@@ -1,10 +1,10 @@
 import { neon } from "@neondatabase/serverless"
 
 if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL environment variable is not set")
+  throw new Error("DATABASE_URL is not set")
 }
 
-const sql = neon(process.env.DATABASE_URL)
+export const sql = neon(process.env.DATABASE_URL)
 
 // Test database connection
 export async function testDatabaseConnection() {
@@ -17,27 +17,18 @@ export async function testDatabaseConnection() {
   }
 }
 
-export { sql }
-
-// Types
-export interface DatabaseUser {
+// Type definitions
+export interface User {
   id: number
   name: string
   email: string
   role: string
   user_type: "project_manager" | "technical_owner"
-  created_at: string
-  updated_at: string
   password_hash?: string
-  email_verified?: boolean
-  image?: string
-  last_login?: string
-  is_active?: boolean
-  permissions?: any
+  is_active: boolean
+  created_at: Date
+  updated_at: Date
 }
-
-// Keep the original User interface for backward compatibility
-export interface User extends DatabaseUser {}
 
 export interface Site {
   id: string
@@ -47,17 +38,17 @@ export interface Site {
   priority: "High" | "Medium" | "Low"
   phase: number
   users_count: number
-  project_manager_id: number
+  project_manager_id?: number
   project_manager_name?: string
-  radsec: string
-  planned_start: string
-  planned_end: string
+  radsec: "Yes" | "No"
+  planned_start?: Date
+  planned_end?: Date
   status: "Planned" | "In Progress" | "Complete" | "Delayed"
   completion_percent: number
   notes?: string
-  created_at: string
-  updated_at: string
-  technical_owners?: DatabaseUser[]
+  created_at: Date
+  updated_at: Date
+  technical_owners?: User[]
   vendors?: Vendor[]
   device_types?: DeviceType[]
   checklist_items?: ChecklistItem[]
@@ -68,14 +59,14 @@ export interface Vendor {
   name: string
   type: "wired" | "wireless"
   is_custom: boolean
-  created_at: string
+  created_at: Date
 }
 
 export interface DeviceType {
   id: number
   name: string
   is_custom: boolean
-  created_at: string
+  created_at: Date
 }
 
 export interface ChecklistItem {
@@ -83,8 +74,8 @@ export interface ChecklistItem {
   name: string
   is_custom: boolean
   completed?: boolean
-  completed_at?: string
-  created_at: string
+  completed_at?: Date
+  created_at: Date
 }
 
 export interface SiteStats {
@@ -97,70 +88,37 @@ export interface SiteStats {
   overall_completion: number
 }
 
-// New Use Case related types
 export interface UseCase {
-  id: string
-  title: string
-  subtitle?: string
-  description: string
-  category: string
-  status: "pending" | "in-progress" | "completed" | "failed"
-  priority: "mandatory" | "optional" | "nice-to-have"
-  completion_percentage: number
-  notes?: string
-  created_at: string
-  updated_at: string
-  test_cases?: TestCase[]
-  requirements?: Requirement[]
-  documentation_links?: DocumentationLink[]
-  success_criteria?: SuccessCriteria[]
-}
-
-export interface TestCase {
-  id: string
+  id: number
   name: string
   description: string
-  expected_outcome: string
-  status: "pending" | "in-progress" | "completed" | "failed"
-  actual_outcome?: string
-  test_date?: string
-  tester_name?: string
-  created_at: string
-  updated_at: string
+  category: string
+  priority: "High" | "Medium" | "Low"
+  status: "Not Started" | "In Progress" | "Validated" | "Failed"
+  validation_notes?: string
+  created_at: Date
+  updated_at: Date
 }
 
-export interface Requirement {
-  id: string
-  type: "functional" | "non-functional"
-  description: string
-  justification?: string
-  status: "met" | "not-met" | "partially-met"
-  created_at: string
-  updated_at: string
-}
-
-export interface BusinessObjective {
-  id: string
-  title: string
-  description: string
-  success_criteria?: string
-  created_at: string
-  updated_at: string
-}
-
-export interface DocumentationLink {
+export interface Report {
   id: number
-  use_case_id: string
-  title: string
-  url: string
-  description?: string
-  created_at: string
+  name: string
+  type: "deployment" | "progress" | "summary"
+  generated_at: Date
+  file_path?: string
+  parameters: any
 }
 
-export interface SuccessCriteria {
+export interface NotificationPreference {
   id: number
-  use_case_id: string
-  criteria: string
-  is_met: boolean
-  created_at: string
+  user_id: number
+  email_notifications: boolean
+  deployment_updates: boolean
+  weekly_reports: boolean
+  critical_alerts: boolean
+  created_at: Date
+  updated_at: Date
 }
+
+// Keep backward compatibility
+export interface DatabaseUser extends User {}

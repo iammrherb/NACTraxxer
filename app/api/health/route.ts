@@ -7,17 +7,15 @@ export async function GET() {
 
     return NextResponse.json({
       status: "ok",
-      database: dbConnected ? "connected" : "disconnected",
       timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV,
+      database: dbConnected ? "connected" : "disconnected",
+      version: "1.0.0",
     })
   } catch (error) {
     return NextResponse.json(
       {
         status: "error",
-        database: "error",
-        error: error.message,
-        timestamp: new Date().toISOString(),
+        error: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 },
     )
