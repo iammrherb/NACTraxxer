@@ -1,6 +1,6 @@
 import type { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
-import { sql } from "./database"
+import { getUserByEmail } from "./api"
 import { verifyPassword } from "./password"
 
 export const authOptions: NextAuthOptions = {
@@ -17,11 +17,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          const [user] = await sql`
-            SELECT id, name, email, role, user_type, password_hash, is_active
-            FROM users 
-            WHERE email = ${credentials.email} AND is_active = true
-          `
+          const user = await getUserByEmail(credentials.email)
 
           if (!user || !user.password_hash) {
             return null
@@ -33,22 +29,14 @@ export const authOptions: NextAuthOptions = {
             return null
           }
 
-          // Update last login
-          await sql`
-            UPDATE users 
-            SET last_login = NOW() 
-            WHERE id = ${user.id}
-          `
-
           return {
             id: user.id.toString(),
-            name: user.name,
             email: user.email,
+            name: user.name,
             role: user.role,
-            user_type: user.user_type,
           }
         } catch (error) {
-          console.error("Auth error:", error)
+          console.error("Authentication error:", error)
           return null
         }
       },
@@ -65,15 +53,13 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.role = user.role
-        token.user_type = user.user_type
       }
       return token
     },
     async session({ session, token }) {
       if (token) {
-        session.user.id = token.sub!
+        session.user.id = token.sub
         session.user.role = token.role as string
-        session.user.user_type = token.user_type as string
       }
       return session
     },

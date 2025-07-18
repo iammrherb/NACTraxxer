@@ -6,30 +6,6 @@ if (!process.env.DATABASE_URL) {
 
 export const sql = neon(process.env.DATABASE_URL)
 
-// Test database connection
-export async function testDatabaseConnection() {
-  try {
-    await sql`SELECT 1`
-    return true
-  } catch (error) {
-    console.error("Database connection failed:", error)
-    return false
-  }
-}
-
-// Type definitions
-export interface User {
-  id: number
-  name: string
-  email: string
-  role: string
-  user_type: "project_manager" | "technical_owner"
-  password_hash?: string
-  is_active: boolean
-  created_at: Date
-  updated_at: Date
-}
-
 export interface Site {
   id: string
   name: string
@@ -40,33 +16,34 @@ export interface Site {
   users_count: number
   project_manager_id?: number
   project_manager_name?: string
-  radsec: "Yes" | "No"
-  planned_start?: Date
-  planned_end?: Date
+  radsec: string
+  planned_start: string
+  planned_end: string
   status: "Planned" | "In Progress" | "Complete" | "Delayed"
   completion_percent: number
   notes?: string
-  created_at: Date
-  updated_at: Date
+  created_at: string
+  updated_at: string
   technical_owners?: User[]
   vendors?: Vendor[]
   device_types?: DeviceType[]
   checklist_items?: ChecklistItem[]
 }
 
-export interface Vendor {
+export interface User {
   id: number
   name: string
-  type: "wired" | "wireless"
-  is_custom: boolean
-  created_at: Date
-}
-
-export interface DeviceType {
-  id: number
-  name: string
-  is_custom: boolean
-  created_at: Date
+  email: string
+  role: string
+  user_type: "project_manager" | "technical_owner"
+  password_hash?: string
+  email_verified?: boolean
+  image?: string
+  last_login?: string
+  is_active?: boolean
+  permissions?: any
+  created_at: string
+  updated_at: string
 }
 
 export interface ChecklistItem {
@@ -74,8 +51,23 @@ export interface ChecklistItem {
   name: string
   is_custom: boolean
   completed?: boolean
-  completed_at?: Date
-  created_at: Date
+  completed_at?: string
+  created_at: string
+}
+
+export interface DeviceType {
+  id: number
+  name: string
+  is_custom: boolean
+  created_at: string
+}
+
+export interface Vendor {
+  id: number
+  name: string
+  type: "wired" | "wireless"
+  is_custom: boolean
+  created_at: string
 }
 
 export interface SiteStats {
@@ -89,36 +81,100 @@ export interface SiteStats {
 }
 
 export interface UseCase {
-  id: number
-  name: string
+  id: string
+  title: string
+  subtitle?: string
   description: string
   category: string
-  priority: "High" | "Medium" | "Low"
-  status: "Not Started" | "In Progress" | "Validated" | "Failed"
-  validation_notes?: string
-  created_at: Date
-  updated_at: Date
+  status: "pending" | "in-progress" | "completed" | "failed"
+  priority: "mandatory" | "optional" | "nice-to-have"
+  completion_percentage: number
+  notes?: string
+  created_at: string
+  updated_at: string
+  test_cases?: TestCase[]
+  requirements?: Requirement[]
+  documentation_links?: DocumentationLink[]
+  success_criteria?: SuccessCriteria[]
 }
 
-export interface Report {
-  id: number
+export interface TestCase {
+  id: string
   name: string
-  type: "deployment" | "progress" | "summary"
-  generated_at: Date
-  file_path?: string
-  parameters: any
+  description: string
+  expected_outcome: string
+  status: "pending" | "in-progress" | "completed" | "failed"
+  actual_outcome?: string
+  test_date?: string
+  tester_name?: string
+  created_at: string
+  updated_at: string
 }
 
-export interface NotificationPreference {
+export interface Requirement {
+  id: string
+  type: "functional" | "non-functional"
+  description: string
+  justification?: string
+  status: "met" | "not-met" | "partially-met"
+  created_at: string
+  updated_at: string
+}
+
+export interface BusinessObjective {
+  id: string
+  title: string
+  description: string
+  success_criteria?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface DocumentationLink {
   id: number
-  user_id: number
-  email_notifications: boolean
-  deployment_updates: boolean
-  weekly_reports: boolean
-  critical_alerts: boolean
-  created_at: Date
-  updated_at: Date
+  use_case_id: string
+  title: string
+  url: string
+  description?: string
+  created_at: string
 }
 
-// Keep backward compatibility
-export interface DatabaseUser extends User {}
+export interface SuccessCriteria {
+  id: number
+  use_case_id: string
+  criteria: string
+  is_met: boolean
+  created_at: string
+}
+
+export async function testDatabaseConnection(): Promise<boolean> {
+  try {
+    const result = await sql`SELECT 1 as test`
+    return result.length > 0
+  } catch (error) {
+    console.error("Database connection test failed:", error)
+    return false
+  }
+}
+
+export async function initializeDatabase(): Promise<void> {
+  try {
+    console.log("Initializing database...")
+
+    // Test connection first
+    const isConnected = await testDatabaseConnection()
+    if (!isConnected) {
+      throw new Error("Database connection failed")
+    }
+
+    console.log("Database connection successful, creating tables...")
+
+    // The tables are already created by the SQL scripts in the scripts folder
+    // This function just verifies the connection and logs the status
+
+    console.log("Database initialized successfully")
+  } catch (error) {
+    console.error("Database initialization failed:", error)
+    throw error
+  }
+}
