@@ -24,54 +24,99 @@ export function Header({ onManageUsers }: HeaderProps) {
   }
 
   return (
-    <header className="bg-gradient-to-r from-slate-800 to-slate-700 text-white shadow-lg">
-      <div className="max-w-7xl mx-auto px-4 py-4">
+    <header className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white shadow-2xl relative overflow-hidden border-b-4 border-blue-500">
+      {/* Animated background elements with better contrast */}
+      <div className="absolute inset-0 opacity-20">
+        <div className="absolute top-0 left-0 w-32 h-32 bg-blue-400 rounded-full animate-pulse blur-xl"></div>
+        <div className="absolute top-10 right-20 w-16 h-16 bg-green-400 rounded-full animate-bounce delay-1000 blur-lg"></div>
+        <div className="absolute bottom-0 right-0 w-24 h-24 bg-purple-400 rounded-full animate-pulse delay-500 blur-xl"></div>
+        <div className="absolute top-1/2 left-1/3 w-20 h-20 bg-cyan-400 rounded-full animate-ping delay-2000 blur-lg"></div>
+      </div>
+
+      {/* Grid pattern overlay for texture */}
+      <div
+        className="absolute inset-0 opacity-5"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fillRule='evenodd'%3E%3Cg fill='%23ffffff' fillOpacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+        }}
+      ></div>
+
+      <div className="max-w-7xl mx-auto px-4 py-6 relative z-10">
         <div className="flex items-center justify-between">
-          {/* Logo Section */}
+          {/* Logo Section with enhanced visibility */}
           <div className="flex items-center space-x-8">
-            <div className="flex items-center">
-              <Image
-                src="/placeholder.svg?height=50&width=150&text=Portnox"
-                alt="Portnox Logo"
-                width={150}
-                height={50}
-                className="h-12 w-auto"
-              />
+            <div className="flex items-center group">
+              <div className="relative bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/20 shadow-2xl">
+                <Image
+                  src="https://www.portnox.com/wp-content/uploads/2021/03/Portnotx_Logo_Color-768x193.png"
+                  alt="Portnox Logo"
+                  width={200}
+                  height={50}
+                  className="h-14 w-auto transition-all duration-300 group-hover:scale-105 drop-shadow-2xl filter brightness-110"
+                  priority
+                />
+                {/* Enhanced glow effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-400 via-green-400 to-blue-400 opacity-0 group-hover:opacity-30 transition-opacity duration-500 rounded-xl blur-md -z-10"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-green-500 opacity-20 rounded-xl animate-pulse"></div>
+              </div>
+
+              {/* Enhanced animated text with better contrast */}
+              <div className="ml-6 hidden lg:block">
+                <div className="text-xl font-bold bg-gradient-to-r from-blue-200 via-white to-green-200 bg-clip-text text-transparent animate-pulse drop-shadow-lg">
+                  Network Access Control
+                </div>
+                <div className="text-sm text-blue-100 animate-fade-in font-medium tracking-wide drop-shadow-md">
+                  Zero Trust Security Platform
+                </div>
+              </div>
             </div>
-            <div className="h-10 w-px bg-white/30" />
-            <div className="bg-white/10 rounded-lg p-2">
+
+            <div className="h-12 w-px bg-gradient-to-b from-transparent via-white/40 to-transparent" />
+
+            <div className="bg-white/15 backdrop-blur-sm rounded-lg p-3 border border-white/30 shadow-xl">
               <Image
                 src="/placeholder.svg?height=40&width=120&text=Customer"
                 alt="Customer Logo"
                 width={120}
                 height={40}
-                className="h-10 w-auto"
+                className="h-10 w-auto opacity-90 hover:opacity-100 transition-opacity duration-300"
               />
             </div>
           </div>
 
-          {/* Title */}
-          <h1 className="text-xl font-semibold">Master Site Deployment Plan</h1>
+          {/* Title with enhanced visibility */}
+          <div className="text-center hidden md:block">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-white via-blue-100 to-white bg-clip-text text-transparent drop-shadow-lg">
+              Master Site Deployment Plan
+            </h1>
+            <div className="text-sm text-blue-100 animate-fade-in font-medium tracking-wide drop-shadow-md mt-1">
+              Deployment & Use Case Tracker
+            </div>
+          </div>
 
-          {/* Controls */}
-          <div className="flex items-center space-x-4">
+          {/* Controls with enhanced visibility */}
+          <div className="flex items-center space-x-3">
             {/* Logo Upload */}
             <div className="relative">
               <input type="file" id="logo-upload" accept="image/*" onChange={handleLogoUpload} className="hidden" />
               <label
                 htmlFor="logo-upload"
-                className="flex items-center space-x-2 bg-white/10 hover:bg-white/20 px-3 py-2 rounded-lg cursor-pointer transition-colors"
+                className="flex items-center space-x-2 bg-white/15 hover:bg-white/25 px-4 py-2 rounded-lg cursor-pointer transition-all duration-300 backdrop-blur-sm hover:scale-105 border border-white/20 shadow-lg"
               >
-                <Upload className="h-4 w-4" />
-                <span className="text-sm">Change Logo</span>
+                <Upload className="h-4 w-4 text-white drop-shadow-sm" />
+                <span className="text-sm hidden sm:inline text-white font-medium">Change Logo</span>
               </label>
             </div>
 
             {/* Theme Toggle */}
-            <div className="flex items-center space-x-2 bg-white/10 rounded-full px-3 py-2">
-              <Sun className="h-4 w-4" />
-              <Switch checked={theme === "dark"} onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")} />
-              <Moon className="h-4 w-4" />
+            <div className="flex items-center space-x-2 bg-white/15 rounded-full px-4 py-2 backdrop-blur-sm border border-white/20 shadow-lg">
+              <Sun className="h-4 w-4 transition-transform duration-300 hover:rotate-180 text-yellow-200 drop-shadow-sm" />
+              <Switch
+                checked={theme === "dark"}
+                onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
+                className="data-[state=checked]:bg-blue-500"
+              />
+              <Moon className="h-4 w-4 transition-transform duration-300 hover:rotate-12 text-blue-200 drop-shadow-sm" />
             </div>
 
             {/* Manage Users */}
@@ -79,10 +124,10 @@ export function Header({ onManageUsers }: HeaderProps) {
               variant="ghost"
               size="sm"
               onClick={onManageUsers}
-              className="bg-white/10 hover:bg-white/20 text-white"
+              className="bg-white/15 hover:bg-white/25 text-white transition-all duration-300 hover:scale-105 backdrop-blur-sm border border-white/20 shadow-lg"
             >
-              <Users className="h-4 w-4 mr-2" />
-              Manage Users
+              <Users className="h-4 w-4 mr-2 drop-shadow-sm" />
+              <span className="hidden sm:inline font-medium">Manage Users</span>
             </Button>
 
             {/* Theme Customization */}
@@ -91,31 +136,47 @@ export function Header({ onManageUsers }: HeaderProps) {
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowThemeOptions(!showThemeOptions)}
-                className="bg-white/10 hover:bg-white/20 text-white"
+                className="bg-white/15 hover:bg-white/25 text-white transition-all duration-300 hover:scale-105 backdrop-blur-sm border border-white/20 shadow-lg"
               >
-                <Palette className="h-4 w-4 mr-2" />
-                Customize
+                <Palette className="h-4 w-4 mr-2 drop-shadow-sm" />
+                <span className="hidden sm:inline font-medium">Customize</span>
               </Button>
 
               {showThemeOptions && (
-                <div className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border p-4 z-50">
+                <div className="absolute right-0 top-full mt-2 w-64 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-lg shadow-2xl border border-white/30 p-4 z-50 animate-fade-in">
                   <h3 className="font-semibold mb-3 text-gray-900 dark:text-white">Theme Colors</h3>
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <label className="text-sm text-gray-700 dark:text-gray-300">Primary</label>
-                      <input type="color" className="w-12 h-8 rounded border" defaultValue="#3b82f6" />
+                      <label className="text-sm text-gray-700 dark:text-gray-300 font-medium">Primary</label>
+                      <input
+                        type="color"
+                        className="w-12 h-8 rounded border transition-all duration-300 hover:scale-110 shadow-md"
+                        defaultValue="#3b82f6"
+                      />
                     </div>
                     <div className="flex items-center justify-between">
-                      <label className="text-sm text-gray-700 dark:text-gray-300">Success</label>
-                      <input type="color" className="w-12 h-8 rounded border" defaultValue="#10b981" />
+                      <label className="text-sm text-gray-700 dark:text-gray-300 font-medium">Success</label>
+                      <input
+                        type="color"
+                        className="w-12 h-8 rounded border transition-all duration-300 hover:scale-110 shadow-md"
+                        defaultValue="#10b981"
+                      />
                     </div>
                     <div className="flex items-center justify-between">
-                      <label className="text-sm text-gray-700 dark:text-gray-300">Warning</label>
-                      <input type="color" className="w-12 h-8 rounded border" defaultValue="#f59e0b" />
+                      <label className="text-sm text-gray-700 dark:text-gray-300 font-medium">Warning</label>
+                      <input
+                        type="color"
+                        className="w-12 h-8 rounded border transition-all duration-300 hover:scale-110 shadow-md"
+                        defaultValue="#f59e0b"
+                      />
                     </div>
                     <div className="flex items-center justify-between">
-                      <label className="text-sm text-gray-700 dark:text-gray-300">Danger</label>
-                      <input type="color" className="w-12 h-8 rounded border" defaultValue="#ef4444" />
+                      <label className="text-sm text-gray-700 dark:text-gray-300 font-medium">Danger</label>
+                      <input
+                        type="color"
+                        className="w-12 h-8 rounded border transition-all duration-300 hover:scale-110 shadow-md"
+                        defaultValue="#ef4444"
+                      />
                     </div>
                   </div>
                 </div>
@@ -124,6 +185,23 @@ export function Header({ onManageUsers }: HeaderProps) {
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes fade-in {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        .animate-fade-in {
+          animation: fade-in 0.6s ease-out;
+        }
+      `}</style>
     </header>
   )
 }
