@@ -1,96 +1,32 @@
 "use client"
 
-import { useMemo, useEffect, useState } from "react"
+import { useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { ChartContainer } from "@/components/ui/chart"
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts"
-
-interface Site {
-  id: string
-  name: string
-  location: string
-  status: "planning" | "in-progress" | "completed" | "on-hold"
-  progress: number
-  vendor: string
-  deviceType: string
-  lastUpdated: string
-  assignedTo: string
-  priority: "high" | "medium" | "low"
-  notes?: string
-  users_count?: number
-  checklist_items?: Array<{ completed: boolean }>
-  region?: string
-  phase?: number
-  completion_percent?: number
-}
+import type { Site } from "@/lib/database"
 
 interface ProgressDashboardProps {
-  sites?: Site[]
+  sites: Site[]
 }
 
-export function ProgressDashboard({ sites = [] }: ProgressDashboardProps) {
-  const [loading, setLoading] = useState(true)
-  const [sitesData, setSitesData] = useState<Site[]>([])
-
-  useEffect(() => {
-    // If sites prop is provided, use it
-    if (sites && sites.length > 0) {
-      setSitesData(sites)
-      setLoading(false)
-    } else {
-      // Otherwise, fetch from API
-      fetchSites()
-    }
-  }, [sites])
-
-  const fetchSites = async () => {
-    try {
-      const response = await fetch("/api/sites")
-      if (response.ok) {
-        const data = await response.json()
-        setSitesData(Array.isArray(data) ? data : [])
-      } else {
-        setSitesData([])
-      }
-    } catch (error) {
-      console.error("Error fetching sites:", error)
-      setSitesData([])
-    } finally {
-      setLoading(false)
-    }
-  }
-
+export function ProgressDashboard({ sites }: ProgressDashboardProps) {
   const stats = useMemo(() => {
-    if (!Array.isArray(sitesData) || sitesData.length === 0) {
-      return {
-        totalSites: 0,
-        completedSites: 0,
-        inProgressSites: 0,
-        plannedSites: 0,
-        delayedSites: 0,
-        totalUsers: 0,
-        overallCompletion: 0,
-        checklistCompletion: 0,
-        totalChecklistItems: 0,
-        completedChecklistItems: 0,
-      }
-    }
-
-    const totalSites = sitesData.length
-    const completedSites = sitesData.filter((site) => site.status === "completed").length
-    const inProgressSites = sitesData.filter((site) => site.status === "in-progress").length
-    const plannedSites = sitesData.filter((site) => site.status === "planning").length
-    const delayedSites = sitesData.filter((site) => site.status === "on-hold").length
-    const totalUsers = sitesData.reduce((sum, site) => sum + (site.users_count || 0), 0)
+    const totalSites = sites.length
+    const completedSites = sites.filter((site) => site.status === "Complete").length
+    const inProgressSites = sites.filter((site) => site.status === "In Progress").length
+    const plannedSites = sites.filter((site) => site.status === "Planned").length
+    const delayedSites = sites.filter((site) => site.status === "Delayed").length
+    const totalUsers = sites.reduce((sum, site) => sum + site.users_count, 0)
     const overallCompletion = totalSites > 0 ? Math.round((completedSites / totalSites) * 100) : 0
 
     // Calculate checklist completion
-    const totalChecklistItems = sitesData.reduce((sum, site) => {
+    const totalChecklistItems = sites.reduce((sum, site) => {
       return sum + (site.checklist_items?.length || 0)
     }, 0)
 
-    const completedChecklistItems = sitesData.reduce((sum, site) => {
+    const completedChecklistItems = sites.reduce((sum, site) => {
       return sum + (site.checklist_items?.filter((item) => item.completed).length || 0)
     }, 0)
 
@@ -109,7 +45,7 @@ export function ProgressDashboard({ sites = [] }: ProgressDashboardProps) {
       totalChecklistItems,
       completedChecklistItems,
     }
-  }, [sitesData])
+  }, [sites])
 
   const statusData = [
     { name: "Complete", value: stats.completedSites, color: "#10b981" },
@@ -119,12 +55,9 @@ export function ProgressDashboard({ sites = [] }: ProgressDashboardProps) {
   ]
 
   const regionData = useMemo(() => {
-    if (!Array.isArray(sitesData) || sitesData.length === 0) return []
-
-    const regions = sitesData.reduce(
+    const regions = sites.reduce(
       (acc, site) => {
-        const region = site.region || "Unknown"
-        acc[region] = (acc[region] || 0) + 1
+        acc[site.region] = (acc[site.region] || 0) + 1
         return acc
       },
       {} as Record<string, number>,
@@ -133,17 +66,14 @@ export function ProgressDashboard({ sites = [] }: ProgressDashboardProps) {
     return Object.entries(regions).map(([region, count]) => ({
       region,
       count,
-      completed: sitesData.filter((site) => (site.region || "Unknown") === region && site.status === "completed")
-        .length,
+      completed: sites.filter((site) => site.region === region && site.status === "Complete").length,
     }))
-  }, [sitesData])
+  }, [sites])
 
   const phaseData = useMemo(() => {
-    if (!Array.isArray(sitesData) || sitesData.length === 0) return []
-
-    const phases = sitesData.reduce(
+    const phases = sites.reduce(
       (acc, site) => {
-        const phase = `Phase ${site.phase || 1}`
+        const phase = `Phase ${site.phase}`
         acc[phase] = (acc[phase] || 0) + 1
         return acc
       },
@@ -153,17 +83,9 @@ export function ProgressDashboard({ sites = [] }: ProgressDashboardProps) {
     return Object.entries(phases).map(([phase, count]) => ({
       phase,
       count,
-      completed: sitesData.filter((site) => `Phase ${site.phase || 1}` === phase && site.status === "completed").length,
+      completed: sites.filter((site) => `Phase ${site.phase}` === phase && site.status === "Complete").length,
     }))
-  }, [sitesData])
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    )
-  }
+  }, [sites])
 
   return (
     <div className="space-y-6">
@@ -238,71 +160,45 @@ export function ProgressDashboard({ sites = [] }: ProgressDashboardProps) {
       </Card>
 
       {/* Charts */}
-      {sitesData.length > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Status Distribution */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Status Distribution</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer config={{}} className="h-[300px]">
-                <PieChart>
-                  <Pie
-                    data={statusData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {statusData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend />
-                </PieChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-
-          {/* Regional Progress */}
-          {regionData.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Progress by Region</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ChartContainer config={{}} className="h-[300px]">
-                  <BarChart data={regionData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="region" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="count" fill="#3b82f6" name="Total Sites" />
-                    <Bar dataKey="completed" fill="#10b981" name="Completed" />
-                  </BarChart>
-                </ChartContainer>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      )}
-
-      {/* Phase Progress */}
-      {phaseData.length > 0 && (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Status Distribution */}
         <Card>
           <CardHeader>
-            <CardTitle>Progress by Phase</CardTitle>
+            <CardTitle>Status Distribution</CardTitle>
           </CardHeader>
           <CardContent>
             <ChartContainer config={{}} className="h-[300px]">
-              <BarChart data={phaseData}>
+              <PieChart>
+                <Pie
+                  data={statusData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={100}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {statusData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+
+        {/* Regional Progress */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Progress by Region</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer config={{}} className="h-[300px]">
+              <BarChart data={regionData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="phase" />
+                <XAxis dataKey="region" />
                 <YAxis />
                 <Tooltip />
                 <Legend />
@@ -312,46 +208,54 @@ export function ProgressDashboard({ sites = [] }: ProgressDashboardProps) {
             </ChartContainer>
           </CardContent>
         </Card>
-      )}
+      </div>
+
+      {/* Phase Progress */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Progress by Phase</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ChartContainer config={{}} className="h-[300px]">
+            <BarChart data={phaseData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="phase" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="count" fill="#3b82f6" name="Total Sites" />
+              <Bar dataKey="completed" fill="#10b981" name="Completed" />
+            </BarChart>
+          </ChartContainer>
+        </CardContent>
+      </Card>
 
       {/* Site Progress List */}
-      {sitesData.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Individual Site Progress</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {sitesData
-                .sort((a, b) => (b.completion_percent || b.progress || 0) - (a.completion_percent || a.progress || 0))
-                .map((site) => (
-                  <div key={site.id} className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-medium">
-                          {site.name} ({site.id})
-                        </span>
-                        <span className="text-sm text-muted-foreground">
-                          {site.completion_percent || site.progress || 0}%
-                        </span>
-                      </div>
-                      <Progress value={site.completion_percent || site.progress || 0} className="h-2" />
+      <Card>
+        <CardHeader>
+          <CardTitle>Individual Site Progress</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {sites
+              .sort((a, b) => b.completion_percent - a.completion_percent)
+              .map((site) => (
+                <div key={site.id} className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-medium">
+                        {site.name} ({site.id})
+                      </span>
+                      <span className="text-sm text-muted-foreground">{site.completion_percent}%</span>
                     </div>
-                    <div className="ml-4 text-sm text-muted-foreground">{site.status}</div>
+                    <Progress value={site.completion_percent} className="h-2" />
                   </div>
-                ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {sitesData.length === 0 && (
-        <Card>
-          <CardContent className="flex items-center justify-center h-32">
-            <p className="text-muted-foreground">No sites data available</p>
-          </CardContent>
-        </Card>
-      )}
+                  <div className="ml-4 text-sm text-muted-foreground">{site.status}</div>
+                </div>
+              ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }
