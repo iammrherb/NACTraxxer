@@ -1,7 +1,9 @@
 import type { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
-import { getUserByEmail } from "./api"
-import { verifyPassword } from "./password"
+import { neon } from "@neondatabase/serverless"
+import bcrypt from "bcryptjs"
+
+const sql = neon(process.env.DATABASE_URL!)
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -17,14 +19,20 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          const user = await getUserByEmail(credentials.email)
+          // Get user from database
+          const users = await sql`
+            SELECT id, email, password_hash, name, role, is_active 
+            FROM users 
+            WHERE email = ${credentials.email}
+          `
 
-          if (!user || !user.password_hash) {
+          const user = users[0]
+          if (!user || !user.is_active) {
             return null
           }
 
-          const isValidPassword = await verifyPassword(credentials.password, user.password_hash)
-
+          // Verify password
+          const isValidPassword = await bcrypt.compare(credentials.password, user.password_hash)
           if (!isValidPassword) {
             return null
           }
@@ -36,7 +44,7 @@ export const authOptions: NextAuthOptions = {
             role: user.role,
           }
         } catch (error) {
-          console.error("Authentication error:", error)
+          console.error("Auth error:", error)
           return null
         }
       },
@@ -44,10 +52,6 @@ export const authOptions: NextAuthOptions = {
   ],
   session: {
     strategy: "jwt",
-  },
-  pages: {
-    signIn: "/auth/signin",
-    error: "/auth/error",
   },
   callbacks: {
     async jwt({ token, user }) {
@@ -58,10 +62,15 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (token) {
-        session.user.id = token.sub
+        session.user.id = token.sub!
         session.user.role = token.role as string
       }
       return session
     },
   },
+  pages: {
+    signIn: "/auth/signin",
+    error: "/auth/error",
+  },
+  secret: process.env.NEXTAUTH_SECRET,
 }

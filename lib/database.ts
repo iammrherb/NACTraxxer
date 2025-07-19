@@ -1,10 +1,43 @@
 import { neon } from "@neondatabase/serverless"
 
 if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL is not set")
+  throw new Error("DATABASE_URL environment variable is not set")
 }
 
-export const sql = neon(process.env.DATABASE_URL)
+const sql = neon(process.env.DATABASE_URL)
+
+// Test database connection
+export async function testDatabaseConnection() {
+  try {
+    await sql`SELECT 1`
+    return true
+  } catch (error) {
+    console.error("Database connection failed:", error)
+    return false
+  }
+}
+
+export { sql }
+
+// Types
+export interface DatabaseUser {
+  id: number
+  name: string
+  email: string
+  role: string
+  user_type: "project_manager" | "technical_owner"
+  created_at: string
+  updated_at: string
+  password_hash?: string
+  email_verified?: boolean
+  image?: string
+  last_login?: string
+  is_active?: boolean
+  permissions?: any
+}
+
+// Keep the original User interface for backward compatibility
+export interface User extends DatabaseUser {}
 
 export interface Site {
   id: string
@@ -14,7 +47,7 @@ export interface Site {
   priority: "High" | "Medium" | "Low"
   phase: number
   users_count: number
-  project_manager_id?: number
+  project_manager_id: number
   project_manager_name?: string
   radsec: string
   planned_start: string
@@ -24,34 +57,17 @@ export interface Site {
   notes?: string
   created_at: string
   updated_at: string
-  technical_owners?: User[]
+  technical_owners?: DatabaseUser[]
   vendors?: Vendor[]
   device_types?: DeviceType[]
   checklist_items?: ChecklistItem[]
 }
 
-export interface User {
+export interface Vendor {
   id: number
   name: string
-  email: string
-  role: string
-  user_type: "project_manager" | "technical_owner"
-  password_hash?: string
-  email_verified?: boolean
-  image?: string
-  last_login?: string
-  is_active?: boolean
-  permissions?: any
-  created_at: string
-  updated_at: string
-}
-
-export interface ChecklistItem {
-  id: number
-  name: string
+  type: "wired" | "wireless"
   is_custom: boolean
-  completed?: boolean
-  completed_at?: string
   created_at: string
 }
 
@@ -62,11 +78,12 @@ export interface DeviceType {
   created_at: string
 }
 
-export interface Vendor {
+export interface ChecklistItem {
   id: number
   name: string
-  type: "wired" | "wireless"
   is_custom: boolean
+  completed?: boolean
+  completed_at?: string
   created_at: string
 }
 
@@ -80,6 +97,7 @@ export interface SiteStats {
   overall_completion: number
 }
 
+// New Use Case related types
 export interface UseCase {
   id: string
   title: string
@@ -145,36 +163,4 @@ export interface SuccessCriteria {
   criteria: string
   is_met: boolean
   created_at: string
-}
-
-export async function testDatabaseConnection(): Promise<boolean> {
-  try {
-    const result = await sql`SELECT 1 as test`
-    return result.length > 0
-  } catch (error) {
-    console.error("Database connection test failed:", error)
-    return false
-  }
-}
-
-export async function initializeDatabase(): Promise<void> {
-  try {
-    console.log("Initializing database...")
-
-    // Test connection first
-    const isConnected = await testDatabaseConnection()
-    if (!isConnected) {
-      throw new Error("Database connection failed")
-    }
-
-    console.log("Database connection successful, creating tables...")
-
-    // The tables are already created by the SQL scripts in the scripts folder
-    // This function just verifies the connection and logs the status
-
-    console.log("Database initialized successfully")
-  } catch (error) {
-    console.error("Database initialization failed:", error)
-    throw error
-  }
 }
