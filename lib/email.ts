@@ -2,7 +2,7 @@ import nodemailer from "nodemailer"
 import { sql } from "./database"
 
 // Email configuration
-const transporter = nodemailer.createTransporter({
+const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || "smtp.gmail.com",
   port: Number.parseInt(process.env.SMTP_PORT || "587"),
   secure: false,
@@ -60,7 +60,7 @@ export async function sendEmail(notification: EmailNotification) {
     `
 
     return { success: true, id: notificationId }
-  } catch (error) {
+  } catch (error: any) {
     console.error("Email send error:", error)
 
     // Update status to failed if we have the ID
@@ -100,7 +100,7 @@ export async function sendSiteStatusChangeNotification(siteId: string, oldStatus
 
     const recipients = [{ email: site.project_manager_email, name: site.project_manager_name }]
 
-    technicalOwners.forEach((owner) => {
+    technicalOwners.forEach((owner: any) => {
       if (!recipients.find((r) => r.email === owner.email)) {
         recipients.push({ email: owner.email, name: owner.name })
       }

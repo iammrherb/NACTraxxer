@@ -1,7 +1,7 @@
 import type { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
-import bcrypt from "bcryptjs"
 import { sql } from "./database"
+import { verifyPassword } from "./password"
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -28,9 +28,9 @@ export const authOptions: NextAuthOptions = {
           }
 
           const user = users[0]
-          const isPasswordValid = await bcrypt.compare(credentials.password, user.password_hash)
+          const isValidPassword = await verifyPassword(credentials.password, user.password_hash)
 
-          if (!isPasswordValid) {
+          if (!isValidPassword) {
             return null
           }
 
