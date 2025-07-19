@@ -1,7 +1,7 @@
 import type { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
-import { sql } from "./database"
-import { verifyPassword } from "./password"
+import { sql } from "@/lib/database"
+import bcrypt from "bcryptjs"
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -18,28 +18,37 @@ export const authOptions: NextAuthOptions = {
 
         try {
           const users = await sql`
-            SELECT id, email, name, password_hash, role, permissions
+            SELECT id, name, email, password_hash, role, user_type, is_active
             FROM users 
-            WHERE email = ${credentials.email} AND active = true
+            WHERE email = ${credentials.email}
+            LIMIT 1
           `
 
-          if (users.length === 0) {
-            return null
-          }
-
           const user = users[0]
-          const isValidPassword = await verifyPassword(credentials.password, user.password_hash)
 
-          if (!isValidPassword) {
+          if (!user || !user.is_active) {
             return null
           }
+
+          const isPasswordValid = await bcrypt.compare(credentials.password, user.password_hash)
+
+          if (!isPasswordValid) {
+            return null
+          }
+
+          // Update last login
+          await sql`
+            UPDATE users 
+            SET last_login = CURRENT_TIMESTAMP 
+            WHERE id = ${user.id}
+          `
 
           return {
             id: user.id.toString(),
             email: user.email,
             name: user.name,
             role: user.role,
-            permissions: user.permissions,
+            userType: user.user_type,
           }
         } catch (error) {
           console.error("Auth error:", error)
@@ -59,17 +68,18 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.role = user.role
-        token.permissions = user.permissions
+        token.userType = user.userType
       }
       return token
     },
     async session({ session, token }) {
       if (token) {
-        session.user.id = token.sub!
+        session.user.id = token.sub
         session.user.role = token.role as string
-        session.user.permissions = token.permissions as any
+        session.user.userType = token.userType as string
       }
       return session
     },
   },
+  secret: process.env.NEXTAUTH_SECRET,
 }

@@ -1,195 +1,190 @@
 import nodemailer from "nodemailer"
-import { sql } from "./database"
 
-// Email configuration
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || "smtp.gmail.com",
-  port: Number.parseInt(process.env.SMTP_PORT || "587"),
-  secure: false,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-})
+// Create transporter with environment variables
+const createTransporter = () => {
+  if (!process.env.SMTP_HOST || !process.env.SMTP_PORT || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    console.warn("SMTP configuration incomplete. Email functionality will be disabled.")
+    return null
+  }
 
-export interface EmailNotification {
-  recipientId?: number
-  recipientEmail: string
+  try {
+    return nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: Number.parseInt(process.env.SMTP_PORT),
+      secure: Number.parseInt(process.env.SMTP_PORT) === 465,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    })
+  } catch (error) {
+    console.error("Failed to create email transporter:", error)
+    return null
+  }
+}
+
+const transporter = createTransporter()
+
+export interface EmailOptions {
+  to: string | string[]
   subject: string
-  body: string
-  notificationType:
-    | "site_status_change"
-    | "deployment_milestone"
-    | "user_assignment"
-    | "report_generated"
-    | "system_alert"
-  siteId?: string
+  text?: string
+  html?: string
 }
 
-export async function sendEmail(notification: EmailNotification) {
-  try {
-    // Save notification to database
-    const result = await sql`
-      INSERT INTO email_notifications (
-        recipient_id, recipient_email, subject, body, 
-        notification_type, site_id, status
-      ) VALUES (
-        ${notification.recipientId || null}, ${notification.recipientEmail}, 
-        ${notification.subject}, ${notification.body}, 
-        ${notification.notificationType}, ${notification.siteId || null}, 
-        'pending'
-      )
-      RETURNING id
-    `
-
-    const notificationId = result[0].id
-
-    // Send email
-    await transporter.sendMail({
-      from: process.env.SMTP_FROM || "noreply@portnox.com",
-      to: notification.recipientEmail,
-      subject: notification.subject,
-      html: notification.body,
-    })
-
-    // Update status to sent
-    await sql`
-      UPDATE email_notifications 
-      SET status = 'sent', sent_at = CURRENT_TIMESTAMP
-      WHERE id = ${notificationId}
-    `
-
-    return { success: true, id: notificationId }
-  } catch (error: any) {
-    console.error("Email send error:", error)
-
-    // Update status to failed if we have the ID
-    if (error.notificationId) {
-      await sql`
-        UPDATE email_notifications 
-        SET status = 'failed', error_message = ${error.message}
-        WHERE id = ${error.notificationId}
-      `
-    }
-
-    return { success: false, error: error.message }
+export async function sendEmail(options: EmailOptions): Promise<boolean> {
+  if (!transporter) {
+    console.warn("Email transporter not available. Skipping email send.")
+    return false
   }
-}
 
-export async function sendSiteStatusChangeNotification(siteId: string, oldStatus: string, newStatus: string) {
   try {
-    // Get site details and stakeholders
-    const sites = await sql`
-      SELECT s.*, u.name as project_manager_name, u.email as project_manager_email
-      FROM sites s
-      LEFT JOIN users u ON s.project_manager_id = u.id
-      WHERE s.id = ${siteId}
-    `
-
-    if (sites.length === 0) return
-
-    const site = sites[0]
-
-    // Get technical owners
-    const technicalOwners = await sql`
-      SELECT u.email, u.name
-      FROM users u
-      JOIN site_technical_owners sto ON u.id = sto.user_id
-      WHERE sto.site_id = ${siteId}
-    `
-
-    const recipients = [{ email: site.project_manager_email, name: site.project_manager_name }]
-
-    technicalOwners.forEach((owner: any) => {
-      if (!recipients.find((r) => r.email === owner.email)) {
-        recipients.push({ email: owner.email, name: owner.name })
-      }
-    })
-
-    const subject = `Site Status Update: ${site.name} (${site.id})`
-    const body = `
-      <h2>Site Status Change Notification</h2>
-      <p>The status of site <strong>${site.name}</strong> (${site.id}) has been updated.</p>
-      
-      <table style="border-collapse: collapse; width: 100%; margin: 20px 0;">
-        <tr>
-          <td style="border: 1px solid #ddd; padding: 8px; background-color: #f9f9f9;"><strong>Site Name:</strong></td>
-          <td style="border: 1px solid #ddd; padding: 8px;">${site.name}</td>
-        </tr>
-        <tr>
-          <td style="border: 1px solid #ddd; padding: 8px; background-color: #f9f9f9;"><strong>Site ID:</strong></td>
-          <td style="border: 1px solid #ddd; padding: 8px;">${site.id}</td>
-        </tr>
-        <tr>
-          <td style="border: 1px solid #ddd; padding: 8px; background-color: #f9f9f9;"><strong>Previous Status:</strong></td>
-          <td style="border: 1px solid #ddd; padding: 8px;">${oldStatus}</td>
-        </tr>
-        <tr>
-          <td style="border: 1px solid #ddd; padding: 8px; background-color: #f9f9f9;"><strong>New Status:</strong></td>
-          <td style="border: 1px solid #ddd; padding: 8px;"><strong>${newStatus}</strong></td>
-        </tr>
-        <tr>
-          <td style="border: 1px solid #ddd; padding: 8px; background-color: #f9f9f9;"><strong>Completion:</strong></td>
-          <td style="border: 1px solid #ddd; padding: 8px;">${site.completion_percent}%</td>
-        </tr>
-      </table>
-      
-      <p>Please log in to the deployment tracker for more details.</p>
-      <p><em>This is an automated notification from the Portnox Deployment Tracker.</em></p>
-    `
-
-    // Send to all recipients
-    for (const recipient of recipients) {
-      if (recipient.email) {
-        await sendEmail({
-          recipientEmail: recipient.email,
-          subject,
-          body,
-          notificationType: "site_status_change",
-          siteId,
-        })
-      }
+    const mailOptions = {
+      from: process.env.SMTP_FROM || process.env.SMTP_USER,
+      to: Array.isArray(options.to) ? options.to.join(", ") : options.to,
+      subject: options.subject,
+      text: options.text,
+      html: options.html,
     }
+
+    const result = await transporter.sendMail(mailOptions)
+    console.log("Email sent successfully:", result.messageId)
+    return true
   } catch (error) {
-    console.error("Error sending site status change notification:", error)
+    console.error("Failed to send email:", error)
+    return false
   }
 }
 
-export async function sendDeploymentMilestoneNotification(siteId: string, milestone: string) {
-  try {
-    const sites = await sql`
-      SELECT s.*, u.name as project_manager_name, u.email as project_manager_email
-      FROM sites s
-      LEFT JOIN users u ON s.project_manager_id = u.id
-      WHERE s.id = ${siteId}
-    `
+export async function sendSiteStatusNotification(
+  siteName: string,
+  status: string,
+  recipients: string[],
+): Promise<boolean> {
+  const subject = `Site Status Update: ${siteName}`
+  const html = `
+    <h2>Site Status Update</h2>
+    <p><strong>Site:</strong> ${siteName}</p>
+    <p><strong>New Status:</strong> ${status}</p>
+    <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
+    <hr>
+    <p>This is an automated notification from the Portnox Deployment Tracker.</p>
+  `
 
-    if (sites.length === 0) return
+  return await sendEmail({
+    to: recipients,
+    subject,
+    html,
+  })
+}
 
-    const site = sites[0]
+export async function sendDeploymentCompleteNotification(
+  siteName: string,
+  completionPercentage: number,
+  recipients: string[],
+): Promise<boolean> {
+  const subject = `Deployment Complete: ${siteName}`
+  const html = `
+    <h2>Deployment Completed</h2>
+    <p><strong>Site:</strong> ${siteName}</p>
+    <p><strong>Completion:</strong> ${completionPercentage}%</p>
+    <p><strong>Completed At:</strong> ${new Date().toLocaleString()}</p>
+    <hr>
+    <p>Congratulations! The deployment has been successfully completed.</p>
+    <p>This is an automated notification from the Portnox Deployment Tracker.</p>
+  `
 
-    const subject = `Deployment Milestone Reached: ${site.name}`
-    const body = `
-      <h2>Deployment Milestone Notification</h2>
-      <p>A deployment milestone has been reached for site <strong>${site.name}</strong> (${site.id}).</p>
-      
-      <p><strong>Milestone:</strong> ${milestone}</p>
-      <p><strong>Current Progress:</strong> ${site.completion_percent}%</p>
-      
-      <p>Congratulations on reaching this milestone!</p>
-      <p><em>This is an automated notification from the Portnox Deployment Tracker.</em></p>
-    `
+  return await sendEmail({
+    to: recipients,
+    subject,
+    html,
+  })
+}
 
-    if (site.project_manager_email) {
-      await sendEmail({
-        recipientEmail: site.project_manager_email,
-        subject,
-        body,
-        notificationType: "deployment_milestone",
-        siteId,
-      })
-    }
-  } catch (error) {
-    console.error("Error sending milestone notification:", error)
-  }
+export async function sendDelayedDeploymentAlert(
+  siteName: string,
+  plannedEnd: string,
+  recipients: string[],
+): Promise<boolean> {
+  const subject = `Deployment Delay Alert: ${siteName}`
+  const html = `
+    <h2>Deployment Delay Alert</h2>
+    <p><strong>Site:</strong> ${siteName}</p>
+    <p><strong>Original Planned End:</strong> ${new Date(plannedEnd).toLocaleDateString()}</p>
+    <p><strong>Current Date:</strong> ${new Date().toLocaleDateString()}</p>
+    <hr>
+    <p>This deployment is past its planned completion date. Please review and update the timeline.</p>
+    <p>This is an automated notification from the Portnox Deployment Tracker.</p>
+  `
+
+  return await sendEmail({
+    to: recipients,
+    subject,
+    html,
+  })
+}
+
+export async function sendWeeklyProgressReport(
+  reportData: {
+    totalSites: number
+    completedSites: number
+    inProgressSites: number
+    delayedSites: number
+    overallProgress: number
+  },
+  recipients: string[],
+): Promise<boolean> {
+  const subject = "Weekly Deployment Progress Report"
+  const html = `
+    <h2>Weekly Deployment Progress Report</h2>
+    <p><strong>Report Date:</strong> ${new Date().toLocaleDateString()}</p>
+    
+    <h3>Summary</h3>
+    <ul>
+      <li><strong>Total Sites:</strong> ${reportData.totalSites}</li>
+      <li><strong>Completed Sites:</strong> ${reportData.completedSites}</li>
+      <li><strong>In Progress Sites:</strong> ${reportData.inProgressSites}</li>
+      <li><strong>Delayed Sites:</strong> ${reportData.delayedSites}</li>
+      <li><strong>Overall Progress:</strong> ${reportData.overallProgress}%</li>
+    </ul>
+    
+    <hr>
+    <p>This is an automated weekly report from the Portnox Deployment Tracker.</p>
+  `
+
+  return await sendEmail({
+    to: recipients,
+    subject,
+    html,
+  })
+}
+
+export async function sendUserInvitation(
+  inviteeEmail: string,
+  inviterName: string,
+  tempPassword: string,
+): Promise<boolean> {
+  const subject = "Invitation to Portnox Deployment Tracker"
+  const html = `
+    <h2>You've been invited to join Portnox Deployment Tracker</h2>
+    <p>Hello,</p>
+    <p><strong>${inviterName}</strong> has invited you to join the Portnox Deployment Tracker system.</p>
+    
+    <h3>Your Login Credentials</h3>
+    <p><strong>Email:</strong> ${inviteeEmail}</p>
+    <p><strong>Temporary Password:</strong> ${tempPassword}</p>
+    
+    <p><strong>Important:</strong> Please change your password after your first login for security.</p>
+    
+    <p><a href="${process.env.NEXTAUTH_URL || "http://localhost:3000"}/auth/signin" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Login Now</a></p>
+    
+    <hr>
+    <p>If you have any questions, please contact your system administrator.</p>
+  `
+
+  return await sendEmail({
+    to: inviteeEmail,
+    subject,
+    html,
+  })
 }
