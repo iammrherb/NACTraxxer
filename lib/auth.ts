@@ -18,15 +18,12 @@ export const authOptions: NextAuthOptions = {
 
         try {
           const users = await sql`
-            SELECT id, name, email, password_hash, role, user_type, is_active
-            FROM users 
-            WHERE email = ${credentials.email}
-            LIMIT 1
+            SELECT * FROM users WHERE email = ${credentials.email}
           `
 
           const user = users[0]
 
-          if (!user || !user.is_active) {
+          if (!user || !user.password_hash) {
             return null
           }
 
@@ -36,19 +33,12 @@ export const authOptions: NextAuthOptions = {
             return null
           }
 
-          // Update last login
-          await sql`
-            UPDATE users 
-            SET last_login = CURRENT_TIMESTAMP 
-            WHERE id = ${user.id}
-          `
-
           return {
             id: user.id.toString(),
             email: user.email,
             name: user.name,
             role: user.role,
-            userType: user.user_type,
+            user_type: user.user_type,
           }
         } catch (error) {
           console.error("Auth error:", error)
@@ -68,18 +58,17 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.role = user.role
-        token.userType = user.userType
+        token.user_type = user.user_type
       }
       return token
     },
     async session({ session, token }) {
       if (token) {
-        session.user.id = token.sub
+        session.user.id = token.sub!
         session.user.role = token.role as string
-        session.user.userType = token.userType as string
+        session.user.user_type = token.user_type as string
       }
       return session
     },
   },
-  secret: process.env.NEXTAUTH_SECRET,
 }

@@ -9,12 +9,13 @@ import { UserManagement } from "@/components/user-management"
 import { ReportsDashboard } from "@/components/reports-dashboard"
 import { NotificationSettings } from "@/components/notification-settings"
 import { UseCasesDashboard } from "@/components/use-cases-dashboard"
-import { ArchitectureDiagram } from "@/components/architecture-diagram"
+import { EnhancedArchitectureDiagram } from "@/components/enhanced-architecture-diagram"
+import { TestMatrixDashboard } from "@/components/test-matrix-dashboard"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Building2, BarChart3, FileText, Bell, Target, Network, Plus } from "lucide-react"
+import { Building2, BarChart3, FileText, Bell, Target, Network, Plus, TestTube } from "lucide-react"
 
 interface Site {
   id: string
@@ -102,6 +103,8 @@ export default function Home() {
         return <Building2 className="h-4 w-4" />
       case "use-cases":
         return <Target className="h-4 w-4" />
+      case "test-matrix":
+        return <TestTube className="h-4 w-4" />
       case "architecture":
         return <Network className="h-4 w-4" />
       case "reports":
@@ -147,7 +150,7 @@ export default function Home() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:grid-cols-none lg:flex">
+          <TabsList className="grid w-full grid-cols-7 lg:w-auto lg:grid-cols-none lg:flex">
             <TabsTrigger value="overview" className="flex items-center space-x-2">
               {getTabIcon("overview")}
               <span className="hidden sm:inline">Overview</span>
@@ -159,6 +162,10 @@ export default function Home() {
             <TabsTrigger value="use-cases" className="flex items-center space-x-2">
               {getTabIcon("use-cases")}
               <span className="hidden sm:inline">Use Cases</span>
+            </TabsTrigger>
+            <TabsTrigger value="test-matrix" className="flex items-center space-x-2">
+              {getTabIcon("test-matrix")}
+              <span className="hidden sm:inline">Test Matrix</span>
             </TabsTrigger>
             <TabsTrigger value="architecture" className="flex items-center space-x-2">
               {getTabIcon("architecture")}
@@ -202,8 +209,12 @@ export default function Home() {
             <UseCasesDashboard />
           </TabsContent>
 
+          <TabsContent value="test-matrix" className="space-y-6">
+            <TestMatrixDashboard />
+          </TabsContent>
+
           <TabsContent value="architecture" className="space-y-6">
-            <ArchitectureDiagram />
+            <EnhancedArchitectureDiagram />
           </TabsContent>
 
           <TabsContent value="reports" className="space-y-6">

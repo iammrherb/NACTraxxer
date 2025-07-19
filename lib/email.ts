@@ -1,17 +1,18 @@
 import nodemailer from "nodemailer"
+import type { Transporter } from "nodemailer"
 
-// Create transporter with environment variables
-const createTransporter = () => {
-  if (!process.env.SMTP_HOST || !process.env.SMTP_PORT || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    console.warn("SMTP configuration incomplete. Email functionality will be disabled.")
-    return null
-  }
-
+// Create transporter with error handling
+const createTransporter = (): Transporter | null => {
   try {
+    if (!process.env.SMTP_HOST || !process.env.SMTP_PORT || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
+      console.warn("SMTP configuration incomplete. Email functionality will be disabled.")
+      return null
+    }
+
     return nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: Number.parseInt(process.env.SMTP_PORT),
-      secure: Number.parseInt(process.env.SMTP_PORT) === 465,
+      secure: Number.parseInt(process.env.SMTP_PORT) === 465, // true for 465, false for other ports
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
@@ -25,166 +26,85 @@ const createTransporter = () => {
 
 const transporter = createTransporter()
 
-export interface EmailOptions {
-  to: string | string[]
+export async function sendEmail({
+  to,
+  subject,
+  html,
+  text,
+}: {
+  to: string
   subject: string
-  text?: string
   html?: string
-}
-
-export async function sendEmail(options: EmailOptions): Promise<boolean> {
+  text?: string
+}) {
   if (!transporter) {
-    console.warn("Email transporter not available. Skipping email send.")
-    return false
+    console.warn("Email transporter not available. Skipping email sending.")
+    return { success: false, error: "Email transporter not configured." }
   }
 
   try {
-    const mailOptions = {
+    const info = await transporter.sendMail({
       from: process.env.SMTP_FROM || process.env.SMTP_USER,
-      to: Array.isArray(options.to) ? options.to.join(", ") : options.to,
-      subject: options.subject,
-      text: options.text,
-      html: options.html,
-    }
+      to,
+      subject,
+      html,
+      text,
+    })
 
-    const result = await transporter.sendMail(mailOptions)
-    console.log("Email sent successfully:", result.messageId)
-    return true
+    console.log("Email sent:", info.messageId)
+    return { success: true, messageId: info.messageId }
   } catch (error) {
-    console.error("Failed to send email:", error)
-    return false
+    console.error("Email sending error:", error)
+    const errorMessage = error instanceof Error ? error.message : "Unknown error"
+    return { success: false, error: errorMessage }
   }
 }
 
-export async function sendSiteStatusNotification(
-  siteName: string,
-  status: string,
-  recipients: string[],
-): Promise<boolean> {
-  const subject = `Site Status Update: ${siteName}`
+export async function sendSiteUpdateNotification(siteData: any, userEmail: string) {
+  const subject = `Site Update: ${siteData.name}`
   const html = `
-    <h2>Site Status Update</h2>
-    <p><strong>Site:</strong> ${siteName}</p>
-    <p><strong>New Status:</strong> ${status}</p>
-    <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
-    <hr>
-    <p>This is an automated notification from the Portnox Deployment Tracker.</p>
-  `
-
-  return await sendEmail({
-    to: recipients,
-    subject,
-    html,
-  })
-}
-
-export async function sendDeploymentCompleteNotification(
-  siteName: string,
-  completionPercentage: number,
-  recipients: string[],
-): Promise<boolean> {
-  const subject = `Deployment Complete: ${siteName}`
-  const html = `
-    <h2>Deployment Completed</h2>
-    <p><strong>Site:</strong> ${siteName}</p>
-    <p><strong>Completion:</strong> ${completionPercentage}%</p>
-    <p><strong>Completed At:</strong> ${new Date().toLocaleString()}</p>
-    <hr>
-    <p>Congratulations! The deployment has been successfully completed.</p>
-    <p>This is an automated notification from the Portnox Deployment Tracker.</p>
-  `
-
-  return await sendEmail({
-    to: recipients,
-    subject,
-    html,
-  })
-}
-
-export async function sendDelayedDeploymentAlert(
-  siteName: string,
-  plannedEnd: string,
-  recipients: string[],
-): Promise<boolean> {
-  const subject = `Deployment Delay Alert: ${siteName}`
-  const html = `
-    <h2>Deployment Delay Alert</h2>
-    <p><strong>Site:</strong> ${siteName}</p>
-    <p><strong>Original Planned End:</strong> ${new Date(plannedEnd).toLocaleDateString()}</p>
-    <p><strong>Current Date:</strong> ${new Date().toLocaleDateString()}</p>
-    <hr>
-    <p>This deployment is past its planned completion date. Please review and update the timeline.</p>
-    <p>This is an automated notification from the Portnox Deployment Tracker.</p>
-  `
-
-  return await sendEmail({
-    to: recipients,
-    subject,
-    html,
-  })
-}
-
-export async function sendWeeklyProgressReport(
-  reportData: {
-    totalSites: number
-    completedSites: number
-    inProgressSites: number
-    delayedSites: number
-    overallProgress: number
-  },
-  recipients: string[],
-): Promise<boolean> {
-  const subject = "Weekly Deployment Progress Report"
-  const html = `
-    <h2>Weekly Deployment Progress Report</h2>
-    <p><strong>Report Date:</strong> ${new Date().toLocaleDateString()}</p>
-    
-    <h3>Summary</h3>
+    <h2>Site Update Notification</h2>
+    <p>The following site has been updated:</p>
     <ul>
-      <li><strong>Total Sites:</strong> ${reportData.totalSites}</li>
-      <li><strong>Completed Sites:</strong> ${reportData.completedSites}</li>
-      <li><strong>In Progress Sites:</strong> ${reportData.inProgressSites}</li>
-      <li><strong>Delayed Sites:</strong> ${reportData.delayedSites}</li>
+      <li><strong>Site:</strong> ${siteData.name}</li>
+      <li><strong>Status:</strong> ${siteData.status}</li>
+      <li><strong>Progress:</strong> ${siteData.completion_percent}%</li>
+    </ul>
+    <p>Please review the changes in the POC Tracker dashboard.</p>
+  `
+  const result = await sendEmail({ to: userEmail, subject, html })
+  return result.success
+}
+
+export async function sendTestCompletionNotification(testData: any, userEmail: string) {
+  const subject = `Test Completed: ${testData.name}`
+  const html = `
+    <h2>Test Completion Notification</h2>
+    <p>A test case has been completed:</p>
+    <ul>
+      <li><strong>Test Case:</strong> ${testData.name}</li>
+      <li><strong>Status:</strong> ${testData.status}</li>
+      <li><strong>Result:</strong> ${testData.result}</li>
+    </ul>
+    <p>View details in the POC Tracker dashboard.</p>
+  `
+  const result = await sendEmail({ to: userEmail, subject, html })
+  return result.success
+}
+
+export async function sendWeeklyReport(reportData: any, userEmail: string) {
+  const subject = "Weekly POC Progress Report"
+  const html = `
+    <h2>Weekly POC Progress Report</h2>
+    <p>Here's your weekly progress summary:</p>
+    <ul>
+      <li><strong>Total Use Cases:</strong> ${reportData.totalUseCases}</li>
+      <li><strong>Completed:</strong> ${reportData.completedUseCases}</li>
+      <li><strong>In Progress:</strong> ${reportData.inProgressUseCases}</li>
       <li><strong>Overall Progress:</strong> ${reportData.overallProgress}%</li>
     </ul>
-    
-    <hr>
-    <p>This is an automated weekly report from the Portnox Deployment Tracker.</p>
+    <p>Access the full dashboard for detailed information.</p>
   `
-
-  return await sendEmail({
-    to: recipients,
-    subject,
-    html,
-  })
-}
-
-export async function sendUserInvitation(
-  inviteeEmail: string,
-  inviterName: string,
-  tempPassword: string,
-): Promise<boolean> {
-  const subject = "Invitation to Portnox Deployment Tracker"
-  const html = `
-    <h2>You've been invited to join Portnox Deployment Tracker</h2>
-    <p>Hello,</p>
-    <p><strong>${inviterName}</strong> has invited you to join the Portnox Deployment Tracker system.</p>
-    
-    <h3>Your Login Credentials</h3>
-    <p><strong>Email:</strong> ${inviteeEmail}</p>
-    <p><strong>Temporary Password:</strong> ${tempPassword}</p>
-    
-    <p><strong>Important:</strong> Please change your password after your first login for security.</p>
-    
-    <p><a href="${process.env.NEXTAUTH_URL || "http://localhost:3000"}/auth/signin" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Login Now</a></p>
-    
-    <hr>
-    <p>If you have any questions, please contact your system administrator.</p>
-  `
-
-  return await sendEmail({
-    to: inviteeEmail,
-    subject,
-    html,
-  })
+  const result = await sendEmail({ to: userEmail, subject, html })
+  return result.success
 }
