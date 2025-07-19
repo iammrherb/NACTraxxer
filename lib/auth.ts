@@ -1,9 +1,7 @@
 import type { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
-import { neon } from "@neondatabase/serverless"
 import bcrypt from "bcryptjs"
-
-const sql = neon(process.env.DATABASE_URL!)
+import { sql } from "./database"
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -19,21 +17,20 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          // Get user from database
           const users = await sql`
-            SELECT id, email, password_hash, name, role, is_active 
+            SELECT id, email, name, password_hash, role, permissions
             FROM users 
-            WHERE email = ${credentials.email}
+            WHERE email = ${credentials.email} AND active = true
           `
 
-          const user = users[0]
-          if (!user || !user.is_active) {
+          if (users.length === 0) {
             return null
           }
 
-          // Verify password
-          const isValidPassword = await bcrypt.compare(credentials.password, user.password_hash)
-          if (!isValidPassword) {
+          const user = users[0]
+          const isPasswordValid = await bcrypt.compare(credentials.password, user.password_hash)
+
+          if (!isPasswordValid) {
             return null
           }
 
@@ -42,6 +39,7 @@ export const authOptions: NextAuthOptions = {
             email: user.email,
             name: user.name,
             role: user.role,
+            permissions: user.permissions,
           }
         } catch (error) {
           console.error("Auth error:", error)
@@ -53,10 +51,15 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
   },
+  pages: {
+    signIn: "/auth/signin",
+    error: "/auth/error",
+  },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
         token.role = user.role
+        token.permissions = user.permissions
       }
       return token
     },
@@ -64,13 +67,9 @@ export const authOptions: NextAuthOptions = {
       if (token) {
         session.user.id = token.sub!
         session.user.role = token.role as string
+        session.user.permissions = token.permissions as any
       }
       return session
     },
   },
-  pages: {
-    signIn: "/auth/signin",
-    error: "/auth/error",
-  },
-  secret: process.env.NEXTAUTH_SECRET,
 }
