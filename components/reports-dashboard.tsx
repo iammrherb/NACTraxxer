@@ -79,14 +79,21 @@ export function ReportsDashboard() {
         setShowGenerateDialog(false)
         loadReports()
       } else {
-        const error = await response.json()
-        throw new Error(error.error || "Failed to generate report")
+        let errorMessage = "Failed to generate report"
+        const errorText = await response.text()
+        try {
+          const errorData = JSON.parse(errorText)
+          errorMessage = errorData.error || errorMessage
+        } catch (jsonError) {
+          errorMessage = errorText || errorMessage
+        }
+        throw new Error(errorMessage)
       }
     } catch (error) {
       console.error("Report generation error:", error)
       toast({
         title: "Error",
-        description: error.message || "Failed to generate report",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
         variant: "destructive",
       })
     } finally {
@@ -99,18 +106,23 @@ export function ReportsDashboard() {
       const response = await fetch(`/api/reports/${reportId}/download`)
       if (response.ok) {
         const blob = await response.blob()
-        const url = URL.createObjectURL(blob)
+        const url = window.URL.createObjectURL(blob)
         const a = document.createElement("a")
         a.href = url
         a.download = filename
+        document.body.appendChild(a)
         a.click()
-        URL.revokeObjectURL(url)
+        a.remove()
+        window.URL.revokeObjectURL(url)
+      } else {
+        const errorText = await response.text()
+        throw new Error(errorText || "Failed to download report")
       }
     } catch (error) {
       console.error("Download error:", error)
       toast({
         title: "Error",
-        description: "Failed to download report",
+        description: error instanceof Error ? error.message : "Failed to download report",
         variant: "destructive",
       })
     }

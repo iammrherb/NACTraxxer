@@ -23,7 +23,7 @@ interface UserManagementProps {
 }
 
 export function UserManagement({
-  users,
+  users = [],
   isOpen,
   onClose,
   onCreateUser,

@@ -58,9 +58,12 @@ export function TestMatrixDashboard() {
   }
 
   const getStatusColor = (status: string) => {
-    if (status.includes("Completed") || status.includes("Passed")) {
+    if (!status) {
+      return "bg-gray-100 text-gray-800 border-gray-200"
+    }
+    if (status.includes("Completed") || status.includes("Passed") || status.includes("Met")) {
       return "bg-green-100 text-green-800 border-green-200"
-    } else if (status.includes("Failed") || status.includes("WIP")) {
+    } else if (status.includes("Failed") || status.includes("WIP") || status.includes("Not Met")) {
       return "bg-red-100 text-red-800 border-red-200"
     } else if (status.includes("Progress")) {
       return "bg-yellow-100 text-yellow-800 border-yellow-200"
@@ -447,13 +450,7 @@ export function TestMatrixDashboard() {
                         <td className="p-3">{req.description}</td>
                         <td className="p-3 text-sm text-gray-600">{req.justification}</td>
                         <td className="p-3">
-                          <Badge
-                            className={
-                              req.metStatus === "Met" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-                            }
-                          >
-                            {req.metStatus}
-                          </Badge>
+                          <Badge className={`text-xs ${getStatusColor(req.metStatus)}`}>{req.metStatus}</Badge>
                         </td>
                       </tr>
                     ))}

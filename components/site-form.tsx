@@ -29,10 +29,10 @@ export function SiteForm({
   isOpen,
   onClose,
   onSave,
-  users,
-  vendors,
-  deviceTypes,
-  checklistItems,
+  users = [],
+  vendors = [],
+  deviceTypes = [],
+  checklistItems = [],
 }: SiteFormProps) {
   const [formData, setFormData] = useState({
     id: "",

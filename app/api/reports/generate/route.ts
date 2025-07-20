@@ -8,7 +8,7 @@ import { sendEmail } from "@/lib/email"
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user) {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -35,17 +35,16 @@ export async function POST(request: NextRequest) {
       userAgent: request.headers.get("user-agent"),
     })
 
-    // Send notification email
+    // Send notification email with corrected parameters
     await sendEmail({
-      recipientEmail: session.user.email!,
+      to: session.user.email,
       subject: "Report Generated Successfully",
-      body: `
+      html: `
         <h2>Report Generation Complete</h2>
-        <p>Your ${parameters.reportType.replace("_", " ")} report has been generated successfully.</p>
+        <p>Your ${parameters.reportType.replace(/_/g, " ")} report has been generated successfully.</p>
         <p>You can download it from the reports section in the application.</p>
         <p><em>This is an automated notification from the Portnox Deployment Tracker.</em></p>
       `,
-      notificationType: "report_generated",
     })
 
     return NextResponse.json(result)

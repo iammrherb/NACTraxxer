@@ -1,7 +1,6 @@
 "use client"
 
 import React from "react"
-
 import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -187,7 +186,7 @@ export function ScopingQuestionnaire({ isOpen, onClose, onSave, existingData }: 
 
   const renderOrganizationStep = () => (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <Label htmlFor="orgName">Organization Name *</Label>
           <Input
@@ -208,7 +207,7 @@ export function ScopingQuestionnaire({ isOpen, onClose, onSave, existingData }: 
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <Label htmlFor="contactEmail">Email Address *</Label>
           <Input
@@ -230,7 +229,7 @@ export function ScopingQuestionnaire({ isOpen, onClose, onSave, existingData }: 
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <Label htmlFor="totalSites">Total Sites *</Label>
           <Input
@@ -267,9 +266,9 @@ export function ScopingQuestionnaire({ isOpen, onClose, onSave, existingData }: 
         </div>
 
         {formData.networkVendors.map((vendor, index) => (
-          <Card key={index} className="p-4">
-            <div className="flex justify-between items-start mb-4">
-              <div className="grid grid-cols-2 gap-4 flex-1">
+          <Card key={index} className="p-4 mb-4">
+            <div className="flex justify-between items-start">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
                 <div>
                   <Label>Vendor Name</Label>
                   <Select
@@ -337,8 +336,8 @@ export function ScopingQuestionnaire({ isOpen, onClose, onSave, existingData }: 
         </div>
 
         {formData.identityProviders.map((provider, index) => (
-          <Card key={index} className="p-4">
-            <div className="grid grid-cols-3 gap-4">
+          <Card key={index} className="p-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <Label>Provider</Label>
                 <Select
@@ -403,7 +402,7 @@ export function ScopingQuestionnaire({ isOpen, onClose, onSave, existingData }: 
 
       <div>
         <Label className="text-lg font-semibold">MDM Solutions</Label>
-        <div className="grid grid-cols-2 gap-4 mt-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
           {[
             "Microsoft Intune",
             "JAMF",
@@ -441,7 +440,7 @@ export function ScopingQuestionnaire({ isOpen, onClose, onSave, existingData }: 
   const renderSecurityStep = () => (
     <div className="space-y-6">
       <Tabs defaultValue="siem" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
           <TabsTrigger value="siem">SIEM</TabsTrigger>
           <TabsTrigger value="mdr">MDR</TabsTrigger>
           <TabsTrigger value="xdr">XDR</TabsTrigger>
@@ -450,7 +449,7 @@ export function ScopingQuestionnaire({ isOpen, onClose, onSave, existingData }: 
 
         <TabsContent value="siem" className="space-y-4">
           <Label className="text-lg font-semibold">SIEM Solutions</Label>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {["Splunk", "Microsoft Sentinel", "IBM QRadar", "LogRhythm", "ArcSight", "Elastic Security", "Other"].map(
               (siem) => (
                 <div key={siem} className="flex items-center space-x-2">
@@ -480,7 +479,7 @@ export function ScopingQuestionnaire({ isOpen, onClose, onSave, existingData }: 
 
         <TabsContent value="mdr" className="space-y-4">
           <Label className="text-lg font-semibold">MDR Solutions</Label>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
               "CrowdStrike Falcon Complete",
               "Microsoft Defender for Business",
@@ -516,7 +515,7 @@ export function ScopingQuestionnaire({ isOpen, onClose, onSave, existingData }: 
 
         <TabsContent value="xdr" className="space-y-4">
           <Label className="text-lg font-semibold">XDR Solutions</Label>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
               "Microsoft Defender XDR",
               "CrowdStrike Falcon",
@@ -552,7 +551,7 @@ export function ScopingQuestionnaire({ isOpen, onClose, onSave, existingData }: 
 
         <TabsContent value="edr" className="space-y-4">
           <Label className="text-lg font-semibold">EDR Solutions</Label>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
               "CrowdStrike Falcon",
               "Microsoft Defender for Endpoint",
@@ -593,7 +592,7 @@ export function ScopingQuestionnaire({ isOpen, onClose, onSave, existingData }: 
     <div className="space-y-6">
       <div>
         <Label className="text-lg font-semibold">Authentication Methods</Label>
-        <div className="grid grid-cols-2 gap-4 mt-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
           {[
             "802.1X (EAP-TLS)",
             "802.1X (PEAP)",
@@ -646,7 +645,7 @@ export function ScopingQuestionnaire({ isOpen, onClose, onSave, existingData }: 
           </div>
 
           {formData.guestAccessRequirements.enabled && (
-            <div className="grid grid-cols-2 gap-4 ml-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ml-6">
               <div>
                 <Label>Session Duration (hours)</Label>
                 <Input
@@ -704,7 +703,7 @@ export function ScopingQuestionnaire({ isOpen, onClose, onSave, existingData }: 
           {formData.byodRequirements.enabled && (
             <div className="ml-6">
               <Label>Supported Platforms</Label>
-              <div className="grid grid-cols-3 gap-4 mt-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-2">
                 {["Windows", "macOS", "iOS", "Android", "Linux", "ChromeOS"].map((platform) => (
                   <div key={platform} className="flex items-center space-x-2">
                     <Checkbox
@@ -753,8 +752,8 @@ export function ScopingQuestionnaire({ isOpen, onClose, onSave, existingData }: 
         </div>
 
         {formData.vlanSegmentation.map((vlan, index) => (
-          <Card key={index} className="p-4">
-            <div className="grid grid-cols-3 gap-4">
+          <Card key={index} className="p-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <Label>VLAN Name</Label>
                 <Input
@@ -800,7 +799,7 @@ export function ScopingQuestionnaire({ isOpen, onClose, onSave, existingData }: 
 
       <div>
         <Label className="text-lg font-semibold">Compliance Requirements</Label>
-        <div className="grid grid-cols-2 gap-4 mt-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-4">
           {["SOX", "HIPAA", "PCI-DSS", "GDPR", "SOC 2", "ISO 27001", "NIST", "FedRAMP", "FISMA", "Other"].map(
             (framework) => (
               <div key={framework} className="flex items-center space-x-2">
@@ -853,7 +852,7 @@ export function ScopingQuestionnaire({ isOpen, onClose, onSave, existingData }: 
 
       <div>
         <Label className="text-lg font-semibold">Security Priorities</Label>
-        <div className="grid grid-cols-2 gap-4 mt-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
           {[
             "Data Loss Prevention",
             "Insider Threat Protection",
@@ -892,7 +891,7 @@ export function ScopingQuestionnaire({ isOpen, onClose, onSave, existingData }: 
 
   const renderTimelineStep = () => (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <Label htmlFor="targetDate">Target Deployment Date</Label>
           <Input
@@ -977,7 +976,7 @@ export function ScopingQuestionnaire({ isOpen, onClose, onSave, existingData }: 
 
   const renderReviewStep = () => (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="p-4">
           <h3 className="font-semibold mb-2">Organization</h3>
           <p>
@@ -1072,7 +1071,7 @@ export function ScopingQuestionnaire({ isOpen, onClose, onSave, existingData }: 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
             <Building2 className="h-6 w-6" />
@@ -1093,7 +1092,7 @@ export function ScopingQuestionnaire({ isOpen, onClose, onSave, existingData }: 
           </div>
 
           {/* Step Navigation */}
-          <div className="flex space-x-2 overflow-x-auto pb-2">
+          <div className="flex flex-wrap gap-2 pb-2">
             {steps.map((step, index) => {
               const Icon = step.icon
               return (
