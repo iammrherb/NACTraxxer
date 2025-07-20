@@ -1,17 +1,18 @@
 "use client"
 
 import type React from "react"
-
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import type { Site, User, Vendor, DeviceType, ChecklistItem } from "@/lib/database"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import type { Site, User, Vendor, DeviceType, ChecklistItem, BaseVendor } from "@/lib/database"
+import { mockCountries } from "@/lib/mock-data"
 
 interface SiteFormProps {
   site?: Site | null
@@ -19,9 +20,49 @@ interface SiteFormProps {
   onClose: () => void
   onSave: (siteData: any) => void
   users: User[]
-  vendors: Vendor[]
+  wiredVendors: Vendor[]
+  wirelessVendors: Vendor[]
+  firewallVendors: BaseVendor[]
+  vpnVendors: BaseVendor[]
+  edrXdrVendors: BaseVendor[]
+  siemVendors: BaseVendor[]
   deviceTypes: DeviceType[]
   checklistItems: ChecklistItem[]
+}
+
+const initialFormData = {
+  id: "",
+  name: "",
+  region: "",
+  country: "",
+  priority: "",
+  phase: 1,
+  users_count: 0,
+  project_manager_id: 0,
+  radsec: "",
+  planned_start: "",
+  planned_end: "",
+  status: "",
+  completion_percent: 0,
+  notes: "",
+  technical_owner_ids: [] as number[],
+  vendor_ids: [] as number[],
+  firewall_vendor_ids: [] as number[],
+  vpn_vendor_ids: [] as number[],
+  edr_xdr_vendor_ids: [] as number[],
+  siem_vendor_ids: [] as number[],
+  device_type_ids: [] as number[],
+  checklist_item_ids: [] as number[],
+  deployment_type: "hybrid" as "agent" | "agentless" | "hybrid",
+  auth_methods: [] as string[],
+  os_details: {
+    windows: false,
+    macos: false,
+    ios: false,
+    android: false,
+    linux: false,
+    linux_distro: "",
+  },
 }
 
 export function SiteForm({
@@ -30,32 +71,16 @@ export function SiteForm({
   onClose,
   onSave,
   users,
-  vendors,
+  wiredVendors,
+  wirelessVendors,
+  firewallVendors,
+  vpnVendors,
+  edrXdrVendors,
+  siemVendors,
   deviceTypes,
   checklistItems,
 }: SiteFormProps) {
-  const [formData, setFormData] = useState({
-    id: "",
-    name: "",
-    region: "",
-    country: "",
-    priority: "",
-    phase: 1,
-    users_count: 0,
-    project_manager_id: 0,
-    radsec: "",
-    planned_start: "",
-    planned_end: "",
-    status: "",
-    completion_percent: 0,
-    notes: "",
-    technical_owner_ids: [] as number[],
-    vendor_ids: [] as number[],
-    device_type_ids: [] as number[],
-    checklist_item_ids: [] as number[],
-  })
-
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [formData, setFormData] = useState(initialFormData)
 
   useEffect(() => {
     if (site) {
@@ -75,459 +100,374 @@ export function SiteForm({
         completion_percent: site.completion_percent,
         notes: site.notes || "",
         technical_owner_ids: site.technical_owners?.map((owner) => owner.id) || [],
-        vendor_ids: site.vendors?.map((vendor) => vendor.id) || [],
+        vendor_ids: site.vendors?.map((v) => v.id) || [],
+        firewall_vendor_ids: site.firewall_vendors?.map((v) => v.id) || [],
+        vpn_vendor_ids: site.vpn_vendors?.map((v) => v.id) || [],
+        edr_xdr_vendor_ids: site.edr_xdr_vendors?.map((v) => v.id) || [],
+        siem_vendor_ids: site.siem_vendors?.map((v) => v.id) || [],
         device_type_ids: site.device_types?.map((dt) => dt.id) || [],
         checklist_item_ids: site.checklist_items?.filter((item) => item.completed).map((item) => item.id) || [],
+        deployment_type: site.deployment_type || "hybrid",
+        auth_methods: site.auth_methods || [],
+        os_details: site.os_details || {
+          windows: false,
+          macos: false,
+          ios: false,
+          android: false,
+          linux: false,
+          linux_distro: "",
+        },
       })
     } else {
-      setFormData({
-        id: "",
-        name: "",
-        region: "",
-        country: "",
-        priority: "",
-        phase: 1,
-        users_count: 0,
-        project_manager_id: 0,
-        radsec: "",
-        planned_start: "",
-        planned_end: "",
-        status: "",
-        completion_percent: 0,
-        notes: "",
-        technical_owner_ids: [],
-        vendor_ids: [],
-        device_type_ids: [],
-        checklist_item_ids: [],
-      })
+      setFormData(initialFormData)
     }
-    setErrors({})
   }, [site, isOpen])
 
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {}
-
-    if (!formData.id.trim()) newErrors.id = "Site ID is required"
-    if (!formData.name.trim()) newErrors.name = "Site name is required"
-    if (!formData.region) newErrors.region = "Region is required"
-    if (!formData.country.trim()) newErrors.country = "Country is required"
-    if (!formData.priority) newErrors.priority = "Priority is required"
-    if (formData.users_count <= 0) newErrors.users_count = "Users count must be greater than 0"
-    if (!formData.project_manager_id) newErrors.project_manager_id = "Project manager is required"
-    if (!formData.radsec) newErrors.radsec = "RADSEC implementation is required"
-    if (!formData.planned_start) newErrors.planned_start = "Planned start date is required"
-    if (!formData.planned_end) newErrors.planned_end = "Planned end date is required"
-    if (!formData.status) newErrors.status = "Status is required"
-    if (formData.completion_percent < 0 || formData.completion_percent > 100) {
-      newErrors.completion_percent = "Completion percentage must be between 0 and 100"
-    }
-    if (formData.technical_owner_ids.length === 0) {
-      newErrors.technical_owner_ids = "At least one technical owner is required"
-    }
-    if (formData.vendor_ids.length === 0) {
-      newErrors.vendor_ids = "At least one vendor is required"
-    }
-    if (formData.device_type_ids.length === 0) {
-      newErrors.device_type_ids = "At least one device type is required"
-    }
-
-    // Date validation
-    if (formData.planned_start && formData.planned_end) {
-      if (new Date(formData.planned_start) > new Date(formData.planned_end)) {
-        newErrors.planned_end = "End date must be after start date"
+  const handleMultiCheckboxChange = (field: keyof typeof initialFormData, id: number, checked: boolean) => {
+    setFormData((prev) => {
+      const currentIds = (prev[field] as number[]) || []
+      return {
+        ...prev,
+        [field]: checked ? [...currentIds, id] : currentIds.filter((existingId) => existingId !== id),
       }
-    }
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
+    })
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (validateForm()) {
-      onSave(formData)
-    }
-  }
-
-  const handleCheckboxChange = (
-    field: "technical_owner_ids" | "vendor_ids" | "device_type_ids" | "checklist_item_ids",
-    id: number,
-    checked: boolean,
-  ) => {
+  const handleAuthMethodsChange = (method: string, checked: boolean) => {
     setFormData((prev) => ({
       ...prev,
-      [field]: checked ? [...prev[field], id] : prev[field].filter((existingId) => existingId !== id),
+      auth_methods: checked ? [...prev.auth_methods, method] : prev.auth_methods.filter((m) => m !== method),
+    }))
+  }
+
+  const handleOsDetailsChange = (os: keyof typeof initialFormData.os_details, checked: boolean) => {
+    setFormData((prev) => ({
+      ...prev,
+      os_details: { ...prev.os_details, [os]: checked },
     }))
   }
 
   const projectManagers = users.filter((user) => user.user_type === "project_manager")
   const technicalOwners = users.filter((user) => user.user_type === "technical_owner")
-  const wiredVendors = vendors.filter((vendor) => vendor.type === "wired")
-  const wirelessVendors = vendors.filter((vendor) => vendor.type === "wireless")
+
+  const groupedChecklistItems = useMemo(() => {
+    return checklistItems.reduce(
+      (acc, item) => {
+        ;(acc[item.category] = acc[item.category] || []).push(item)
+        return acc
+      },
+      {} as Record<string, ChecklistItem[]>,
+    )
+  }, [checklistItems])
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    onSave(formData)
+  }
+
+  const renderCheckboxGrid = (
+    items: { id: number; name: string }[],
+    field: keyof typeof initialFormData,
+    columns = 3,
+  ) => (
+    <div className={`grid grid-cols-${columns} gap-x-4 gap-y-2 mt-2 border rounded p-2`}>
+      {items.map((item) => (
+        <div key={item.id} className="flex items-center space-x-2">
+          <Checkbox
+            id={`${field}-${item.id}`}
+            checked={(formData[field] as number[]).includes(item.id)}
+            onCheckedChange={(checked) => handleMultiCheckboxChange(field, item.id, checked as boolean)}
+          />
+          <Label htmlFor={`${field}-${item.id}`} className="text-sm font-normal">
+            {item.name}
+          </Label>
+        </div>
+      ))}
+    </div>
+  )
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl">
         <DialogHeader>
           <DialogTitle>{site ? "Edit Site" : "Add New Site"}</DialogTitle>
         </DialogHeader>
+        <ScrollArea className="max-h-[80vh]">
+          <form onSubmit={handleSubmit} className="space-y-6 p-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Site Information</CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="id">Site ID *</Label>
+                  <Input
+                    id="id"
+                    value={formData.id}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, id: e.target.value }))}
+                    disabled={!!site}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="name">Site Name *</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="region">Region *</Label>
+                  <Select
+                    value={formData.region}
+                    onValueChange={(value) => setFormData((prev) => ({ ...prev, region: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Region" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="North America">North America</SelectItem>
+                      <SelectItem value="EMEA">EMEA</SelectItem>
+                      <SelectItem value="APAC">APAC</SelectItem>
+                      <SelectItem value="LATAM">LATAM</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="country">Country *</Label>
+                  <Select
+                    value={formData.country}
+                    onValueChange={(value) => setFormData((prev) => ({ ...prev, country: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Country" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {mockCountries.map((c) => (
+                        <SelectItem key={c.code} value={c.name}>
+                          {c.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="priority">Priority *</Label>
+                  <Select
+                    value={formData.priority}
+                    onValueChange={(value) => setFormData((prev) => ({ ...prev, priority: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Priority" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="High">High</SelectItem>
+                      <SelectItem value="Medium">Medium</SelectItem>
+                      <SelectItem value="Low">Low</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="users_count">Number of Users *</Label>
+                  <Input
+                    id="users_count"
+                    type="number"
+                    min="1"
+                    value={formData.users_count}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, users_count: Number.parseInt(e.target.value) || 0 }))
+                    }
+                  />
+                </div>
+              </CardContent>
+            </Card>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Basic Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Site Information</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="id">Site ID *</Label>
-                <Input
-                  id="id"
-                  value={formData.id}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, id: e.target.value }))}
-                  disabled={!!site}
-                  className={errors.id ? "border-red-500" : ""}
-                />
-                {errors.id && <p className="text-sm text-red-500 mt-1">{errors.id}</p>}
-              </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Network & Security Infrastructure</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue="network">
+                  <TabsList>
+                    <TabsTrigger value="network">Network</TabsTrigger>
+                    <TabsTrigger value="security">Security</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="network" className="space-y-4 pt-4">
+                    <div>
+                      <Label className="font-semibold">Wired Vendors</Label>
+                      {renderCheckboxGrid(wiredVendors, "vendor_ids")}
+                    </div>
+                    <div>
+                      <Label className="font-semibold">Wireless Vendors</Label>
+                      {renderCheckboxGrid(wirelessVendors, "vendor_ids")}
+                    </div>
+                  </TabsContent>
+                  <TabsContent value="security" className="space-y-4 pt-4">
+                    <div>
+                      <Label className="font-semibold">Firewall Vendors</Label>
+                      {renderCheckboxGrid(firewallVendors, "firewall_vendor_ids")}
+                    </div>
+                    <div>
+                      <Label className="font-semibold">VPN Vendors</Label>
+                      {renderCheckboxGrid(vpnVendors, "vpn_vendor_ids")}
+                    </div>
+                    <div>
+                      <Label className="font-semibold">EDR/XDR Vendors</Label>
+                      {renderCheckboxGrid(edrXdrVendors, "edr_xdr_vendor_ids")}
+                    </div>
+                    <div>
+                      <Label className="font-semibold">SIEM/SOAR/MDR Vendors</Label>
+                      {renderCheckboxGrid(siemVendors, "siem_vendor_ids")}
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
 
-              <div>
-                <Label htmlFor="name">Site Name *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-                  className={errors.name ? "border-red-500" : ""}
-                />
-                {errors.name && <p className="text-sm text-red-500 mt-1">{errors.name}</p>}
-              </div>
-
-              <div>
-                <Label htmlFor="region">Region *</Label>
-                <Select
-                  value={formData.region}
-                  onValueChange={(value) => setFormData((prev) => ({ ...prev, region: value }))}
-                >
-                  <SelectTrigger className={errors.region ? "border-red-500" : ""}>
-                    <SelectValue placeholder="Select Region" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="North America">North America</SelectItem>
-                    <SelectItem value="EMEA">EMEA</SelectItem>
-                    <SelectItem value="APAC">APAC</SelectItem>
-                    <SelectItem value="LATAM">LATAM</SelectItem>
-                  </SelectContent>
-                </Select>
-                {errors.region && <p className="text-sm text-red-500 mt-1">{errors.region}</p>}
-              </div>
-
-              <div>
-                <Label htmlFor="country">Country *</Label>
-                <Input
-                  id="country"
-                  value={formData.country}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, country: e.target.value }))}
-                  className={errors.country ? "border-red-500" : ""}
-                />
-                {errors.country && <p className="text-sm text-red-500 mt-1">{errors.country}</p>}
-              </div>
-
-              <div>
-                <Label htmlFor="priority">Priority *</Label>
-                <Select
-                  value={formData.priority}
-                  onValueChange={(value) => setFormData((prev) => ({ ...prev, priority: value }))}
-                >
-                  <SelectTrigger className={errors.priority ? "border-red-500" : ""}>
-                    <SelectValue placeholder="Select Priority" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="High">High</SelectItem>
-                    <SelectItem value="Medium">Medium</SelectItem>
-                    <SelectItem value="Low">Low</SelectItem>
-                  </SelectContent>
-                </Select>
-                {errors.priority && <p className="text-sm text-red-500 mt-1">{errors.priority}</p>}
-              </div>
-
-              <div>
-                <Label htmlFor="phase">Phase *</Label>
-                <Select
-                  value={formData.phase.toString()}
-                  onValueChange={(value) => setFormData((prev) => ({ ...prev, phase: Number.parseInt(value) }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Phase" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">Phase 1</SelectItem>
-                    <SelectItem value="2">Phase 2</SelectItem>
-                    <SelectItem value="3">Phase 3</SelectItem>
-                    <SelectItem value="4">Phase 4</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="users_count">Number of Users *</Label>
-                <Input
-                  id="users_count"
-                  type="number"
-                  min="1"
-                  value={formData.users_count}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, users_count: Number.parseInt(e.target.value) || 0 }))
-                  }
-                  className={errors.users_count ? "border-red-500" : ""}
-                />
-                {errors.users_count && <p className="text-sm text-red-500 mt-1">{errors.users_count}</p>}
-              </div>
-
-              <div>
-                <Label htmlFor="radsec">RADSEC Implementation *</Label>
-                <Select
-                  value={formData.radsec}
-                  onValueChange={(value) => setFormData((prev) => ({ ...prev, radsec: value }))}
-                >
-                  <SelectTrigger className={errors.radsec ? "border-red-500" : ""}>
-                    <SelectValue placeholder="Select RADSEC Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Native">Native</SelectItem>
-                    <SelectItem value="LRAD">LRAD</SelectItem>
-                    <SelectItem value="None">None</SelectItem>
-                  </SelectContent>
-                </Select>
-                {errors.radsec && <p className="text-sm text-red-500 mt-1">{errors.radsec}</p>}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Project Management */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Project Management</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="project_manager_id">Project Manager *</Label>
-                <Select
-                  value={formData.project_manager_id.toString()}
-                  onValueChange={(value) =>
-                    setFormData((prev) => ({ ...prev, project_manager_id: Number.parseInt(value) }))
-                  }
-                >
-                  <SelectTrigger className={errors.project_manager_id ? "border-red-500" : ""}>
-                    <SelectValue placeholder="Select Project Manager" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {projectManagers.map((pm) => (
-                      <SelectItem key={pm.id} value={pm.id.toString()}>
-                        {pm.name}
-                      </SelectItem>
+            <Card>
+              <CardHeader>
+                <CardTitle>Deployment Details</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label className="font-semibold">Device Types In Scope</Label>
+                  {renderCheckboxGrid(deviceTypes, "device_type_ids", 4)}
+                </div>
+                <div>
+                  <Label className="font-semibold">Operating Systems</Label>
+                  <div className="grid grid-cols-3 gap-4 mt-2 border rounded p-2">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="os-windows"
+                        checked={formData.os_details.windows}
+                        onCheckedChange={(c) => handleOsDetailsChange("windows", c as boolean)}
+                      />
+                      <Label htmlFor="os-windows" className="font-normal">
+                        Windows
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="os-macos"
+                        checked={formData.os_details.macos}
+                        onCheckedChange={(c) => handleOsDetailsChange("macos", c as boolean)}
+                      />
+                      <Label htmlFor="os-macos" className="font-normal">
+                        macOS
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="os-ios"
+                        checked={formData.os_details.ios}
+                        onCheckedChange={(c) => handleOsDetailsChange("ios", c as boolean)}
+                      />
+                      <Label htmlFor="os-ios" className="font-normal">
+                        iOS
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="os-android"
+                        checked={formData.os_details.android}
+                        onCheckedChange={(c) => handleOsDetailsChange("android", c as boolean)}
+                      />
+                      <Label htmlFor="os-android" className="font-normal">
+                        Android
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2 col-span-2">
+                      <Checkbox
+                        id="os-linux"
+                        checked={formData.os_details.linux}
+                        onCheckedChange={(c) => handleOsDetailsChange("linux", c as boolean)}
+                      />
+                      <Label htmlFor="os-linux" className="font-normal">
+                        Linux
+                      </Label>
+                      {formData.os_details.linux && (
+                        <Input
+                          placeholder="Distro(s)..."
+                          value={formData.os_details.linux_distro}
+                          onChange={(e) =>
+                            setFormData((p) => ({
+                              ...p,
+                              os_details: { ...p.os_details, linux_distro: e.target.value },
+                            }))
+                          }
+                          className="h-8 ml-2"
+                        />
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <Label className="font-semibold">Authentication Methods</Label>
+                  <div className="grid grid-cols-4 gap-4 mt-2 border rounded p-2">
+                    {["EAP-TLS", "EAP-TTLS", "PEAP", "MSCHAPv2", "PAP", "SAML", "OpenID", "EAM"].map((m) => (
+                      <div key={m} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`auth-${m}`}
+                          checked={formData.auth_methods.includes(m)}
+                          onCheckedChange={(c) => handleAuthMethodsChange(m, c as boolean)}
+                        />
+                        <Label htmlFor={`auth-${m}`} className="font-normal">
+                          {m}
+                        </Label>
+                      </div>
                     ))}
-                  </SelectContent>
-                </Select>
-                {errors.project_manager_id && <p className="text-sm text-red-500 mt-1">{errors.project_manager_id}</p>}
-              </div>
-
-              <div className="col-span-2">
-                <Label>Technical Owners *</Label>
-                <div className="grid grid-cols-2 gap-2 mt-2 max-h-32 overflow-y-auto border rounded p-2">
-                  {technicalOwners.map((owner) => (
-                    <div key={owner.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`tech-owner-${owner.id}`}
-                        checked={formData.technical_owner_ids.includes(owner.id)}
-                        onCheckedChange={(checked) =>
-                          handleCheckboxChange("technical_owner_ids", owner.id, checked as boolean)
-                        }
-                      />
-                      <Label htmlFor={`tech-owner-${owner.id}`} className="text-sm">
-                        {owner.name}
-                      </Label>
-                    </div>
-                  ))}
+                  </div>
                 </div>
-                {errors.technical_owner_ids && (
-                  <p className="text-sm text-red-500 mt-1">{errors.technical_owner_ids}</p>
-                )}
-              </div>
-
-              <div>
-                <Label htmlFor="planned_start">Planned Start Date *</Label>
-                <Input
-                  id="planned_start"
-                  type="date"
-                  value={formData.planned_start}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, planned_start: e.target.value }))}
-                  className={errors.planned_start ? "border-red-500" : ""}
-                />
-                {errors.planned_start && <p className="text-sm text-red-500 mt-1">{errors.planned_start}</p>}
-              </div>
-
-              <div>
-                <Label htmlFor="planned_end">Planned End Date *</Label>
-                <Input
-                  id="planned_end"
-                  type="date"
-                  value={formData.planned_end}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, planned_end: e.target.value }))}
-                  className={errors.planned_end ? "border-red-500" : ""}
-                />
-                {errors.planned_end && <p className="text-sm text-red-500 mt-1">{errors.planned_end}</p>}
-              </div>
-
-              <div>
-                <Label htmlFor="status">Status *</Label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(value) => setFormData((prev) => ({ ...prev, status: value }))}
-                >
-                  <SelectTrigger className={errors.status ? "border-red-500" : ""}>
-                    <SelectValue placeholder="Select Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Planned">Planned</SelectItem>
-                    <SelectItem value="In Progress">In Progress</SelectItem>
-                    <SelectItem value="Complete">Complete</SelectItem>
-                    <SelectItem value="Delayed">Delayed</SelectItem>
-                  </SelectContent>
-                </Select>
-                {errors.status && <p className="text-sm text-red-500 mt-1">{errors.status}</p>}
-              </div>
-
-              <div>
-                <Label htmlFor="completion_percent">Completion Percentage *</Label>
-                <Input
-                  id="completion_percent"
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={formData.completion_percent}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, completion_percent: Number.parseInt(e.target.value) || 0 }))
-                  }
-                  className={errors.completion_percent ? "border-red-500" : ""}
-                />
-                {errors.completion_percent && <p className="text-sm text-red-500 mt-1">{errors.completion_percent}</p>}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Network Infrastructure */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Network Infrastructure</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label>Wired Vendors *</Label>
-                <div className="grid grid-cols-3 gap-2 mt-2 max-h-32 overflow-y-auto border rounded p-2">
-                  {wiredVendors.map((vendor) => (
-                    <div key={vendor.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`wired-vendor-${vendor.id}`}
-                        checked={formData.vendor_ids.includes(vendor.id)}
-                        onCheckedChange={(checked) => handleCheckboxChange("vendor_ids", vendor.id, checked as boolean)}
-                      />
-                      <Label htmlFor={`wired-vendor-${vendor.id}`} className="text-sm">
-                        {vendor.name}
-                      </Label>
-                    </div>
-                  ))}
+                <div>
+                  <Label htmlFor="deployment_type" className="font-semibold">
+                    Deployment Type
+                  </Label>
+                  <Select
+                    value={formData.deployment_type}
+                    onValueChange={(v) => setFormData((p) => ({ ...p, deployment_type: v as any }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="agent">Agent-based</SelectItem>
+                      <SelectItem value="agentless">Agentless</SelectItem>
+                      <SelectItem value="hybrid">Hybrid</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-              </div>
+              </CardContent>
+            </Card>
 
-              <div>
-                <Label>Wireless Vendors *</Label>
-                <div className="grid grid-cols-3 gap-2 mt-2 max-h-32 overflow-y-auto border rounded p-2">
-                  {wirelessVendors.map((vendor) => (
-                    <div key={vendor.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`wireless-vendor-${vendor.id}`}
-                        checked={formData.vendor_ids.includes(vendor.id)}
-                        onCheckedChange={(checked) => handleCheckboxChange("vendor_ids", vendor.id, checked as boolean)}
-                      />
-                      <Label htmlFor={`wireless-vendor-${vendor.id}`} className="text-sm">
-                        {vendor.name}
-                      </Label>
-                    </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Deployment Checklist</CardTitle>
+                <CardDescription>Select all relevant technologies and integrations for this site.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue="MDM/UEM" className="w-full">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="MDM/UEM">MDM/UEM</TabsTrigger>
+                    <TabsTrigger value="SSO/MFA">SSO/MFA</TabsTrigger>
+                    <TabsTrigger value="Infrastructure">Infrastructure</TabsTrigger>
+                  </TabsList>
+                  {Object.entries(groupedChecklistItems).map(([category, items]) => (
+                    <TabsContent key={category} value={category}>
+                      {renderCheckboxGrid(items, "checklist_item_ids", 2)}
+                    </TabsContent>
                   ))}
-                </div>
-                {errors.vendor_ids && <p className="text-sm text-red-500 mt-1">{errors.vendor_ids}</p>}
-              </div>
-            </CardContent>
-          </Card>
+                </Tabs>
+              </CardContent>
+            </Card>
 
-          {/* Device Types and Checklist */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Deployment Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label>Device Types *</Label>
-                <div className="grid grid-cols-4 gap-2 mt-2 max-h-32 overflow-y-auto border rounded p-2">
-                  {deviceTypes.map((deviceType) => (
-                    <div key={deviceType.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`device-type-${deviceType.id}`}
-                        checked={formData.device_type_ids.includes(deviceType.id)}
-                        onCheckedChange={(checked) =>
-                          handleCheckboxChange("device_type_ids", deviceType.id, checked as boolean)
-                        }
-                      />
-                      <Label htmlFor={`device-type-${deviceType.id}`} className="text-sm">
-                        {deviceType.name}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-                {errors.device_type_ids && <p className="text-sm text-red-500 mt-1">{errors.device_type_ids}</p>}
-              </div>
-
-              <div>
-                <Label>Deployment Checklist</Label>
-                <div className="grid grid-cols-2 gap-2 mt-2 max-h-32 overflow-y-auto border rounded p-2">
-                  {checklistItems.map((item) => (
-                    <div key={item.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`checklist-${item.id}`}
-                        checked={formData.checklist_item_ids.includes(item.id)}
-                        onCheckedChange={(checked) =>
-                          handleCheckboxChange("checklist_item_ids", item.id, checked as boolean)
-                        }
-                      />
-                      <Label htmlFor={`checklist-${item.id}`} className="text-sm">
-                        {item.name}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="notes">Notes</Label>
-                <Textarea
-                  id="notes"
-                  value={formData.notes}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
-                  placeholder="Enter any special considerations, dependencies, or requirements..."
-                  rows={4}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Form Actions */}
-          <div className="flex justify-end space-x-2">
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit">{site ? "Update Site" : "Create Site"}</Button>
-          </div>
-        </form>
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button type="submit">{site ? "Update Site" : "Create Site"}</Button>
+            </div>
+          </form>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   )

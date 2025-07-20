@@ -15,24 +15,39 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Building2, BarChart3, FileText, Bell, Target, Network, Plus, TestTube } from "lucide-react"
-
-interface Site {
-  id: string
-  name: string
-  location: string
-  status: "planning" | "in-progress" | "completed" | "on-hold"
-  progress: number
-  vendor: string
-  deviceType: string
-  lastUpdated: string
-  assignedTo: string
-  priority: "high" | "medium" | "low"
-  notes?: string
-}
+import { Building2, BarChart3, FileText, Bell, Target, Network, Plus, TestTube, Users } from "lucide-react"
+import {
+  getSites,
+  getUsers,
+  getWiredVendors,
+  getWirelessVendors,
+  getDeviceTypes,
+  getChecklistItems,
+  getFirewallVendors,
+  getVpnVendors,
+  getEdrXdrVendors,
+  getSiemVendors,
+  createSite,
+  updateSite,
+  deleteSite,
+  createUser,
+  updateUser,
+  deleteUser,
+} from "@/lib/api"
+import type { Site, User, Vendor, DeviceType, ChecklistItem } from "@/lib/database"
 
 export default function Home() {
   const [sites, setSites] = useState<Site[]>([])
+  const [users, setUsers] = useState<User[]>([])
+  const [wiredVendors, setWiredVendors] = useState<Vendor[]>([])
+  const [wirelessVendors, setWirelessVendors] = useState<Vendor[]>([])
+  const [deviceTypes, setDeviceTypes] = useState<DeviceType[]>([])
+  const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([])
+  const [firewallVendors, setFirewallVendors] = useState<Vendor[]>([])
+  const [vpnVendors, setVpnVendors] = useState<Vendor[]>([])
+  const [edrXdrVendors, setEdrXdrVendors] = useState<Vendor[]>([])
+  const [siemVendors, setSiemVendors] = useState<Vendor[]>([])
+
   const [showSiteForm, setShowSiteForm] = useState(false)
   const [showUserManagement, setShowUserManagement] = useState(false)
   const [editingSite, setEditingSite] = useState<Site | null>(null)
@@ -40,40 +55,62 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState("overview")
 
   useEffect(() => {
-    loadSites()
+    loadInitialData()
   }, [])
 
-  const loadSites = async () => {
+  const loadInitialData = async () => {
     try {
       setLoading(true)
-      const response = await fetch("/api/sites")
-      if (response.ok) {
-        const data = await response.json()
-        setSites(data)
-      }
+      const [
+        sitesData,
+        usersData,
+        wiredVendorsData,
+        wirelessVendorsData,
+        deviceTypesData,
+        checklistItemsData,
+        firewallVendorsData,
+        vpnVendorsData,
+        edrXdrVendorsData,
+        siemVendorsData,
+      ] = await Promise.all([
+        getSites(),
+        getUsers(),
+        getWiredVendors(),
+        getWirelessVendors(),
+        getDeviceTypes(),
+        getChecklistItems(),
+        getFirewallVendors(),
+        getVpnVendors(),
+        getEdrXdrVendors(),
+        getSiemVendors(),
+      ])
+      setSites(sitesData)
+      setUsers(usersData)
+      setWiredVendors(wiredVendorsData)
+      setWirelessVendors(wirelessVendorsData)
+      setDeviceTypes(deviceTypesData)
+      setChecklistItems(checklistItemsData)
+      setFirewallVendors(firewallVendorsData)
+      setVpnVendors(vpnVendorsData)
+      setEdrXdrVendors(edrXdrVendorsData)
+      setSiemVendors(siemVendorsData)
     } catch (error) {
-      console.error("Error loading sites:", error)
+      console.error("Error loading initial data:", error)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleSiteSubmit = async (siteData: Omit<Site, "id" | "lastUpdated">) => {
+  const handleSiteSave = async (siteData: any) => {
     try {
-      const url = editingSite ? `/api/sites/${editingSite.id}` : "/api/sites"
-      const method = editingSite ? "PUT" : "POST"
-
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(siteData),
-      })
-
-      if (response.ok) {
-        await loadSites()
-        setShowSiteForm(false)
-        setEditingSite(null)
+      if (editingSite) {
+        await updateSite(editingSite.id, siteData)
+      } else {
+        await createSite(siteData)
       }
+      await loadInitialData()
+      setShowSiteForm(false)
+      setEditingSite(null)
     } catch (error) {
       console.error("Error saving site:", error)
     }
@@ -85,13 +122,43 @@ export default function Home() {
   }
 
   const handleDeleteSite = async (id: string) => {
-    try {
-      const response = await fetch(`/api/sites/${id}`, { method: "DELETE" })
-      if (response.ok) {
-        await loadSites()
+    if (confirm("Are you sure you want to delete this site?")) {
+      try {
+        await deleteSite(id)
+        await loadInitialData()
+      } catch (error) {
+        console.error("Error deleting site:", error)
       }
+    }
+  }
+
+  const handleUserCreate = async (userData: any) => {
+    try {
+      await createUser(userData)
+      const updatedUsers = await getUsers()
+      setUsers(updatedUsers)
     } catch (error) {
-      console.error("Error deleting site:", error)
+      console.error("Error creating user:", error)
+    }
+  }
+
+  const handleUserUpdate = async (id: number, userData: any) => {
+    try {
+      await updateUser(id, userData)
+      const updatedUsers = await getUsers()
+      setUsers(updatedUsers)
+    } catch (error) {
+      console.error("Error updating user:", error)
+    }
+  }
+
+  const handleUserDelete = async (id: number) => {
+    try {
+      await deleteUser(id)
+      const updatedUsers = await getUsers()
+      setUsers(updatedUsers)
+    } catch (error) {
+      console.error("Error deleting user:", error)
     }
   }
 
@@ -128,29 +195,43 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-black">
       <Header onManageUsers={() => setShowUserManagement(true)} />
 
       <main className="max-w-7xl mx-auto px-4 py-8">
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Portnox NAC Deployment Tracker</h1>
-              <p className="text-gray-600">Comprehensive site deployment and use case validation platform</p>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+                Portnox NAC Deployment Tracker
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                Comprehensive site deployment and use case validation platform
+              </p>
             </div>
             <div className="flex space-x-2">
-              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+              <Button variant="outline" onClick={() => setShowUserManagement(true)}>
+                <Users className="h-4 w-4 mr-2" />
+                Manage Users
+              </Button>
+              <Badge
+                variant="outline"
+                className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-700"
+              >
                 POC Environment
               </Badge>
-              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                v2.1.0
+              <Badge
+                variant="outline"
+                className="bg-green-50 text-green-700 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700"
+              >
+                v3.0.0-mock
               </Badge>
             </div>
           </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7 lg:w-auto lg:grid-cols-none lg:flex">
+          <TabsList className="grid w-full grid-cols-4 sm:grid-cols-7 lg:w-auto lg:grid-cols-none lg:flex">
             <TabsTrigger value="overview" className="flex items-center space-x-2">
               {getTabIcon("overview")}
               <span className="hidden sm:inline">Overview</span>
@@ -193,7 +274,12 @@ export default function Home() {
                     <Building2 className="h-5 w-5" />
                     <span>Site Deployments</span>
                   </CardTitle>
-                  <Button onClick={() => setShowSiteForm(true)}>
+                  <Button
+                    onClick={() => {
+                      setEditingSite(null)
+                      setShowSiteForm(true)
+                    }}
+                  >
                     <Plus className="h-4 w-4 mr-2" />
                     Add Site
                   </Button>
@@ -231,15 +317,34 @@ export default function Home() {
       {showSiteForm && (
         <SiteForm
           site={editingSite}
-          onSubmit={handleSiteSubmit}
-          onCancel={() => {
+          isOpen={showSiteForm}
+          onClose={() => {
             setShowSiteForm(false)
             setEditingSite(null)
           }}
+          onSave={handleSiteSave}
+          users={users}
+          wiredVendors={wiredVendors}
+          wirelessVendors={wirelessVendors}
+          deviceTypes={deviceTypes}
+          checklistItems={checklistItems}
+          firewallVendors={firewallVendors}
+          vpnVendors={vpnVendors}
+          edrXdrVendors={edrXdrVendors}
+          siemVendors={siemVendors}
         />
       )}
 
-      {showUserManagement && <UserManagement onClose={() => setShowUserManagement(false)} />}
+      {showUserManagement && (
+        <UserManagement
+          isOpen={showUserManagement}
+          onClose={() => setShowUserManagement(false)}
+          users={users}
+          onCreateUser={handleUserCreate}
+          onUpdateUser={handleUserUpdate}
+          onDeleteUser={handleUserDelete}
+        />
+      )}
     </div>
   )
 }

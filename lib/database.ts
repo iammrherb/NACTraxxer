@@ -1,25 +1,18 @@
-import { neon } from "@neondatabase/serverless"
+// The database connection has been temporarily removed.
+// The application will use mock data from /lib/mock-data.ts
+// To re-integrate, restore the original content of this file.
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL environment variable is not set")
+// Mocked exports to prevent deployment errors.
+export const sql = () => {
+  throw new Error("Database is disabled. The application is running in mock data mode.")
 }
 
-const sql = neon(process.env.DATABASE_URL)
-
-// Test database connection
 export async function testDatabaseConnection() {
-  try {
-    await sql`SELECT 1`
-    return true
-  } catch (error) {
-    console.error("Database connection failed:", error)
-    return false
-  }
+  console.log("Database connection check skipped (mock mode).")
+  return true
 }
 
-export { sql }
-
-// Types
+// Types remain to ensure the application's type safety.
 export interface DatabaseUser {
   id: number
   name: string
@@ -58,14 +51,37 @@ export interface Site {
   created_at: string
   updated_at: string
   technical_owners?: DatabaseUser[]
+
+  // Expanded Network & Security
   vendors?: Vendor[]
+  firewall_vendors?: BaseVendor[]
+  vpn_vendors?: BaseVendor[]
+  edr_xdr_vendors?: BaseVendor[]
+  siem_vendors?: BaseVendor[]
+
+  // Expanded Deployment Details
   device_types?: DeviceType[]
+  deployment_type?: "agent" | "agentless" | "hybrid"
+  auth_methods?: string[]
+  os_details?: {
+    windows: boolean
+    macos: boolean
+    ios: boolean
+    android: boolean
+    linux: boolean
+    linux_distro?: string
+  }
+
+  // Expanded Checklist
   checklist_items?: ChecklistItem[]
 }
 
-export interface Vendor {
+export interface BaseVendor {
   id: number
   name: string
+}
+
+export interface Vendor extends BaseVendor {
   type: "wired" | "wireless"
   is_custom: boolean
   created_at: string
@@ -81,6 +97,7 @@ export interface DeviceType {
 export interface ChecklistItem {
   id: number
   name: string
+  category: string
   is_custom: boolean
   completed?: boolean
   completed_at?: string
