@@ -1,12 +1,11 @@
-import { writeFile, mkdir } from "fs/promises"
-import { join } from "path"
+import { put, del } from "@vercel/blob"
 import { sql } from "./database"
 
 export interface FileUploadResult {
   id: number
   filename: string
   originalName: string
-  filePath: string
+  filePath: string // This will now be the blob URL
   fileSize: number
   mimeType: string
 }
@@ -19,40 +18,35 @@ export async function saveFile(
   description?: string,
 ): Promise<FileUploadResult> {
   try {
-    // Create upload directory if it doesn't exist
-    const uploadDir = join(process.cwd(), "uploads", siteId)
-    await mkdir(uploadDir, { recursive: true })
+    // Generate a unique path for the blob
+    const blobPath = `uploads/${siteId}/${Date.now()}-${file.name}`
 
-    // Generate unique filename
-    const timestamp = Date.now()
-    const extension = file.name.split(".").pop()
-    const filename = `${timestamp}-${Math.random().toString(36).substring(7)}.${extension}`
-    const filePath = join(uploadDir, filename)
+    // Upload file to Vercel Blob
+    const blob = await put(blobPath, file, {
+      access: "public",
+    })
 
-    // Save file to disk
-    const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
-    await writeFile(filePath, buffer)
-
-    // Save file info to database
+    // Save file info to database, using the blob URL
     const result = await sql`
       INSERT INTO file_uploads (
         filename, original_name, mime_type, file_size, file_path,
         uploaded_by, site_id, category, description
       ) VALUES (
-        ${filename}, ${file.name}, ${file.type}, ${file.size}, ${filePath},
+        ${blob.pathname}, ${file.name}, ${file.type}, ${file.size}, ${blob.url},
         ${uploadedBy}, ${siteId}, ${category}, ${description || null}
       )
       RETURNING *
     `
 
+    const dbResult = result[0]
+
     return {
-      id: result[0].id,
-      filename: result[0].filename,
-      originalName: result[0].original_name,
-      filePath: result[0].file_path,
-      fileSize: result[0].file_size,
-      mimeType: result[0].mime_type,
+      id: dbResult.id,
+      filename: dbResult.filename,
+      originalName: dbResult.original_name,
+      filePath: dbResult.file_path, // This is the public URL from Vercel Blob
+      fileSize: dbResult.file_size,
+      mimeType: dbResult.mime_type,
     }
   } catch (error) {
     console.error("File upload error:", error)
@@ -72,7 +66,7 @@ export async function getFilesBySite(siteId: string) {
 
 export async function deleteFile(fileId: number, userId: number) {
   try {
-    // Get file info
+    // Get file info to get the blob URL
     const files = await sql`
       SELECT * FROM file_uploads 
       WHERE id = ${fileId} AND uploaded_by = ${userId}
@@ -82,14 +76,11 @@ export async function deleteFile(fileId: number, userId: number) {
       throw new Error("File not found or access denied")
     }
 
-    const file = files[0]
+    const fileToDelete = files[0]
 
-    // Delete from filesystem
-    const fs = require("fs").promises
-    try {
-      await fs.unlink(file.file_path)
-    } catch (error) {
-      console.warn("Could not delete file from filesystem:", error)
+    // Delete from Vercel Blob store using the URL
+    if (fileToDelete.file_path) {
+      await del(fileToDelete.file_path)
     }
 
     // Delete from database

@@ -1,197 +1,141 @@
 import {
   mockSites,
   mockUsers,
-  mockWiredVendors,
-  mockWirelessVendors,
-  mockDeviceTypes,
-  mockChecklistItems,
-  mockFirewallVendors,
-  mockVpnVendors,
-  mockEdrXdrVendors,
-  mockSiemVendors,
-} from "./mock-data"
-import type { User, Site, Vendor, DeviceType, ChecklistItem, SiteStats, BaseVendor } from "./database"
+  initialWiredVendors,
+  initialWirelessVendors,
+  initialFirewallVendors,
+  initialVpnVendors,
+  initialEdrXdrVendors,
+  initialSiemVendors,
+  initialIdpVendors,
+  initialMfaVendors,
+  initialDeviceTypes,
+  initialChecklistItems,
+  initialUseCases,
+  initialTestMatrix,
+  initialRequirements,
+  initialTestCases,
+  initialTasks,
+  initialRegions,
+  mockCountries,
+  clearMockSites as clearData,
+  loadMockSites as loadData,
+} from "./library-data"
 
-// Users API
-export async function getUsers(type?: "project_manager" | "technical_owner"): Promise<User[]> {
-  if (type) {
-    return mockUsers.filter((u) => u.user_type === type)
-  }
-  return mockUsers
-}
+import type {
+  Site,
+  User,
+  LibraryData,
+  Vendor,
+  DeviceType,
+  ChecklistItem,
+  SiteStats,
+  UseCase,
+  TestCase,
+  Requirement,
+} from "./database"
 
-export async function createUser(user: Omit<User, "id" | "created_at" | "updated_at">): Promise<User> {
-  const newUser: User = {
-    id: Math.max(0, ...mockUsers.map((u) => u.id)) + 1,
-    ...user,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  }
-  mockUsers.push(newUser)
-  return newUser
-}
+// Hold data in memory
+let sites: Site[] = JSON.parse(JSON.stringify(mockSites))
+let users: User[] = JSON.parse(JSON.stringify(mockUsers))
+const wiredVendors: Vendor[] = JSON.parse(JSON.stringify(initialWiredVendors))
+const wirelessVendors: Vendor[] = JSON.parse(JSON.stringify(initialWirelessVendors))
+const deviceTypes: DeviceType[] = JSON.parse(JSON.stringify(initialDeviceTypes))
+const checklistItems: ChecklistItem[] = JSON.parse(JSON.stringify(initialChecklistItems))
+const useCases: UseCase[] = JSON.parse(JSON.stringify(initialUseCases))
+const testCases: TestCase[] = JSON.parse(JSON.stringify(initialTestCases))
+const requirements: Requirement[] = JSON.parse(JSON.stringify(initialRequirements))
 
-export async function updateUser(id: number, userData: Partial<User>): Promise<User> {
-  const userIndex = mockUsers.findIndex((u) => u.id === id)
-  if (userIndex === -1) throw new Error("User not found")
-  mockUsers[userIndex] = { ...mockUsers[userIndex], ...userData, updated_at: new Date().toISOString() }
-  return mockUsers[userIndex]
-}
-
-export async function deleteUser(id: number): Promise<void> {
-  const index = mockUsers.findIndex((u) => u.id === id)
-  if (index > -1) {
-    mockUsers.splice(index, 1)
-  }
-}
-
-// Sites API
-export async function getSites(): Promise<Site[]> {
-  return mockSites.map((site) => ({
+// --- Site Management ---
+export const getSites = async (): Promise<Site[]> => {
+  await new Promise((res) => setTimeout(res, 200))
+  return sites.map((site) => ({
     ...site,
-    project_manager_name: mockUsers.find((u) => u.id === site.project_manager_id)?.name,
+    project_manager_name: users.find((u) => u.id === site.project_manager_id)?.name,
   }))
 }
 
-export async function getSite(id: string): Promise<Site | null> {
-  const site = mockSites.find((s) => s.id === id)
-  if (!site) return null
-  return {
-    ...site,
-    project_manager_name: mockUsers.find((u) => u.id === site.project_manager_id)?.name,
+export const getSite = async (id: string): Promise<Site | undefined> => {
+  await new Promise((res) => setTimeout(res, 100))
+  const site = sites.find((s) => s.id === id)
+  if (site) {
+    return {
+      ...site,
+      project_manager_name: users.find((u) => u.id === site.project_manager_id)?.name,
+    }
   }
+  return undefined
 }
 
-export async function createSite(siteData: any): Promise<Site> {
+export const createSite = async (siteData: any): Promise<Site> => {
+  await new Promise((res) => setTimeout(res, 200))
   const newSite: Site = {
     ...siteData,
-    id: `SITE${Math.floor(Math.random() * 1000)}`,
+    id: `SITE-${Date.now()}`,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   }
-  mockSites.push(newSite)
-  return (await getSite(newSite.id))!
+  sites.push(newSite)
+  return newSite
 }
 
-export async function updateSite(id: string, siteData: any): Promise<Site> {
-  const siteIndex = mockSites.findIndex((s) => s.id === id)
+export const updateSite = async (id: string, updates: Partial<Site>): Promise<Site> => {
+  await new Promise((res) => setTimeout(res, 200))
+  const siteIndex = sites.findIndex((s) => s.id === id)
   if (siteIndex === -1) throw new Error("Site not found")
+  sites[siteIndex] = { ...sites[siteIndex], ...updates, updated_at: new Date().toISOString() }
+  return sites[siteIndex]
+}
 
-  const currentSite = mockSites[siteIndex]
-
-  // Deep merge for os_details
-  const updatedOsDetails = {
-    ...currentSite.os_details,
-    ...siteData.os_details,
+export const deleteSite = async (id: string): Promise<{ message: string }> => {
+  await new Promise((res) => setTimeout(res, 200))
+  const initialLength = sites.length
+  sites = sites.filter((s) => s.id !== id)
+  if (sites.length === initialLength) {
+    throw new Error("Site not found")
   }
+  return { message: "Site deleted successfully" }
+}
 
-  mockSites[siteIndex] = {
-    ...currentSite,
-    ...siteData,
-    os_details: updatedOsDetails,
-    updated_at: new Date().toISOString(),
+// --- Library & Data Management ---
+export const getLibraryData = async (): Promise<LibraryData> => {
+  await new Promise((res) => setTimeout(res, 100))
+  return {
+    wiredVendors: wiredVendors,
+    wirelessVendors: wirelessVendors,
+    firewallVendors: initialFirewallVendors,
+    vpnVendors: initialVpnVendors,
+    edrXdrVendors: initialEdrXdrVendors,
+    siemVendors: initialSiemVendors,
+    idpVendors: initialIdpVendors,
+    mfaVendors: initialMfaVendors,
+    deviceTypes: deviceTypes,
+    checklistItems: checklistItems,
+    useCases: useCases,
+    testMatrix: initialTestMatrix,
+    requirements: requirements,
+    testCases: testCases,
+    tasks: initialTasks,
+    regions: initialRegions,
+    countries: mockCountries,
   }
-  return (await getSite(id))!
 }
 
-export async function deleteSite(id: string): Promise<void> {
-  const index = mockSites.findIndex((s) => s.id === id)
-  if (index > -1) {
-    mockSites.splice(index, 1)
-  }
+export const getUsers = async (): Promise<User[]> => {
+  await new Promise((res) => setTimeout(res, 100))
+  return users
 }
 
-// Vendors API
-export async function getWiredVendors(): Promise<Vendor[]> {
-  return mockWiredVendors
-}
-
-export async function getWirelessVendors(): Promise<Vendor[]> {
-  return mockWirelessVendors
-}
-
-export async function getFirewallVendors(): Promise<BaseVendor[]> {
-  return mockFirewallVendors
-}
-
-export async function getVpnVendors(): Promise<BaseVendor[]> {
-  return mockVpnVendors
-}
-
-export async function getEdrXdrVendors(): Promise<BaseVendor[]> {
-  return mockEdrXdrVendors
-}
-
-export async function getSiemVendors(): Promise<BaseVendor[]> {
-  return mockSiemVendors
-}
-
-export async function getVendors(type?: "wired" | "wireless"): Promise<Vendor[]> {
-  const allVendors = [...mockWiredVendors, ...mockWirelessVendors]
-  if (type) {
-    return allVendors.filter((v) => v.type === type)
-  }
-  return allVendors
-}
-
-export async function createVendor(vendor: Omit<Vendor, "id" | "created_at">): Promise<Vendor> {
-  const allVendors = [...mockWiredVendors, ...mockWirelessVendors]
-  const newVendor: Vendor = {
-    id: Math.max(0, ...allVendors.map((v) => v.id)) + 1,
-    ...vendor,
-    created_at: new Date().toISOString(),
-  }
-  if (newVendor.type === "wired") {
-    mockWiredVendors.push(newVendor)
-  } else {
-    mockWirelessVendors.push(newVendor)
-  }
-  return newVendor
-}
-
-// Device Types API
-export async function getDeviceTypes(): Promise<DeviceType[]> {
-  return mockDeviceTypes
-}
-
-export async function createDeviceType(deviceType: Omit<DeviceType, "id" | "created_at">): Promise<DeviceType> {
-  const newDeviceType: DeviceType = {
-    id: Math.max(0, ...mockDeviceTypes.map((d) => d.id)) + 1,
-    ...deviceType,
-    created_at: new Date().toISOString(),
-  }
-  mockDeviceTypes.push(newDeviceType)
-  return newDeviceType
-}
-
-// Checklist Items API
-export async function getChecklistItems(): Promise<ChecklistItem[]> {
-  return mockChecklistItems
-}
-
-export async function createChecklistItem(
-  item: Omit<ChecklistItem, "id" | "created_at" | "completed" | "completed_at">,
-): Promise<ChecklistItem> {
-  const newItem: ChecklistItem = {
-    id: Math.max(0, ...mockChecklistItems.map((i) => i.id)) + 1,
-    ...item,
-    created_at: new Date().toISOString(),
-  }
-  mockChecklistItems.push(newItem)
-  return newItem
-}
-
-// Statistics API
-export async function getSiteStats(): Promise<SiteStats> {
-  const total_sites = mockSites.length
-  const completed_sites = mockSites.filter((s) => s.status === "Complete").length
-  const in_progress_sites = mockSites.filter((s) => s.status === "In Progress").length
-  const planned_sites = mockSites.filter((s) => s.status === "Planned").length
-  const delayed_sites = mockSites.filter((s) => s.status === "Delayed").length
-  const total_users = mockSites.reduce((sum, s) => sum + s.users_count, 0)
+export const getSiteStats = async (): Promise<SiteStats> => {
+  await new Promise((res) => setTimeout(res, 300))
+  const total_sites = sites.length
+  const completed_sites = sites.filter((s) => s.status === "Complete").length
+  const in_progress_sites = sites.filter((s) => s.status === "In Progress").length
+  const planned_sites = sites.filter((s) => s.status === "Planned").length
+  const delayed_sites = sites.filter((s) => s.status === "Delayed").length
+  const total_users = sites.reduce((acc, site) => acc + (site.users_count || 0), 0)
   const overall_completion =
-    total_sites > 0 ? Math.round(mockSites.reduce((sum, s) => sum + s.completion_percent, 0) / total_sites) : 0
-
+    total_sites > 0 ? Math.round(sites.reduce((acc, site) => acc + (site.completion_percent || 0), 0) / total_sites) : 0
   return {
     total_sites,
     completed_sites,
@@ -201,4 +145,141 @@ export async function getSiteStats(): Promise<SiteStats> {
     total_users,
     overall_completion,
   }
+}
+
+// --- Generic Library Item CRUD ---
+const getLibraryList = (type: string) => {
+  switch (type) {
+    case "use-cases":
+      return useCases
+    case "test-cases":
+      return testCases
+    case "requirements":
+      return requirements
+    case "wired-vendors":
+      return wiredVendors
+    case "wireless-vendors":
+      return wirelessVendors
+    case "device-types":
+      return deviceTypes
+    default:
+      throw new Error(`Unknown library type: ${type}`)
+  }
+}
+
+export const createLibraryItem = async (itemData: any, type: string): Promise<any> => {
+  await new Promise((res) => setTimeout(res, 200))
+  const list = getLibraryList(type)
+  const newItem = {
+    ...itemData,
+    id: `${type.toUpperCase()}-${Date.now()}`,
+    is_custom: true,
+  }
+  list.push(newItem)
+  return newItem
+}
+
+export const updateLibraryItem = async (id: string | number, updates: any, type: string): Promise<any> => {
+  await new Promise((res) => setTimeout(res, 200))
+  const list = getLibraryList(type)
+  const itemIndex = list.findIndex((item: any) => item.id === id)
+  if (itemIndex === -1) throw new Error("Item not found")
+  list[itemIndex] = { ...list[itemIndex], ...updates }
+  return list[itemIndex]
+}
+
+export const deleteLibraryItem = async (id: string | number, type: string): Promise<void> => {
+  await new Promise((res) => setTimeout(res, 200))
+  const listRef = getLibraryList(type)
+  const itemIndex = listRef.findIndex((item: any) => item.id === id)
+  if (itemIndex > -1) {
+    listRef.splice(itemIndex, 1)
+  } else {
+    throw new Error("Item not found for deletion")
+  }
+}
+
+// --- User CRUD ---
+export const createUser = async (userData: Omit<User, "id">): Promise<User> => {
+  await new Promise((res) => setTimeout(res, 200))
+  const newUser = { ...userData, id: Date.now() }
+  users.push(newUser)
+  return newUser
+}
+
+export const updateUser = async (id: number, updates: Partial<User>): Promise<User> => {
+  await new Promise((res) => setTimeout(res, 200))
+  const userIndex = users.findIndex((u) => u.id === id)
+  if (userIndex === -1) throw new Error("User not found")
+  users[userIndex] = { ...users[userIndex], ...updates }
+  return users[userIndex]
+}
+
+export const deleteUser = async (id: number): Promise<void> => {
+  await new Promise((res) => setTimeout(res, 200))
+  users = users.filter((u) => u.id !== id)
+}
+
+// --- Vendor Specific ---
+export const getVendors = async (): Promise<Vendor[]> => {
+  await new Promise((res) => setTimeout(res, 100))
+  return [...wiredVendors, ...wirelessVendors]
+}
+
+export const createVendor = async (vendorData: Omit<Vendor, "id">): Promise<Vendor> => {
+  const list = vendorData.type === "wired" ? wiredVendors : wirelessVendors
+  const newVendor = { ...vendorData, id: Date.now(), is_custom: true }
+  list.push(newVendor)
+  return newVendor
+}
+
+// --- Device Type Specific ---
+export const getDeviceTypes = async (): Promise<DeviceType[]> => {
+  await new Promise((res) => setTimeout(res, 100))
+  return deviceTypes
+}
+
+export const createDeviceType = async (deviceData: Omit<DeviceType, "id" | "is_custom">): Promise<DeviceType> => {
+  await new Promise((res) => setTimeout(res, 200))
+  const newDevice: DeviceType = {
+    ...deviceData,
+    id: Date.now(),
+    is_custom: true,
+  }
+  deviceTypes.push(newDevice)
+  return newDevice
+}
+
+// --- Checklist Item Specific ---
+export const getChecklistItems = async (): Promise<ChecklistItem[]> => {
+  await new Promise((res) => setTimeout(res, 100))
+  return checklistItems
+}
+
+export const createChecklistItem = async (
+  itemData: Omit<ChecklistItem, "id" | "is_custom">,
+): Promise<ChecklistItem> => {
+  await new Promise((res) => setTimeout(res, 200))
+  const newItem: ChecklistItem = {
+    ...itemData,
+    id: `CHK-CUSTOM-${Date.now()}`,
+    is_custom: true,
+  }
+  checklistItems.push(newItem)
+  return newItem
+}
+
+// --- Debug/Settings Functions ---
+export const clearDatabase = async () => {
+  await new Promise((res) => setTimeout(res, 500))
+  clearData()
+  sites = []
+  return { message: "All site data has been cleared." }
+}
+
+export const seedDatabase = async () => {
+  await new Promise((res) => setTimeout(res, 500))
+  loadData()
+  sites = JSON.parse(JSON.stringify(mockSites))
+  return { message: "Sample site data has been loaded." }
 }

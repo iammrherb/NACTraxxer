@@ -11,14 +11,27 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import type { Site, User, Vendor, DeviceType, ChecklistItem, BaseVendor } from "@/lib/database"
-import { mockCountries } from "@/lib/mock-data"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import type {
+  Site,
+  User,
+  Vendor,
+  DeviceType,
+  ChecklistItem,
+  BaseVendor,
+  UseCase,
+  TestMatrixEntry,
+} from "@/lib/database"
+import { mockCountries } from "@/lib/library-data" // Updated import
+import { toast } from "./ui/use-toast"
+import { createVendor as apiCreateVendor } from "@/lib/api"
 
 interface SiteFormProps {
   site?: Site | null
   isOpen: boolean
   onClose: () => void
   onSave: (siteData: any) => void
+  onUpdateLibraries: () => void
   users: User[]
   wiredVendors: Vendor[]
   wirelessVendors: Vendor[]
@@ -28,6 +41,10 @@ interface SiteFormProps {
   siemVendors: BaseVendor[]
   deviceTypes: DeviceType[]
   checklistItems: ChecklistItem[]
+  useCases: UseCase[]
+  testMatrix: TestMatrixEntry[]
+  // For pre-populating from scoping
+  scopingData?: { industry: string; projectGoals: string[] }
 }
 
 const initialFormData = {
@@ -35,14 +52,14 @@ const initialFormData = {
   name: "",
   region: "",
   country: "",
-  priority: "",
+  priority: "Medium",
   phase: 1,
   users_count: 0,
   project_manager_id: 0,
-  radsec: "",
+  radsec: "Native",
   planned_start: "",
   planned_end: "",
-  status: "",
+  status: "Planned",
   completion_percent: 0,
   notes: "",
   technical_owner_ids: [] as number[],
@@ -53,6 +70,8 @@ const initialFormData = {
   siem_vendor_ids: [] as number[],
   device_type_ids: [] as number[],
   checklist_item_ids: [] as number[],
+  use_case_ids: [] as string[],
+  test_matrix_ids: [] as string[],
   deployment_type: "hybrid" as "agent" | "agentless" | "hybrid",
   auth_methods: [] as string[],
   os_details: {
@@ -63,6 +82,9 @@ const initialFormData = {
     linux: false,
     linux_distro: "",
   },
+  industry: "",
+  project_goals: [] as string[],
+  legacy_nac_systems: [] as { name: string; migration_timeline_months: number }[],
 }
 
 export function SiteForm({
@@ -70,6 +92,7 @@ export function SiteForm({
   isOpen,
   onClose,
   onSave,
+  onUpdateLibraries,
   users,
   wiredVendors,
   wirelessVendors,
@@ -79,26 +102,19 @@ export function SiteForm({
   siemVendors,
   deviceTypes,
   checklistItems,
+  useCases,
+  testMatrix,
+  scopingData,
 }: SiteFormProps) {
   const [formData, setFormData] = useState(initialFormData)
+  const [customVendorName, setCustomVendorName] = useState("")
+  const [customVendorType, setCustomVendorType] = useState<"wired" | "wireless">("wired")
 
   useEffect(() => {
     if (site) {
       setFormData({
-        id: site.id,
-        name: site.name,
-        region: site.region,
-        country: site.country,
-        priority: site.priority,
-        phase: site.phase,
-        users_count: site.users_count,
-        project_manager_id: site.project_manager_id || 0,
-        radsec: site.radsec,
-        planned_start: site.planned_start,
-        planned_end: site.planned_end,
-        status: site.status,
-        completion_percent: site.completion_percent,
-        notes: site.notes || "",
+        ...initialFormData, // Start with defaults
+        ...site, // Overlay existing site data
         technical_owner_ids: site.technical_owners?.map((owner) => owner.id) || [],
         vendor_ids: site.vendors?.map((v) => v.id) || [],
         firewall_vendor_ids: site.firewall_vendors?.map((v) => v.id) || [],
@@ -106,26 +122,48 @@ export function SiteForm({
         edr_xdr_vendor_ids: site.edr_xdr_vendors?.map((v) => v.id) || [],
         siem_vendor_ids: site.siem_vendors?.map((v) => v.id) || [],
         device_type_ids: site.device_types?.map((dt) => dt.id) || [],
-        checklist_item_ids: site.checklist_items?.filter((item) => item.completed).map((item) => item.id) || [],
-        deployment_type: site.deployment_type || "hybrid",
-        auth_methods: site.auth_methods || [],
-        os_details: site.os_details || {
-          windows: false,
-          macos: false,
-          ios: false,
-          android: false,
-          linux: false,
-          linux_distro: "",
-        },
+        checklist_item_ids: site.checklist_items?.map((item) => item.id) || [],
       })
     } else {
-      setFormData(initialFormData)
+      // This is a new site, apply scoping suggestions
+      let suggestedUseCases: string[] = []
+      if (scopingData) {
+        suggestedUseCases = useCases
+          .filter(
+            (uc) =>
+              uc.is_baseline ||
+              uc.applicable_industries.includes(scopingData.industry) ||
+              uc.applicable_goals.some((g) => scopingData.projectGoals.includes(g)),
+          )
+          .map((uc) => uc.id)
+      }
+      setFormData({
+        ...initialFormData,
+        use_case_ids: suggestedUseCases,
+        industry: scopingData?.industry || "",
+        project_goals: scopingData?.projectGoals || [],
+      })
     }
-  }, [site, isOpen])
+  }, [site, isOpen, scopingData, useCases])
 
-  const handleMultiCheckboxChange = (field: keyof typeof initialFormData, id: number, checked: boolean) => {
+  const handleAddCustomVendor = async () => {
+    if (!customVendorName) {
+      toast({ title: "Error", description: "Custom vendor name is required.", variant: "destructive" })
+      return
+    }
+    try {
+      const newVendor = await apiCreateVendor({ name: customVendorName, type: customVendorType, is_custom: true })
+      toast({ title: "Success", description: `Added custom vendor: ${newVendor.name}` })
+      setCustomVendorName("")
+      onUpdateLibraries() // This will trigger a re-fetch of vendors on the main page
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to add custom vendor.", variant: "destructive" })
+    }
+  }
+
+  const handleMultiCheckboxChange = (field: keyof typeof initialFormData, id: number | string, checked: boolean) => {
     setFormData((prev) => {
-      const currentIds = (prev[field] as number[]) || []
+      const currentIds = (prev[field] as (number | string)[]) || []
       return {
         ...prev,
         [field]: checked ? [...currentIds, id] : currentIds.filter((existingId) => existingId !== id),
@@ -147,9 +185,6 @@ export function SiteForm({
     }))
   }
 
-  const projectManagers = users.filter((user) => user.user_type === "project_manager")
-  const technicalOwners = users.filter((user) => user.user_type === "technical_owner")
-
   const groupedChecklistItems = useMemo(() => {
     return checklistItems.reduce(
       (acc, item) => {
@@ -159,6 +194,16 @@ export function SiteForm({
       {} as Record<string, ChecklistItem[]>,
     )
   }, [checklistItems])
+
+  const groupedUseCases = useMemo(() => {
+    return useCases.reduce(
+      (acc, item) => {
+        ;(acc[item.category] = acc[item.category] || []).push(item)
+        return acc
+      },
+      {} as Record<string, UseCase[]>,
+    )
+  }, [useCases])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -170,15 +215,15 @@ export function SiteForm({
     field: keyof typeof initialFormData,
     columns = 3,
   ) => (
-    <div className={`grid grid-cols-${columns} gap-x-4 gap-y-2 mt-2 border rounded p-2`}>
+    <div className={`grid grid-cols-1 md:grid-cols-${columns} gap-x-4 gap-y-2 mt-2 border rounded p-2`}>
       {items.map((item) => (
         <div key={item.id} className="flex items-center space-x-2">
           <Checkbox
-            id={`${field}-${item.id}`}
+            id={`${String(field)}-${item.id}`}
             checked={(formData[field] as number[]).includes(item.id)}
             onCheckedChange={(checked) => handleMultiCheckboxChange(field, item.id, checked as boolean)}
           />
-          <Label htmlFor={`${field}-${item.id}`} className="text-sm font-normal">
+          <Label htmlFor={`${String(field)}-${item.id}`} className="text-sm font-normal">
             {item.name}
           </Label>
         </div>
@@ -194,6 +239,7 @@ export function SiteForm({
         </DialogHeader>
         <ScrollArea className="max-h-[80vh]">
           <form onSubmit={handleSubmit} className="space-y-6 p-4">
+            {/* Site Info, Project Management etc. */}
             <Card>
               <CardHeader>
                 <CardTitle>Site Information</CardTitle>
@@ -282,6 +328,7 @@ export function SiteForm({
               </CardContent>
             </Card>
 
+            {/* Network & Security */}
             <Card>
               <CardHeader>
                 <CardTitle>Network & Security Infrastructure</CardTitle>
@@ -300,6 +347,25 @@ export function SiteForm({
                     <div>
                       <Label className="font-semibold">Wireless Vendors</Label>
                       {renderCheckboxGrid(wirelessVendors, "vendor_ids")}
+                    </div>
+                    <div className="flex items-end gap-2 pt-2 border-t">
+                      <Input
+                        placeholder="Add Custom Vendor Name"
+                        value={customVendorName}
+                        onChange={(e) => setCustomVendorName(e.target.value)}
+                      />
+                      <Select value={customVendorType} onValueChange={(v: any) => setCustomVendorType(v)}>
+                        <SelectTrigger className="w-[120px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="wired">Wired</SelectItem>
+                          <SelectItem value="wireless">Wireless</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button type="button" onClick={handleAddCustomVendor}>
+                        Add
+                      </Button>
                     </div>
                   </TabsContent>
                   <TabsContent value="security" className="space-y-4 pt-4">
@@ -324,6 +390,7 @@ export function SiteForm({
               </CardContent>
             </Card>
 
+            {/* Deployment Details */}
             <Card>
               <CardHeader>
                 <CardTitle>Deployment Details</CardTitle>
@@ -439,6 +506,67 @@ export function SiteForm({
               </CardContent>
             </Card>
 
+            {/* Scope Definition */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Scope Definition</CardTitle>
+                <CardDescription>
+                  Select the use cases and test scenarios that apply to this site. Items have been pre-selected based on
+                  your scoping questionnaire.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue="use-cases">
+                  <TabsList>
+                    <TabsTrigger value="use-cases">Use Cases</TabsTrigger>
+                    <TabsTrigger value="test-matrix">Test Matrix</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="use-cases" className="pt-4">
+                    <Accordion type="multiple" className="w-full" defaultValue={Object.keys(groupedUseCases)}>
+                      {Object.entries(groupedUseCases).map(([category, items]) => (
+                        <AccordionItem key={category} value={category}>
+                          <AccordionTrigger>{category}</AccordionTrigger>
+                          <AccordionContent className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
+                            {items.map((item) => (
+                              <div key={item.id} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`use-case-${item.id}`}
+                                  checked={formData.use_case_ids.includes(item.id)}
+                                  onCheckedChange={(c) =>
+                                    handleMultiCheckboxChange("use_case_ids", item.id, c as boolean)
+                                  }
+                                />
+                                <Label htmlFor={`use-case-${item.id}`} className="font-normal">
+                                  {item.title}
+                                </Label>
+                              </div>
+                            ))}
+                          </AccordionContent>
+                        </AccordionItem>
+                      ))}
+                    </Accordion>
+                  </TabsContent>
+                  <TabsContent value="test-matrix" className="pt-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
+                      {testMatrix.map((item) => (
+                        <div key={item.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`test-matrix-${item.id}`}
+                            checked={formData.test_matrix_ids.includes(item.id)}
+                            onCheckedChange={(c) => handleMultiCheckboxChange("test_matrix_ids", item.id, c as boolean)}
+                          />
+                          <Label htmlFor={`test-matrix-${item.id}`} className="font-normal">
+                            {item.platform} - {item.mode} - {item.type}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+
+            {/* Deployment Checklist */}
             <Card>
               <CardHeader>
                 <CardTitle>Deployment Checklist</CardTitle>

@@ -1,4 +1,14 @@
-import type { Site, User, Vendor, DeviceType, ChecklistItem, BaseVendor } from "./database"
+import type {
+  Site,
+  User,
+  Vendor,
+  DeviceType,
+  ChecklistItem,
+  BaseVendor,
+  UseCase,
+  TestMatrixEntry,
+  Requirement,
+} from "./database"
 
 export const mockUsers: User[] = [
   {
@@ -151,6 +161,158 @@ export const mockChecklistItems: ChecklistItem[] = [
   { id: 16, name: "ZTNA (SaaS)", category: "Infrastructure", is_custom: false, created_at: "2025-01-01T00:00:00Z" },
 ]
 
+export const requirementsData: Requirement[] = [
+  {
+    id: "REQ-01",
+    description: "Corporate devices must use certificate-based authentication (EAP-TLS).",
+    justification: "Ensures only managed and trusted devices can connect.",
+    metStatus: "Met",
+  },
+  {
+    id: "REQ-02",
+    description: "Guest network must be isolated from the corporate network.",
+    justification: "Prevents unauthorized access to internal resources from guest devices.",
+    metStatus: "Met",
+  },
+  {
+    id: "REQ-03",
+    description: "IoT devices must be placed in a segmented VLAN.",
+    justification: "Limits the attack surface of potentially vulnerable IoT devices.",
+    metStatus: "Not Met",
+  },
+  {
+    id: "REQ-04",
+    description: "Devices with high-risk vulnerabilities must be quarantined.",
+    justification: "Prevents compromised devices from spreading threats.",
+    metStatus: "Met",
+  },
+]
+
+export const useCasesData: UseCase[] = [
+  {
+    id: "UC-01",
+    title: "Wired 802.1X for Corporate Windows Devices",
+    category: "Wired Access",
+    description:
+      "Ensure only corporate-managed Windows devices, authenticated via EAP-TLS with certificates from Intune, can access the wired network.",
+    priority: "mandatory",
+    status: "pending",
+    completion_percentage: 0,
+    created_at: "2025-01-01T00:00:00Z",
+    updated_at: "2025-01-01T00:00:00Z",
+    requirement_ids: ["REQ-01"],
+  },
+  {
+    id: "UC-02",
+    title: "Wireless 802.1X for Corporate macOS Devices",
+    category: "Wireless Access",
+    description:
+      "Ensure only corporate-managed macOS devices, authenticated via EAP-TLS with certificates from Jamf Pro, can access the corporate Wi-Fi.",
+    priority: "mandatory",
+    status: "pending",
+    completion_percentage: 0,
+    created_at: "2025-01-01T00:00:00Z",
+    updated_at: "2025-01-01T00:00:00Z",
+    requirement_ids: ["REQ-01"],
+  },
+  {
+    id: "UC-03",
+    title: "Guest Wireless Access",
+    category: "Wireless Access",
+    description: "Provide time-limited, isolated internet access for guest users via a captive portal.",
+    priority: "optional",
+    status: "pending",
+    completion_percentage: 0,
+    created_at: "2025-01-01T00:00:00Z",
+    updated_at: "2025-01-01T00:00:00Z",
+    requirement_ids: ["REQ-02"],
+  },
+  {
+    id: "UC-04",
+    title: "IoT Device Onboarding and Segmentation",
+    category: "IoT/OT Security",
+    description:
+      "Onboard IoT devices (cameras, printers) using MAC authentication (MAB) and place them into a segmented, least-privilege network VLAN.",
+    priority: "mandatory",
+    status: "pending",
+    completion_percentage: 0,
+    created_at: "2025-01-01T00:00:00Z",
+    updated_at: "2025-01-01T00:00:00Z",
+    requirement_ids: ["REQ-03"],
+  },
+  {
+    id: "UC-05",
+    title: "Risk-Based Access Control",
+    category: "Security",
+    description:
+      "Dynamically change access for a device if a high-risk vulnerability is detected by the EDR/XDR integration (e.g., move to a quarantine VLAN).",
+    priority: "nice-to-have",
+    status: "pending",
+    completion_percentage: 0,
+    created_at: "2025-01-01T00:00:00Z",
+    updated_at: "2025-01-01T00:00:00Z",
+    requirement_ids: ["REQ-04"],
+  },
+]
+
+export const testMatrixData: TestMatrixEntry[] = [
+  {
+    id: "TM-01",
+    platform: "MacOS",
+    mode: "Agentless(SCEP+Jamf)",
+    type: "Wired",
+    configurationPortnoxCloud: "Completed",
+    configurationCalixNAS: "Completed",
+    configurationIntuneJamf: "Completed",
+    dot1xConnectionTest: "Passed",
+    manualBlockByAdmin: "Block only if re-connect[WIP]Portnox is investigating",
+    aclTest: "Passed",
+    riskAssessmentPolicyTest: "Passed",
+    remediationPolicyTest: "Failed[WIP]Portnox is investigating",
+    notes: "Aruba NAS use Local Radius/ Portnox Cloud Radius server",
+    detectRisk: "All risk attributes",
+    blockAction: "N/A",
+    remark: "Not Start",
+  },
+  {
+    id: "TM-02",
+    platform: "Windows",
+    mode: "Agentless (SCEP + Intune)",
+    type: "Wired",
+    configurationPortnoxCloud: "Completed",
+    configurationCalixNAS: "Completed",
+    configurationIntuneJamf: "Completed",
+    dot1xConnectionTest: "Passed",
+    manualBlockByAdmin: "Block only if re-connect[WIP]Portnox is investigating",
+    aclTest: "Passed",
+    riskAssessmentPolicyTest: "Passed",
+    remediationPolicyTest: "Passed",
+    notes:
+      "1. China users' machine need to turn off proxy script during the deployment.2. Real time block requires CoA (Local redius Docker version only)",
+    detectRisk: "Limited risk attributes",
+    blockAction: "Block only if re-connect[WIP]Portnox is investigating",
+    remark: "N/A",
+  },
+  {
+    id: "TM-03",
+    platform: "iOS(iPhone & iPad)",
+    mode: "Agentless (SCEP + Intune + iOS)",
+    type: "Wireless",
+    configurationPortnoxCloud: "Completed",
+    configurationCalixNAS: "Completed",
+    configurationIntuneJamf: "Completed",
+    dot1xConnectionTest: "Passed",
+    manualBlockByAdmin: "Block only if re-connect[WIP]Portnox is investigating",
+    aclTest: "Failed[WIP]Portnox is investigating",
+    riskAssessmentPolicyTest: "Failed[WIP]Portnox is investigating",
+    remediationPolicyTest: "In Progress",
+    notes: "SCEP cert has been deployed, but not found SSID - NAC, will open intune case",
+    detectRisk: "Limited risk attributes",
+    blockAction: "Not Start",
+    remark: "N/A",
+  },
+]
+
 export const mockSites: Site[] = [
   {
     id: "HQ001",
@@ -183,6 +345,8 @@ export const mockSites: Site[] = [
       { ...mockChecklistItems[0], completed: true },
       { ...mockChecklistItems[8], completed: true },
     ],
+    use_case_ids: ["UC-01", "UC-02"],
+    test_matrix_ids: ["TM-01", "TM-02"],
   },
   {
     id: "EUR003",
@@ -227,5 +391,4 @@ export const mockCountries = [
   { name: "India", code: "IN" },
   { name: "Brazil", code: "BR" },
   { name: "Australia", code: "AU" },
-  // Add more countries as needed
 ]
