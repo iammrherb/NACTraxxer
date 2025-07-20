@@ -1,177 +1,237 @@
 "use client"
 
-import { useState, useMemo } from "react"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogDescription,
-} from "@/components/ui/dialog"
+import type React from "react"
+
+import { useState } from "react"
+import { Plus, Edit, Trash2, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Edit, Trash2, PlusCircle } from "lucide-react"
-import type { User } from "@/lib/database"
-import { toast } from "@/components/ui/use-toast"
-import * as api from "@/lib/api"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Badge } from "@/components/ui/badge"
+import type { DatabaseUser } from "@/lib/database"
 
 interface UserManagementProps {
+  users: DatabaseUser[]
   isOpen: boolean
   onClose: () => void
-  users: User[]
-  onUpdate: () => void
+  onCreateUser: (userData: Omit<DatabaseUser, "id" | "created_at" | "updated_at">) => void
+  onUpdateUser: (id: number, userData: Partial<DatabaseUser>) => void
+  onDeleteUser: (id: number) => void
 }
 
-export function UserManagement({ isOpen, onClose, users, onUpdate }: UserManagementProps) {
-  const [isEditing, setIsEditing] = useState<User | null>(null)
-  const [formData, setFormData] = useState({ name: "", email: "", role: "", user_type: "technical_owner" })
+export function UserManagement({
+  users,
+  isOpen,
+  onClose,
+  onCreateUser,
+  onUpdateUser,
+  onDeleteUser,
+}: UserManagementProps) {
+  const [activeTab, setActiveTab] = useState<"project_manager" | "technical_owner">("project_manager")
+  const [editingUser, setEditingUser] = useState<DatabaseUser | null>(null)
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    role: "",
+    user_type: "project_manager" as "project_manager" | "technical_owner",
+  })
 
-  const projectManagers = useMemo(() => users.filter((u) => u.user_type === "project_manager"), [users])
-  const technicalOwners = useMemo(() => users.filter((u) => u.user_type === "technical_owner"), [users])
+  const projectManagers = users.filter((user) => user.user_type === "project_manager")
+  const technicalOwners = users.filter((user) => user.user_type === "technical_owner")
 
-  const handleEdit = (user: User) => {
-    setIsEditing(user)
-    setFormData({ name: user.name, email: user.email, role: user.role, user_type: user.user_type })
-  }
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this user?")) return
-    try {
-      await api.deleteUser(id)
-      toast({ title: "Success", description: "User deleted." })
-      onUpdate()
-    } catch (error) {
-      toast({ title: "Error", description: "Failed to delete user.", variant: "destructive" })
+    if (editingUser) {
+      onUpdateUser(editingUser.id, formData)
+    } else {
+      onCreateUser(formData)
     }
+
+    setFormData({ name: "", email: "", role: "", user_type: activeTab })
+    setEditingUser(null)
   }
 
-  const handleSave = async () => {
-    try {
-      if (isEditing) {
-        await api.updateUser(isEditing.id, formData)
-        toast({ title: "Success", description: "User updated." })
-      } else {
-        await api.createUser(formData as Omit<User, "id">)
-        toast({ title: "Success", description: "User created." })
-      }
-      onUpdate()
-      resetForm()
-    } catch (error) {
-      toast({ title: "Error", description: "Failed to save user.", variant: "destructive" })
+  const handleEdit = (user: DatabaseUser) => {
+    setEditingUser(user)
+    setFormData({
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      user_type: user.user_type,
+    })
+  }
+
+  const handleDelete = (user: DatabaseUser) => {
+    if (confirm(`Are you sure you want to delete ${user.name}?`)) {
+      onDeleteUser(user.id)
     }
   }
 
   const resetForm = () => {
-    setIsEditing(null)
-    setFormData({ name: "", email: "", role: "", user_type: "technical_owner" })
+    setFormData({ name: "", email: "", role: "", user_type: activeTab })
+    setEditingUser(null)
   }
-
-  const renderUserTable = (title: string, userList: User[]) => (
-    <div>
-      <h3 className="text-lg font-semibold mb-2">{title}</h3>
-      <ScrollArea className="h-48 border rounded-md">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {userList.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell>
-                  <div className="font-medium">{user.name}</div>
-                  <div className="text-sm text-muted-foreground">{user.email}</div>
-                </TableCell>
-                <TableCell>{user.role}</TableCell>
-                <TableCell className="text-right">
-                  <Button variant="ghost" size="icon" onClick={() => handleEdit(user)}>
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => handleDelete(user.id)}>
-                    <Trash2 className="h-4 w-4 text-red-500" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </ScrollArea>
-    </div>
-  )
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>User Management</DialogTitle>
-          <DialogDescription>Manage project managers and technical owners for all sites.</DialogDescription>
         </DialogHeader>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
-          {renderUserTable("Project Managers", projectManagers)}
-          {renderUserTable("Technical Owners", technicalOwners)}
-        </div>
-        <div className="p-4 border-t">
-          <h3 className="text-lg font-semibold mb-4">{isEditing ? `Editing ${isEditing.name}` : "Add New User"}</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="name">Full Name</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="user_type">User Type</Label>
-              <Select value={formData.user_type} onValueChange={(v: any) => setFormData({ ...formData, user_type: v })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="project_manager">Project Manager</SelectItem>
-                  <SelectItem value="technical_owner">Technical Owner</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="role">Role / Title</Label>
-              <Input
-                id="role"
-                placeholder="e.g., Senior Network Engineer"
-                value={formData.role}
-                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-              />
-            </div>
+
+        <div className="space-y-6">
+          {/* Tab Navigation */}
+          <div className="flex space-x-1 bg-muted p-1 rounded-lg">
+            <button
+              onClick={() => {
+                setActiveTab("project_manager")
+                resetForm()
+              }}
+              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                activeTab === "project_manager"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Project Managers ({projectManagers.length})
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab("technical_owner")
+                resetForm()
+              }}
+              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                activeTab === "technical_owner"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Technical Owners ({technicalOwners.length})
+            </button>
           </div>
+
+          {/* Add/Edit Form */}
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                {editingUser ? "Edit" : "Add New"}{" "}
+                {activeTab === "project_manager" ? "Project Manager" : "Technical Owner"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="name">Full Name *</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="email">Email *</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="role">Role *</Label>
+                  <Select
+                    value={formData.role}
+                    onValueChange={(value) => setFormData((prev) => ({ ...prev, role: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {activeTab === "project_manager" ? (
+                        <>
+                          <SelectItem value="Project Manager">Project Manager</SelectItem>
+                          <SelectItem value="Senior Project Manager">Senior Project Manager</SelectItem>
+                          <SelectItem value="Lead Project Manager">Lead Project Manager</SelectItem>
+                        </>
+                      ) : (
+                        <>
+                          <SelectItem value="Network Administrator">Network Administrator</SelectItem>
+                          <SelectItem value="Security Engineer">Security Engineer</SelectItem>
+                          <SelectItem value="Network Engineer">Network Engineer</SelectItem>
+                          <SelectItem value="System Administrator">System Administrator</SelectItem>
+                          <SelectItem value="IT Manager">IT Manager</SelectItem>
+                        </>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="md:col-span-3 flex justify-end space-x-2">
+                  {editingUser && (
+                    <Button type="button" variant="outline" onClick={resetForm}>
+                      Cancel
+                    </Button>
+                  )}
+                  <Button type="submit">
+                    <Plus className="h-4 w-4 mr-2" />
+                    {editingUser ? "Update" : "Add"} User
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+
+          {/* User List */}
+          <Card>
+            <CardHeader>
+              <CardTitle>{activeTab === "project_manager" ? "Project Managers" : "Technical Owners"}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {(activeTab === "project_manager" ? projectManagers : technicalOwners).map((user) => (
+                  <div key={user.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                        <User className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <div className="font-medium">{user.name}</div>
+                        <div className="text-sm text-muted-foreground">{user.email}</div>
+                        <Badge variant="outline" className="text-xs mt-1">
+                          {user.role}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Button size="sm" variant="ghost" onClick={() => handleEdit(user)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleDelete(user)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+
+                {(activeTab === "project_manager" ? projectManagers : technicalOwners).length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No {activeTab === "project_manager" ? "project managers" : "technical owners"} found.
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
-        <DialogFooter>
-          {isEditing && (
-            <Button variant="outline" onClick={resetForm}>
-              Cancel Edit
-            </Button>
-          )}
-          <Button onClick={handleSave}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            {isEditing ? "Save Changes" : "Add User"}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   )

@@ -5,25 +5,56 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { ChartContainer } from "@/components/ui/chart"
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts"
-import type { SiteStats } from "@/lib/database"
+import type { Site } from "@/lib/database"
 
 interface ProgressDashboardProps {
-  stats: SiteStats
+  sites: Site[]
 }
 
-export function ProgressDashboard({ stats }: ProgressDashboardProps) {
-  // Safely access the sites array from the stats object.
-  const sites = stats.sites || []
+export function ProgressDashboard({ sites }: ProgressDashboardProps) {
+  const stats = useMemo(() => {
+    const totalSites = sites.length
+    const completedSites = sites.filter((site) => site.status === "Complete").length
+    const inProgressSites = sites.filter((site) => site.status === "In Progress").length
+    const plannedSites = sites.filter((site) => site.status === "Planned").length
+    const delayedSites = sites.filter((site) => site.status === "Delayed").length
+    const totalUsers = sites.reduce((sum, site) => sum + site.users_count, 0)
+    const overallCompletion = totalSites > 0 ? Math.round((completedSites / totalSites) * 100) : 0
+
+    // Calculate checklist completion
+    const totalChecklistItems = sites.reduce((sum, site) => {
+      return sum + (site.checklist_items?.length || 0)
+    }, 0)
+
+    const completedChecklistItems = sites.reduce((sum, site) => {
+      return sum + (site.checklist_items?.filter((item) => item.completed).length || 0)
+    }, 0)
+
+    const checklistCompletion =
+      totalChecklistItems > 0 ? Math.round((completedChecklistItems / totalChecklistItems) * 100) : 0
+
+    return {
+      totalSites,
+      completedSites,
+      inProgressSites,
+      plannedSites,
+      delayedSites,
+      totalUsers,
+      overallCompletion,
+      checklistCompletion,
+      totalChecklistItems,
+      completedChecklistItems,
+    }
+  }, [sites])
 
   const statusData = [
-    { name: "Complete", value: stats.completed_sites, color: "#10b981" },
-    { name: "In Progress", value: stats.in_progress_sites, color: "#3b82f6" },
-    { name: "Planned", value: stats.planned_sites, color: "#6b7280" },
-    { name: "Delayed", value: stats.delayed_sites, color: "#ef4444" },
+    { name: "Complete", value: stats.completedSites, color: "#10b981" },
+    { name: "In Progress", value: stats.inProgressSites, color: "#3b82f6" },
+    { name: "Planned", value: stats.plannedSites, color: "#6b7280" },
+    { name: "Delayed", value: stats.delayedSites, color: "#ef4444" },
   ]
 
   const regionData = useMemo(() => {
-    if (!sites || sites.length === 0) return []
     const regions = sites.reduce(
       (acc, site) => {
         acc[site.region] = (acc[site.region] || 0) + 1
@@ -40,7 +71,6 @@ export function ProgressDashboard({ stats }: ProgressDashboardProps) {
   }, [sites])
 
   const phaseData = useMemo(() => {
-    if (!sites || sites.length === 0) return []
     const phases = sites.reduce(
       (acc, site) => {
         const phase = `Phase ${site.phase}`
@@ -66,8 +96,8 @@ export function ProgressDashboard({ stats }: ProgressDashboardProps) {
             <CardTitle className="text-sm font-medium">Total Sites</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.total_sites}</div>
-            <p className="text-xs text-muted-foreground">{stats.total_users.toLocaleString()} total users</p>
+            <div className="text-2xl font-bold">{stats.totalSites}</div>
+            <p className="text-xs text-muted-foreground">{stats.totalUsers.toLocaleString()} total users</p>
           </CardContent>
         </Card>
 
@@ -76,8 +106,8 @@ export function ProgressDashboard({ stats }: ProgressDashboardProps) {
             <CardTitle className="text-sm font-medium">Completed</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats.completed_sites}</div>
-            <p className="text-xs text-muted-foreground">{stats.overall_completion}% of all sites</p>
+            <div className="text-2xl font-bold text-green-600">{stats.completedSites}</div>
+            <p className="text-xs text-muted-foreground">{stats.overallCompletion}% of all sites</p>
           </CardContent>
         </Card>
 
@@ -86,7 +116,7 @@ export function ProgressDashboard({ stats }: ProgressDashboardProps) {
             <CardTitle className="text-sm font-medium">In Progress</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{stats.in_progress_sites}</div>
+            <div className="text-2xl font-bold text-blue-600">{stats.inProgressSites}</div>
             <p className="text-xs text-muted-foreground">Currently being deployed</p>
           </CardContent>
         </Card>
@@ -96,9 +126,9 @@ export function ProgressDashboard({ stats }: ProgressDashboardProps) {
             <CardTitle className="text-sm font-medium">Checklist Progress</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.checklist_completion}%</div>
+            <div className="text-2xl font-bold">{stats.checklistCompletion}%</div>
             <p className="text-xs text-muted-foreground">
-              {stats.completed_checklist_items} of {stats.total_checklist_items} items
+              {stats.completedChecklistItems} of {stats.totalChecklistItems} items
             </p>
           </CardContent>
         </Card>
@@ -114,16 +144,16 @@ export function ProgressDashboard({ stats }: ProgressDashboardProps) {
             <div>
               <div className="flex justify-between text-sm mb-2">
                 <span>Site Completion</span>
-                <span>{stats.overall_completion}%</span>
+                <span>{stats.overallCompletion}%</span>
               </div>
-              <Progress value={stats.overall_completion} className="h-3" />
+              <Progress value={stats.overallCompletion} className="h-3" />
             </div>
             <div>
               <div className="flex justify-between text-sm mb-2">
                 <span>Checklist Items</span>
-                <span>{stats.checklist_completion}%</span>
+                <span>{stats.checklistCompletion}%</span>
               </div>
-              <Progress value={stats.checklist_completion} className="h-3" />
+              <Progress value={stats.checklistCompletion} className="h-3" />
             </div>
           </div>
         </CardContent>

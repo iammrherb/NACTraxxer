@@ -1,285 +1,319 @@
-import {
-  mockSites,
-  mockUsers,
-  initialWiredVendors,
-  initialWirelessVendors,
-  initialFirewallVendors,
-  initialVpnVendors,
-  initialEdrXdrVendors,
-  initialSiemVendors,
-  initialIdpVendors,
-  initialMfaVendors,
-  initialDeviceTypes,
-  initialChecklistItems,
-  initialUseCases,
-  initialTestMatrix,
-  initialRequirements,
-  initialTestCases,
-  initialTasks,
-  initialRegions,
-  mockCountries,
-  clearMockSites as clearData,
-  loadMockSites as loadData,
-} from "./library-data"
+import { sql } from "./database"
+import type { User, Site, Vendor, DeviceType, ChecklistItem, SiteStats } from "./database"
 
-import type {
-  Site,
-  User,
-  LibraryData,
-  Vendor,
-  DeviceType,
-  ChecklistItem,
-  SiteStats,
-  UseCase,
-  TestCase,
-  Requirement,
-} from "./database"
-
-// Hold data in memory
-let sites: Site[] = JSON.parse(JSON.stringify(mockSites))
-let users: User[] = JSON.parse(JSON.stringify(mockUsers))
-const wiredVendors: Vendor[] = JSON.parse(JSON.stringify(initialWiredVendors))
-const wirelessVendors: Vendor[] = JSON.parse(JSON.stringify(initialWirelessVendors))
-const deviceTypes: DeviceType[] = JSON.parse(JSON.stringify(initialDeviceTypes))
-const checklistItems: ChecklistItem[] = JSON.parse(JSON.stringify(initialChecklistItems))
-const useCases: UseCase[] = JSON.parse(JSON.stringify(initialUseCases))
-const testCases: TestCase[] = JSON.parse(JSON.stringify(initialTestCases))
-const requirements: Requirement[] = JSON.parse(JSON.stringify(initialRequirements))
-
-// --- Site Management ---
-export const getSites = async (): Promise<Site[]> => {
-  await new Promise((res) => setTimeout(res, 200))
-  return sites.map((site) => ({
-    ...site,
-    project_manager_name: users.find((u) => u.id === site.project_manager_id)?.name,
-  }))
+// Users API
+export async function getUsers(type?: "project_manager" | "technical_owner"): Promise<User[]> {
+  if (type) {
+    return await sql`SELECT * FROM users WHERE user_type = ${type} ORDER BY name`
+  } else {
+    return await sql`SELECT * FROM users ORDER BY name`
+  }
 }
 
-export const getSite = async (id: string): Promise<Site | undefined> => {
-  await new Promise((res) => setTimeout(res, 100))
-  const site = sites.find((s) => s.id === id)
-  if (site) {
-    return {
-      ...site,
-      project_manager_name: users.find((u) => u.id === site.project_manager_id)?.name,
+export async function createUser(user: Omit<User, "id" | "created_at" | "updated_at">): Promise<User> {
+  const result = await sql`
+    INSERT INTO users (name, email, role, user_type)
+    VALUES (${user.name}, ${user.email}, ${user.role}, ${user.user_type})
+    RETURNING *
+  `
+  return result[0]
+}
+
+export async function updateUser(id: number, user: Partial<User>): Promise<User> {
+  const result = await sql`
+    UPDATE users 
+    SET name = COALESCE(${user.name}, name),
+        email = COALESCE(${user.email}, email),
+        role = COALESCE(${user.role}, role),
+        updated_at = CURRENT_TIMESTAMP
+    WHERE id = ${id}
+    RETURNING *
+  `
+  return result[0]
+}
+
+export async function deleteUser(id: number): Promise<void> {
+  await sql`DELETE FROM users WHERE id = ${id}`
+}
+
+// Sites API
+export async function getSites(): Promise<Site[]> {
+  const sites = await sql`
+    SELECT s.*, u.name as project_manager_name
+    FROM sites s
+    LEFT JOIN users u ON s.project_manager_id = u.id
+    ORDER BY s.created_at DESC
+  `
+
+  // Get related data for each site
+  for (const site of sites) {
+    // Get technical owners
+    site.technical_owners = await sql`
+      SELECT u.* FROM users u
+      JOIN site_technical_owners sto ON u.id = sto.user_id
+      WHERE sto.site_id = ${site.id}
+    `
+
+    // Get vendors
+    site.vendors = await sql`
+      SELECT v.* FROM vendors v
+      JOIN site_vendors sv ON v.id = sv.vendor_id
+      WHERE sv.site_id = ${site.id}
+    `
+
+    // Get device types
+    site.device_types = await sql`
+      SELECT dt.* FROM device_types dt
+      JOIN site_device_types sdt ON dt.id = sdt.device_type_id
+      WHERE sdt.site_id = ${site.id}
+    `
+
+    // Get checklist items
+    site.checklist_items = await sql`
+      SELECT ci.*, sc.completed, sc.completed_at
+      FROM checklist_items ci
+      LEFT JOIN site_checklist sc ON ci.id = sc.checklist_item_id AND sc.site_id = ${site.id}
+      ORDER BY ci.name
+    `
+  }
+
+  return sites
+}
+
+export async function getSite(id: string): Promise<Site | null> {
+  const sites = await sql`
+    SELECT s.*, u.name as project_manager_name
+    FROM sites s
+    LEFT JOIN users u ON s.project_manager_id = u.id
+    WHERE s.id = ${id}
+  `
+
+  if (sites.length === 0) return null
+
+  const site = sites[0]
+
+  // Get related data
+  site.technical_owners = await sql`
+    SELECT u.* FROM users u
+    JOIN site_technical_owners sto ON u.id = sto.user_id
+    WHERE sto.site_id = ${site.id}
+  `
+
+  site.vendors = await sql`
+    SELECT v.* FROM vendors v
+    JOIN site_vendors sv ON v.id = sv.vendor_id
+    WHERE sv.site_id = ${site.id}
+  `
+
+  site.device_types = await sql`
+    SELECT dt.* FROM device_types dt
+    JOIN site_device_types sdt ON dt.id = sdt.device_type_id
+    WHERE sdt.site_id = ${site.id}
+  `
+
+  site.checklist_items = await sql`
+    SELECT ci.*, sc.completed, sc.completed_at
+    FROM checklist_items ci
+    LEFT JOIN site_checklist sc ON ci.id = sc.checklist_item_id AND sc.site_id = ${site.id}
+    ORDER BY ci.name
+  `
+
+  return site
+}
+
+export async function createSite(siteData: any): Promise<Site> {
+  // Insert site
+  const siteResult = await sql`
+    INSERT INTO sites (
+      id, name, region, country, priority, phase, users_count,
+      project_manager_id, radsec, planned_start, planned_end,
+      status, completion_percent, notes
+    ) VALUES (
+      ${siteData.id}, ${siteData.name}, ${siteData.region}, ${siteData.country},
+      ${siteData.priority}, ${siteData.phase}, ${siteData.users_count},
+      ${siteData.project_manager_id}, ${siteData.radsec}, ${siteData.planned_start},
+      ${siteData.planned_end}, ${siteData.status}, ${siteData.completion_percent},
+      ${siteData.notes}
+    )
+    RETURNING *
+  `
+
+  const site = siteResult[0]
+
+  // Insert technical owners
+  if (siteData.technical_owner_ids?.length > 0) {
+    for (const ownerId of siteData.technical_owner_ids) {
+      await sql`
+        INSERT INTO site_technical_owners (site_id, user_id)
+        VALUES (${site.id}, ${ownerId})
+      `
     }
   }
-  return undefined
-}
 
-export const createSite = async (siteData: any): Promise<Site> => {
-  await new Promise((res) => setTimeout(res, 200))
-  const newSite: Site = {
-    ...siteData,
-    id: `SITE-${Date.now()}`,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
+  // Insert vendors
+  if (siteData.vendor_ids?.length > 0) {
+    for (const vendorId of siteData.vendor_ids) {
+      await sql`
+        INSERT INTO site_vendors (site_id, vendor_id)
+        VALUES (${site.id}, ${vendorId})
+      `
+    }
   }
-  sites.push(newSite)
-  return newSite
-}
 
-export const updateSite = async (id: string, updates: Partial<Site>): Promise<Site> => {
-  await new Promise((res) => setTimeout(res, 200))
-  const siteIndex = sites.findIndex((s) => s.id === id)
-  if (siteIndex === -1) throw new Error("Site not found")
-  sites[siteIndex] = { ...sites[siteIndex], ...updates, updated_at: new Date().toISOString() }
-  return sites[siteIndex]
-}
-
-export const deleteSite = async (id: string): Promise<{ message: string }> => {
-  await new Promise((res) => setTimeout(res, 200))
-  const initialLength = sites.length
-  sites = sites.filter((s) => s.id !== id)
-  if (sites.length === initialLength) {
-    throw new Error("Site not found")
+  // Insert device types
+  if (siteData.device_type_ids?.length > 0) {
+    for (const deviceTypeId of siteData.device_type_ids) {
+      await sql`
+        INSERT INTO site_device_types (site_id, device_type_id)
+        VALUES (${site.id}, ${deviceTypeId})
+      `
+    }
   }
-  return { message: "Site deleted successfully" }
-}
 
-// --- Library & Data Management ---
-export const getLibraryData = async (): Promise<LibraryData> => {
-  await new Promise((res) => setTimeout(res, 100))
-  return {
-    wiredVendors: wiredVendors,
-    wirelessVendors: wirelessVendors,
-    firewallVendors: initialFirewallVendors,
-    vpnVendors: initialVpnVendors,
-    edrXdrVendors: initialEdrXdrVendors,
-    siemVendors: initialSiemVendors,
-    idpVendors: initialIdpVendors,
-    mfaVendors: initialMfaVendors,
-    deviceTypes: deviceTypes,
-    checklistItems: checklistItems,
-    useCases: useCases,
-    testMatrix: initialTestMatrix,
-    requirements: requirements,
-    testCases: testCases,
-    tasks: initialTasks,
-    regions: initialRegions,
-    countries: mockCountries,
+  // Insert checklist items
+  if (siteData.checklist_item_ids?.length > 0) {
+    for (const itemId of siteData.checklist_item_ids) {
+      await sql`
+        INSERT INTO site_checklist (site_id, checklist_item_id, completed, completed_at)
+        VALUES (${site.id}, ${itemId}, true, CURRENT_TIMESTAMP)
+      `
+    }
   }
+
+  return (await getSite(site.id)) as Site
 }
 
-export const getUsers = async (): Promise<User[]> => {
-  await new Promise((res) => setTimeout(res, 100))
-  return users
-}
+export async function updateSite(id: string, siteData: any): Promise<Site> {
+  // Update site
+  await sql`
+    UPDATE sites SET
+      name = ${siteData.name},
+      region = ${siteData.region},
+      country = ${siteData.country},
+      priority = ${siteData.priority},
+      phase = ${siteData.phase},
+      users_count = ${siteData.users_count},
+      project_manager_id = ${siteData.project_manager_id},
+      radsec = ${siteData.radsec},
+      planned_start = ${siteData.planned_start},
+      planned_end = ${siteData.planned_end},
+      status = ${siteData.status},
+      completion_percent = ${siteData.completion_percent},
+      notes = ${siteData.notes},
+      updated_at = CURRENT_TIMESTAMP
+    WHERE id = ${id}
+  `
 
-export const getSiteStats = async (): Promise<SiteStats> => {
-  await new Promise((res) => setTimeout(res, 300))
-  const total_sites = sites.length
-  const completed_sites = sites.filter((s) => s.status === "Complete").length
-  const in_progress_sites = sites.filter((s) => s.status === "In Progress").length
-  const planned_sites = sites.filter((s) => s.status === "Planned").length
-  const delayed_sites = sites.filter((s) => s.status === "Delayed").length
-  const total_users = sites.reduce((acc, site) => acc + (site.users_count || 0), 0)
-  const overall_completion =
-    total_sites > 0 ? Math.round(sites.reduce((acc, site) => acc + (site.completion_percent || 0), 0) / total_sites) : 0
-  return {
-    total_sites,
-    completed_sites,
-    in_progress_sites,
-    planned_sites,
-    delayed_sites,
-    total_users,
-    overall_completion,
+  // Update technical owners
+  await sql`DELETE FROM site_technical_owners WHERE site_id = ${id}`
+  if (siteData.technical_owner_ids?.length > 0) {
+    for (const ownerId of siteData.technical_owner_ids) {
+      await sql`
+        INSERT INTO site_technical_owners (site_id, user_id)
+        VALUES (${id}, ${ownerId})
+      `
+    }
   }
-}
 
-// --- Generic Library Item CRUD ---
-const getLibraryList = (type: string) => {
-  switch (type) {
-    case "use-cases":
-      return useCases
-    case "test-cases":
-      return testCases
-    case "requirements":
-      return requirements
-    case "wired-vendors":
-      return wiredVendors
-    case "wireless-vendors":
-      return wirelessVendors
-    case "device-types":
-      return deviceTypes
-    default:
-      throw new Error(`Unknown library type: ${type}`)
+  // Update vendors
+  await sql`DELETE FROM site_vendors WHERE site_id = ${id}`
+  if (siteData.vendor_ids?.length > 0) {
+    for (const vendorId of siteData.vendor_ids) {
+      await sql`
+        INSERT INTO site_vendors (site_id, vendor_id)
+        VALUES (${id}, ${vendorId})
+      `
+    }
   }
-}
 
-export const createLibraryItem = async (itemData: any, type: string): Promise<any> => {
-  await new Promise((res) => setTimeout(res, 200))
-  const list = getLibraryList(type)
-  const newItem = {
-    ...itemData,
-    id: `${type.toUpperCase()}-${Date.now()}`,
-    is_custom: true,
+  // Update device types
+  await sql`DELETE FROM site_device_types WHERE site_id = ${id}`
+  if (siteData.device_type_ids?.length > 0) {
+    for (const deviceTypeId of siteData.device_type_ids) {
+      await sql`
+        INSERT INTO site_device_types (site_id, device_type_id)
+        VALUES (${id}, ${deviceTypeId})
+      `
+    }
   }
-  list.push(newItem)
-  return newItem
+
+  // Update checklist items
+  await sql`DELETE FROM site_checklist WHERE site_id = ${id}`
+  if (siteData.checklist_item_ids?.length > 0) {
+    for (const itemId of siteData.checklist_item_ids) {
+      await sql`
+        INSERT INTO site_checklist (site_id, checklist_item_id, completed, completed_at)
+        VALUES (${id}, ${itemId}, true, CURRENT_TIMESTAMP)
+      `
+    }
+  }
+
+  return (await getSite(id)) as Site
 }
 
-export const updateLibraryItem = async (id: string | number, updates: any, type: string): Promise<any> => {
-  await new Promise((res) => setTimeout(res, 200))
-  const list = getLibraryList(type)
-  const itemIndex = list.findIndex((item: any) => item.id === id)
-  if (itemIndex === -1) throw new Error("Item not found")
-  list[itemIndex] = { ...list[itemIndex], ...updates }
-  return list[itemIndex]
+export async function deleteSite(id: string): Promise<void> {
+  await sql`DELETE FROM sites WHERE id = ${id}`
 }
 
-export const deleteLibraryItem = async (id: string | number, type: string): Promise<void> => {
-  await new Promise((res) => setTimeout(res, 200))
-  const listRef = getLibraryList(type)
-  const itemIndex = listRef.findIndex((item: any) => item.id === id)
-  if (itemIndex > -1) {
-    listRef.splice(itemIndex, 1)
+// Vendors API
+export async function getVendors(type?: "wired" | "wireless"): Promise<Vendor[]> {
+  if (type) {
+    return await sql`SELECT * FROM vendors WHERE type = ${type} ORDER BY name`
   } else {
-    throw new Error("Item not found for deletion")
+    return await sql`SELECT * FROM vendors ORDER BY type, name`
   }
 }
 
-// --- User CRUD ---
-export const createUser = async (userData: Omit<User, "id">): Promise<User> => {
-  await new Promise((res) => setTimeout(res, 200))
-  const newUser = { ...userData, id: Date.now() }
-  users.push(newUser)
-  return newUser
+export async function createVendor(vendor: Omit<Vendor, "id" | "created_at">): Promise<Vendor> {
+  const result = await sql`
+    INSERT INTO vendors (name, type, is_custom)
+    VALUES (${vendor.name}, ${vendor.type}, ${vendor.is_custom})
+    RETURNING *
+  `
+  return result[0]
 }
 
-export const updateUser = async (id: number, updates: Partial<User>): Promise<User> => {
-  await new Promise((res) => setTimeout(res, 200))
-  const userIndex = users.findIndex((u) => u.id === id)
-  if (userIndex === -1) throw new Error("User not found")
-  users[userIndex] = { ...users[userIndex], ...updates }
-  return users[userIndex]
+// Device Types API
+export async function getDeviceTypes(): Promise<DeviceType[]> {
+  return await sql`SELECT * FROM device_types ORDER BY name`
 }
 
-export const deleteUser = async (id: number): Promise<void> => {
-  await new Promise((res) => setTimeout(res, 200))
-  users = users.filter((u) => u.id !== id)
+export async function createDeviceType(deviceType: Omit<DeviceType, "id" | "created_at">): Promise<DeviceType> {
+  const result = await sql`
+    INSERT INTO device_types (name, is_custom)
+    VALUES (${deviceType.name}, ${deviceType.is_custom})
+    RETURNING *
+  `
+  return result[0]
 }
 
-// --- Vendor Specific ---
-export const getVendors = async (): Promise<Vendor[]> => {
-  await new Promise((res) => setTimeout(res, 100))
-  return [...wiredVendors, ...wirelessVendors]
+// Checklist Items API
+export async function getChecklistItems(): Promise<ChecklistItem[]> {
+  return await sql`SELECT * FROM checklist_items ORDER BY name`
 }
 
-export const createVendor = async (vendorData: Omit<Vendor, "id">): Promise<Vendor> => {
-  const list = vendorData.type === "wired" ? wiredVendors : wirelessVendors
-  const newVendor = { ...vendorData, id: Date.now(), is_custom: true }
-  list.push(newVendor)
-  return newVendor
+export async function createChecklistItem(item: Omit<ChecklistItem, "id" | "created_at">): Promise<ChecklistItem> {
+  const result = await sql`
+    INSERT INTO checklist_items (name, is_custom)
+    VALUES (${item.name}, ${item.is_custom})
+    RETURNING *
+  `
+  return result[0]
 }
 
-// --- Device Type Specific ---
-export const getDeviceTypes = async (): Promise<DeviceType[]> => {
-  await new Promise((res) => setTimeout(res, 100))
-  return deviceTypes
-}
+// Statistics API
+export async function getSiteStats(): Promise<SiteStats> {
+  const stats = await sql`
+    SELECT 
+      COUNT(*) as total_sites,
+      COUNT(CASE WHEN status = 'Complete' THEN 1 END) as completed_sites,
+      COUNT(CASE WHEN status = 'In Progress' THEN 1 END) as in_progress_sites,
+      COUNT(CASE WHEN status = 'Planned' THEN 1 END) as planned_sites,
+      COUNT(CASE WHEN status = 'Delayed' THEN 1 END) as delayed_sites,
+      SUM(users_count) as total_users,
+      ROUND(AVG(completion_percent)) as overall_completion
+    FROM sites
+  `
 
-export const createDeviceType = async (deviceData: Omit<DeviceType, "id" | "is_custom">): Promise<DeviceType> => {
-  await new Promise((res) => setTimeout(res, 200))
-  const newDevice: DeviceType = {
-    ...deviceData,
-    id: Date.now(),
-    is_custom: true,
-  }
-  deviceTypes.push(newDevice)
-  return newDevice
-}
-
-// --- Checklist Item Specific ---
-export const getChecklistItems = async (): Promise<ChecklistItem[]> => {
-  await new Promise((res) => setTimeout(res, 100))
-  return checklistItems
-}
-
-export const createChecklistItem = async (
-  itemData: Omit<ChecklistItem, "id" | "is_custom">,
-): Promise<ChecklistItem> => {
-  await new Promise((res) => setTimeout(res, 200))
-  const newItem: ChecklistItem = {
-    ...itemData,
-    id: `CHK-CUSTOM-${Date.now()}`,
-    is_custom: true,
-  }
-  checklistItems.push(newItem)
-  return newItem
-}
-
-// --- Debug/Settings Functions ---
-export const clearDatabase = async () => {
-  await new Promise((res) => setTimeout(res, 500))
-  clearData()
-  sites = []
-  return { message: "All site data has been cleared." }
-}
-
-export const seedDatabase = async () => {
-  await new Promise((res) => setTimeout(res, 500))
-  loadData()
-  sites = JSON.parse(JSON.stringify(mockSites))
-  return { message: "Sample site data has been loaded." }
+  return stats[0]
 }

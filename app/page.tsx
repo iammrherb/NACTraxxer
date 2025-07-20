@@ -1,156 +1,245 @@
 "use client"
 
-import dynamic from "next/dynamic"
-import { useEffect, useState, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { Header } from "@/components/header"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import type { Site, User, SiteStats, LibraryData } from "@/lib/database"
-import * as api from "@/lib/api"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Home, Target, CaseUpper, BookCopy, Settings } from "lucide-react"
-import { Toaster } from "@/components/ui/sonner"
+import { SiteTable } from "@/components/site-table"
+import { SiteForm } from "@/components/site-form"
+import { ProgressDashboard } from "@/components/progress-dashboard"
 import { UserManagement } from "@/components/user-management"
+import { ReportsDashboard } from "@/components/reports-dashboard"
+import { NotificationSettings } from "@/components/notification-settings"
+import { UseCasesDashboard } from "@/components/use-cases-dashboard"
+import { EnhancedArchitectureDiagram } from "@/components/enhanced-architecture-diagram"
+import { TestMatrixDashboard } from "@/components/test-matrix-dashboard"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Building2, BarChart3, FileText, Bell, Target, Network, Plus, TestTube } from "lucide-react"
 
-const DashboardSkeleton = () => (
-  <div className="space-y-4 p-4">
-    <div className="flex justify-between items-center">
-      <Skeleton className="h-10 w-48" />
-      <Skeleton className="h-10 w-24" />
-    </div>
-    <Skeleton className="h-[400px] w-full rounded-lg" />
-  </div>
-)
+interface Site {
+  id: string
+  name: string
+  location: string
+  status: "planning" | "in-progress" | "completed" | "on-hold"
+  progress: number
+  vendor: string
+  deviceType: string
+  lastUpdated: string
+  assignedTo: string
+  priority: "high" | "medium" | "low"
+  notes?: string
+}
 
-const ProgressDashboard = dynamic(
-  () => import("@/components/progress-dashboard").then((mod) => mod.ProgressDashboard),
-  {
-    loading: () => <DashboardSkeleton />,
-  },
-)
-const ScopingDashboard = dynamic(() => import("@/components/scoping-dashboard").then((mod) => mod.ScopingDashboard), {
-  loading: () => <DashboardSkeleton />,
-})
-const SiteList = dynamic(() => import("@/components/site-list").then((mod) => mod.SiteList), {
-  loading: () => <DashboardSkeleton />,
-})
-const LibraryDashboard = dynamic(() => import("@/components/library-dashboard").then((mod) => mod.LibraryDashboard), {
-  loading: () => <DashboardSkeleton />,
-})
-const SettingsDashboard = dynamic(
-  () => import("@/components/settings-dashboard").then((mod) => mod.SettingsDashboard),
-  {
-    loading: () => <DashboardSkeleton />,
-  },
-)
-
-export default function HomeDashboard() {
+export default function Home() {
   const [sites, setSites] = useState<Site[]>([])
-  const [users, setUsers] = useState<User[]>([])
-  const [stats, setStats] = useState<SiteStats | null>(null)
-  const [libraryData, setLibraryData] = useState<LibraryData | null>(null)
+  const [showSiteForm, setShowSiteForm] = useState(false)
+  const [showUserManagement, setShowUserManagement] = useState(false)
+  const [editingSite, setEditingSite] = useState<Site | null>(null)
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState("dashboard")
-  const [isUserManagementOpen, setIsUserManagementOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState("overview")
 
-  const loadAllData = useCallback(async () => {
-    setLoading(true)
+  useEffect(() => {
+    loadSites()
+  }, [])
+
+  const loadSites = async () => {
     try {
-      const [sitesData, usersData, statsData, libData] = await Promise.all([
-        api.getSites(),
-        api.getUsers(),
-        api.getSiteStats(),
-        api.getLibraryData(),
-      ])
-      setSites(sitesData)
-      setUsers(usersData)
-      setStats(statsData)
-      setLibraryData(libData)
+      setLoading(true)
+      const response = await fetch("/api/sites")
+      if (response.ok) {
+        const data = await response.json()
+        setSites(data)
+      }
     } catch (error) {
-      console.error("Failed to load dashboard data:", error)
+      console.error("Error loading sites:", error)
     } finally {
       setLoading(false)
     }
-  }, [])
+  }
 
-  useEffect(() => {
-    loadAllData()
-  }, [loadAllData])
+  const handleSiteSubmit = async (siteData: Omit<Site, "id" | "lastUpdated">) => {
+    try {
+      const url = editingSite ? `/api/sites/${editingSite.id}` : "/api/sites"
+      const method = editingSite ? "PUT" : "POST"
 
-  if (loading || !libraryData) {
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(siteData),
+      })
+
+      if (response.ok) {
+        await loadSites()
+        setShowSiteForm(false)
+        setEditingSite(null)
+      }
+    } catch (error) {
+      console.error("Error saving site:", error)
+    }
+  }
+
+  const handleEditSite = (site: Site) => {
+    setEditingSite(site)
+    setShowSiteForm(true)
+  }
+
+  const handleDeleteSite = async (id: string) => {
+    try {
+      const response = await fetch(`/api/sites/${id}`, { method: "DELETE" })
+      if (response.ok) {
+        await loadSites()
+      }
+    } catch (error) {
+      console.error("Error deleting site:", error)
+    }
+  }
+
+  const getTabIcon = (tab: string) => {
+    switch (tab) {
+      case "overview":
+        return <BarChart3 className="h-4 w-4" />
+      case "sites":
+        return <Building2 className="h-4 w-4" />
+      case "use-cases":
+        return <Target className="h-4 w-4" />
+      case "test-matrix":
+        return <TestTube className="h-4 w-4" />
+      case "architecture":
+        return <Network className="h-4 w-4" />
+      case "reports":
+        return <FileText className="h-4 w-4" />
+      case "settings":
+        return <Bell className="h-4 w-4" />
+      default:
+        return null
+    }
+  }
+
+  if (loading) {
     return (
-      <div className="flex min-h-screen w-full flex-col bg-muted/40">
-        <Header />
-        <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-          <DashboardSkeleton />
-        </main>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+        <Header onManageUsers={() => setShowUserManagement(true)} />
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="flex min-h-screen w-full flex-col bg-muted/40">
-      <Header onManageUsers={() => setIsUserManagementOpen(true)} />
-      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5">
-            <TabsTrigger value="dashboard">
-              <Home className="mr-2 h-4 w-4" />
-              Dashboard
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <Header onManageUsers={() => setShowUserManagement(true)} />
+
+      <main className="max-w-7xl mx-auto px-4 py-8">
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Portnox NAC Deployment Tracker</h1>
+              <p className="text-gray-600">Comprehensive site deployment and use case validation platform</p>
+            </div>
+            <div className="flex space-x-2">
+              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                POC Environment
+              </Badge>
+              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                v2.1.0
+              </Badge>
+            </div>
+          </div>
+        </div>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-7 lg:w-auto lg:grid-cols-none lg:flex">
+            <TabsTrigger value="overview" className="flex items-center space-x-2">
+              {getTabIcon("overview")}
+              <span className="hidden sm:inline">Overview</span>
             </TabsTrigger>
-            <TabsTrigger value="scoping">
-              <Target className="mr-2 h-4 w-4" />
-              Scoping
+            <TabsTrigger value="sites" className="flex items-center space-x-2">
+              {getTabIcon("sites")}
+              <span className="hidden sm:inline">Sites</span>
             </TabsTrigger>
-            <TabsTrigger value="sites">
-              <CaseUpper className="mr-2 h-4 w-4" />
-              Sites
+            <TabsTrigger value="use-cases" className="flex items-center space-x-2">
+              {getTabIcon("use-cases")}
+              <span className="hidden sm:inline">Use Cases</span>
             </TabsTrigger>
-            <TabsTrigger value="library">
-              <BookCopy className="mr-2 h-4 w-4" />
-              Library
+            <TabsTrigger value="test-matrix" className="flex items-center space-x-2">
+              {getTabIcon("test-matrix")}
+              <span className="hidden sm:inline">Test Matrix</span>
             </TabsTrigger>
-            <TabsTrigger value="settings">
-              <Settings className="mr-2 h-4 w-4" />
-              Settings
+            <TabsTrigger value="architecture" className="flex items-center space-x-2">
+              {getTabIcon("architecture")}
+              <span className="hidden sm:inline">Architecture</span>
+            </TabsTrigger>
+            <TabsTrigger value="reports" className="flex items-center space-x-2">
+              {getTabIcon("reports")}
+              <span className="hidden sm:inline">Reports</span>
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="flex items-center space-x-2">
+              {getTabIcon("settings")}
+              <span className="hidden sm:inline">Settings</span>
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="dashboard" className="mt-4">
-            {stats && <ProgressDashboard stats={stats} />}
+          <TabsContent value="overview" className="space-y-6">
+            <ProgressDashboard sites={sites} />
           </TabsContent>
 
-          <TabsContent value="scoping" className="mt-4">
-            <ScopingDashboard
-              library={libraryData}
-              onSiteCreate={() => {
-                loadAllData()
-                setActiveTab("sites")
-              }}
-            />
+          <TabsContent value="sites" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center space-x-2">
+                    <Building2 className="h-5 w-5" />
+                    <span>Site Deployments</span>
+                  </CardTitle>
+                  <Button onClick={() => setShowSiteForm(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Site
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <SiteTable sites={sites} onEdit={handleEditSite} onDelete={handleDeleteSite} />
+              </CardContent>
+            </Card>
           </TabsContent>
 
-          <TabsContent value="sites" className="mt-4">
-            <SiteList sites={sites} onUpdate={loadAllData} library={libraryData} users={users} />
+          <TabsContent value="use-cases" className="space-y-6">
+            <UseCasesDashboard />
           </TabsContent>
 
-          <TabsContent value="library" className="mt-4">
-            <LibraryDashboard libraryData={libraryData} onUpdate={loadAllData} />
+          <TabsContent value="test-matrix" className="space-y-6">
+            <TestMatrixDashboard />
           </TabsContent>
 
-          <TabsContent value="settings" className="mt-4">
-            <SettingsDashboard users={users} onUpdate={loadAllData} />
+          <TabsContent value="architecture" className="space-y-6">
+            <EnhancedArchitectureDiagram />
+          </TabsContent>
+
+          <TabsContent value="reports" className="space-y-6">
+            <ReportsDashboard />
+          </TabsContent>
+
+          <TabsContent value="settings" className="space-y-6">
+            <NotificationSettings />
           </TabsContent>
         </Tabs>
       </main>
-      <Toaster />
-      {isUserManagementOpen && (
-        <UserManagement
-          isOpen={isUserManagementOpen}
-          onClose={() => setIsUserManagementOpen(false)}
-          users={users}
-          onUpdate={loadAllData}
+
+      {/* Modals */}
+      {showSiteForm && (
+        <SiteForm
+          site={editingSite}
+          onSubmit={handleSiteSubmit}
+          onCancel={() => {
+            setShowSiteForm(false)
+            setEditingSite(null)
+          }}
         />
       )}
+
+      {showUserManagement && <UserManagement onClose={() => setShowUserManagement(false)} />}
     </div>
   )
 }
