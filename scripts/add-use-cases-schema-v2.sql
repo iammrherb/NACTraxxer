@@ -1,5 +1,4 @@
 -- Drop existing tables if they exist to recreate with correct schema
-DROP TABLE IF EXISTS scoping_questionnaire CASCADE;
 DROP TABLE IF EXISTS test_cases CASCADE;
 DROP TABLE IF EXISTS documentation_links CASCADE;
 DROP TABLE IF EXISTS success_criteria CASCADE;
@@ -9,112 +8,73 @@ DROP TABLE IF EXISTS use_cases CASCADE;
 
 -- Create use_cases table
 CREATE TABLE IF NOT EXISTS use_cases (
-  id VARCHAR(50) PRIMARY KEY,
-  title VARCHAR(255) NOT NULL,
-  subtitle VARCHAR(255),
-  description TEXT NOT NULL,
-  category VARCHAR(100) NOT NULL,
-  status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'in-progress', 'completed', 'failed')),
-  priority VARCHAR(20) DEFAULT 'optional' CHECK (priority IN ('mandatory', 'optional', 'nice-to-have')),
-  completion_percentage INTEGER DEFAULT 0 CHECK (completion_percentage >= 0 AND completion_percentage <= 100),
-  notes TEXT,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    id VARCHAR(50) PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    subtitle VARCHAR(255),
+    description TEXT NOT NULL,
+    category VARCHAR(100) NOT NULL,
+    status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'in-progress', 'completed', 'failed')),
+    priority VARCHAR(20) DEFAULT 'optional' CHECK (priority IN ('mandatory', 'optional', 'nice-to-have')),
+    completion_percentage INTEGER DEFAULT 0 CHECK (completion_percentage >= 0 AND completion_percentage <= 100),
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create test_cases table with proper foreign key
 CREATE TABLE IF NOT EXISTS test_cases (
-  id SERIAL PRIMARY KEY,
-  use_case_id VARCHAR(50) NOT NULL REFERENCES use_cases(id) ON DELETE CASCADE,
-  name VARCHAR(255) NOT NULL,
-  description TEXT NOT NULL,
-  expected_outcome TEXT NOT NULL,
-  status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'in-progress', 'completed', 'failed')),
-  actual_outcome TEXT,
-  test_date TIMESTAMP,
-  tester_name VARCHAR(255),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    id SERIAL PRIMARY KEY,
+    use_case_id VARCHAR(50) NOT NULL REFERENCES use_cases(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    expected_outcome TEXT NOT NULL,
+    status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'in-progress', 'completed', 'failed')),
+    actual_outcome TEXT,
+    test_date TIMESTAMP,
+    tester_name VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create requirements table
 CREATE TABLE IF NOT EXISTS requirements (
-  id SERIAL PRIMARY KEY,
-  type VARCHAR(20) NOT NULL CHECK (type IN ('functional', 'non-functional')),
-  description TEXT NOT NULL,
-  justification TEXT,
-  status VARCHAR(20) DEFAULT 'not-met' CHECK (status IN ('met', 'not-met', 'partially-met')),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    id SERIAL PRIMARY KEY,
+    type VARCHAR(20) NOT NULL CHECK (type IN ('functional', 'non-functional')),
+    description TEXT NOT NULL,
+    justification TEXT,
+    status VARCHAR(20) DEFAULT 'not-met' CHECK (status IN ('met', 'not-met', 'partially-met')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create use_case_requirements junction table
 CREATE TABLE IF NOT EXISTS use_case_requirements (
-  id SERIAL PRIMARY KEY,
-  use_case_id VARCHAR(50) NOT NULL REFERENCES use_cases(id) ON DELETE CASCADE,
-  requirement_id INTEGER NOT NULL REFERENCES requirements(id) ON DELETE CASCADE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE(use_case_id, requirement_id)
+    id SERIAL PRIMARY KEY,
+    use_case_id VARCHAR(50) NOT NULL REFERENCES use_cases(id) ON DELETE CASCADE,
+    requirement_id INTEGER NOT NULL REFERENCES requirements(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(use_case_id, requirement_id)
 );
 
 -- Create documentation_links table
 CREATE TABLE IF NOT EXISTS documentation_links (
-  id SERIAL PRIMARY KEY,
-  use_case_id VARCHAR(50) NOT NULL REFERENCES use_cases(id) ON DELETE CASCADE,
-  title VARCHAR(255) NOT NULL,
-  url TEXT NOT NULL,
-  description TEXT,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    id SERIAL PRIMARY KEY,
+    use_case_id VARCHAR(50) NOT NULL REFERENCES use_cases(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    url TEXT NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create success_criteria table
 CREATE TABLE IF NOT EXISTS success_criteria (
-  id SERIAL PRIMARY KEY,
-  use_case_id VARCHAR(50) NOT NULL REFERENCES use_cases(id) ON DELETE CASCADE,
-  criteria TEXT NOT NULL,
-  is_met BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Create scoping_questionnaire table
-CREATE TABLE IF NOT EXISTS scoping_questionnaire (
-  id SERIAL PRIMARY KEY,
-  organization_name VARCHAR(255) NOT NULL,
-  contact_person VARCHAR(255) NOT NULL,
-  contact_email VARCHAR(255) NOT NULL,
-  contact_phone VARCHAR(50),
-  total_sites INTEGER,
-  total_users INTEGER,
-  network_vendors JSONB,
-  switch_models JSONB,
-  wireless_models JSONB,
-  identity_providers JSONB,
-  mdm_solutions JSONB,
-  siem_solutions JSONB,
-  mdr_solutions JSONB,
-  xdr_solutions JSONB,
-  edr_solutions JSONB,
-  auth_methods JSONB,
-  certificate_requirements JSONB,
-  guest_access_requirements JSONB,
-  byod_requirements JSONB,
-  vlan_segmentation JSONB,
-  access_policies JSONB,
-  compliance_requirements JSONB,
-  risk_tolerance VARCHAR(20) CHECK (risk_tolerance IN ('low', 'medium', 'high')),
-  security_priorities JSONB,
-  compliance_frameworks JSONB,
-  target_deployment_date DATE,
-  budget_range VARCHAR(50),
-  project_timeline_months INTEGER,
-  high_availability_required BOOLEAN DEFAULT FALSE,
-  disaster_recovery_required BOOLEAN DEFAULT FALSE,
-  multi_region_deployment BOOLEAN DEFAULT FALSE,
-  status VARCHAR(20) DEFAULT 'draft' CHECK (status IN ('draft', 'submitted', 'reviewed', 'approved')),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    id SERIAL PRIMARY KEY,
+    use_case_id VARCHAR(50) NOT NULL REFERENCES use_cases(id) ON DELETE CASCADE,
+    criteria TEXT NOT NULL,
+    is_met BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Insert sample use cases

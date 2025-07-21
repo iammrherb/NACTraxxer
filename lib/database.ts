@@ -1,90 +1,134 @@
 import { neon } from "@neondatabase/serverless"
 
-if (!process.env.DATABASE_URL) {
+// Check if the database URL is set
+if (!process.env.POSTGRES_URL) {
   throw new Error("DATABASE_URL environment variable is not set")
 }
 
-const sql = neon(process.env.DATABASE_URL)
+export const sql = neon(process.env.POSTGRES_URL)
 
-// Test database connection
 export async function testDatabaseConnection() {
   try {
-    await sql`SELECT 1`
-    return true
+    const result = await sql`SELECT now()`
+    console.log("Database connection successful:", result)
+    return { success: true, result }
   } catch (error) {
     console.error("Database connection failed:", error)
-    return false
+    throw new Error("Database connection failed")
   }
 }
 
-export { sql }
+export interface BaseVendor {
+  id: number
+  name: string
+  is_custom?: boolean
+}
 
-// Types
-export interface DatabaseUser {
+export interface Vendor extends BaseVendor {
+  type: "wired" | "wireless"
+}
+
+export interface DeviceType {
+  id: number
+  name: string
+  is_custom?: boolean
+}
+
+export interface ChecklistItem {
+  id: number
+  name: string
+  category: string
+  is_custom?: boolean
+}
+
+export interface UseCase {
+  id: number
+  name: string
+  description: string
+  is_custom?: boolean
+}
+
+export interface TestMatrixEntry {
+  id: number
+  device_type_id: number
+  use_case_id: number
+  is_supported: boolean
+}
+
+export interface Requirement {
+  id: number
+  name: string
+  description: string
+  is_custom?: boolean
+}
+
+export interface TestCase {
+  id: number
+  name: string
+  description: string
+  is_custom?: boolean
+}
+
+export interface Task {
+  id: number
+  name: string
+  description: string
+  due_date?: string
+  status: "To Do" | "In Progress" | "Done"
+  assignee_id?: number
+}
+
+export interface SiteTask extends Task {
+  site_task_id: string // Unique ID for the task instance on a site
+}
+
+export interface User {
   id: number
   name: string
   email: string
-  role: string
-  user_type: "project_manager" | "technical_owner"
-  created_at: string
-  updated_at: string
-  password_hash?: string
-  email_verified?: boolean
-  image?: string
-  last_login?: string
-  is_active?: boolean
-  permissions?: any
+  role: "Admin" | "Project Manager" | "Technical Owner" | "Read Only"
 }
-
-// Keep the original User interface for backward compatibility
-export interface User extends DatabaseUser {}
 
 export interface Site {
   id: string
   name: string
   region: string
   country: string
-  priority: "High" | "Medium" | "Low"
+  status: "Planned" | "In Progress" | "Delayed" | "Complete"
   phase: number
   users_count: number
-  project_manager_id: number
-  project_manager_name?: string
-  radsec: string
   planned_start: string
   planned_end: string
-  status: "Planned" | "In Progress" | "Complete" | "Delayed"
   completion_percent: number
-  notes?: string
+  project_manager_id: number
+  project_manager_name?: string
+  technical_owner_ids: number[]
+  radsec: "Native" | "Proxy" | "Not Used"
+  vendor_ids: number[]
+  firewall_vendor_ids: number[]
+  vpn_vendor_ids: number[]
+  edr_xdr_vendor_ids: number[]
+  siem_vendor_ids: number[]
+  idp_vendor_ids: number[]
+  mfa_vendor_ids: number[]
+  device_type_ids: number[]
+  checklist_item_ids: number[]
+  use_case_ids: number[]
+  tasks: SiteTask[]
+  test_case_statuses: { test_case_id: number; status: "Pass" | "Fail" | "Not Tested" }[]
+  requirement_statuses: { requirement_id: number; status: "Met" | "Not Met" | "Not Applicable" }[]
   created_at: string
   updated_at: string
-  technical_owners?: DatabaseUser[]
-  vendors?: Vendor[]
-  device_types?: DeviceType[]
-  checklist_items?: ChecklistItem[]
 }
 
-export interface Vendor {
+export interface Region {
   id: number
   name: string
-  type: "wired" | "wireless"
-  is_custom: boolean
-  created_at: string
 }
 
-export interface DeviceType {
-  id: number
+export interface Country {
+  code: string
   name: string
-  is_custom: boolean
-  created_at: string
-}
-
-export interface ChecklistItem {
-  id: number
-  name: string
-  is_custom: boolean
-  completed?: boolean
-  completed_at?: string
-  created_at: string
 }
 
 export interface SiteStats {
@@ -97,70 +141,22 @@ export interface SiteStats {
   overall_completion: number
 }
 
-// New Use Case related types
-export interface UseCase {
-  id: string
-  title: string
-  subtitle?: string
-  description: string
-  category: string
-  status: "pending" | "in-progress" | "completed" | "failed"
-  priority: "mandatory" | "optional" | "nice-to-have"
-  completion_percentage: number
-  notes?: string
-  created_at: string
-  updated_at: string
-  test_cases?: TestCase[]
-  requirements?: Requirement[]
-  documentation_links?: DocumentationLink[]
-  success_criteria?: SuccessCriteria[]
-}
-
-export interface TestCase {
-  id: string
-  name: string
-  description: string
-  expected_outcome: string
-  status: "pending" | "in-progress" | "completed" | "failed"
-  actual_outcome?: string
-  test_date?: string
-  tester_name?: string
-  created_at: string
-  updated_at: string
-}
-
-export interface Requirement {
-  id: string
-  type: "functional" | "non-functional"
-  description: string
-  justification?: string
-  status: "met" | "not-met" | "partially-met"
-  created_at: string
-  updated_at: string
-}
-
-export interface BusinessObjective {
-  id: string
-  title: string
-  description: string
-  success_criteria?: string
-  created_at: string
-  updated_at: string
-}
-
-export interface DocumentationLink {
-  id: number
-  use_case_id: string
-  title: string
-  url: string
-  description?: string
-  created_at: string
-}
-
-export interface SuccessCriteria {
-  id: number
-  use_case_id: string
-  criteria: string
-  is_met: boolean
-  created_at: string
+export interface LibraryData {
+  wiredVendors: Vendor[]
+  wirelessVendors: Vendor[]
+  firewallVendors: BaseVendor[]
+  vpnVendors: BaseVendor[]
+  edrXdrVendors: BaseVendor[]
+  siemVendors: BaseVendor[]
+  idpVendors: BaseVendor[]
+  mfaVendors: BaseVendor[]
+  deviceTypes: DeviceType[]
+  checklistItems: ChecklistItem[]
+  useCases: UseCase[]
+  testMatrix: TestMatrixEntry[]
+  requirements: Requirement[]
+  testCases: TestCase[]
+  tasks: Task[]
+  regions: Region[]
+  countries: Country[]
 }

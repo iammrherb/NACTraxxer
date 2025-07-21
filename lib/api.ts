@@ -1,347 +1,255 @@
-import { sql } from "./database"
-import type { User, Site, Vendor, DeviceType, ChecklistItem, SiteStats } from "./database"
-import { hashPassword } from "./password"
+import {
+  mockSites,
+  mockUsers,
+  initialWiredVendors,
+  initialWirelessVendors,
+  initialFirewallVendors,
+  initialVpnVendors,
+  initialEdrXdrVendors,
+  initialSiemVendors,
+  initialIdpVendors,
+  initialMfaVendors,
+  initialDeviceTypes,
+  initialChecklistItems,
+  initialUseCases,
+  initialTestMatrix,
+  initialRequirements,
+  initialTestCases,
+  initialTasks,
+  initialRegions,
+  mockCountries,
+  clearSites as clearData,
+  loadSampleSites as loadData,
+} from "./library-data"
 
-// Sites API - OPTIMIZED
-export async function getSites(): Promise<Site[]> {
-  // 1. Fetch all sites with project manager name
-  const sites = await sql<Site[]>`
-SELECT s.*, u.name as project_manager_name
-FROM sites s
-LEFT JOIN users u ON s.project_manager_id = u.id
-ORDER BY s.created_at DESC
-`
+import type { Site, User, LibraryData, BaseVendor, Vendor, DeviceType, ChecklistItem, SiteStats } from "./database"
 
-  if (sites.length === 0) {
-    return []
-  }
+// Hold data in memory
+let sites: Site[] = JSON.parse(JSON.stringify(mockSites))
+const users: User[] = JSON.parse(JSON.stringify(mockUsers))
+const wiredVendors: Vendor[] = JSON.parse(JSON.stringify(initialWiredVendors))
+const wirelessVendors: Vendor[] = JSON.parse(JSON.stringify(initialWirelessVendors))
+const idpVendors: BaseVendor[] = JSON.parse(JSON.stringify(initialIdpVendors))
+const deviceTypes: DeviceType[] = JSON.parse(JSON.stringify(initialDeviceTypes))
+const checklistItems: ChecklistItem[] = JSON.parse(JSON.stringify(initialChecklistItems))
 
-  const siteIds = sites.map((s) => s.id)
-
-  // 2. Fetch all related data for all sites in bulk
-  const [technicalOwners, vendors, deviceTypes, allChecklistItems, siteChecklistData] = await Promise.all([
-    sql`
-  SELECT u.*, sto.site_id FROM users u
-  JOIN site_technical_owners sto ON u.id = sto.user_id
-  WHERE sto.site_id = ANY(${siteIds})
-`,
-    sql`
-  SELECT v.*, sv.site_id FROM vendors v
-  JOIN site_vendors sv ON v.id = sv.vendor_id
-  WHERE sv.site_id = ANY(${siteIds})
-`,
-    sql`
-  SELECT dt.*, sdt.site_id FROM device_types dt
-  JOIN site_device_types sdt ON dt.id = sdt.device_type_id
-  WHERE sdt.site_id = ANY(${siteIds})
-`,
-    sql`SELECT * FROM checklist_items ORDER BY name`,
-    sql`SELECT * FROM site_checklist WHERE site_id = ANY(${siteIds})`,
-  ])
-
-  // 3. Create maps for efficient lookups
-  const technicalOwnersBySite = technicalOwners.reduce((acc, owner) => {
-    ;(acc[owner.site_id] = acc[owner.site_id] || []).push(owner)
-    return acc
-  }, {})
-
-  const vendorsBySite = vendors.reduce((acc, vendor) => {
-    ;(acc[vendor.site_id] = acc[vendor.site_id] || []).push(vendor)
-    return acc
-  }, {})
-
-  const deviceTypesBySite = deviceTypes.reduce((acc, type) => {
-    ;(acc[type.site_id] = acc[type.site_id] || []).push(type)
-    return acc
-  }, {})
-
-  const siteChecklistMap = siteChecklistData.reduce((acc, item) => {
-    if (!acc[item.site_id]) {
-      acc[item.site_id] = {}
-    }
-    acc[item.site_id][item.checklist_item_id] = item
-    return acc
-  }, {})
-
-  // 4. Map the related data back to the sites
-  const sitesWithData = sites.map((site) => {
-    return {
-      ...site,
-      technical_owners: technicalOwnersBySite[site.id] || [],
-      vendors: vendorsBySite[site.id] || [],
-      device_types: deviceTypesBySite[site.id] || [],
-      checklist_items: allChecklistItems.map((item) => {
-        const siteSpecificData = siteChecklistMap[site.id]?.[item.id]
-        return {
-          ...item,
-          completed: siteSpecificData?.completed ?? false,
-          completed_at: siteSpecificData?.completed_at ?? null,
-        }
-      }),
-    }
-  })
-
-  return sitesWithData
+// --- Site Management ---
+export const getSites = async (): Promise<Site[]> => {
+  // Simulate network delay
+  await new Promise((res) => setTimeout(res, 200))
+  // In a real app, you'd populate related data here
+  return sites.map((site) => ({
+    ...site,
+    project_manager_name: users.find((u) => u.id === site.project_manager_id)?.name,
+  }))
 }
 
-export async function getSite(id: string): Promise<Site | null> {
-  const sites = await sql`
-SELECT s.*, u.name as project_manager_name
-FROM sites s
-LEFT JOIN users u ON s.project_manager_id = u.id
-WHERE s.id = ${id}
-`
-
-  if (sites.length === 0) return null
-
-  const site = sites[0]
-  const siteId = site.id
-
-  // Fetch related data for this single site
-  const [technicalOwners, vendors, deviceTypes, allChecklistItems, siteChecklistData] = await Promise.all([
-    sql`SELECT u.* FROM users u JOIN site_technical_owners sto ON u.id = sto.user_id WHERE sto.site_id = ${siteId}`,
-    sql`SELECT v.* FROM vendors v JOIN site_vendors sv ON v.id = sv.vendor_id WHERE sv.site_id = ${siteId}`,
-    sql`SELECT dt.* FROM device_types dt JOIN site_device_types sdt ON dt.id = sdt.device_type_id WHERE sdt.site_id = ${siteId}`,
-    sql`SELECT * FROM checklist_items ORDER BY name`,
-    sql`SELECT * FROM site_checklist WHERE site_id = ${siteId}`,
-  ])
-
-  const siteChecklistMap = new Map(siteChecklistData.map((item) => [item.checklist_item_id, item]))
-
-  site.technical_owners = technicalOwners
-  site.vendors = vendors
-  site.device_types = deviceTypes
-  site.checklist_items = allChecklistItems.map((item) => {
-    const siteSpecificData = siteChecklistMap.get(item.id)
-    return {
-      ...item,
-      completed: siteSpecificData?.completed ?? false,
-      completed_at: siteSpecificData?.completed_at ?? null,
-    }
-  })
-
-  return site
+export const getSite = async (id: string): Promise<Site | undefined> => {
+  await new Promise((res) => setTimeout(res, 100))
+  return sites.find((s) => s.id === id)
 }
 
-export async function createSite(siteData: any): Promise<Site> {
-  // Insert site
-  const siteResult = await sql`
-INSERT INTO sites (
-  id, name, region, country, priority, phase, users_count,
-  project_manager_id, radsec, planned_start, planned_end,
-  status, completion_percent, notes
-) VALUES (
-  ${siteData.id}, ${siteData.name}, ${siteData.region}, ${siteData.country},
-  ${siteData.priority}, ${siteData.phase}, ${siteData.users_count},
-  ${siteData.project_manager_id}, ${siteData.radsec}, ${siteData.planned_start},
-  ${siteData.planned_end}, ${siteData.status}, ${siteData.completion_percent},
-  ${siteData.notes}
-)
-RETURNING *
-`
-
-  const site = siteResult[0]
-
-  // Insert technical owners
-  if (siteData.technical_owner_ids?.length > 0) {
-    for (const ownerId of siteData.technical_owner_ids) {
-      await sql`
-    INSERT INTO site_technical_owners (site_id, user_id)
-    VALUES (${site.id}, ${ownerId})
-  `
-    }
+export const createSite = async (siteData: Omit<Site, "id" | "created_at" | "updated_at">): Promise<Site> => {
+  await new Promise((res) => setTimeout(res, 200))
+  const newSite: Site = {
+    ...siteData,
+    id: `SITE-${Date.now()}`,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    completion_percent: 0,
+    tasks: [],
+    test_case_statuses: [],
+    requirement_statuses: [],
   }
-
-  // Insert vendors
-  if (siteData.vendor_ids?.length > 0) {
-    for (const vendorId of siteData.vendor_ids) {
-      await sql`
-    INSERT INTO site_vendors (site_id, vendor_id)
-    VALUES (${site.id}, ${vendorId})
-  `
-    }
-  }
-
-  // Insert device types
-  if (siteData.device_type_ids?.length > 0) {
-    for (const deviceTypeId of siteData.device_type_ids) {
-      await sql`
-    INSERT INTO site_device_types (site_id, device_type_id)
-    VALUES (${site.id}, ${deviceTypeId})
-  `
-    }
-  }
-
-  // Insert checklist items
-  if (siteData.checklist_item_ids?.length > 0) {
-    for (const itemId of siteData.checklist_item_ids) {
-      await sql`
-    INSERT INTO site_checklist (site_id, checklist_item_id, completed, completed_at)
-    VALUES (${site.id}, ${itemId}, true, CURRENT_TIMESTAMP)
-  `
-    }
-  }
-
-  return (await getSite(site.id)) as Site
+  sites.push(newSite)
+  return newSite
 }
 
-export async function updateSite(id: string, siteData: any): Promise<Site> {
-  // Update site
-  await sql`
-UPDATE sites SET
-  name = ${siteData.name},
-  region = ${siteData.region},
-  country = ${siteData.country},
-  priority = ${siteData.priority},
-  phase = ${siteData.phase},
-  users_count = ${siteData.users_count},
-  project_manager_id = ${siteData.project_manager_id},
-  radsec = ${siteData.radsec},
-  planned_start = ${siteData.planned_start},
-  planned_end = ${siteData.planned_end},
-  status = ${siteData.status},
-  completion_percent = ${siteData.completion_percent},
-  notes = ${siteData.notes},
-  updated_at = CURRENT_TIMESTAMP
-WHERE id = ${id}
-`
-
-  // Update technical owners
-  await sql`DELETE FROM site_technical_owners WHERE site_id = ${id}`
-  if (siteData.technical_owner_ids?.length > 0) {
-    for (const ownerId of siteData.technical_owner_ids) {
-      await sql`
-    INSERT INTO site_technical_owners (site_id, user_id)
-    VALUES (${id}, ${ownerId})
-  `
-    }
+export const updateSite = async (id: string, updates: Partial<Site>): Promise<Site> => {
+  await new Promise((res) => setTimeout(res, 200))
+  const siteIndex = sites.findIndex((s) => s.id === id)
+  if (siteIndex === -1) {
+    throw new Error("Site not found")
   }
-
-  // Update vendors
-  await sql`DELETE FROM site_vendors WHERE site_id = ${id}`
-  if (siteData.vendor_ids?.length > 0) {
-    for (const vendorId of siteData.vendor_ids) {
-      await sql`
-    INSERT INTO site_vendors (site_id, vendor_id)
-    VALUES (${id}, ${vendorId})
-  `
-    }
-  }
-
-  // Update device types
-  await sql`DELETE FROM site_device_types WHERE site_id = ${id}`
-  if (siteData.device_type_ids?.length > 0) {
-    for (const deviceTypeId of siteData.device_type_ids) {
-      await sql`
-    INSERT INTO site_device_types (site_id, device_type_id)
-    VALUES (${id}, ${deviceTypeId})
-  `
-    }
-  }
-
-  // Update checklist items
-  await sql`DELETE FROM site_checklist WHERE site_id = ${id}`
-  if (siteData.checklist_item_ids?.length > 0) {
-    for (const itemId of siteData.checklist_item_ids) {
-      await sql`
-    INSERT INTO site_checklist (site_id, checklist_item_id, completed, completed_at)
-    VALUES (${id}, ${itemId}, true, CURRENT_TIMESTAMP)
-  `
-    }
-  }
-
-  return (await getSite(id)) as Site
+  sites[siteIndex] = { ...sites[siteIndex], ...updates, updated_at: new Date().toISOString() }
+  return sites[siteIndex]
 }
 
-export async function deleteSite(id: string): Promise<void> {
-  await sql`DELETE FROM sites WHERE id = ${id}`
+export const deleteSite = async (id: string): Promise<void> => {
+  await new Promise((res) => setTimeout(res, 200))
+  sites = sites.filter((s) => s.id !== id)
 }
 
-// Users API
-export async function getUsers(type?: "project_manager" | "technical_owner"): Promise<User[]> {
-  if (type) {
-    return await sql`SELECT * FROM users WHERE user_type = ${type} ORDER BY name`
+// --- Library & Data Management ---
+export const getLibraryData = async (): Promise<LibraryData> => {
+  await new Promise((res) => setTimeout(res, 100))
+  return {
+    wiredVendors: wiredVendors,
+    wirelessVendors: wirelessVendors,
+    firewallVendors: initialFirewallVendors,
+    vpnVendors: initialVpnVendors,
+    edrXdrVendors: initialEdrXdrVendors,
+    siemVendors: initialSiemVendors,
+    idpVendors: idpVendors,
+    mfaVendors: initialMfaVendors,
+    deviceTypes: deviceTypes,
+    checklistItems: checklistItems,
+    useCases: initialUseCases,
+    testMatrix: initialTestMatrix,
+    requirements: initialRequirements,
+    testCases: initialTestCases,
+    tasks: initialTasks,
+    regions: initialRegions,
+    countries: mockCountries,
+  }
+}
+
+export const getUsers = async (): Promise<User[]> => {
+  await new Promise((res) => setTimeout(res, 100))
+  return users
+}
+
+export const getSiteStats = async (): Promise<SiteStats> => {
+  await new Promise((res) => setTimeout(res, 300))
+  const total_sites = sites.length
+  const completed_sites = sites.filter((s) => s.status === "Complete").length
+  const in_progress_sites = sites.filter((s) => s.status === "In Progress").length
+  const planned_sites = sites.filter((s) => s.status === "Planned").length
+  const delayed_sites = sites.filter((s) => s.status === "Delayed").length
+  const total_users = sites.reduce((acc, site) => acc + (site.users_count || 0), 0)
+  const overall_completion =
+    total_sites > 0 ? Math.round(sites.reduce((acc, site) => acc + (site.completion_percent || 0), 0) / total_sites) : 0
+  return {
+    total_sites,
+    completed_sites,
+    in_progress_sites,
+    planned_sites,
+    delayed_sites,
+    total_users,
+    overall_completion,
+  }
+}
+
+// --- User Management ---
+export const createUser = async (userData: Omit<User, "id" | "created_at" | "updated_at">): Promise<User> => {
+  await new Promise((res) => setTimeout(res, 200))
+  const newUser: User = {
+    ...userData,
+    id: Date.now(),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }
+  users.push(newUser)
+  return newUser
+}
+
+export const updateUser = async (id: number, updates: Partial<User>): Promise<User> => {
+  await new Promise((res) => setTimeout(res, 200))
+  const userIndex = users.findIndex((u) => u.id === id)
+  if (userIndex === -1) throw new Error("User not found")
+  users[userIndex] = { ...users[userIndex], ...updates, updated_at: new Date().toISOString() }
+  return users[userIndex]
+}
+
+export const deleteUser = async (id: number): Promise<void> => {
+  await new Promise((res) => setTimeout(res, 200))
+  const index = users.findIndex((u) => u.id === id)
+  if (index > -1) {
+    users.splice(index, 1)
   } else {
-    return await sql`SELECT * FROM users ORDER BY name`
+    throw new Error("User not found")
   }
 }
 
-export async function createUser(
-  userData: Omit<User, "id" | "created_at" | "updated_at" | "password"> & { password?: string },
-): Promise<Omit<User, "password">> {
-  const { name, email, password, user_type } = userData
-  if (!password) {
-    throw new Error("Password is required to create a user.")
-  }
-  const hashedPassword = await hashPassword(password)
-
-  const result = await sql`
-  INSERT INTO users (name, email, password, user_type)
-  VALUES (${name}, ${email}, ${hashedPassword}, ${user_type})
-  RETURNING id, name, email, user_type, created_at, updated_at
-`
-  return result[0]
+// --- Vendor Specific ---
+export const getVendors = async (): Promise<Vendor[]> => {
+  await new Promise((res) => setTimeout(res, 100))
+  return [...wiredVendors, ...wirelessVendors]
 }
 
-// Vendors API
-export async function getVendors(type?: "wired" | "wireless"): Promise<Vendor[]> {
-  if (type) {
-    return await sql`SELECT * FROM vendors WHERE type = ${type} ORDER BY name`
+export const createVendor = async (vendorData: Omit<Vendor, "id" | "is_custom" | "created_at">): Promise<Vendor> => {
+  const list = vendorData.type === "wired" ? wiredVendors : wirelessVendors
+  const newVendor: Vendor = {
+    ...vendorData,
+    id: Date.now(),
+    is_custom: true,
+    created_at: new Date().toISOString(),
+  }
+  list.push(newVendor)
+  return newVendor
+}
+
+// --- Device Type Specific ---
+export const getDeviceTypes = async (): Promise<DeviceType[]> => {
+  await new Promise((res) => setTimeout(res, 100))
+  return deviceTypes
+}
+
+// --- Checklist Item Specific ---
+export const getChecklistItems = async (): Promise<ChecklistItem[]> => {
+  await new Promise((res) => setTimeout(res, 100))
+  return checklistItems
+}
+
+// --- Library Item CRUD ---
+const createLibraryItem = <T extends { id: number; name: string }>(list: T[], item: { name: string }): T => {
+  const newItem = {
+    ...item,
+    id: Date.now(),
+    is_custom: true,
+    created_at: new Date().toISOString(),
+  } as T
+  list.push(newItem)
+  return newItem
+}
+
+const updateLibraryItem = <T extends { id: number }>(list: T[], item: T): T => {
+  const index = list.findIndex((i) => i.id === item.id)
+  if (index > -1) {
+    list[index] = item
+    return item
+  }
+  throw new Error("Item not found")
+}
+
+const deleteLibraryItem = <T extends { id: number }>(list: T[], id: number): void => {
+  const index = list.findIndex((i) => i.id === id)
+  if (index > -1) {
+    list.splice(index, 1)
   } else {
-    return await sql`SELECT * FROM vendors ORDER BY type, name`
+    throw new Error("Item not found")
   }
 }
 
-export async function createVendor(vendor: Omit<Vendor, "id" | "created_at">): Promise<Vendor> {
-  const result = await sql`
-INSERT INTO vendors (name, type, is_custom)
-VALUES (${vendor.name}, ${vendor.type}, ${vendor.is_custom})
-RETURNING *
-`
-  return result[0]
+export const createWiredVendor = (item: { name: string }) => createLibraryItem(wiredVendors, { ...item, type: "wired" })
+export const updateWiredVendor = (item: Vendor) => updateLibraryItem(wiredVendors, item)
+export const deleteWiredVendor = (id: number) => deleteLibraryItem(wiredVendors, id)
+
+export const createWirelessVendor = (item: { name: string }) =>
+  createLibraryItem(wirelessVendors, { ...item, type: "wireless" })
+export const updateWirelessVendor = (item: Vendor) => updateLibraryItem(wirelessVendors, item)
+export const deleteWirelessVendor = (id: number) => deleteLibraryItem(wirelessVendors, id)
+
+export const createDeviceType = (item: { name: string }) => createLibraryItem(deviceTypes, item)
+export const updateDeviceType = (item: DeviceType) => updateLibraryItem(deviceTypes, item)
+export const deleteDeviceType = (id: number) => deleteLibraryItem(deviceTypes, id)
+
+export const createChecklistItem = (item: { name: string; category: string }) => createLibraryItem(checklistItems, item)
+export const updateChecklistItem = (item: ChecklistItem) => updateLibraryItem(checklistItems, item)
+export const deleteChecklistItem = (id: number) => deleteLibraryItem(checklistItems, id)
+
+// --- Debug/Settings Functions ---
+export const clearDatabase = async () => {
+  await new Promise((res) => setTimeout(res, 500))
+  clearData()
+  sites = [] // Clear the in-memory array too
+  return { message: "All site data has been cleared." }
 }
 
-// Device Types API
-export async function getDeviceTypes(): Promise<DeviceType[]> {
-  return await sql`SELECT * FROM device_types ORDER BY name`
-}
-
-export async function createDeviceType(deviceType: Omit<DeviceType, "id" | "created_at">): Promise<DeviceType> {
-  const result = await sql`
-INSERT INTO device_types (name, is_custom)
-VALUES (${deviceType.name}, ${deviceType.is_custom})
-RETURNING *
-`
-  return result[0]
-}
-
-// Checklist Items API
-export async function getChecklistItems(): Promise<ChecklistItem[]> {
-  return await sql`SELECT * FROM checklist_items ORDER BY name`
-}
-
-export async function createChecklistItem(item: Omit<ChecklistItem, "id" | "created_at">): Promise<ChecklistItem> {
-  const result = await sql`
-INSERT INTO checklist_items (name, is_custom)
-VALUES (${item.name}, ${item.is_custom})
-RETURNING *
-`
-  return result[0]
-}
-
-// Statistics API
-export async function getSiteStats(): Promise<SiteStats> {
-  const stats = await sql`
-SELECT 
-  COUNT(*) as total_sites,
-  COUNT(CASE WHEN status = 'Complete' THEN 1 END) as completed_sites,
-  COUNT(CASE WHEN status = 'In Progress' THEN 1 END) as in_progress_sites,
-  COUNT(CASE WHEN status = 'Planned' THEN 1 END) as planned_sites,
-  COUNT(CASE WHEN status = 'Delayed' THEN 1 END) as delayed_sites,
-  SUM(users_count) as total_users,
-  ROUND(AVG(completion_percent)) as overall_completion
-FROM sites
-`
-
-  return stats[0]
+export const seedDatabase = async () => {
+  await new Promise((res) => setTimeout(res, 500))
+  loadData()
+  // Deep copy to prevent mutation issues
+  sites = JSON.parse(JSON.stringify(mockSites))
+  return { message: "Sample site data has been loaded." }
 }

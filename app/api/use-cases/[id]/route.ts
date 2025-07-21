@@ -1,65 +1,99 @@
+import { type NextRequest, NextResponse } from "next/server"
 import { sql } from "@/lib/database"
-import { NextResponse } from "next/server"
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const { id } = params
-    const [useCase] = await sql`
-      SELECT * FROM use_cases WHERE id = ${id}
+    const useCase = await sql`
+      SELECT 
+        uc.*,
+        COALESCE(
+          json_agg(
+            DISTINCT jsonb_build_object(
+              'id', tc.id,
+              'name', tc.name,
+              'description', tc.description,
+              'expected_outcome', tc.expected_outcome,
+              'status', tc.status,
+              'actual_outcome', tc.actual_outcome,
+              'test_date', tc.test_date,
+              'tester_name', tc.tester_name
+            )
+          ) FILTER (WHERE tc.id IS NOT NULL), 
+          '[]'
+        ) as test_cases,
+        COALESCE(
+          json_agg(
+            DISTINCT jsonb_build_object(
+              'id', dl.id,
+              'title', dl.title,
+              'url', dl.url,
+              'description', dl.description
+            )
+          ) FILTER (WHERE dl.id IS NOT NULL), 
+          '[]'
+        ) as documentation_links,
+        COALESCE(
+          json_agg(
+            DISTINCT jsonb_build_object(
+              'id', sc.id,
+              'criteria', sc.criteria,
+              'is_met', sc.is_met
+            )
+          ) FILTER (WHERE sc.id IS NOT NULL), 
+          '[]'
+        ) as success_criteria
+      FROM use_cases uc
+      LEFT JOIN test_cases tc ON uc.id = tc.use_case_id
+      LEFT JOIN documentation_links dl ON uc.id = dl.use_case_id
+      LEFT JOIN success_criteria sc ON uc.id = sc.use_case_id
+      WHERE uc.id = ${params.id}
+      GROUP BY uc.id
     `
-    if (!useCase) {
-      return NextResponse.json({ message: "Use case not found" }, { status: 404 })
+
+    if (useCase.length === 0) {
+      return NextResponse.json({ error: "Use case not found" }, { status: 404 })
     }
-    return NextResponse.json(useCase)
+
+    return NextResponse.json(useCase[0])
   } catch (error) {
-    console.error(`Error fetching use case ${params.id}:`, error)
-    return NextResponse.json({ message: "Error fetching use case" }, { status: 500 })
+    console.error("Error fetching use case:", error)
+    return NextResponse.json({ error: "Failed to fetch use case" }, { status: 500 })
   }
 }
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const { id } = params
-    const body = await request.json()
+    const useCaseData = await request.json()
 
-    // Dynamically build the update query based on fields present in the body
-    const fields = Object.keys(body)
-    const values = Object.values(body)
+    const useCase = await sql`
+      UPDATE use_cases 
+      SET 
+        title = ${useCaseData.title},
+        subtitle = ${useCaseData.subtitle},
+        description = ${useCaseData.description},
+        category = ${useCaseData.category},
+        status = ${useCaseData.status},
+        priority = ${useCaseData.priority},
+        completion_percentage = ${useCaseData.completion_percentage},
+        notes = ${useCaseData.notes},
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ${params.id}
+      RETURNING *
+    `
 
-    if (fields.length === 0) {
-      return NextResponse.json({ message: "No fields to update" }, { status: 400 })
-    }
-
-    const setClauses = fields.map((field, index) => `${field} = $${index + 1}`).join(", ")
-
-    const query = `UPDATE use_cases SET ${setClauses}, updated_at = NOW() WHERE id = $${fields.length + 1} RETURNING *`
-    const queryParams = [...values, id]
-
-    const [updatedUseCase] = await sql.query(query, queryParams)
-
-    if (!updatedUseCase) {
-      return NextResponse.json({ message: "Use case not found" }, { status: 404 })
-    }
-
-    return NextResponse.json(updatedUseCase)
+    return NextResponse.json(useCase[0])
   } catch (error) {
-    console.error(`Error updating use case ${params.id}:`, error)
-    return NextResponse.json({ message: "Error updating use case" }, { status: 500 })
+    console.error("Error updating use case:", error)
+    return NextResponse.json({ error: "Failed to update use case" }, { status: 500 })
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const { id } = params
-    const result = await sql`
-      DELETE FROM use_cases WHERE id = ${id}
-    `
-    if (result.count === 0) {
-      return NextResponse.json({ message: "Use case not found" }, { status: 404 })
-    }
-    return NextResponse.json({ message: "Use case deleted successfully" })
+    await sql`DELETE FROM use_cases WHERE id = ${params.id}`
+    return NextResponse.json({ success: true })
   } catch (error) {
-    console.error(`Error deleting use case ${params.id}:`, error)
-    return NextResponse.json({ message: "Error deleting use case" }, { status: 500 })
+    console.error("Error deleting use case:", error)
+    return NextResponse.json({ error: "Failed to delete use case" }, { status: 500 })
   }
 }

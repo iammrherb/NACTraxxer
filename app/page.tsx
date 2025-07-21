@@ -1,253 +1,146 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import type { Site } from "@/lib/database"
+import dynamic from "next/dynamic"
+import { useEffect, useState, useCallback } from "react"
 import { Header } from "@/components/header"
-import { SiteTable } from "@/components/site-table"
-import { SiteForm } from "@/components/site-form"
-import { SiteWorkbook } from "@/components/site-workbook"
-import { ProgressDashboard } from "@/components/progress-dashboard"
-import { UserManagement } from "@/components/user-management"
-import { ReportsDashboard } from "@/components/reports-dashboard"
-import { NotificationSettings } from "@/components/notification-settings"
-import { POCTrackerDashboard } from "@/components/poc-tracker-dashboard"
-import { EnhancedArchitectureDiagram } from "@/components/enhanced-architecture-diagram"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Building2, BarChart3, FileText, Bell, Target, Network, BookOpen } from "lucide-react"
+import type { Site, User, SiteStats, LibraryData } from "@/lib/database"
+import * as api from "@/lib/api"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Home, Target, CaseUpper, BookCopy, Settings } from "lucide-react"
+import { Toaster } from "@/components/ui/sonner"
 
-export default function Home() {
+const DashboardSkeleton = () => (
+  <div className="space-y-4 p-4">
+    <div className="flex justify-between items-center">
+      <Skeleton className="h-10 w-48" />
+      <Skeleton className="h-10 w-24" />
+    </div>
+    <Skeleton className="h-[400px] w-full rounded-lg" />
+  </div>
+)
+
+const ProgressDashboard = dynamic(
+  () => import("@/components/progress-dashboard").then((mod) => mod.ProgressDashboard),
+  {
+    loading: () => <DashboardSkeleton />,
+  },
+)
+const ScopingDashboard = dynamic(() => import("@/components/scoping-dashboard").then((mod) => mod.ScopingDashboard), {
+  loading: () => <DashboardSkeleton />,
+})
+const SiteList = dynamic(() => import("@/components/site-list").then((mod) => mod.SiteList), {
+  loading: () => <DashboardSkeleton />,
+})
+const LibraryDashboard = dynamic(() => import("@/components/library-dashboard").then((mod) => mod.LibraryDashboard), {
+  loading: () => <DashboardSkeleton />,
+})
+const SettingsDashboard = dynamic(
+  () => import("@/components/settings-dashboard").then((mod) => mod.SettingsDashboard),
+  {
+    loading: () => <DashboardSkeleton />,
+  },
+)
+
+export default function HomeDashboard() {
   const [sites, setSites] = useState<Site[]>([])
-  const [showSiteForm, setShowSiteForm] = useState(false)
-  const [showUserManagement, setShowUserManagement] = useState(false)
-  const [editingSite, setEditingSite] = useState<Site | null>(null)
-  const [selectedSiteForWorkbook, setSelectedSiteForWorkbook] = useState<Site | null>(null)
+  const [users, setUsers] = useState<User[]>([])
+  const [stats, setStats] = useState<SiteStats | null>(null)
+  const [libraryData, setLibraryData] = useState<LibraryData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState("overview")
+  const [activeTab, setActiveTab] = useState("dashboard")
 
-  useEffect(() => {
-    loadSites()
-  }, [])
-
-  const loadSites = async () => {
+  const loadAllData = useCallback(async () => {
+    setLoading(true)
     try {
-      setLoading(true)
-      const response = await fetch("/api/sites")
-      if (response.ok) {
-        const data = await response.json()
-        setSites(data)
-      } else {
-        console.error("Failed to load sites:", response.statusText)
-      }
+      const [sitesData, usersData, statsData, libData] = await Promise.all([
+        api.getSites(),
+        api.getUsers(),
+        api.getSiteStats(),
+        api.getLibraryData(),
+      ])
+      setSites(sitesData)
+      setUsers(usersData)
+      setStats(statsData)
+      setLibraryData(libData)
     } catch (error) {
-      console.error("Error loading sites:", error)
+      console.error("Failed to load dashboard data:", error)
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  const handleSiteSubmit = async (siteData: Partial<Site>) => {
-    try {
-      const url = editingSite ? `/api/sites/${editingSite.id}` : "/api/sites"
-      const method = editingSite ? "PUT" : "POST"
+  useEffect(() => {
+    loadAllData()
+  }, [loadAllData])
 
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(siteData),
-      })
-
-      if (response.ok) {
-        await loadSites()
-        setShowSiteForm(false)
-        setEditingSite(null)
-      } else {
-        console.error("Error saving site:", await response.text())
-      }
-    } catch (error) {
-      console.error("Error saving site:", error)
-    }
-  }
-
-  const handleAddSite = () => {
-    setEditingSite(null)
-    setShowSiteForm(true)
-  }
-
-  const handleEditSite = (site: Site) => {
-    setEditingSite(site)
-    setShowSiteForm(true)
-  }
-
-  const handleDeleteSite = async (id: string) => {
-    try {
-      const response = await fetch(`/api/sites/${id}`, { method: "DELETE" })
-      if (response.ok) {
-        await loadSites()
-      } else {
-        console.error("Error deleting site:", await response.text())
-      }
-    } catch (error) {
-      console.error("Error deleting site:", error)
-    }
-  }
-
-  const handleViewWorkbook = (site: Site) => {
-    setSelectedSiteForWorkbook(site)
-    setActiveTab("workbook")
-  }
-
-  const handleShowNotes = (site: Site) => {
-    alert(`Notes for ${site.name}:\n\n${site.notes || "No notes available."}`)
-  }
-
-  const getTabIcon = (tab: string) => {
-    switch (tab) {
-      case "overview":
-        return <BarChart3 className="h-4 w-4" />
-      case "sites":
-        return <Building2 className="h-4 w-4" />
-      case "workbook":
-        return <BookOpen className="h-4 w-4" />
-      case "poc-tracker":
-        return <Target className="h-4 w-4" />
-      case "architecture":
-        return <Network className="h-4 w-4" />
-      case "reports":
-        return <FileText className="h-4 w-4" />
-      case "settings":
-        return <Bell className="h-4 w-4" />
-      default:
-        return null
-    }
-  }
-
-  if (loading) {
+  if (loading || !libraryData) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-        <Header onManageUsers={() => setShowUserManagement(true)} />
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        </div>
+      <div className="flex min-h-screen w-full flex-col bg-muted/40">
+        <Header />
+        <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+          <DashboardSkeleton />
+        </main>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      <Header onManageUsers={() => setShowUserManagement(true)} />
-
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-                Portnox NAC Deployment Tracker
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                Comprehensive site deployment and use case validation platform
-              </p>
-            </div>
-            <div className="flex space-x-2">
-              <Badge
-                variant="outline"
-                className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-700"
-              >
-                POC Environment
-              </Badge>
-              <Badge
-                variant="outline"
-                className="bg-green-50 text-green-700 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700"
-              >
-                v2.1.0
-              </Badge>
-            </div>
-          </div>
-        </div>
-
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 sm:grid-cols-7 lg:w-auto lg:grid-cols-none lg:flex">
-            <TabsTrigger value="overview" className="flex items-center space-x-2">
-              {getTabIcon("overview")} <span className="hidden sm:inline">Overview</span>
+    <div className="flex min-h-screen w-full flex-col bg-muted/40">
+      <Header />
+      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5">
+            <TabsTrigger value="dashboard">
+              <Home className="mr-2 h-4 w-4" />
+              Dashboard
             </TabsTrigger>
-            <TabsTrigger value="sites" className="flex items-center space-x-2">
-              {getTabIcon("sites")} <span className="hidden sm:inline">Sites</span>
+            <TabsTrigger value="scoping">
+              <Target className="mr-2 h-4 w-4" />
+              Scoping
             </TabsTrigger>
-            <TabsTrigger value="workbook" className="flex items-center space-x-2" disabled={!selectedSiteForWorkbook}>
-              {getTabIcon("workbook")} <span className="hidden sm:inline">Workbook</span>
+            <TabsTrigger value="sites">
+              <CaseUpper className="mr-2 h-4 w-4" />
+              Sites
             </TabsTrigger>
-            <TabsTrigger value="poc-tracker" className="flex items-center space-x-2">
-              {getTabIcon("poc-tracker")} <span className="hidden sm:inline">POC Tracker</span>
+            <TabsTrigger value="library">
+              <BookCopy className="mr-2 h-4 w-4" />
+              Library
             </TabsTrigger>
-            <TabsTrigger value="architecture" className="flex items-center space-x-2">
-              {getTabIcon("architecture")} <span className="hidden sm:inline">Architecture</span>
-            </TabsTrigger>
-            <TabsTrigger value="reports" className="flex items-center space-x-2">
-              {getTabIcon("reports")} <span className="hidden sm:inline">Reports</span>
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center space-x-2">
-              {getTabIcon("settings")} <span className="hidden sm:inline">Settings</span>
+            <TabsTrigger value="settings">
+              <Settings className="mr-2 h-4 w-4" />
+              Settings
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview" className="space-y-6">
-            <ProgressDashboard sites={sites} />
+          <TabsContent value="dashboard" className="mt-4">
+            {stats && <ProgressDashboard stats={stats} />}
           </TabsContent>
 
-          <TabsContent value="sites" className="space-y-6">
-            <SiteTable
-              sites={sites}
-              onAddSite={handleAddSite}
-              onEditSite={handleEditSite}
-              onDeleteSite={handleDeleteSite}
-              onViewWorkbook={handleViewWorkbook}
-              onShowNotes={handleShowNotes}
+          <TabsContent value="scoping" className="mt-4">
+            <ScopingDashboard
+              library={libraryData}
+              onSiteCreate={() => {
+                loadAllData()
+                setActiveTab("sites")
+              }}
             />
           </TabsContent>
 
-          <TabsContent value="workbook" className="space-y-6">
-            {selectedSiteForWorkbook ? (
-              <SiteWorkbook site={selectedSiteForWorkbook} onUpdate={loadSites} />
-            ) : (
-              <Card>
-                <CardContent className="pt-6 text-center text-gray-500">
-                  <p>Select a site from the Master Site List to view its workbook.</p>
-                </CardContent>
-              </Card>
-            )}
+          <TabsContent value="sites" className="mt-4">
+            <SiteList sites={sites} onUpdate={loadAllData} library={libraryData} users={users} />
           </TabsContent>
 
-          <TabsContent value="poc-tracker" className="space-y-6">
-            <POCTrackerDashboard />
+          <TabsContent value="library" className="mt-4">
+            <LibraryDashboard libraryData={libraryData} onUpdate={loadAllData} />
           </TabsContent>
 
-          <TabsContent value="architecture" className="space-y-6">
-            <EnhancedArchitectureDiagram />
-          </TabsContent>
-
-          <TabsContent value="reports" className="space-y-6">
-            <ReportsDashboard />
-          </TabsContent>
-
-          <TabsContent value="settings" className="space-y-6">
-            <NotificationSettings />
+          <TabsContent value="settings" className="mt-4">
+            <SettingsDashboard users={users} onUpdate={loadAllData} />
           </TabsContent>
         </Tabs>
       </main>
-
-      {showSiteForm && (
-        <SiteForm
-          site={editingSite}
-          onSubmit={handleSiteSubmit}
-          onCancel={() => {
-            setShowSiteForm(false)
-            setEditingSite(null)
-          }}
-        />
-      )}
-
-      {showUserManagement && <UserManagement onClose={() => setShowUserManagement(false)} />}
+      <Toaster />
     </div>
   )
 }

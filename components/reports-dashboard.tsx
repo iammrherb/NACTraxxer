@@ -20,7 +20,7 @@ interface Report {
   generated_by_name: string
   generated_at: string
   download_count: number
-  file_path: string
+  file_path: string // This will be the Vercel Blob URL
 }
 
 export function ReportsDashboard() {
@@ -44,11 +44,14 @@ export function ReportsDashboard() {
   }, [])
 
   const loadReports = async () => {
+    setLoading(true)
     try {
       const response = await fetch("/api/reports")
       if (response.ok) {
         const data = await response.json()
         setReports(data)
+      } else {
+        throw new Error("Failed to fetch reports")
       }
     } catch (error) {
       console.error("Error loading reports:", error)
@@ -74,18 +77,18 @@ export function ReportsDashboard() {
       if (response.ok) {
         toast({
           title: "Success",
-          description: "Report generated successfully! You will receive an email notification.",
+          description: "Report generated successfully! It will appear in the list shortly.",
         })
         setShowGenerateDialog(false)
-        loadReports()
+        setTimeout(loadReports, 1000)
       } else {
-        let errorMessage = "Failed to generate report"
-        const errorText = await response.text()
+        let errorMessage = "An unknown error occurred."
         try {
-          const errorData = JSON.parse(errorText)
-          errorMessage = errorData.error || errorMessage
+          const errorData = await response.json()
+          errorMessage = errorData.error || "Failed to generate report."
         } catch (jsonError) {
-          errorMessage = errorText || errorMessage
+          const textError = await response.text()
+          errorMessage = textError || "Failed to generate report due to a server error."
         }
         throw new Error(errorMessage)
       }
@@ -93,7 +96,7 @@ export function ReportsDashboard() {
       console.error("Report generation error:", error)
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "An unknown error occurred",
+        description: error instanceof Error ? error.message : "Failed to generate report",
         variant: "destructive",
       })
     } finally {
@@ -101,31 +104,14 @@ export function ReportsDashboard() {
     }
   }
 
-  const downloadReport = async (reportId: number, filename: string) => {
-    try {
-      const response = await fetch(`/api/reports/${reportId}/download`)
-      if (response.ok) {
-        const blob = await response.blob()
-        const url = window.URL.createObjectURL(blob)
-        const a = document.createElement("a")
-        a.href = url
-        a.download = filename
-        document.body.appendChild(a)
-        a.click()
-        a.remove()
-        window.URL.revokeObjectURL(url)
-      } else {
-        const errorText = await response.text()
-        throw new Error(errorText || "Failed to download report")
-      }
-    } catch (error) {
-      console.error("Download error:", error)
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to download report",
-        variant: "destructive",
-      })
-    }
+  const downloadReport = (reportUrl: string, filename: string) => {
+    const link = document.createElement("a")
+    link.href = reportUrl
+    link.target = "_blank"
+    link.download = filename
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
   }
 
   const getReportTypeLabel = (type: string) => {
@@ -141,18 +127,17 @@ export function ReportsDashboard() {
 
   const getReportTypeColor = (type: string) => {
     const colors = {
-      site_summary: "bg-blue-100 text-blue-800",
-      progress_report: "bg-green-100 text-green-800",
-      deployment_status: "bg-orange-100 text-orange-800",
-      user_activity: "bg-purple-100 text-purple-800",
-      custom: "bg-gray-100 text-gray-800",
+      site_summary: "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300",
+      progress_report: "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300",
+      deployment_status: "bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300",
+      user_activity: "bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300",
+      custom: "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300",
     }
     return colors[type] || colors.custom
   }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold">Reports Dashboard</h2>
@@ -164,7 +149,6 @@ export function ReportsDashboard() {
         </Button>
       </div>
 
-      {/* Reports List */}
       <Card>
         <CardHeader>
           <CardTitle>Generated Reports</CardTitle>
@@ -186,26 +170,28 @@ export function ReportsDashboard() {
                     <FileText className="h-8 w-8 text-gray-400" />
                     <div>
                       <p className="font-medium">{report.title}</p>
-                      <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                        <Badge className={getReportTypeColor(report.report_type)}>
+                      <div className="flex items-center flex-wrap gap-x-2 text-sm text-muted-foreground">
+                        <Badge variant="outline" className={getReportTypeColor(report.report_type)}>
                           {getReportTypeLabel(report.report_type)}
                         </Badge>
-                        <span>•</span>
+                        <span className="hidden sm:inline">•</span>
                         <div className="flex items-center">
                           <User className="h-3 w-3 mr-1" />
                           {report.generated_by_name}
                         </div>
-                        <span>•</span>
+                        <span className="hidden sm:inline">•</span>
                         <div className="flex items-center">
                           <Calendar className="h-3 w-3 mr-1" />
                           {new Date(report.generated_at).toLocaleDateString()}
                         </div>
-                        <span>•</span>
-                        <span>{report.download_count} downloads</span>
                       </div>
                     </div>
                   </div>
-                  <Button size="sm" variant="outline" onClick={() => downloadReport(report.id, `${report.title}.pdf`)}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => downloadReport(report.file_path, `${report.title}.pdf`)}
+                  >
                     <Download className="h-4 w-4 mr-2" />
                     Download
                   </Button>
@@ -216,21 +202,20 @@ export function ReportsDashboard() {
         </CardContent>
       </Card>
 
-      {/* Generate Report Dialog */}
       <Dialog open={showGenerateDialog} onOpenChange={setShowGenerateDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Generate New Report</DialogTitle>
           </DialogHeader>
-          <div className="space-y-6">
+          <div className="space-y-6 py-4">
             <div>
               <Label htmlFor="reportType">Report Type</Label>
               <Select
                 value={reportParams.reportType}
                 onValueChange={(value) => setReportParams((prev) => ({ ...prev, reportType: value as any }))}
               >
-                <SelectTrigger>
-                  <SelectValue />
+                <SelectTrigger id="reportType">
+                  <SelectValue placeholder="Select a report type" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="site_summary">Site Summary Report</SelectItem>
@@ -287,7 +272,7 @@ export function ReportsDashboard() {
               <Label htmlFor="includeCharts">Include charts and visualizations</Label>
             </div>
 
-            <div className="flex justify-end space-x-2">
+            <div className="flex justify-end space-x-2 pt-4">
               <Button variant="outline" onClick={() => setShowGenerateDialog(false)}>
                 Cancel
               </Button>
