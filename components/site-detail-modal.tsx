@@ -21,7 +21,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { toast } from "./ui/use-toast"
 import * as api from "@/lib/api"
-import type { Site, User, UseCase, TestCase, SiteTestCaseStatus } from "@/lib/database"
+import type { Site, DatabaseUser as User, UseCase, TestCase, SiteTestCaseStatus } from "@/lib/database"
 
 interface SiteDetailModalProps {
   isOpen: boolean
@@ -37,7 +37,7 @@ const MultiSelectGrid = ({ title, options, selectedIds, onSelectionChange }: any
     <Label className="font-semibold">{title}</Label>
     <ScrollArea className="h-48 mt-2 border rounded p-3">
       <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-        {options.map((option: any) => (
+        {(options || []).map((option: any) => (
           <div key={option.id} className="flex items-center space-x-2">
             <Checkbox
               id={`${title}-${option.id}`}
@@ -120,15 +120,16 @@ export function SiteDetailModal({ isOpen, onClose, site, onUpdate, library, user
         </DialogHeader>
         <div className="max-h-[70vh] overflow-hidden">
           <Tabs defaultValue="details">
-            <TabsList>
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="details">Details</TabsTrigger>
-              <TabsTrigger value="team_vendors">Team & Vendors</TabsTrigger>
+              <TabsTrigger value="team">Team</TabsTrigger>
+              <TabsTrigger value="vendors">Vendors</TabsTrigger>
               <TabsTrigger value="use_cases">Use Cases</TabsTrigger>
               <TabsTrigger value="test_plan">Test Plan</TabsTrigger>
             </TabsList>
             <ScrollArea className="h-[60vh] p-1">
               <TabsContent value="details" className="p-4 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   <div>
                     <Label>Site Name</Label>
                     <Input
@@ -154,6 +155,14 @@ export function SiteDetailModal({ isOpen, onClose, site, onUpdate, library, user
                     </Select>
                   </div>
                   <div>
+                    <Label>Deployment Phase</Label>
+                    <Input
+                      type="number"
+                      value={editedSite.phase}
+                      onChange={(e) => setEditedSite((p) => ({ ...p, phase: Number.parseInt(e.target.value) || 1 }))}
+                    />
+                  </div>
+                  <div>
                     <Label>Go-Live Date</Label>
                     <Input
                       type="date"
@@ -171,20 +180,61 @@ export function SiteDetailModal({ isOpen, onClose, site, onUpdate, library, user
                       }
                     />
                   </div>
+                  <div>
+                    <Label>Industry</Label>
+                    <Input
+                      value={editedSite.industry || ""}
+                      onChange={(e) => setEditedSite((p) => ({ ...p, industry: e.target.value }))}
+                    />
+                  </div>
                 </div>
               </TabsContent>
-              <TabsContent value="team_vendors" className="p-4 grid grid-cols-2 gap-6">
+              <TabsContent value="team" className="p-4 grid grid-cols-2 gap-6">
+                <div>
+                  <Label>Project Manager</Label>
+                  <Select
+                    value={String(editedSite.project_manager_id)}
+                    onValueChange={(v) => setEditedSite((p) => ({ ...p, project_manager_id: Number(v) }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a Project Manager" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {users
+                        .filter((u) => u.user_type === "project_manager")
+                        .map((pm) => (
+                          <SelectItem key={pm.id} value={String(pm.id)}>
+                            {pm.name}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <MultiSelectGrid
                   title="Technical Owners"
                   options={users.filter((u) => u.user_type === "technical_owner")}
                   selectedIds={editedSite.technical_owner_ids || []}
                   onSelectionChange={(ids: number[]) => setEditedSite((p) => ({ ...p, technical_owner_ids: ids }))}
                 />
+              </TabsContent>
+              <TabsContent value="vendors" className="p-4 grid grid-cols-3 gap-6">
                 <MultiSelectGrid
                   title="Wired Vendors"
                   options={library.wiredVendors}
                   selectedIds={editedSite.vendor_ids || []}
                   onSelectionChange={(ids: number[]) => setEditedSite((p) => ({ ...p, vendor_ids: ids }))}
+                />
+                <MultiSelectGrid
+                  title="Wireless Vendors"
+                  options={library.wirelessVendors}
+                  selectedIds={editedSite.vendor_ids || []}
+                  onSelectionChange={(ids: number[]) => setEditedSite((p) => ({ ...p, vendor_ids: ids }))}
+                />
+                <MultiSelectGrid
+                  title="Firewall Vendors"
+                  options={library.firewallVendors}
+                  selectedIds={editedSite.firewall_vendor_ids || []}
+                  onSelectionChange={(ids: number[]) => setEditedSite((p) => ({ ...p, firewall_vendor_ids: ids }))}
                 />
                 <MultiSelectGrid
                   title="IDP Vendors"
@@ -197,6 +247,12 @@ export function SiteDetailModal({ isOpen, onClose, site, onUpdate, library, user
                   options={library.edrXdrVendors}
                   selectedIds={editedSite.edr_xdr_vendor_ids || []}
                   onSelectionChange={(ids: number[]) => setEditedSite((p) => ({ ...p, edr_xdr_vendor_ids: ids }))}
+                />
+                <MultiSelectGrid
+                  title="MDM Vendors"
+                  options={library.mdmVendors}
+                  selectedIds={editedSite.mdm_vendor_ids || []}
+                  onSelectionChange={(ids: number[]) => setEditedSite((p) => ({ ...p, mdm_vendor_ids: ids }))}
                 />
               </TabsContent>
               <TabsContent value="use_cases" className="p-4">

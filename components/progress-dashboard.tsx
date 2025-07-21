@@ -6,20 +6,79 @@ import { Progress } from "@/components/ui/progress"
 import { ChartContainer } from "@/components/ui/chart"
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts"
 import type { SiteStats } from "@/lib/database"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface ProgressDashboardProps {
-  stats: SiteStats
+  stats: SiteStats | null
 }
 
+const DashboardSkeleton = () => (
+  <div className="space-y-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {[...Array(4)].map((_, i) => (
+        <Card key={i}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <Skeleton className="h-4 w-24" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-7 w-12" />
+            <Skeleton className="h-3 w-32 mt-2" />
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+    <Card>
+      <CardHeader>
+        <Skeleton className="h-6 w-48" />
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+      </CardContent>
+    </Card>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-6 w-40" />
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-[300px] w-full" />
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-6 w-40" />
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-[300px] w-full" />
+        </CardContent>
+      </Card>
+    </div>
+    <Card>
+      <CardHeader>
+        <Skeleton className="h-6 w-48" />
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {[...Array(5)].map((_, i) => (
+            <Skeleton key={i} className="h-10 w-full" />
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  </div>
+)
+
 export function ProgressDashboard({ stats }: ProgressDashboardProps) {
-  // Safely access the sites array from the stats object.
-  const sites = stats.sites || []
+  const sites = stats?.sites || []
 
   const statusData = [
-    { name: "Complete", value: stats.completed_sites, color: "#10b981" },
-    { name: "In Progress", value: stats.in_progress_sites, color: "#3b82f6" },
-    { name: "Planned", value: stats.planned_sites, color: "#6b7280" },
-    { name: "Delayed", value: stats.delayed_sites, color: "#ef4444" },
+    { name: "Complete", value: stats?.completed_sites, color: "#10b981" },
+    { name: "In Progress", value: stats?.in_progress_sites, color: "#3b82f6" },
+    { name: "Planned", value: stats?.planned_sites, color: "#6b7280" },
+    { name: "Delayed", value: stats?.delayed_sites, color: "#ef4444" },
   ]
 
   const regionData = useMemo(() => {
@@ -56,6 +115,10 @@ export function ProgressDashboard({ stats }: ProgressDashboardProps) {
       completed: sites.filter((site) => `Phase ${site.phase}` === phase && site.status === "Complete").length,
     }))
   }, [sites])
+
+  if (!stats) {
+    return <DashboardSkeleton />
+  }
 
   return (
     <div className="space-y-6">

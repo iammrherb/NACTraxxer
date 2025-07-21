@@ -18,6 +18,30 @@ export async function testDatabaseConnection() {
   }
 }
 
+export interface ScopingQuestionnaire {
+  id: string
+  organizationName: string
+  totalUsers: number
+  siteCount: number // New field for bulk creation
+  country: string
+  region: string
+  industry: string
+  projectGoals: string[]
+  legacySystems: { name: string }[]
+  idpVendors: string[]
+  mfaVendors: string[]
+  wiredVendors: string[]
+  wirelessVendors: string[]
+  mdmVendors: string[]
+  edrVendors: string[]
+  siemVendors: string[]
+  firewallVendors: string[]
+  vpnVendors: string[]
+  created_at: string
+  updated_at: string
+  status: "Draft" | "Completed"
+}
+
 export interface BaseVendor {
   id: number
   name: string
@@ -25,7 +49,7 @@ export interface BaseVendor {
 }
 
 export interface Vendor extends BaseVendor {
-  type: "wired" | "wireless"
+  type: "wired" | "wireless" | "firewall" | "vpn" | "edr-xdr" | "siem" | "idp" | "mfa" | "mdm"
   created_at?: string
 }
 
@@ -102,7 +126,7 @@ export interface SiteTask extends Task {
   site_task_id: string
 }
 
-export interface User {
+export interface DatabaseUser {
   id: number
   name: string
   email: string
@@ -192,13 +216,13 @@ export interface SiteStats {
 export interface LibraryData {
   wiredVendors: Vendor[]
   wirelessVendors: Vendor[]
-  firewallVendors: BaseVendor[]
-  vpnVendors: BaseVendor[]
-  edrXdrVendors: BaseVendor[]
-  siemVendors: BaseVendor[]
-  idpVendors: BaseVendor[]
-  mfaVendors: BaseVendor[]
-  mdmVendors: BaseVendor[]
+  firewallVendors: Vendor[]
+  vpnVendors: Vendor[]
+  edrXdrVendors: Vendor[]
+  siemVendors: Vendor[]
+  idpVendors: Vendor[]
+  mfaVendors: Vendor[]
+  mdmVendors: Vendor[]
   deviceTypes: DeviceType[]
   checklistItems: ChecklistItem[]
   useCases: UseCase[]

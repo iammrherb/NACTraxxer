@@ -51,8 +51,7 @@ export function UserManagement({
       onCreateUser(formData)
     }
 
-    setFormData({ name: "", email: "", role: "", user_type: activeTab })
-    setEditingUser(null)
+    resetForm()
   }
 
   const handleEdit = (user: DatabaseUser) => {
@@ -76,6 +75,18 @@ export function UserManagement({
     setEditingUser(null)
   }
 
+  const technicalOwnerRoles = [
+    "Network Engineer",
+    "Security Engineer",
+    "System Administrator",
+    "IT Manager",
+    "Security Architect",
+    "Cloud Engineer",
+    "DevOps Engineer",
+  ]
+
+  const projectManagerRoles = ["Project Manager", "Senior Project Manager", "Program Manager", "Project Coordinator"]
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -84,7 +95,6 @@ export function UserManagement({
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Tab Navigation */}
           <div className="flex space-x-1 bg-muted p-1 rounded-lg">
             <button
               onClick={() => {
@@ -114,7 +124,6 @@ export function UserManagement({
             </button>
           </div>
 
-          {/* Add/Edit Form */}
           <Card>
             <CardHeader>
               <CardTitle>
@@ -153,21 +162,11 @@ export function UserManagement({
                       <SelectValue placeholder="Select Role" />
                     </SelectTrigger>
                     <SelectContent>
-                      {activeTab === "project_manager" ? (
-                        <>
-                          <SelectItem value="Project Manager">Project Manager</SelectItem>
-                          <SelectItem value="Senior Project Manager">Senior Project Manager</SelectItem>
-                          <SelectItem value="Lead Project Manager">Lead Project Manager</SelectItem>
-                        </>
-                      ) : (
-                        <>
-                          <SelectItem value="Network Administrator">Network Administrator</SelectItem>
-                          <SelectItem value="Security Engineer">Security Engineer</SelectItem>
-                          <SelectItem value="Network Engineer">Network Engineer</SelectItem>
-                          <SelectItem value="System Administrator">System Administrator</SelectItem>
-                          <SelectItem value="IT Manager">IT Manager</SelectItem>
-                        </>
-                      )}
+                      {(activeTab === "project_manager" ? projectManagerRoles : technicalOwnerRoles).map((role) => (
+                        <SelectItem key={role} value={role}>
+                          {role}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -186,7 +185,6 @@ export function UserManagement({
             </CardContent>
           </Card>
 
-          {/* User List */}
           <Card>
             <CardHeader>
               <CardTitle>{activeTab === "project_manager" ? "Project Managers" : "Technical Owners"}</CardTitle>

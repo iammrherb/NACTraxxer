@@ -1,8 +1,6 @@
 "use client"
-
-import type React from "react"
 import { useState } from "react"
-import { Moon, Sun, Users, Palette, Upload } from "lucide-react"
+import { Moon, Sun, Users, Palette } from "lucide-react"
 import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
@@ -16,16 +14,8 @@ export function Header({ onManageUsers }: HeaderProps) {
   const { theme, setTheme } = useTheme()
   const [showThemeOptions, setShowThemeOptions] = useState(false)
 
-  const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file) {
-      console.log("Logo uploaded:", file.name)
-    }
-  }
-
   return (
     <header className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white shadow-2xl relative overflow-hidden border-b-4 border-blue-500">
-      {/* Animated background elements with better contrast */}
       <div className="absolute inset-0 opacity-20">
         <div className="absolute top-0 left-0 w-32 h-32 bg-blue-400 rounded-full animate-pulse blur-xl"></div>
         <div className="absolute top-10 right-20 w-16 h-16 bg-green-400 rounded-full animate-bounce delay-1000 blur-lg"></div>
@@ -33,7 +23,6 @@ export function Header({ onManageUsers }: HeaderProps) {
         <div className="absolute top-1/2 left-1/3 w-20 h-20 bg-cyan-400 rounded-full animate-ping delay-2000 blur-lg"></div>
       </div>
 
-      {/* Grid pattern overlay for texture */}
       <div
         className="absolute inset-0 opacity-5"
         style={{
@@ -41,27 +30,24 @@ export function Header({ onManageUsers }: HeaderProps) {
         }}
       ></div>
 
-      <div className="max-w-7xl mx-auto px-4 py-6 relative z-10">
+      <div className="max-w-full mx-auto px-6 py-4 relative z-10">
         <div className="flex items-center justify-between">
-          {/* Logo Section with enhanced visibility */}
-          <div className="flex items-center space-x-8">
+          <div className="flex items-center space-x-6">
             <div className="flex items-center group">
-              <div className="relative bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/20 shadow-2xl">
+              <div className="relative bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/20 shadow-2xl animate-logo-in">
                 <Image
-                  src="https://www.portnox.com/wp-content/uploads/2021/03/Portnotx_Logo_Color-768x193.png"
+                  src="https://www.portnox.com/wp-content/uploads/2023/07/Portnox-Logo-White-1.svg"
                   alt="Portnox Logo"
-                  width={200}
-                  height={50}
-                  className="h-14 w-auto transition-all duration-300 group-hover:scale-105 drop-shadow-2xl filter brightness-110"
+                  width={240}
+                  height={60}
+                  className="h-20 w-auto transition-all duration-300 group-hover:scale-105 drop-shadow-[0_4px_10px_rgba(255,255,255,0.25)]"
                   priority
                 />
-                {/* Enhanced glow effect */}
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-400 via-green-400 to-blue-400 opacity-0 group-hover:opacity-30 transition-opacity duration-500 rounded-xl blur-md -z-10"></div>
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-green-500 opacity-20 rounded-xl animate-pulse"></div>
               </div>
 
-              {/* Enhanced animated text with better contrast */}
-              <div className="ml-6 hidden lg:block">
+              <div className="ml-6">
                 <div className="text-xl font-bold bg-gradient-to-r from-blue-200 via-white to-green-200 bg-clip-text text-transparent animate-pulse drop-shadow-lg">
                   Network Access Control
                 </div>
@@ -70,76 +56,47 @@ export function Header({ onManageUsers }: HeaderProps) {
                 </div>
               </div>
             </div>
-
-            <div className="h-12 w-px bg-gradient-to-b from-transparent via-white/40 to-transparent" />
-
-            <div className="bg-white/15 backdrop-blur-sm rounded-lg p-3 border border-white/30 shadow-xl">
-              <Image
-                src="/placeholder.svg?height=40&width=120&text=Customer"
-                alt="Customer Logo"
-                width={120}
-                height={40}
-                className="h-10 w-auto opacity-90 hover:opacity-100 transition-opacity duration-300"
-              />
-            </div>
           </div>
 
-          {/* Title with enhanced visibility */}
-          <div className="text-center hidden md:block">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-white via-blue-100 to-white bg-clip-text text-transparent drop-shadow-lg">
+          <div className="text-center hidden lg:block group">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-white via-blue-100 to-white bg-clip-text text-transparent drop-shadow-lg transition-all duration-300 ease-in-out group-hover:scale-105 group-hover:drop-shadow-xl">
               Master Site Deployment Plan
             </h1>
-            <div className="text-sm text-blue-100 animate-fade-in font-medium tracking-wide drop-shadow-md mt-1">
+            <div className="text-base text-blue-100 animate-fade-in font-medium tracking-wide drop-shadow-md mt-1 transition-all duration-300 ease-in-out group-hover:text-blue-50 group-hover:tracking-wider">
               Deployment & Use Case Tracker
             </div>
           </div>
 
-          {/* Controls with enhanced visibility */}
           <div className="flex items-center space-x-3">
-            {/* Logo Upload */}
-            <div className="relative">
-              <input type="file" id="logo-upload" accept="image/*" onChange={handleLogoUpload} className="hidden" />
-              <label
-                htmlFor="logo-upload"
-                className="flex items-center space-x-2 bg-white/15 hover:bg-white/25 px-4 py-2 rounded-lg cursor-pointer transition-all duration-300 backdrop-blur-sm hover:scale-105 border border-white/20 shadow-lg"
-              >
-                <Upload className="h-4 w-4 text-white drop-shadow-sm" />
-                <span className="text-sm hidden sm:inline text-white font-medium">Change Logo</span>
-              </label>
-            </div>
-
-            {/* Theme Toggle */}
             <div className="flex items-center space-x-2 bg-white/15 rounded-full px-4 py-2 backdrop-blur-sm border border-white/20 shadow-lg">
-              <Sun className="h-4 w-4 transition-transform duration-300 hover:rotate-180 text-yellow-200 drop-shadow-sm" />
+              <Sun className="h-5 w-5 transition-transform duration-300 hover:rotate-180 text-yellow-200 drop-shadow-sm" />
               <Switch
                 checked={theme === "dark"}
                 onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
                 className="data-[state=checked]:bg-blue-500"
               />
-              <Moon className="h-4 w-4 transition-transform duration-300 hover:rotate-12 text-blue-200 drop-shadow-sm" />
+              <Moon className="h-5 w-5 transition-transform duration-300 hover:rotate-12 text-blue-200 drop-shadow-sm" />
             </div>
 
-            {/* Manage Users */}
             <Button
               variant="ghost"
               size="sm"
               onClick={onManageUsers}
-              className="bg-white/15 hover:bg-white/25 text-white transition-all duration-300 hover:scale-105 backdrop-blur-sm border border-white/20 shadow-lg"
+              className="bg-white/15 hover:bg-white/25 text-white transition-all duration-300 hover:scale-105 backdrop-blur-sm border border-white/20 shadow-lg px-4 py-2 h-auto"
             >
-              <Users className="h-4 w-4 mr-2 drop-shadow-sm" />
-              <span className="hidden sm:inline font-medium">Manage Users</span>
+              <Users className="h-5 w-5 mr-2 drop-shadow-sm" />
+              <span className="font-medium">Manage Users</span>
             </Button>
 
-            {/* Theme Customization */}
             <div className="relative">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowThemeOptions(!showThemeOptions)}
-                className="bg-white/15 hover:bg-white/25 text-white transition-all duration-300 hover:scale-105 backdrop-blur-sm border border-white/20 shadow-lg"
+                className="bg-white/15 hover:bg-white/25 text-white transition-all duration-300 hover:scale-105 backdrop-blur-sm border border-white/20 shadow-lg px-4 py-2 h-auto"
               >
-                <Palette className="h-4 w-4 mr-2 drop-shadow-sm" />
-                <span className="hidden sm:inline font-medium">Customize</span>
+                <Palette className="h-5 w-5 mr-2 drop-shadow-sm" />
+                <span className="font-medium">Customize</span>
               </Button>
 
               {showThemeOptions && (
@@ -187,21 +144,36 @@ export function Header({ onManageUsers }: HeaderProps) {
       </div>
 
       <style jsx>{`
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-            transform: translateY(-10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        .animate-fade-in {
-          animation: fade-in 0.6s ease-out;
-        }
-      `}</style>
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .animate-fade-in {
+    animation: fade-in 0.6s ease-out;
+  }
+
+  @keyframes logo-in {
+    from {
+      opacity: 0;
+      transform: translateX(-20px) scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+    }
+  }
+
+  .animate-logo-in {
+    animation: logo-in 0.8s ease-out forwards;
+  }
+`}</style>
     </header>
   )
 }

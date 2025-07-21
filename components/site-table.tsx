@@ -1,13 +1,13 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { Search, Download, Plus, Edit, Book, StickyNote, ArrowUpDown } from "lucide-react"
+import { Search, Download, Plus, Edit, Book, StickyNote, ArrowUpDown, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
 import type { Site } from "@/lib/database"
 
 interface SiteTableProps {
@@ -17,15 +17,25 @@ interface SiteTableProps {
   onViewWorkbook: (site: Site) => void
   onShowNotes: (site: Site) => void
   onSelectSite?: (site: Site) => void
+  onBulkEdit: (siteIds: string[]) => void
 }
 
-export function SiteTable({ sites, onAddSite, onEditSite, onViewWorkbook, onShowNotes, onSelectSite }: SiteTableProps) {
+export function SiteTable({
+  sites,
+  onAddSite,
+  onEditSite,
+  onViewWorkbook,
+  onShowNotes,
+  onSelectSite,
+  onBulkEdit,
+}: SiteTableProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [regionFilter, setRegionFilter] = useState("All Regions")
   const [priorityFilter, setPriorityFilter] = useState("All Priorities")
   const [statusFilter, setStatusFilter] = useState("All Statuses")
   const [sortField, setSortField] = useState<keyof Site>("created_at")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc")
+  const [selectedSiteIds, setSelectedSiteIds] = useState<string[]>([])
 
   const filteredAndSortedSites = useMemo(() => {
     const filtered = sites.filter((site) => {
@@ -64,6 +74,22 @@ export function SiteTable({ sites, onAddSite, onEditSite, onViewWorkbook, onShow
     } else {
       setSortField(field)
       setSortDirection("asc")
+    }
+  }
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedSiteIds(filteredAndSortedSites.map((s) => s.id))
+    } else {
+      setSelectedSiteIds([])
+    }
+  }
+
+  const handleSelectRow = (siteId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedSiteIds((prev) => [...prev, siteId])
+    } else {
+      setSelectedSiteIds((prev) => prev.filter((id) => id !== siteId))
     }
   }
 
@@ -139,10 +165,6 @@ export function SiteTable({ sites, onAddSite, onEditSite, onViewWorkbook, onShow
     }
   }
 
-  const handleSiteClick = (site: Site) => {
-    onSelectSite?.(site)
-  }
-
   return (
     <Card>
       <CardHeader>
@@ -204,7 +226,7 @@ export function SiteTable({ sites, onAddSite, onEditSite, onViewWorkbook, onShow
           <div className="flex gap-2">
             <Button onClick={exportToCSV} variant="outline">
               <Download className="h-4 w-4 mr-2" />
-              Export CSV
+              Export
             </Button>
             <Button onClick={onAddSite}>
               <Plus className="h-4 w-4 mr-2" />
@@ -213,11 +235,33 @@ export function SiteTable({ sites, onAddSite, onEditSite, onViewWorkbook, onShow
           </div>
         </div>
 
+        {/* Bulk Actions Bar */}
+        {selectedSiteIds.length > 0 && (
+          <div className="flex items-center justify-between p-3 mb-4 bg-muted rounded-lg">
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" onClick={() => setSelectedSiteIds([])}>
+                <X className="h-4 w-4" />
+              </Button>
+              <span className="font-medium">{selectedSiteIds.length} sites selected</span>
+            </div>
+            <Button onClick={() => onBulkEdit(selectedSiteIds)}>
+              <Edit className="mr-2 h-4 w-4" />
+              Bulk Edit
+            </Button>
+          </div>
+        )}
+
         {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
               <tr className="border-b">
+                <th className="p-3">
+                  <Checkbox
+                    checked={selectedSiteIds.length > 0 && selectedSiteIds.length === filteredAndSortedSites.length}
+                    onCheckedChange={handleSelectAll}
+                  />
+                </th>
                 <th className="text-left p-3 font-semibold">
                   <Button
                     variant="ghost"
@@ -238,20 +282,6 @@ export function SiteTable({ sites, onAddSite, onEditSite, onViewWorkbook, onShow
                     Site Name <ArrowUpDown className="ml-1 h-3 w-3" />
                   </Button>
                 </th>
-                <th className="text-left p-3 font-semibold">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleSort("region")}
-                    className="h-auto p-0 font-semibold"
-                  >
-                    Region <ArrowUpDown className="ml-1 h-3 w-3" />
-                  </Button>
-                </th>
-                <th className="text-left p-3 font-semibold">Priority</th>
-                <th className="text-left p-3 font-semibold">Phase</th>
-                <th className="text-left p-3 font-semibold">Users</th>
-                <th className="text-left p-3 font-semibold">Project Manager</th>
                 <th className="text-left p-3 font-semibold">Status</th>
                 <th className="text-left p-3 font-semibold">Completion</th>
                 <th className="text-left p-3 font-semibold">Actions</th>
@@ -259,20 +289,15 @@ export function SiteTable({ sites, onAddSite, onEditSite, onViewWorkbook, onShow
             </thead>
             <tbody>
               {filteredAndSortedSites.map((site) => (
-                <tr
-                  key={site.id}
-                  className="border-b hover:bg-muted/50 cursor-pointer"
-                  onClick={() => handleSiteClick(site)}
-                >
+                <tr key={site.id} className="border-b hover:bg-muted/50">
+                  <td className="p-3">
+                    <Checkbox
+                      checked={selectedSiteIds.includes(site.id)}
+                      onCheckedChange={(checked) => handleSelectRow(site.id, checked as boolean)}
+                    />
+                  </td>
                   <td className="p-3 font-mono text-sm">{site.id}</td>
                   <td className="p-3 font-medium">{site.name}</td>
-                  <td className="p-3">{site.region}</td>
-                  <td className="p-3">
-                    <Badge className={getPriorityColor(site.priority)}>{site.priority}</Badge>
-                  </td>
-                  <td className="p-3">{site.phase}</td>
-                  <td className="p-3">{site.users_count.toLocaleString()}</td>
-                  <td className="p-3">{site.project_manager_name}</td>
                   <td className="p-3">
                     <div className="flex items-center gap-2">
                       <div className={`w-2 h-2 rounded-full ${getStatusColor(site.status)}`} />

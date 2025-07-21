@@ -1,7 +1,14 @@
 "use client"
 
-import { useState } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { useState, useEffect } from "react"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -10,20 +17,42 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { mockCountries } from "@/lib/library-data"
-import type { LibraryData, Vendor, BaseVendor } from "@/lib/database"
+import type { LibraryData, Vendor, ScopingQuestionnaire as ScopingQuestionnaireType } from "@/lib/database"
 
 interface ScopingQuestionnaireProps {
   isOpen: boolean
   onClose: () => void
   onSave: (data: any) => void
   library: LibraryData
+  questionnaire: ScopingQuestionnaireType | null
 }
 
 interface CheckboxGridProps {
   title: string
-  options: (Vendor | BaseVendor)[] | undefined
+  options: (Vendor | { id: number; name: string })[] | undefined
   selected: string[]
   onSelectionChange: (newSelection: string[]) => void
+}
+
+const initialFormData = {
+  organizationName: "",
+  totalUsers: 1000,
+  siteCount: 1,
+  country: "United States",
+  region: "North America",
+  industry: "technology",
+  projectGoals: [],
+  legacySystems: [],
+  idpVendors: [],
+  mfaVendors: [],
+  wiredVendors: [],
+  wirelessVendors: [],
+  mdmVendors: [],
+  edrVendors: [],
+  siemVendors: [],
+  firewallVendors: [],
+  vpnVendors: [],
+  status: "Draft",
 }
 
 const CheckboxGrid = ({ title, options, selected, onSelectionChange }: CheckboxGridProps) => (
@@ -51,28 +80,19 @@ const CheckboxGrid = ({ title, options, selected, onSelectionChange }: CheckboxG
   </div>
 )
 
-export function ScopingQuestionnaire({ isOpen, onClose, onSave, library }: ScopingQuestionnaireProps) {
-  const [formData, setFormData] = useState<any>({
-    organizationName: "",
-    totalUsers: 1000,
-    country: "United States",
-    region: "North America",
-    industry: "technology",
-    projectGoals: [],
-    legacySystems: [],
-    idpVendors: [],
-    mfaVendors: [],
-    wiredVendors: [],
-    wirelessVendors: [],
-    mdmVendors: [],
-    edrVendors: [],
-    siemVendors: [],
-    firewallVendors: [],
-    vpnVendors: [],
-  })
+export function ScopingQuestionnaire({ isOpen, onClose, onSave, library, questionnaire }: ScopingQuestionnaireProps) {
+  const [formData, setFormData] = useState<any>(initialFormData)
 
-  const handleSubmit = () => {
-    onSave(formData)
+  useEffect(() => {
+    if (questionnaire) {
+      setFormData(questionnaire)
+    } else {
+      setFormData(initialFormData)
+    }
+  }, [questionnaire, isOpen])
+
+  const handleSubmit = (status: "Draft" | "Completed") => {
+    onSave({ ...formData, status })
   }
 
   if (!isOpen) return null
@@ -81,7 +101,12 @@ export function ScopingQuestionnaire({ isOpen, onClose, onSave, library }: Scopi
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-5xl">
         <DialogHeader>
-          <DialogTitle>Deployment Scoping Questionnaire</DialogTitle>
+          <DialogTitle>
+            {questionnaire ? `Edit: ${questionnaire.organizationName}` : "New Deployment Scoping"}
+          </DialogTitle>
+          <DialogDescription>
+            Fill this out to automatically generate sites with pre-configured settings.
+          </DialogDescription>
         </DialogHeader>
         <ScrollArea className="max-h-[75vh] p-4">
           <Accordion type="multiple" defaultValue={["item-1"]} className="w-full">
@@ -97,7 +122,7 @@ export function ScopingQuestionnaire({ isOpen, onClose, onSave, library }: Scopi
                     />
                   </div>
                   <div>
-                    <Label>Total Users</Label>
+                    <Label>Total Users (Across All Sites)</Label>
                     <Input
                       type="number"
                       value={formData.totalUsers}
@@ -105,7 +130,16 @@ export function ScopingQuestionnaire({ isOpen, onClose, onSave, library }: Scopi
                     />
                   </div>
                   <div>
-                    <Label>Country</Label>
+                    <Label>Number of Sites to Create</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={formData.siteCount}
+                      onChange={(e) => setFormData({ ...formData, siteCount: Number.parseInt(e.target.value) || 1 })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Default Country for New Sites</Label>
                     <Select value={formData.country} onValueChange={(v) => setFormData({ ...formData, country: v })}>
                       <SelectTrigger>
                         <SelectValue />
@@ -120,7 +154,7 @@ export function ScopingQuestionnaire({ isOpen, onClose, onSave, library }: Scopi
                     </Select>
                   </div>
                   <div>
-                    <Label>Region</Label>
+                    <Label>Default Region for New Sites</Label>
                     <Select value={formData.region} onValueChange={(v) => setFormData({ ...formData, region: v })}>
                       <SelectTrigger>
                         <SelectValue />
@@ -144,6 +178,7 @@ export function ScopingQuestionnaire({ isOpen, onClose, onSave, library }: Scopi
                     { id: 4, name: "Incident Response" },
                     { id: 5, name: "IoT Security" },
                     { id: 6, name: "Guest Access" },
+                    { id: 7, name: "Secure Remote Work" },
                   ]}
                   selected={formData.projectGoals}
                   onSelectionChange={(s: any) => setFormData({ ...formData, projectGoals: s })}
@@ -218,11 +253,18 @@ export function ScopingQuestionnaire({ isOpen, onClose, onSave, library }: Scopi
             </AccordionItem>
           </Accordion>
         </ScrollArea>
-        <DialogFooter>
+        <DialogFooter className="justify-between">
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit}>Create Site from Scoping</Button>
+          <div>
+            <Button variant="secondary" onClick={() => handleSubmit("Draft")}>
+              Save as Draft
+            </Button>
+            <Button onClick={() => handleSubmit("Completed")} className="ml-2">
+              {questionnaire ? "Update & Create Sites" : "Save & Create Sites"}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
