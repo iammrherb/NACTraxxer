@@ -10,62 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { mockCountries } from "@/lib/library-data"
-import type { LibraryData, Vendor } from "@/lib/database"
-
-// This interface is aspirational and doesn't fully match the form yet.
-// It's kept for future reference as the form is built out.
-interface ScopingData {
-  // Organization Info
-  organizationName: string
-  totalUsers: number
-  country: string
-  region: string
-  industry: string
-  projectGoals: string[]
-  legacySystems: Array<{ name: string; timeline: number }>
-
-  // Network Infrastructure
-  totalSites: number
-  networkVendors: Array<{ name: string; type: string; models: string[] }>
-  switchModels: string[]
-  wirelessModels: string[]
-
-  // Identity Providers
-  identityProviders: Array<{ name: string; type: string; userCount: number }>
-  mdmSolutions: Array<{ name: string; deviceCount: number; platforms: string[] }>
-
-  // Security Solutions
-  siemSolutions: Array<{ name: string; version: string; integration: string }>
-  mdrSolutions: Array<{ name: string; vendor: string }>
-  xdrSolutions: Array<{ name: string; vendor: string }>
-  edrSolutions: Array<{ name: string; vendor: string; coverage: number }>
-
-  // Authentication Requirements
-  authMethods: string[]
-  certificateRequirements: Array<{ type: string; validity: number; autoRenewal: boolean }>
-  guestAccessRequirements: { enabled: boolean; duration: number; sponsorship: boolean }
-  byodRequirements: { enabled: boolean; platforms: string[]; restrictions: string[] }
-
-  // Access Control Policies
-  vlanSegmentation: Array<{ name: string; purpose: string; userGroups: string[] }>
-  accessPolicies: Array<{ name: string; conditions: string[]; actions: string[] }>
-  complianceRequirements: string[]
-
-  // Risk Assessment
-  riskTolerance: "low" | "medium" | "high"
-  securityPriorities: string[]
-  complianceFrameworks: string[]
-
-  // Timeline and Budget
-  targetDeploymentDate: string
-  budgetRange: string
-  projectTimelineMonths: number
-
-  // Additional Requirements
-  highAvailabilityRequired: boolean
-  disasterRecoveryRequired: boolean
-  multiRegionDeployment: boolean
-}
+import type { LibraryData, Vendor, BaseVendor } from "@/lib/database"
 
 interface ScopingQuestionnaireProps {
   isOpen: boolean
@@ -76,7 +21,7 @@ interface ScopingQuestionnaireProps {
 
 interface CheckboxGridProps {
   title: string
-  options: Vendor[] | undefined
+  options: (Vendor | BaseVendor)[] | undefined
   selected: string[]
   onSelectionChange: (newSelection: string[]) => void
 }
@@ -181,10 +126,11 @@ export function ScopingQuestionnaire({ isOpen, onClose, onSave, library }: Scopi
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="North America">North America</SelectItem>
-                        <SelectItem value="EMEA">EMEA</SelectItem>
-                        <SelectItem value="APAC">APAC</SelectItem>
-                        <SelectItem value="LATAM">LATAM</SelectItem>
+                        {library.regions.map((r) => (
+                          <SelectItem key={r.name} value={r.name}>
+                            {r.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -192,10 +138,12 @@ export function ScopingQuestionnaire({ isOpen, onClose, onSave, library }: Scopi
                 <CheckboxGrid
                   title="Project Goals"
                   options={[
-                    { id: "1", name: "Zero Trust", type: "Goal" },
-                    { id: "2", name: "Legacy NAC Migration", type: "Goal" },
-                    { id: "3", name: "Compliance", type: "Goal" },
-                    { id: "4", name: "Incident Response", type: "Goal" },
+                    { id: 1, name: "Zero Trust" },
+                    { id: 2, name: "Legacy NAC Migration" },
+                    { id: 3, name: "Compliance" },
+                    { id: 4, name: "Incident Response" },
+                    { id: 5, name: "IoT Security" },
+                    { id: 6, name: "Guest Access" },
                   ]}
                   selected={formData.projectGoals}
                   onSelectionChange={(s: any) => setFormData({ ...formData, projectGoals: s })}
