@@ -1,32 +1,41 @@
+-- Clear existing data
+TRUNCATE TABLE site_technical_owners, sites, users RESTART IDENTITY;
+
+-- Insert sample users, avoiding conflicts if they already exist
+INSERT INTO users (id, name, email, role, avatar) VALUES
+('usr_1', 'Alex Rivera', 'alex.rivera@example.com', 'Project Manager', '/placeholder-user.jpg'),
+('usr_2', 'Samantha Chen', 'samantha.chen@example.com', 'Engineer', '/placeholder-user.jpg'),
+('usr_3', 'Marcus Wright', 'marcus.wright@example.com', 'Admin', '/placeholder-user.jpg'),
+('usr_4', 'John Smith', 'john.smith@example.com', 'Engineer', '/placeholder-user.jpg'),
+('usr_5', 'Priya Sharma', 'priya.sharma@example.com', 'Project Manager', '/placeholder-user.jpg'),
+('usr_6', 'David Lee', 'david.lee@example.com', 'Engineer', '/placeholder-user.jpg')
+ON CONFLICT (id) DO NOTHING;
+
 -- Insert sample sites data
-INSERT INTO sites (id, name, region, country, priority, phase, users_count, project_manager_id, radsec, planned_start, planned_end, status, completion_percent, notes) VALUES
-('HQ001', 'Global Headquarters', 'North America', 'USA', 'High', 1, 2500, 1, 'Native', '2025-08-01', '2025-08-15', 'In Progress', 35, 'Executive network needs priority handling. CEO office requires special consideration for seamless connectivity during international calls. Boardroom has custom AV equipment that needs network access.'),
-('DC002', 'Primary Data Center', 'North America', 'USA', 'High', 1, 150, 2, 'LRAD', '2025-08-05', '2025-08-12', 'In Progress', 65, '24/7 operation requires careful change windows. Critical services must not be disrupted. Server authentication will require special consideration.'),
-('EUR003', 'European HQ', 'EMEA', 'Germany', 'Medium', 2, 1200, 3, 'Native', '2025-09-01', '2025-09-15', 'Planned', 0, 'GDPR compliance required. Special attention to privacy notices for guest access. Works council approval may be needed for certain policies.'),
-('APAC004', 'APAC Regional Office', 'APAC', 'Singapore', 'Medium', 2, 800, 4, 'LRAD', '2025-09-10', '2025-09-25', 'Planned', 0, 'Multi-tenant building with shared infrastructure. Need to coordinate with building management for certain network changes.'),
-('SAT005', 'Satellite Office', 'North America', 'Canada', 'Low', 3, 75, 1, 'Native', '2025-10-01', '2025-10-05', 'Planned', 0, 'Limited IT support on-site. Will need remote implementation assistance. VPN connectivity may impact RADIUS traffic.'),
-('MFG006', 'Manufacturing Plant', 'LATAM', 'Mexico', 'High', 1, 450, 5, 'Native', '2025-08-15', '2025-08-30', 'Complete', 100, 'Manufacturing floor required special considerations for IoT devices. Implemented using certificates for device authentication. Project completed ahead of schedule.'),
-('RD007', 'Research & Development', 'North America', 'USA', 'High', 1, 320, 6, 'LRAD', '2025-08-03', '2025-08-20', 'In Progress', 55, 'Specialized lab equipment needs custom authentication. Research data security is a top priority. Separate network segment for classified projects.'),
-('RETAIL008', 'Flagship Retail Store', 'North America', 'USA', 'Medium', 2, 85, 3, 'Native', '2025-09-15', '2025-09-25', 'Planned', 0, 'POS systems and digital signage require special consideration. Customer guest Wi-Fi will be segmented from corporate. Peak holiday season deployment constraints.'),
-('EMEA009', 'Paris Office', 'EMEA', 'France', 'Medium', 2, 375, 5, 'Native', '2025-09-20', '2025-10-05', 'Planned', 0, 'Historic building with architectural limitations for AP placement. Local compliance requirements must be addressed.'),
-('EMEA010', 'London Office', 'EMEA', 'UK', 'High', 1, 620, 2, 'LRAD', '2025-08-10', '2025-08-28', 'Complete', 100, 'Site has high-security areas requiring special consideration. UK compliance requirements implemented successfully.'),
-('APAC011', 'Tokyo Office', 'APAC', 'Japan', 'Medium', 2, 425, 1, 'Native', '2025-09-12', '2025-09-30', 'Delayed', 0, 'Delayed due to local permitting issues. New timeline being negotiated with building management.'),
-('DC012', 'Secondary Data Center', 'APAC', 'Australia', 'High', 1, 120, 4, 'LRAD', '2025-08-05', '2025-08-25', 'Complete', 100, 'Disaster recovery site with specialized redundancy requirements. All critical systems verified and tested.');
+INSERT INTO sites (id, name, region, country, priority, phase, users_count, project_manager_id, radsec, planned_start, planned_end, status, completion_percent, notes, use_case_ids) VALUES
+('HQ001', 'Global Headquarters', 'North America', 'USA', 'High', 'In Progress', 2500, 'usr_1', 'Yes', '2025-08-01', '2025-08-15', 'In Progress', 35, 'Executive network needs priority handling.', '["uc_1", "uc_3"]'),
+('DC002', 'Primary Data Center', 'North America', 'USA', 'High', 'In Progress', 150, 'usr_1', 'Yes', '2025-08-05', '2025-08-12', 'In Progress', 65, '24/7 operation requires careful change windows.', '["uc_2"]'),
+('EUR003', 'European HQ', 'EMEA', 'Germany', 'Medium', 'Scoping', 1200, 'usr_5', 'No', '2025-09-01', '2025-09-15', 'Planning', 0, 'GDPR compliance required.', '["uc_1", "uc_4"]'),
+('APAC004', 'APAC Regional Office', 'APAC', 'Singapore', 'Medium', 'Planning', 800, 'usr_5', 'TBD', '2025-09-10', '2025-09-25', 'Planning', 0, 'Multi-tenant building with shared infrastructure.', '["uc_4"]'),
+('SAT005', 'Satellite Office', 'North America', 'Canada', 'Low', 'Planning', 75, 'usr_1', 'Yes', '2025-10-01', '2025-10-05', 'Planning', 0, 'Limited IT support on-site.', '["uc_3"]'),
+('MFG006', 'Manufacturing Plant', 'LATAM', 'Mexico', 'High', 'Complete', 450, 'usr_5', 'Yes', '2025-08-15', '2025-08-30', 'Complete', 100, 'Manufacturing floor required special considerations for IoT devices.', '["uc_1"]'),
+('RD007', 'Research & Development', 'North America', 'USA', 'High', 'In Progress', 320, 'usr_6', 'Yes', '2025-08-03', '2025-08-20', 'In Progress', 55, 'Specialized lab equipment needs custom authentication.', '["uc_2"]'),
+('RETAIL008', 'Flagship Retail Store', 'North America', 'USA', 'Medium', 'Planning', 85, 'usr_5', 'Yes', '2025-09-15', '2025-09-25', 'Planning', 0, 'POS systems and digital signage require special consideration.', '["uc_3"]'),
+('EMEA009', 'Paris Office', 'EMEA', 'France', 'Medium', 'Planning', 375, 'usr_5', 'Yes', '2025-09-20', '2025-10-05', 'Planning', 0, 'Historic building with architectural limitations for AP placement.', '["uc_4"]'),
+('EMEA010', 'London Office', 'EMEA', 'UK', 'High', 'Complete', 620, 'usr_1', 'Yes', '2025-08-10', '2025-08-28', 'Complete', 100, 'Site has high-security areas requiring special consideration.', '["uc_1"]'),
+('APAC011', 'Tokyo Office', 'APAC', 'Japan', 'Medium', 'Planning', 425, 'usr_1', 'Yes', '2025-09-12', '2025-09-30', 'Planning', 0, 'Delayed due to local permitting issues.', '["uc_3"]'),
+('DC012', 'Secondary Data Center', 'APAC', 'Australia', 'High', 'Complete', 120, 'usr_1', 'Yes', '2025-08-05', '2025-08-25', 'Complete', 100, 'Disaster recovery site with specialized redundancy requirements.', '["uc_2"]'),
+('EU001', 'European Office', 'Europe', 'Germany', 'Medium', 'Complete', 800, 'usr_5', 'Yes', '2025-05-10', '2025-06-20', 'Complete', 100, 'Completed ahead of schedule.', '["uc_1"]'),
+('AP001', 'Asia-Pacific Hub', 'APAC', 'Singapore', 'Medium', 'In Progress', 1200, 'usr_5', 'TBD', '2025-10-01', '2025-11-15', 'At Risk', 50, 'Supply chain delays for new APs.', '["uc_2", "uc_4"]')
+ON CONFLICT (id) DO NOTHING;
 
 -- Insert site technical owners relationships
 INSERT INTO site_technical_owners (site_id, user_id) VALUES
-('HQ001', 7), ('HQ001', 8),
-('DC002', 9), ('DC002', 10),
-('EUR003', 11), ('EUR003', 12),
-('APAC004', 13), ('APAC004', 14),
-('SAT005', 15),
-('MFG006', 16), ('MFG006', 17),
-('RD007', 18), ('RD007', 10),
-('RETAIL008', 15),
-('EMEA009', 12), ('EMEA009', 7),
-('EMEA010', 8), ('EMEA010', 18),
-('APAC011', 14), ('APAC011', 13),
-('DC012', 16), ('DC012', 9);
+('HQ001', 'usr_2'),
+('HQ001', 'usr_4'),
+('DC002', 'usr_6'),
+('EUR003', 'usr_2'),
+('AP001', 'usr_6');
 
 -- Insert site vendors relationships (sample data)
 INSERT INTO site_vendors (site_id, vendor_id) VALUES
@@ -41,7 +50,9 @@ INSERT INTO site_vendors (site_id, vendor_id) VALUES
 ('EMEA009', 4), ('EMEA009', 1), ('EMEA009', 15), -- HPE, Cisco wired, Aruba wireless
 ('EMEA010', 1), ('EMEA010', 2), ('EMEA010', 14), -- Cisco, Juniper wired, Cisco wireless
 ('APAC011', 1), ('APAC011', 13), ('APAC011', 14), -- Cisco wired, Allied Telesis wired, Cisco wireless
-('DC012', 1), ('DC012', 2), ('DC012', 14); -- Cisco, Juniper wired, Cisco wireless
+('DC012', 1), ('DC012', 2), ('DC012', 14), -- Cisco, Juniper wired, Cisco wireless
+('EU001', 1), ('EU001', 4), -- Cisco, HPE wired
+('AP001', 2), ('AP001', 13); -- Juniper wired, Allied Telesis wired
 
 -- Insert site device types relationships
 INSERT INTO site_device_types (site_id, device_type_id) VALUES
@@ -56,7 +67,9 @@ INSERT INTO site_device_types (site_id, device_type_id) VALUES
 ('EMEA009', 1), ('EMEA009', 2), ('EMEA009', 3), -- Windows, Apple, Mobile
 ('EMEA010', 1), ('EMEA010', 2), ('EMEA010', 3), ('EMEA010', 6), -- Windows, Apple, Mobile, BYOD
 ('APAC011', 1), ('APAC011', 2), ('APAC011', 3), -- Windows, Apple, Mobile
-('DC012', 1), ('DC012', 7), ('DC012', 4); -- Windows, Linux, IoT
+('DC012', 1), ('DC012', 7), ('DC012', 4), -- Windows, Linux, IoT
+('EU001', 1), ('EU001', 2), ('EU001', 3), -- Windows, Apple, Mobile
+('AP001', 1), ('AP001', 2), ('AP001', 3); -- Windows, Apple, Mobile
 
 -- Insert completed checklist items for sites
 INSERT INTO site_checklist (site_id, checklist_item_id, completed, completed_at) VALUES
@@ -104,4 +117,14 @@ INSERT INTO site_checklist (site_id, checklist_item_id, completed, completed_at)
 ('DC012', 6, true, '2025-08-08'), -- Switches
 ('DC012', 7, true, '2025-08-09'), -- Wireless
 ('DC012', 8, true, '2025-08-10'), -- MAB
-('DC012', 10, true, '2025-08-11'); -- Testing
+('DC012', 10, true, '2025-08-11'), -- Testing
+
+-- EU001 (Completed - 100%)
+('EU001', 1, true, '2025-06-15'), -- Intune
+('EU001', 2, true, '2025-06-16'), -- JAMF
+('EU001', 4, true, '2025-06-17'), -- Native
+
+-- AP001 (In Progress - 50%)
+('AP001', 3, true, '2025-10-05'), -- LRAD
+('AP001', 5, true, '2025-10-06'), -- RADIUS
+('AP001', 6, true, '2025-10-07'); -- Switches

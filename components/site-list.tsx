@@ -1,148 +1,131 @@
 "use client"
 
-import { useState } from "react"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
+import { useState, useEffect } from "react"
+import { getSites, getUsers } from "@/lib/api"
+import type { Site, User } from "@/lib/types"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
-import { Checkbox } from "@/components/ui/checkbox"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu"
-import { MoreHorizontal, PlusCircle, Edit } from "lucide-react"
-import type { Site, DatabaseUser } from "@/lib/database"
-import { SiteDetailModal } from "./site-detail-modal"
-import { BulkEditModal } from "./bulk-edit-modal"
-import { BulkCreateSitesModal } from "./bulk-create-sites-modal" // New import
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { MoreHorizontal, PlusCircle, FileDown, Pencil, Trash2 } from "lucide-react"
+import SiteDetailModal from "./site-detail-modal"
+import BulkCreateSitesModal from "./bulk-create-sites-modal"
+import BulkEditModal from "./bulk-edit-modal"
 
-interface SiteListProps {
-  sites: Site[]
-  users: DatabaseUser[]
-  onEdit: (site: Site) => void
-  onDelete: (id: string) => void
-  onBulkUpdate: (siteIds: string[], updates: Partial<Site>) => void
-  onBulkCreate: (count: number, prefix: string, start: number, defaults: Partial<Site>) => void
-}
-
-export function SiteList({ sites, users, onEdit, onDelete, onBulkUpdate, onBulkCreate }: SiteListProps) {
+export function SiteList() {
+  const [sites, setSites] = useState<Site[]>([])
+  const [users, setUsers] = useState<User[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [selectedSite, setSelectedSite] = useState<Site | null>(null)
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
-  const [isBulkEditModalOpen, setIsBulkEditModalOpen] = useState(false)
-  const [isBulkCreateModalOpen, setIsBulkCreateModalOpen] = useState(false) // New state
-  const [selectedRows, setSelectedRows] = useState<string[]>([])
+  const [isBulkCreateOpen, setBulkCreateOpen] = useState(false)
+  const [isBulkEditOpen, setBulkEditOpen] = useState(false)
+  const [selectedSiteIds, setSelectedSiteIds] = useState<string[]>([])
 
-  const handleViewDetails = (site: Site) => {
-    setSelectedSite(site)
-    setIsDetailModalOpen(true)
-  }
-
-  const handleSelectRow = (id: string) => {
-    setSelectedRows((prev) => (prev.includes(id) ? prev.filter((rowId) => rowId !== id) : [...prev, id]))
-  }
-
-  const handleSelectAll = (checked: boolean) => {
-    setSelectedRows(checked ? sites.map((s) => s.id) : [])
-  }
-
-  const isAllSelected = sites.length > 0 && selectedRows.length === sites.length
-
-  const statusVariant = (status: string) => {
-    switch (status) {
-      case "Complete":
-        return "success"
-      case "In Progress":
-        return "default"
-      case "Delayed":
-        return "destructive"
-      case "Planned":
-        return "secondary"
-      default:
-        return "outline"
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        setLoading(true)
+        const [sitesData, usersData] = await Promise.all([getSites(), getUsers()])
+        setSites(sitesData)
+        setUsers(usersData)
+        setError(null)
+      } catch (err: any) {
+        setError(err.message || "Failed to fetch data")
+      } finally {
+        setLoading(false)
+      }
     }
+    fetchData()
+  }, [])
+
+  const handleSiteCreated = (newSite: Site) => {
+    setSites((prevSites) => [newSite, ...prevSites])
   }
 
-  const priorityVariant = (priority: string) => {
-    switch (priority) {
-      case "High":
-        return "destructive"
-      case "Medium":
-        return "default"
-      case "Low":
-        return "secondary"
-      default:
-        return "outline"
-    }
+  const handleSitesImported = (newSites: Site[]) => {
+    setSites((prevSites) => [...newSites, ...prevSites])
+  }
+
+  const handleBulkUpdate = (updatedSites: Site[]) => {
+    setSites((prev) => prev.map((site) => updatedSites.find((us) => us.id === site.id) || site))
+    setSelectedSiteIds([])
+  }
+
+  const handleRowSelection = (siteId: string) => {
+    setSelectedSiteIds((prev) => (prev.includes(siteId) ? prev.filter((id) => id !== siteId) : [...prev, siteId]))
+  }
+
+  if (loading) {
+    return <div>Loading sites...</div>
+  }
+
+  if (error) {
+    return <div className="text-red-500">Error: {error}</div>
   }
 
   return (
-    <>
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold">Site Inventory</h2>
-        <div>
-          <Button onClick={() => setIsBulkCreateModalOpen(true)} variant="outline" className="mr-2">
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Bulk Create
-          </Button>
-          <Button onClick={() => onEdit(null as any)}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Add New Site
-          </Button>
+    <Card>
+      <CardHeader>
+        <div className="flex justify-between items-center">
+          <CardTitle>Site Inventory</CardTitle>
+          <div className="flex items-center gap-2">
+            {selectedSiteIds.length > 0 && (
+              <Button variant="outline" onClick={() => setBulkEditOpen(true)}>
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit Selected ({selectedSiteIds.length})
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => setBulkCreateOpen(true)}>
+              <FileDown className="mr-2 h-4 w-4" />
+              Bulk Import
+            </Button>
+            <Button>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Add Site
+            </Button>
+          </div>
         </div>
-      </div>
-      {selectedRows.length > 0 && (
-        <div className="mb-4 bg-muted p-2 rounded-lg flex items-center justify-between">
-          <span>{selectedRows.length} sites selected</span>
-          <Button onClick={() => setIsBulkEditModalOpen(true)}>
-            <Edit className="mr-2 h-4 w-4" />
-            Bulk Edit
-          </Button>
-        </div>
-      )}
-      <div className="rounded-md border">
+      </CardHeader>
+      <CardContent>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[40px]">
-                <Checkbox checked={isAllSelected} onCheckedChange={handleSelectAll} />
-              </TableHead>
-              <TableHead>Site ID</TableHead>
-              <TableHead>Name</TableHead>
+              <TableHead></TableHead>
+              <TableHead>Site Name</TableHead>
               <TableHead>Region</TableHead>
-              <TableHead>Country</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Priority</TableHead>
-              <TableHead>Users</TableHead>
               <TableHead>Project Manager</TableHead>
-              <TableHead className="w-[150px]">Completion</TableHead>
-              <TableHead className="w-[50px]">Actions</TableHead>
+              <TableHead>Completion</TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sites.map((site) => (
-              <TableRow key={site.id} data-state={selectedRows.includes(site.id) ? "selected" : ""}>
+              <TableRow key={site.id}>
                 <TableCell>
-                  <Checkbox checked={selectedRows.includes(site.id)} onCheckedChange={() => handleSelectRow(site.id)} />
+                  <input
+                    type="checkbox"
+                    checked={selectedSiteIds.includes(site.id)}
+                    onChange={() => handleRowSelection(site.id)}
+                  />
                 </TableCell>
-                <TableCell className="font-medium">{site.id}</TableCell>
-                <TableCell>{site.name}</TableCell>
+                <TableCell className="font-medium">{site.name}</TableCell>
                 <TableCell>{site.region}</TableCell>
-                <TableCell>{site.country}</TableCell>
                 <TableCell>
-                  <Badge variant={statusVariant(site.status)}>{site.status}</Badge>
+                  <Badge
+                    className={site.status === "At Risk" ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"}
+                  >
+                    {site.status}
+                  </Badge>
                 </TableCell>
-                <TableCell>
-                  <Badge variant={priorityVariant(site.priority)}>{site.priority}</Badge>
-                </TableCell>
-                <TableCell>{site.users_count}</TableCell>
-                <TableCell>{site.project_manager_name || "Unassigned"}</TableCell>
+                <TableCell>{(site.project_manager as User)?.name ?? "N/A"}</TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
-                    <Progress value={site.completion_percent} className="w-[100px]" />
-                    <span className="text-xs text-muted-foreground">{site.completion_percent}%</span>
+                    <Progress value={site.completion_percent} className="w-24" />
+                    <span>{site.completion_percent}%</span>
                   </div>
                 </TableCell>
                 <TableCell>
@@ -154,11 +137,14 @@ export function SiteList({ sites, users, onEdit, onDelete, onBulkUpdate, onBulkC
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleViewDetails(site)}>View Details</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onEdit(site)}>Edit Site</DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => onDelete(site.id)} className="text-red-600">
-                        Delete Site
+                      <DropdownMenuItem onClick={() => setSelectedSite(site)}>View Details</DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <Pencil className="mr-2 h-4 w-4" />
+                        Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="text-red-600">
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -166,34 +152,20 @@ export function SiteList({ sites, users, onEdit, onDelete, onBulkUpdate, onBulkC
               </TableRow>
             ))}
           </TableBody>
-          <TableFooter>
-            <TableRow>
-              <TableCell colSpan={11}>{sites.length} sites</TableCell>
-            </TableRow>
-          </TableFooter>
         </Table>
-      </div>
-      {selectedSite && (
-        <SiteDetailModal
-          site={selectedSite}
-          isOpen={isDetailModalOpen}
-          onClose={() => setIsDetailModalOpen(false)}
-          users={users}
+      </CardContent>
+      {selectedSite && <SiteDetailModal site={selectedSite} onClose={() => setSelectedSite(null)} users={users} />}
+      {isBulkCreateOpen && (
+        <BulkCreateSitesModal onClose={() => setBulkCreateOpen(false)} onSitesImported={handleSitesImported} />
+      )}
+      {isBulkEditOpen && (
+        <BulkEditModal
+          siteIds={selectedSiteIds}
+          onClose={() => setBulkEditOpen(false)}
+          onBulkUpdate={handleBulkUpdate}
+          allUsers={users}
         />
       )}
-      <BulkEditModal
-        isOpen={isBulkEditModalOpen}
-        onClose={() => setIsBulkEditModalOpen(false)}
-        selectedSiteIds={selectedRows}
-        onSave={onBulkUpdate}
-        users={users}
-      />
-      <BulkCreateSitesModal
-        isOpen={isBulkCreateModalOpen}
-        onClose={() => setIsBulkCreateModalOpen(false)}
-        onSave={onBulkCreate}
-        users={users}
-      />
-    </>
+    </Card>
   )
 }
