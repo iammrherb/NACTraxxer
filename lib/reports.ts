@@ -2,11 +2,15 @@ import { sql } from "./database"
 import { put } from "@vercel/blob"
 import PDFDocument from "pdfkit"
 import { Buffer } from "buffer"
+import { jsPDF } from "jspdf"
+import autoTable from "jspdf-autotable"
 import type { Site } from "./types"
 import type { ChecklistItem } from "./types"
 import type { PDFDocument as PDFKitDocument } from "pdfkit"
-import { ChartJSNodeCanvas } from "chartjs-node-canvas"
 import type { ChartConfiguration } from "chart.js"
+import { getSites, getSiteStats } from "./api"
+import type { SiteStats } from "./types"
+import { format } from "date-fns"
 
 export interface ReportParameters {
   reportType: "site_summary" | "progress_report" | "deployment_status" | "user_activity" | "custom"
@@ -23,57 +27,95 @@ export interface ReportParameters {
 // Chart generation setup
 const width = 800
 const height = 400
-const chartJSNodeCanvas = new ChartJSNodeCanvas({
-  width,
-  height,
-  backgroundColour: "#ffffff",
-  plugins: {
-    globalVariableLegacy: ["chartjs-adapter-date-fns"],
-  },
-})
 
-async function generateChart(config: ChartConfiguration): Promise<Buffer> {
-  return await chartJSNodeCanvas.renderToBuffer(config)
+async function generateChartImage(configuration: ChartConfiguration, width: number, height: number): Promise<Buffer> {
+  // Dynamically import chartjs-node-canvas to avoid build errors on Vercel
+  const { ChartJSNodeCanvas } = await import("chartjs-node-canvas")
+  const chartJSNodeCanvas = new ChartJSNodeCanvas({
+    width,
+    height,
+    backgroundColour: "#ffffff",
+    plugins: {
+      globalVariableLegacy: ["chartjs-adapter-date-fns"],
+    },
+  })
+  return chartJSNodeCanvas.renderToBuffer(configuration)
 }
 
-// Helper to add header and footer
-const addPdfHeadersAndFooters = (doc: PDFKitDocument, title: string) => {
-  const pages = doc.bufferedPageRange()
-  for (let i = 0; i < pages.count; i++) {
-    doc.switchToPage(i)
-
-    // Header
-    doc.fontSize(14).text(title, doc.page.margins.left, 30, {
-      align: "center",
-      width: doc.page.width - doc.page.margins.left - doc.page.margins.right,
-    })
-    doc.moveTo(50, 55).lineTo(550, 55).stroke()
-
-    // Footer
-    const bottom = doc.page.height - 50
-    doc.fontSize(8).text(`Page ${i + 1} of ${pages.count}`, 50, bottom, { align: "right", width: 500 })
-    doc.fontSize(8).text(`Generated: ${new Date().toLocaleString()}`, 50, bottom, { align: "left" })
+function getStatusChartConfig(stats: SiteStats): ChartConfiguration {
+  return {
+    type: "doughnut",
+    data: {
+      labels: ["Completed", "In Progress", "Planned", "At Risk"],
+      datasets: [
+        {
+          label: "Site Status",
+          data: [stats.completed_sites, stats.in_progress_sites, stats.planned_sites, stats.delayed_sites],
+          backgroundColor: ["#22c55e", "#3b82f6", "#a8a29e", "#ef4444"],
+          hoverOffset: 4,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: "top",
+        },
+        title: {
+          display: true,
+          text: "Deployment Status Overview",
+        },
+      },
+    },
   }
 }
 
-// Helper function to generate PDF in memory
-async function createPdfBuffer(title: string, buildPdf: (doc: PDFKitDocument) => Promise<void>): Promise<Buffer> {
-  return new Promise(async (resolve, reject) => {
-    const doc = new PDFDocument({ margin: 50, size: "A4", bufferPages: true })
-    const chunks: Buffer[] = []
+function getTimelineChartConfig(sites: Site[]): ChartConfiguration {
+  const timelineData = sites
+    .filter((site) => site.plannedStart && site.plannedEnd)
+    .map((site) => ({
+      x: [new Date(site.plannedStart), new Date(site.plannedEnd)],
+      y: site.name,
+    }))
 
-    doc.on("data", (chunk) => chunks.push(chunk))
-    doc.on("end", () => {
-      addPdfHeadersAndFooters(doc, title)
-      doc.flushPages()
-      resolve(Buffer.concat(chunks))
-    })
-    doc.on("error", reject)
-
-    await buildPdf(doc)
-
-    doc.end()
-  })
+  return {
+    type: "bar",
+    data: {
+      labels: timelineData.map((d) => d.y),
+      datasets: [
+        {
+          label: "Deployment Timeline",
+          data: timelineData.map((d) => d.x),
+          backgroundColor: "rgba(59, 130, 246, 0.5)",
+          borderColor: "rgb(59, 130, 246)",
+          borderWidth: 1,
+        },
+      ],
+    },
+    options: {
+      indexAxis: "y",
+      scales: {
+        x: {
+          type: "time",
+          time: {
+            unit: "month",
+          },
+          min: new Date(Math.min(...sites.map((s) => new Date(s.plannedStart).getTime()))).toISOString(),
+          max: new Date(Math.max(...sites.map((s) => new Date(s.plannedEnd).getTime()))).toISOString(),
+        },
+      },
+      plugins: {
+        legend: {
+          display: false,
+        },
+        title: {
+          display: true,
+          text: "Project Timelines",
+        },
+      },
+    },
+  }
 }
 
 export async function generateReport(
@@ -189,7 +231,7 @@ export async function generateSiteSummaryPdf(doc: PDFKitDocument, parameters: Re
       },
     }
     try {
-      const chartImage = await generateChart(statusChartConfig)
+      const chartImage = await generateChartImage(statusChartConfig, 400, 400)
       doc.image(chartImage, { width: 450, align: "center" })
       doc.moveDown()
     } catch (e) {
@@ -318,30 +360,119 @@ async function generateCustomReport(doc: PDFKitDocument, parameters: ReportParam
   doc.text("Custom reporting is not yet implemented.")
 }
 
-export async function getReports(userId?: number) {
-  try {
-    // This single query will test for both 'reports' and 'users' tables.
-    let query = sql`
-      SELECT r.id, r.title, r.report_type, r.file_path, r.generated_at, r.download_count, u.name as generated_by_name
-      FROM reports r
-      LEFT JOIN users u ON r.generated_by = u.id
-      WHERE r.expires_at > CURRENT_TIMESTAMP
-    `
+export async function generatePdfReport(userId: number | string): Promise<Buffer> {
+  const doc = new jsPDF()
+  const [sites, stats] = await Promise.all([getSites(), getSiteStats()])
 
-    if (userId) {
-      query = sql`${query} AND r.generated_by = ${userId}`
-    }
+  // Header
+  doc.setFontSize(22)
+  doc.text("Portnox Deployment Tracker - Summary Report", 14, 22)
+  doc.setFontSize(12)
+  doc.text(`Report generated on: ${format(new Date(), "yyyy-MM-dd HH:mm")}`, 14, 30)
 
-    query = sql`${query} ORDER BY r.generated_at DESC`
+  // Add charts
+  const statusChartConfig = getStatusChartConfig(stats)
+  const statusChartImage = await generateChartImage(statusChartConfig, 400, 400)
+  doc.addImage(statusChartImage, "PNG", 14, 40, 80, 80)
 
-    const result = await query
-    return result.map((row) => ({ ...row }))
-  } catch (error: any) {
-    // A broad catch to handle any database error during initial setup.
-    // This makes the dashboard more resilient if migrations/seeding are incomplete.
-    console.warn(
-      `Could not fetch reports, possibly due to an incomplete database schema or data issue. Returning an empty list. Error: ${error.message}`,
-    )
-    return []
+  const timelineChartConfig = getTimelineChartConfig(sites)
+  const timelineChartImage = await generateChartImage(timelineChartConfig, 800, 600)
+  doc.addImage(timelineChartImage, "PNG", 100, 40, 95, 71)
+
+  // Add stats table
+  autoTable(doc, {
+    startY: 130,
+    head: [["Metric", "Value"]],
+    body: [
+      ["Total Sites", stats.total_sites],
+      ["Completed Sites", stats.completed_sites],
+      ["In Progress", stats.in_progress_sites],
+      ["Planned", stats.planned_sites],
+      ["At Risk", stats.delayed_sites],
+      ["Overall Completion", `${stats.overall_completion}%`],
+    ],
+  })
+
+  // Add detailed sites table
+  doc.addPage()
+  doc.setFontSize(18)
+  doc.text("Detailed Site Information", 14, 22)
+  autoTable(doc, {
+    startY: 30,
+    head: [["ID", "Name", "Region", "Status", "Project Manager", "Start Date", "End Date", "Completion %"]],
+    body: sites.map((site) => [
+      site.id,
+      site.name,
+      site.region,
+      site.status,
+      site.projectManager,
+      format(new Date(site.plannedStart), "yyyy-MM-dd"),
+      format(new Date(site.plannedEnd), "yyyy-MM-dd"),
+      `${site.completionPercent}%`,
+    ]),
+    theme: "striped",
+    headStyles: { fillColor: [22, 160, 133] },
+  })
+
+  const pdfBuffer = doc.output("arraybuffer")
+  return Buffer.from(pdfBuffer)
+}
+
+export async function getReports(userId?: number | string) {
+  // In a real app, you'd fetch user-specific or saved reports from a DB.
+  // Here, we'll just mock a list of available reports.
+  return [
+    {
+      id: "summary-report-latest",
+      name: "Latest Summary Report",
+      description: "An overview of all deployment sites and their current status.",
+      generatedAt: new Date().toISOString(),
+    },
+    {
+      id: "timeline-report-q3",
+      name: "Q3 Timeline Report",
+      description: "A detailed timeline view of projects scheduled for Q3.",
+      generatedAt: new Date(new Date().setDate(new Date().getDate() - 30)).toISOString(),
+    },
+  ]
+}
+
+// Helper to add header and footer
+const addPdfHeadersAndFooters = (doc: PDFKitDocument, title: string) => {
+  const pages = doc.bufferedPageRange()
+  for (let i = 0; i < pages.count; i++) {
+    doc.switchToPage(i)
+
+    // Header
+    doc.fontSize(14).text(title, doc.page.margins.left, 30, {
+      align: "center",
+      width: doc.page.width - doc.page.margins.left - doc.page.margins.right,
+    })
+    doc.moveTo(50, 55).lineTo(550, 55).stroke()
+
+    // Footer
+    const bottom = doc.page.height - 50
+    doc.fontSize(8).text(`Page ${i + 1} of ${pages.count}`, 50, bottom, { align: "right", width: 500 })
+    doc.fontSize(8).text(`Generated: ${new Date().toLocaleString()}`, 50, bottom, { align: "left" })
   }
+}
+
+// Helper function to generate PDF in memory
+async function createPdfBuffer(title: string, buildPdf: (doc: PDFKitDocument) => Promise<void>): Promise<Buffer> {
+  return new Promise(async (resolve, reject) => {
+    const doc = new PDFDocument({ margin: 50, size: "A4", bufferPages: true })
+    const chunks: Buffer[] = []
+
+    doc.on("data", (chunk) => chunks.push(chunk))
+    doc.on("end", () => {
+      addPdfHeadersAndFooters(doc, title)
+      doc.flushPages()
+      resolve(Buffer.concat(chunks))
+    })
+    doc.on("error", reject)
+
+    await buildPdf(doc)
+
+    doc.end()
+  })
 }
