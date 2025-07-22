@@ -1,189 +1,180 @@
 import {
   mockSites,
   mockUsers,
-  notifications,
-  milestones,
-  checklistItems as libraryChecklistItems,
-  useCases,
-  testCases,
-  requirements,
+  initialWiredVendors,
+  initialWirelessVendors,
+  initialFirewallVendors,
+  initialVpnVendors,
+  initialEdrXdrVendors,
+  initialSiemVendors,
+  initialIdpVendors,
+  initialMfaVendors,
+  initialMdmVendors,
+  initialDeviceTypes,
+  initialChecklistItems,
+  initialUseCases,
+  initialTestMatrix,
+  initialRequirements,
+  initialTestCases,
+  initialTasks,
   initialRegions,
-  idpVendors,
-  mfaVendors,
-  edrVendors,
-  siemVendors,
-  wiredVendors,
-  wirelessVendors,
-  firewallVendors,
-  vpnVendors,
-  mdmVendors,
-  deviceTypes,
+  mockCountries,
+  mockScopingQuestionnaires,
+  clearSites as clearData,
+  loadSampleSites as loadData,
 } from "./library-data"
+
 import type {
   Site,
-  User,
-  Notification,
-  Milestone,
+  DatabaseUser,
   LibraryData,
-  SiteStats,
-  ChecklistItem,
-  DeviceType,
+  BaseVendor,
   Vendor,
+  DeviceType,
+  ChecklistItem,
+  SiteStats,
   ScopingQuestionnaire,
-} from "./types"
+} from "./database"
 
-const state = {
-  sites: JSON.parse(JSON.stringify(mockSites)),
-  users: JSON.parse(JSON.stringify(mockUsers)),
-  notifications: JSON.parse(JSON.stringify(notifications)),
-  milestones: JSON.parse(JSON.stringify(milestones)),
+// Hold data in memory
+let sites: Site[] = JSON.parse(JSON.stringify(mockSites))
+const users: DatabaseUser[] = JSON.parse(JSON.stringify(mockUsers))
+let questionnaires: ScopingQuestionnaire[] = JSON.parse(JSON.stringify(mockScopingQuestionnaires))
+const wiredVendors: Vendor[] = JSON.parse(JSON.stringify(initialWiredVendors))
+const wirelessVendors: Vendor[] = JSON.parse(JSON.stringify(initialWirelessVendors))
+const idpVendors: BaseVendor[] = JSON.parse(JSON.stringify(initialIdpVendors))
+const deviceTypes: DeviceType[] = JSON.parse(JSON.stringify(initialDeviceTypes))
+const checklistItems: ChecklistItem[] = JSON.parse(JSON.stringify(initialChecklistItems))
+
+// --- Site Management ---
+export const getSites = async (): Promise<Site[]> => {
+  await new Promise((res) => setTimeout(res, 200))
+  return sites.map((site) => ({
+    ...site,
+    project_manager_name: users.find((u) => u.id === site.project_manager_id)?.name,
+  }))
 }
 
-const simulateDelay = (ms: number) => new Promise((res) => setTimeout(res, ms))
-
-export async function getSites(): Promise<Site[]> {
-  await simulateDelay(50)
-  return JSON.parse(JSON.stringify(state.sites))
+export const getSite = async (id: string): Promise<Site | undefined> => {
+  await new Promise((res) => setTimeout(res, 100))
+  return sites.find((s) => s.id === id)
 }
 
-export async function getSite(id: string): Promise<Site | undefined> {
-  await simulateDelay(50)
-  const site = state.sites.find((s: Site) => s.id === id)
-  return site ? JSON.parse(JSON.stringify(site)) : undefined
-}
-
-export async function createSite(siteData: Partial<Site>): Promise<Site> {
-  await simulateDelay(100)
+export const createSite = async (siteData: Omit<Site, "id" | "created_at" | "updated_at">): Promise<Site> => {
+  await new Promise((res) => setTimeout(res, 200))
   const newSite: Site = {
-    id: `site-${Date.now()}`,
-    name: "New Site",
-    customer: "",
-    region: "",
-    country: "",
-    status: "Planned",
-    projectManager: "",
-    technicalOwners: [],
-    wiredVendors: [],
-    wirelessVendors: [],
-    deviceTypes: [],
-    radsec: "Native",
-    plannedStart: new Date().toISOString(),
-    plannedEnd: new Date().toISOString(),
-    completionPercent: 0,
-    deploymentChecklist: [],
     ...siteData,
+    id: `SITE-${Date.now()}`,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    completion_percent: 0,
+    tasks: [],
+    test_case_statuses: [],
+    requirement_statuses: [],
   }
-  state.sites.push(newSite)
-  return JSON.parse(JSON.stringify(newSite))
+  sites.push(newSite)
+  return newSite
 }
 
-export async function deleteSite(id: string): Promise<void> {
-  await simulateDelay(100)
-  const siteIndex = state.sites.findIndex((s: Site) => s.id === id)
-  if (siteIndex > -1) {
-    state.sites.splice(siteIndex, 1)
-  }
-}
-
-export async function updateSite(id: string, updatedData: Partial<Site>): Promise<Site | null> {
-  await simulateDelay(100)
-  const siteIndex = state.sites.findIndex((s: Site) => s.id === id)
+export const updateSite = async (id: string, updates: Partial<Site>): Promise<Site> => {
+  await new Promise((res) => setTimeout(res, 200))
+  const siteIndex = sites.findIndex((s) => s.id === id)
   if (siteIndex === -1) {
-    return null
+    throw new Error("Site not found")
   }
-  state.sites[siteIndex] = { ...state.sites[siteIndex], ...updatedData }
-  return JSON.parse(JSON.stringify(state.sites[siteIndex]))
+  sites[siteIndex] = { ...sites[siteIndex], ...updates, updated_at: new Date().toISOString() }
+  return sites[siteIndex]
 }
 
-export async function getUsers(): Promise<User[]> {
-  await simulateDelay(50)
-  return JSON.parse(JSON.stringify(state.users))
+export const bulkUpdateSites = async (siteIds: string[], updates: Partial<Site>): Promise<Site[]> => {
+  await new Promise((res) => setTimeout(res, 500))
+  const updatedSites: Site[] = []
+  siteIds.forEach((id) => {
+    const siteIndex = sites.findIndex((s) => s.id === id)
+    if (siteIndex !== -1) {
+      sites[siteIndex] = { ...sites[siteIndex], ...updates, updated_at: new Date().toISOString() }
+      updatedSites.push(sites[siteIndex])
+    }
+  })
+  return updatedSites
 }
 
-export async function createUser(userData: Omit<User, "id" | "avatar">): Promise<User> {
-  await simulateDelay(100)
-  const newUser: User = {
-    id: `user-${Date.now()}`,
-    avatar: "/placeholder-user.jpg",
-    ...userData,
+export const deleteSite = async (id: string): Promise<void> => {
+  await new Promise((res) => setTimeout(res, 200))
+  sites = sites.filter((s) => s.id !== id)
+}
+
+// --- Scoping Questionnaire Management ---
+export const getQuestionnaires = async (): Promise<ScopingQuestionnaire[]> => {
+  await new Promise((res) => setTimeout(res, 100))
+  return questionnaires
+}
+
+export const createQuestionnaire = async (data: Omit<ScopingQuestionnaire, "id" | "created_at" | "updated_at">) => {
+  await new Promise((res) => setTimeout(res, 200))
+  const newQuestionnaire: ScopingQuestionnaire = {
+    ...data,
+    id: `SCOPE-${Date.now()}`,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   }
-  state.users.push(newUser)
-  return JSON.parse(JSON.stringify(newUser))
+  questionnaires.push(newQuestionnaire)
+  return newQuestionnaire
 }
 
-export async function updateUser(id: string, userData: Partial<User>): Promise<User | null> {
-  await simulateDelay(100)
-  const userIndex = state.users.findIndex((u: User) => u.id === id)
-  if (userIndex === -1) {
-    return null
+export const updateQuestionnaire = async (id: string, updates: Partial<ScopingQuestionnaire>) => {
+  await new Promise((res) => setTimeout(res, 200))
+  const index = questionnaires.findIndex((q) => q.id === id)
+  if (index === -1) throw new Error("Questionnaire not found")
+  questionnaires[index] = { ...questionnaires[index], ...updates, updated_at: new Date().toISOString() }
+  return questionnaires[index]
+}
+
+export const deleteQuestionnaire = async (id: string) => {
+  await new Promise((res) => setTimeout(res, 200))
+  questionnaires = questionnaires.filter((q) => q.id !== id)
+}
+
+// --- Library & Data Management ---
+export const getLibraryData = async (): Promise<LibraryData> => {
+  await new Promise((res) => setTimeout(res, 100))
+  return {
+    wiredVendors: initialWiredVendors,
+    wirelessVendors: initialWirelessVendors,
+    firewallVendors: initialFirewallVendors,
+    vpnVendors: initialVpnVendors,
+    edrXdrVendors: initialEdrXdrVendors,
+    siemVendors: initialSiemVendors,
+    idpVendors: initialIdpVendors,
+    mfaVendors: initialMfaVendors,
+    mdmVendors: initialMdmVendors,
+    deviceTypes: initialDeviceTypes,
+    checklistItems: initialChecklistItems,
+    useCases: initialUseCases,
+    testMatrix: initialTestMatrix,
+    requirements: initialRequirements,
+    testCases: initialTestCases,
+    tasks: initialTasks,
+    regions: initialRegions.map((r) => ({ name: r })),
+    countries: mockCountries,
   }
-  state.users[userIndex] = { ...state.users[userIndex], ...userData }
-  return JSON.parse(JSON.stringify(state.users[userIndex]))
 }
 
-export async function deleteUser(id: string): Promise<void> {
-  await simulateDelay(100)
-  const userIndex = state.users.findIndex((u: User) => u.id === id)
-  if (userIndex > -1) {
-    state.users.splice(userIndex, 1)
-  }
+export const getUsers = async (): Promise<DatabaseUser[]> => {
+  await new Promise((res) => setTimeout(res, 100))
+  return users
 }
 
-export async function getNotifications(): Promise<Notification[]> {
-  await simulateDelay(100)
-  const sortedNotifications = [...state.notifications].sort(
-    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
-  )
-  return JSON.parse(JSON.stringify(sortedNotifications))
-}
-
-export async function getMilestones(): Promise<Milestone[]> {
-  await simulateDelay(50)
-  return JSON.parse(JSON.stringify(state.milestones))
-}
-
-export async function getLibraryData(): Promise<LibraryData> {
-  await simulateDelay(20)
-  return JSON.parse(
-    JSON.stringify({
-      deploymentChecklist: libraryChecklistItems,
-      useCases,
-      testCases,
-      requirements,
-      regions: initialRegions,
-      idpVendors,
-      mfaVendors,
-      edrVendors,
-      siemVendors,
-      wiredVendors,
-      wirelessVendors,
-      firewallVendors,
-      vpnVendors,
-      mdmVendors,
-      deviceTypes,
-    }),
-  )
-}
-
-export async function getSiteStats(): Promise<SiteStats> {
-  await simulateDelay(150)
-  const total_sites = state.sites.length
-  const completed_sites = state.sites.filter((s: Site) => s.status === "Completed").length
-  const in_progress_sites = state.sites.filter((s: Site) => s.status === "In Progress").length
-  const planned_sites = state.sites.filter((s: Site) => s.status === "Planning").length
-  const delayed_sites = state.sites.filter((s: Site) => s.status === "At Risk").length
-  const total_users = state.users.length
+export const getSiteStats = async (): Promise<SiteStats> => {
+  await new Promise((res) => setTimeout(res, 300))
+  const total_sites = sites.length
+  const completed_sites = sites.filter((s) => s.status === "Complete").length
+  const in_progress_sites = sites.filter((s) => s.status === "In Progress").length
+  const planned_sites = sites.filter((s) => s.status === "Planned").length
+  const delayed_sites = sites.filter((s) => s.status === "Delayed").length
+  const total_users = sites.reduce((acc, site) => acc + (site.users_count || 0), 0)
   const overall_completion =
-    total_sites > 0
-      ? Math.round(
-          state.sites.reduce((acc: number, site: Site) => {
-            const totalItems = site.deploymentChecklist.length
-            const completedItems = site.deploymentChecklist.filter((i) => i.completed).length
-            return acc + (totalItems > 0 ? (completedItems / totalItems) * 100 : 0)
-          }, 0) / total_sites,
-        )
-      : 0
-
+    total_sites > 0 ? Math.round(sites.reduce((acc, site) => acc + (site.completion_percent || 0), 0) / total_sites) : 0
   return {
     total_sites,
     completed_sites,
@@ -195,194 +186,128 @@ export async function getSiteStats(): Promise<SiteStats> {
   }
 }
 
-export async function getChecklistStatus(siteId: string): Promise<Record<string, boolean>> {
-  await simulateDelay(50)
-  const site = state.sites.find((s: Site) => s.id === siteId)
-  if (!site) {
-    console.error(`Site with id ${siteId} not found in getChecklistStatus`)
-    return {}
+// --- User Management ---
+export const createUser = async (
+  userData: Omit<DatabaseUser, "id" | "created_at" | "updated_at">,
+): Promise<DatabaseUser> => {
+  await new Promise((res) => setTimeout(res, 200))
+  const newUser: DatabaseUser = {
+    ...userData,
+    id: Date.now(),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   }
-  const status: Record<string, boolean> = {}
-  site.deploymentChecklist.forEach((item) => {
-    status[item.id] = item.completed
-  })
-  return status
+  users.push(newUser)
+  return newUser
 }
 
-export async function updateChecklistStatus(siteId: string, newStatus: Record<string, boolean>): Promise<void> {
-  await simulateDelay(100)
-  const siteIndex = state.sites.findIndex((s: Site) => s.id === siteId)
+export const updateUser = async (id: number, updates: Partial<DatabaseUser>): Promise<DatabaseUser> => {
+  await new Promise((res) => setTimeout(res, 200))
+  const userIndex = users.findIndex((u) => u.id === id)
+  if (userIndex === -1) throw new Error("User not found")
+  users[userIndex] = { ...users[userIndex], ...updates, updated_at: new Date().toISOString() }
+  return users[userIndex]
+}
 
-  if (siteIndex === -1) {
-    console.error(`Site with id ${siteId} not found in updateChecklistStatus`)
-    return
+export const deleteUser = async (id: number): Promise<void> => {
+  await new Promise((res) => setTimeout(res, 200))
+  const index = users.findIndex((u) => u.id === id)
+  if (index > -1) {
+    users.splice(index, 1)
+  } else {
+    throw new Error("User not found")
   }
+}
 
-  const site = state.sites[siteIndex]
-  const updatedChecklist = site.deploymentChecklist.map((item) => ({
+// --- Vendor Specific ---
+export const getVendors = async (): Promise<Vendor[]> => {
+  await new Promise((res) => setTimeout(res, 100))
+  return [...wiredVendors, ...wirelessVendors]
+}
+
+export const createVendor = async (vendorData: Omit<Vendor, "id" | "is_custom" | "created_at">): Promise<Vendor> => {
+  const list = vendorData.type === "wired" ? wiredVendors : wirelessVendors
+  const newVendor: Vendor = {
+    ...vendorData,
+    id: Date.now(),
+    is_custom: true,
+    created_at: new Date().toISOString(),
+  }
+  list.push(newVendor)
+  return newVendor
+}
+
+// --- Device Type Specific ---
+export const getDeviceTypes = async (): Promise<DeviceType[]> => {
+  await new Promise((res) => setTimeout(res, 100))
+  return deviceTypes
+}
+
+// --- Checklist Item Specific ---
+export const getChecklistItems = async (): Promise<ChecklistItem[]> => {
+  await new Promise((res) => setTimeout(res, 100))
+  return checklistItems
+}
+
+// --- Library Item CRUD ---
+const createLibraryItem = <T extends { id: number; name: string }>(list: T[], item: { name: string }): T => {
+  const newItem = {
     ...item,
-    completed: newStatus[item.id] ?? item.completed,
-  }))
-
-  state.sites[siteIndex].deploymentChecklist = updatedChecklist
-}
-
-export async function bulkUpdateSites(siteIds: string[], updates: any): Promise<void> {
-  await simulateDelay(200)
-
-  const updatedSites = state.sites.map((site: Site) => {
-    if (siteIds.includes(site.id)) {
-      const newSiteData = { ...site }
-      if (updates.project_manager_id) {
-        const pm = state.users.find((u: User) => u.id === updates.project_manager_id)
-        if (pm) newSiteData.projectManager = pm.name
-      }
-      if (updates.technical_owner_ids) {
-        newSiteData.technicalOwners = state.users
-          .filter((u: User) => updates.technical_owner_ids.includes(u.id))
-          .map((u: User) => u.name)
-      }
-      return newSiteData
-    }
-    return site
-  })
-  state.sites = updatedSites
-}
-
-export async function bulkCreateSites(sitesData: Partial<Site>[]): Promise<Site[]> {
-  await simulateDelay(200)
-  const newSites: Site[] = sitesData.map((site, i) => ({
-    id: `${site.name?.replace(/\s+/g, "-").toUpperCase() || "SITE"}-${Date.now() + i}`,
-    name: site.name || "New Site",
-    customer: site.customer || "",
-    region: site.region || "",
-    country: site.country || "",
-    status: site.status || "Planning",
-    projectManager: site.projectManager || "",
-    technicalOwners: site.technicalOwners || [],
-    wiredVendors: site.wiredVendors || [],
-    wirelessVendors: site.wirelessVendors || [],
-    deviceTypes: site.deviceTypes || [],
-    radsec: site.radsec || "Native",
-    plannedStart: site.plannedStart || new Date().toISOString(),
-    plannedEnd: site.plannedEnd || new Date().toISOString(),
-    completionPercent: site.completionPercent || 0,
-    deploymentChecklist: site.deploymentChecklist || [],
-  }))
-  state.sites.push(...newSites)
-  return JSON.parse(JSON.stringify(newSites))
-}
-
-export async function getChecklistItems(): Promise<ChecklistItem[]> {
-  const data = await getLibraryData()
-  return data.deploymentChecklist
-}
-
-export async function createChecklistItem(itemData: Omit<ChecklistItem, "id">): Promise<ChecklistItem> {
-  await simulateDelay(100)
-  const newItem = { id: `chk-${Date.now()}`, ...itemData }
-  console.log("Created checklist item (mock):", newItem)
+    id: Date.now(),
+    is_custom: true,
+    created_at: new Date().toISOString(),
+  } as T
+  list.push(newItem)
   return newItem
 }
 
-export async function getDeviceTypes(): Promise<DeviceType[]> {
-  const data = await getLibraryData()
-  return data.deviceTypes
-}
-
-export async function createDeviceType(itemData: Omit<DeviceType, "id">): Promise<DeviceType> {
-  await simulateDelay(100)
-  const newItem = { id: `dev-${Date.now()}`, ...itemData }
-  console.log("Created device type (mock):", newItem)
-  return newItem
-}
-
-export async function getVendors(): Promise<Vendor[]> {
-  const data = await getLibraryData()
-  return [
-    ...data.wiredVendors,
-    ...data.wirelessVendors,
-    ...data.firewallVendors,
-    ...data.vpnVendors,
-    ...data.mdmVendors,
-    ...data.idpVendors,
-    ...data.mfaVendors,
-    ...data.edrVendors,
-    ...data.siemVendors,
-  ]
-}
-
-export async function createVendor(itemData: Omit<Vendor, "id">): Promise<Vendor> {
-  await simulateDelay(100)
-  const newItem = { id: `vendor-${Date.now()}`, ...itemData }
-  console.log("Created vendor (mock):", newItem)
-  return newItem
-}
-
-export async function getQuestionnaires(): Promise<ScopingQuestionnaire[]> {
-  await simulateDelay(50)
-  // This is a mock, returning an empty array for now.
-  return []
-}
-
-export async function createQuestionnaire(data: Omit<ScopingQuestionnaire, "id">): Promise<ScopingQuestionnaire> {
-  await simulateDelay(100)
-  const newQuestionnaire = { id: `${Date.now()}`, ...data }
-  console.log("Created questionnaire (mock):", newQuestionnaire)
-  // This is a mock, just returning the created object.
-  return newQuestionnaire
-}
-
-export async function updateQuestionnaire(
-  id: string,
-  data: Partial<ScopingQuestionnaire>,
-): Promise<ScopingQuestionnaire> {
-  await simulateDelay(100)
-  console.log(`Updating questionnaire ${id} (mock):`, data)
-  // This is a mock, returning a merged object.
-  const mockQuestionnaire: ScopingQuestionnaire = {
-    id,
-    siteName: "Updated Site",
-    customerName: "Updated Customer",
-    region: "North America",
-    country: "US",
-    projectManager: "Alice",
-    technicalOwner: "Bob",
-    ...data,
+const updateLibraryItem = <T extends { id: number }>(list: T[], item: T): T => {
+  const index = list.findIndex((i) => i.id === item.id)
+  if (index > -1) {
+    list[index] = item
+    return item
   }
-  return mockQuestionnaire
+  throw new Error("Item not found")
 }
 
-export async function deleteQuestionnaire(id: string): Promise<void> {
-  await simulateDelay(100)
-  console.log(`Deleting questionnaire ${id} (mock)`)
+const deleteLibraryItem = <T extends { id: number }>(list: T[], id: number): void => {
+  const index = list.findIndex((i) => i.id === id)
+  if (index > -1) {
+    list.splice(index, 1)
+  } else {
+    throw new Error("Item not found")
+  }
 }
 
-export async function seedDatabase(): Promise<void> {
-  await simulateDelay(200)
-  state.sites = JSON.parse(JSON.stringify(mockSites))
-  state.users = JSON.parse(JSON.stringify(mockUsers))
-  console.log("Database seeded with mock data.")
+export const createWiredVendor = (item: { name: string }) => createLibraryItem(wiredVendors, { ...item, type: "wired" })
+export const updateWiredVendor = (item: Vendor) => updateLibraryItem(wiredVendors, item)
+export const deleteWiredVendor = (id: number) => deleteLibraryItem(wiredVendors, id)
+
+export const createWirelessVendor = (item: { name: string }) =>
+  createLibraryItem(wirelessVendors, { ...item, type: "wireless" })
+export const updateWirelessVendor = (item: Vendor) => updateLibraryItem(wirelessVendors, item)
+export const deleteWirelessVendor = (id: number) => deleteLibraryItem(wirelessVendors, id)
+
+export const createDeviceType = (item: { name: string }) => createLibraryItem(deviceTypes, item)
+export const updateDeviceType = (item: DeviceType) => updateLibraryItem(deviceTypes, item)
+export const deleteDeviceType = (id: number) => deleteLibraryItem(deviceTypes, id)
+
+export const createChecklistItem = (item: { name: string; category: string }) => createLibraryItem(checklistItems, item)
+export const updateChecklistItem = (item: ChecklistItem) => updateLibraryItem(checklistItems, item)
+export const deleteChecklistItem = (id: number) => deleteLibraryItem(checklistItems, id)
+
+// --- Debug/Settings Functions ---
+export const clearDatabase = async () => {
+  await new Promise((res) => setTimeout(res, 500))
+  clearData()
+  sites = [] // Clear the in-memory array too
+  return { message: "All site data has been cleared." }
 }
 
-export async function clearDatabase(): Promise<void> {
-  await simulateDelay(200)
-  state.sites = []
-  state.users = []
-  console.log("Database cleared.")
-}
-
-export async function deleteLibraryItem(id: number | string, type: string): Promise<void> {
-  console.log(`Deleting item with id ${id} of type ${type}`)
-  await simulateDelay(100)
-}
-
-export async function updateLibraryItem(id: number | string, data: any, type: string): Promise<void> {
-  console.log(`Updating item with id ${id} of type ${type} with data:`, data)
-  await simulateDelay(100)
-}
-
-export async function createLibraryItem(data: any, type: string): Promise<void> {
-  console.log(`Creating item of type ${type} with data:`, data)
-  await simulateDelay(100)
+export const seedDatabase = async () => {
+  await new Promise((res) => setTimeout(res, 500))
+  loadData()
+  // Deep copy to prevent mutation issues
+  sites = JSON.parse(JSON.stringify(mockSites))
+  return { message: "Sample site data has been loaded." }
 }

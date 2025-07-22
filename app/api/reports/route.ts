@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     const reports = await getReports(mockUserId)
     return NextResponse.json(reports)
   } catch (error) {
-    console.error("API Error fetching reports:", error)
-    return NextResponse.json({ error: "Failed to fetch reports due to a server error" }, { status: 500 })
+    console.error("Error fetching reports:", error)
+    return NextResponse.json({ error: "Failed to fetch reports" }, { status: 500 })
   }
 }

@@ -1,173 +1,597 @@
 import type {
   Site,
-  User,
-  Notification,
-  Milestone,
-  LibraryItem,
+  DatabaseUser,
   Vendor,
-  Region,
   DeviceType,
+  ChecklistItem,
+  BaseVendor,
   UseCase,
-  TestCase,
   Requirement,
-} from "./types"
+  TestCase,
+  Task,
+  TestMatrixEntry,
+  ScopingQuestionnaire,
+} from "./database"
+
+export const mockUsers: DatabaseUser[] = [
+  {
+    id: 1,
+    name: "Alice Johnson",
+    email: "alice.j@example.com",
+    role: "Senior Project Manager",
+    user_type: "project_manager",
+    created_at: "2025-01-10T10:00:00Z",
+    updated_at: "2025-01-10T10:00:00Z",
+  },
+  {
+    id: 2,
+    name: "Bob Williams",
+    email: "bob.w@example.com",
+    role: "Project Manager",
+    user_type: "project_manager",
+    created_at: "2025-01-11T11:00:00Z",
+    updated_at: "2025-01-11T11:00:00Z",
+  },
+  {
+    id: 7,
+    name: "Charlie Brown",
+    email: "charlie.b@example.com",
+    role: "Network Engineer",
+    user_type: "technical_owner",
+    created_at: "2025-01-12T12:00:00Z",
+    updated_at: "2025-01-12T12:00:00Z",
+  },
+  {
+    id: 8,
+    name: "Diana Prince",
+    email: "diana.p@example.com",
+    role: "Security Architect",
+    user_type: "technical_owner",
+    created_at: "2025-01-13T13:00:00Z",
+    updated_at: "2025-01-13T13:00:00Z",
+  },
+  {
+    id: 9,
+    name: "Ethan Hunt",
+    email: "ethan.h@example.com",
+    role: "System Administrator",
+    user_type: "technical_owner",
+    created_at: "2025-01-14T14:00:00Z",
+    updated_at: "2025-01-14T14:00:00Z",
+  },
+]
+
+export const initialRegions = ["North America", "EMEA", "APAC", "LATAM", "Africa"]
 
 export const mockCountries = [
-  { code: "US", name: "United States" },
-  { code: "CA", name: "Canada" },
-  { code: "GB", name: "United Kingdom" },
-  { code: "AU", name: "Australia" },
-  { code: "DE", name: "Germany" },
-  { code: "FR", name: "France" },
-  { code: "JP", name: "Japan" },
-  { code: "IN", name: "India" },
+  { name: "United States", code: "US", region: "North America" },
+  { name: "Canada", code: "CA", region: "North America" },
+  { name: "Mexico", code: "MX", region: "North America" },
+  { name: "United Kingdom", code: "GB", region: "EMEA" },
+  { name: "Germany", code: "DE", region: "EMEA" },
+  { name: "France", code: "FR", region: "EMEA" },
+  { name: "South Africa", code: "ZA", region: "Africa" },
+  { name: "Nigeria", code: "NG", region: "Africa" },
+  { name: "Japan", code: "JP", region: "APAC" },
+  { name: "China", code: "CN", region: "APAC" },
+  { name: "India", code: "IN", region: "APAC" },
+  { name: "Australia", code: "AU", region: "APAC" },
+  { name: "Brazil", code: "BR", region: "LATAM" },
+  { name: "Argentina", code: "AR", region: "LATAM" },
 ]
 
-export const initialRegions: Region[] = [
-  { name: "North America" },
-  { name: "Europe" },
-  { name: "Asia-Pacific (APAC)" },
-  { name: "Latin America (LATAM)" },
-  { name: "Middle East & Africa (MEA)" },
+export const initialWiredVendors: Vendor[] = [
+  { id: 1, name: "Cisco", type: "wired" },
+  { id: 2, name: "Juniper", type: "wired" },
+  { id: 3, name: "Arista", type: "wired" },
+  { id: 4, name: "HPE/Aruba", type: "wired" },
+  { id: 5, name: "Extreme Networks", type: "wired" },
+  { id: 6, name: "Dell", type: "wired" },
+  { id: 7, name: "Brocade", type: "wired" },
 ]
 
-export const idpVendors: Vendor[] = [
-  { id: 1, name: "Okta" },
-  { id: 2, name: "Azure AD" },
-  { id: 3, name: "Ping Identity" },
+export const initialWirelessVendors: Vendor[] = [
+  { id: 14, name: "Cisco/Meraki", type: "wireless" },
+  { id: 15, name: "HPE/Aruba", type: "wireless" },
+  { id: 16, name: "Ubiquiti", type: "wireless" },
+  { id: 17, name: "Ruckus (CommScope)", type: "wireless" },
+  { id: 18, name: "Juniper Mist", type: "wireless" },
+  { id: 19, name: "Extreme Networks", type: "wireless" },
+  { id: 20, name: "Fortinet", type: "wireless" },
 ]
 
-export const mfaVendors: Vendor[] = [
-  { id: 1, name: "Okta Verify" },
-  { id: 2, name: "Microsoft Authenticator" },
-  { id: 3, name: "Duo Push" },
-]
-
-export const edrVendors: Vendor[] = [
-  { id: 1, name: "CrowdStrike" },
-  { id: 2, name: "SentinelOne" },
-  { id: 3, name: "Microsoft Defender" },
-]
-
-export const siemVendors: Vendor[] = [
-  { id: 1, name: "Splunk" },
-  { id: 2, name: "Microsoft Sentinel" },
-  { id: 3, name: "LogRhythm" },
-]
-
-export const wiredVendors: Vendor[] = [
-  { id: 1, name: "Cisco" },
-  { id: 2, name: "Aruba" },
-  { id: 3, name: "Juniper" },
-]
-
-export const wirelessVendors: Vendor[] = [
-  { id: 1, name: "Cisco Meraki" },
-  { id: 2, name: "Aruba" },
-  { id: 3, name: "Mist (Juniper)" },
-]
-
-export const firewallVendors: Vendor[] = [
+export const initialFirewallVendors: BaseVendor[] = [
   { id: 1, name: "Palo Alto Networks" },
   { id: 2, name: "Fortinet" },
-  { id: 3, name: "Cisco ASA/FTD" },
+  { id: 3, name: "Cisco" },
+  { id: 4, name: "Check Point" },
+  { id: 5, name: "Juniper" },
+  { id: 6, name: "Sophos" },
+  { id: 7, name: "Forcepoint" },
 ]
 
-export const vpnVendors: Vendor[] = [
-  { id: 1, name: "Palo Alto GlobalProtect" },
-  { id: 2, name: "Cisco AnyConnect" },
+export const initialVpnVendors: BaseVendor[] = [
+  { id: 1, name: "Cisco AnyConnect" },
+  { id: 2, name: "Palo Alto GlobalProtect" },
   { id: 3, name: "FortiClient" },
+  { id: 4, name: "OpenVPN" },
+  { id: 5, name: "Zscaler" },
+  { id: 6, name: "NetMotion" },
+  { id: 7, name: "Pulse Secure" },
 ]
 
-export const mdmVendors: Vendor[] = [
+export const initialEdrXdrVendors: BaseVendor[] = [
+  { id: 1, name: "CrowdStrike Falcon" },
+  { id: 2, name: "Microsoft Defender for Endpoint" },
+  { id: 3, name: "SentinelOne" },
+  { id: 4, name: "Palo Alto Cortex XDR" },
+  { id: 5, name: "Trend Micro" },
+  { id: 6, name: "Cybereason" },
+  { id: 7, name: "Carbon Black" },
+]
+
+export const initialSiemVendors: BaseVendor[] = [
+  { id: 1, name: "Splunk" },
+  { id: 2, name: "Microsoft Sentinel" },
+  { id: 3, name: "IBM QRadar" },
+  { id: 4, name: "LogRhythm" },
+  { id: 5, name: "Exabeam" },
+  { id: 6, name: "Securonix" },
+  { id: 7, name: "Graylog" },
+]
+
+export const initialIdpVendors: BaseVendor[] = [
+  { id: 1, name: "Microsoft Entra ID" },
+  { id: 2, name: "Okta" },
+  { id: 3, name: "Ping Identity" },
+  { id: 4, name: "Google Workspace" },
+  { id: 5, name: "OneLogin" },
+  { id: 6, name: "JumpCloud" },
+]
+
+export const initialMfaVendors: BaseVendor[] = [
+  { id: 1, name: "Duo Security" },
+  { id: 2, name: "Microsoft Authenticator" },
+  { id: 3, name: "Okta Verify" },
+  { id: 4, name: "Google Authenticator" },
+  { id: 5, name: "Yubico (YubiKey)" },
+]
+
+export const initialMdmVendors: BaseVendor[] = [
   { id: 1, name: "Microsoft Intune" },
   { id: 2, name: "VMware Workspace ONE" },
-  { id: 3, name: "Jamf" },
+  { id: 3, name: "Jamf Pro" },
+  { id: 4, name: "MobileIron" },
+  { id: 5, name: "SOTI MobiControl" },
+  { id: 6, name: "Kandji" },
 ]
 
-export const deviceTypes: DeviceType[] = [
-  { id: 1, name: "Windows Desktop" },
-  { id: 2, name: "macOS Laptop" },
-  { id: 3, name: "iOS Device" },
-  { id: 4, name: "Android Device" },
-  { id: 5, name: "VoIP Phone" },
-  { id: 6, name: "Printer" },
-  { id: 7, name: "IoT Sensor" },
+export const initialDeviceTypes: DeviceType[] = [
+  { id: 1, name: "Windows Desktop/Laptop" },
+  { id: 2, name: "macOS Desktop/Laptop" },
+  { id: 3, name: "iOS (iPhone/iPad)" },
+  { id: 4, name: "Android (Phone/Tablet)" },
+  { id: 5, name: "Linux Server" },
+  { id: 6, name: "Linux Desktop" },
+  { id: 7, name: "Surveillance Camera" },
+  { id: 8, name: "IP Phone" },
+  { id: 9, name: "Printer" },
+  { id: 10, name: "HVAC Controller" },
+  { id: 11, name: "Medical Device" },
+  { id: 12, name: "Point of Sale (POS) Terminal" },
 ]
 
-export const checklistItems: LibraryItem[] = [
-  { id: "p1-1", category: "Planning", title: "Define Project Scope", description: "...", content: "..." },
+export const initialChecklistItems: ChecklistItem[] = [
+  { id: 1, name: "MDM/UEM Integration (e.g., Intune, Jamf)", category: "Integrations" },
+  { id: 2, name: "IdP Integration (e.g., Entra ID, Okta)", category: "Integrations" },
+  { id: 3, name: "SIEM Integration (e.g., Sentinel, Splunk)", category: "Integrations" },
+  { id: 4, name: "EDR/XDR Integration (e.g., CrowdStrike)", category: "Integrations" },
+  { id: 5, name: "AD Broker Deployed", category: "Infrastructure" },
+  { id: 6, name: "Local RADIUS Deployed", category: "Infrastructure" },
+  { id: 7, name: "Firewall Rules Configured", category: "Infrastructure" },
+  { id: 8, name: "Switch/AP Config Deployed", category: "Infrastructure" },
+  { id: 9, name: "Certificate Authority Configured", category: "PKI" },
+  { id: 10, name: "SCEP Profile Deployed", category: "PKI" },
+  { id: 11, name: "Corporate Access Policy Defined", category: "Policies" },
+  { id: 12, name: "Guest Access Policy Defined", category: "Policies" },
+  { id: 13, name: "IoT Access Policy Defined", category: "Policies" },
+  { id: 14, name: "Pilot Group Identified", category: "Deployment" },
+  { id: 15, name: "UAT Completed", category: "Deployment" },
 ]
 
-export const mockSites: Site[] = [
+export const initialRequirements: Requirement[] = [
   {
-    id: "acme-corp-ny",
-    name: "ACME Corp - New York",
-    customer: "ACME Corporation",
+    id: "REQ-01",
+    description: "Corporate devices must use certificate-based authentication (EAP-TLS).",
+    justification: "Ensures only managed and trusted devices can connect.",
+  },
+  {
+    id: "REQ-02",
+    description: "Guest network must be isolated from the corporate network.",
+    justification: "Prevents unauthorized access to internal resources from guest devices.",
+  },
+  {
+    id: "REQ-03",
+    description: "IoT devices must be placed in a segmented VLAN.",
+    justification: "Limits the attack surface of potentially vulnerable IoT devices.",
+  },
+  {
+    id: "REQ-04",
+    description: "VPN users must authenticate with MFA.",
+    justification: "Adds a layer of security for remote access.",
+  },
+  {
+    id: "REQ-05",
+    description: "Devices failing compliance checks must be quarantined.",
+    justification: "Prevents non-compliant devices from accessing sensitive resources.",
+  },
+]
+
+export const initialTestCases: TestCase[] = [
+  {
+    id: "TC-01",
+    name: "Corporate Wired Connection (EAP-TLS)",
+    description: "A managed Windows device with a valid certificate connects to a wired port.",
+    expected_outcome: "Device is authenticated and placed in the corporate VLAN.",
+  },
+  {
+    id: "TC-02",
+    name: "Corporate Wireless Connection (EAP-TLS)",
+    description: "A managed macOS device with a valid certificate connects to the corporate SSID.",
+    expected_outcome: "Device is authenticated and placed in the corporate VLAN.",
+  },
+  {
+    id: "TC-03",
+    name: "Guest Wireless Connection",
+    description: "A guest's personal smartphone connects to the guest SSID.",
+    expected_outcome: "User is redirected to a captive portal and, after accepting terms, gets internet-only access.",
+  },
+  {
+    id: "TC-04",
+    name: "IoT Wired Connection (MAB)",
+    description: "A registered IP camera is connected to a wired port.",
+    expected_outcome: "Device is identified by its MAC address and placed in the IoT VLAN.",
+  },
+  {
+    id: "TC-05",
+    name: "Revoked Certificate Connection Attempt",
+    description: "A corporate device with a revoked certificate attempts to connect.",
+    expected_outcome: "Authentication fails, and the device is denied access or placed in a remediation VLAN.",
+  },
+  {
+    id: "TC-06",
+    name: "Non-Compliant Device Connection Attempt",
+    description: "A corporate device with disabled antivirus attempts to connect.",
+    expected_outcome: "Device is identified as non-compliant and placed in a quarantine VLAN with limited access.",
+  },
+  {
+    id: "TC-07",
+    name: "VPN Connection with MFA",
+    description: "A remote user authenticates to the VPN.",
+    expected_outcome: "User provides credentials and is prompted for an MFA code to gain access.",
+  },
+]
+
+export const initialUseCases: UseCase[] = [
+  {
+    id: "UC-01",
+    title: "Wired 802.1X for Corporate Devices",
+    description: "Ensure only corporate-managed devices, authenticated via EAP-TLS, can access the wired network.",
+    category: "Wired Access",
+    priority: "mandatory",
+    is_baseline: true,
+    applicable_industries: ["All"],
+    applicable_goals: ["Zero Trust", "Device Compliance"],
+    requirement_ids: ["REQ-01", "REQ-05"],
+    test_case_ids: ["TC-01", "TC-05", "TC-06"],
+  },
+  {
+    id: "UC-02",
+    title: "Wireless 802.1X for Corporate Devices",
+    description:
+      "Ensure only corporate-managed devices, authenticated via EAP-TLS, can access the corporate wireless network.",
+    category: "Wireless Access",
+    priority: "mandatory",
+    is_baseline: true,
+    applicable_industries: ["All"],
+    applicable_goals: ["Zero Trust", "Device Compliance"],
+    requirement_ids: ["REQ-01", "REQ-05"],
+    test_case_ids: ["TC-02", "TC-05", "TC-06"],
+  },
+  {
+    id: "UC-03",
+    title: "Guest Wireless Access",
+    description: "Provide time-limited, isolated internet access for guest users via a captive portal.",
+    category: "Wireless Access",
+    priority: "mandatory",
+    is_baseline: true,
+    applicable_industries: ["All"],
+    applicable_goals: ["Guest Access"],
+    requirement_ids: ["REQ-02"],
+    test_case_ids: ["TC-03"],
+  },
+  {
+    id: "UC-04",
+    title: "IoT Device Onboarding and Segmentation",
+    description:
+      "Onboard IoT devices (cameras, printers) using MAC authentication (MAB) and place them into a segmented, least-privilege network VLAN.",
+    category: "IoT/OT Security",
+    priority: "optional",
+    is_baseline: false,
+    applicable_industries: ["Healthcare", "Manufacturing", "Corporate"],
+    applicable_goals: ["IoT Security"],
+    requirement_ids: ["REQ-03"],
+    test_case_ids: ["TC-04"],
+  },
+  {
+    id: "UC-05",
+    title: "Secure Remote Access (VPN)",
+    description: "Enforce strong authentication for users connecting to the network via VPN.",
+    category: "Remote Access",
+    priority: "mandatory",
+    is_baseline: false,
+    applicable_industries: ["All"],
+    applicable_goals: ["Secure Remote Work"],
+    requirement_ids: ["REQ-04"],
+    test_case_ids: ["TC-07"],
+  },
+]
+
+export const initialTestMatrix: TestMatrixEntry[] = [
+  {
+    id: "TM-01",
+    platform: "Windows 11",
+    mode: "Agentless (SCEP + Intune)",
+    type: "Wired",
+    config_portnox_cloud: "Completed",
+    config_nas: "Completed",
+    config_mdm: "Completed",
+    test_8021x: "Passed",
+    test_manual_block: "Passed",
+    test_acl: "Passed",
+    test_risk_assessment: "Passed",
+    test_remediation: "Passed",
+    notes: "Real-time block requires CoA (Local RADIUS Docker version only).",
+    is_custom: false,
+  },
+  {
+    id: "TM-02",
+    platform: "macOS Sonoma",
+    mode: "Agentless (SCEP + Jamf)",
+    type: "Wired",
+    config_portnox_cloud: "Completed",
+    config_nas: "Completed",
+    config_mdm: "Completed",
+    test_8021x: "Passed",
+    test_manual_block: "Passed",
+    test_acl: "Passed",
+    test_risk_assessment: "Passed",
+    test_remediation: "Failed",
+    notes: "Remediation script for Jamf is under development.",
+    is_custom: false,
+  },
+  {
+    id: "TM-03",
+    platform: "iOS 17",
+    mode: "Agentless (SCEP + Intune)",
+    type: "Wireless",
+    config_portnox_cloud: "Completed",
+    config_nas: "Completed",
+    config_mdm: "Completed",
+    test_8021x: "Passed",
+    test_manual_block: "N/A",
+    test_acl: "Passed",
+    test_risk_assessment: "Passed",
+    test_remediation: "N/A",
+    notes: "Testing on Meraki APs.",
+    is_custom: false,
+  },
+  {
+    id: "TM-04",
+    platform: "Android 14",
+    mode: "Agentless (SCEP + Intune)",
+    type: "Wireless",
+    config_portnox_cloud: "In Progress",
+    config_nas: "Completed",
+    config_mdm: "Completed",
+    test_8021x: "Pending",
+    test_manual_block: "Pending",
+    test_acl: "Pending",
+    test_risk_assessment: "Pending",
+    test_remediation: "Pending",
+    notes: "Awaiting configuration of Android Enterprise profiles.",
+    is_custom: false,
+  },
+]
+
+export const initialTasks: Task[] = [
+  { id: "TASK-01", title: "Project Kickoff Meeting", description: "...", status: "To Do" },
+  { id: "TASK-02", title: "Configure Cloud Tenant", description: "...", status: "To Do" },
+  { id: "TASK-03", title: "Integrate with Identity Provider", description: "...", status: "To Do" },
+  { id: "TASK-04", title: "Deploy On-Premise Broker/RADIUS", description: "...", status: "To Do" },
+  { id: "TASK-05", title: "Configure Network Access Policies", description: "...", status: "To Do" },
+  { id: "TASK-06", title: "Pilot Group Testing", description: "...", status: "To Do" },
+  { id: "TASK-07", title: "User Acceptance Testing (UAT)", description: "...", status: "To Do" },
+  { id: "TASK-08", title: "Production Rollout", description: "...", status: "To Do" },
+]
+
+export let mockSites: Site[] = [
+  {
+    id: "HQ001",
+    name: "Global Headquarters",
+    industry: "Technology",
+    project_goals: ["Zero Trust", "Device Compliance", "IoT Security"],
+    legacy_nac_systems: [{ name: "Cisco ISE", migration_timeline_months: 6 }],
     region: "North America",
     country: "United States",
-    status: "In Progress",
-    projectManager: "Alice Johnson",
-    technicalOwners: ["Bob Williams"],
-    wiredVendors: ["Cisco"],
-    wirelessVendors: ["Cisco Meraki"],
-    deviceTypes: ["Corporate Laptops", "Smartphones", "VoIP Phones"],
+    phase: 1,
+    users_count: 2500,
+    project_manager_id: 1,
     radsec: "Native",
-    plannedStart: "2024-08-01",
-    plannedEnd: "2024-09-30",
-    completionPercent: 45,
-    deploymentChecklist: [
-      { id: "p1-1", category: "Planning", task: "Define Project Scope", completed: true },
-      { id: "p1-2", category: "Planning", task: "Identify Stakeholders", completed: true },
-      { id: "p2-1", category: "Design", task: "Architect Network Integration", completed: false },
+    planned_start: "2025-08-01",
+    planned_end: "2025-10-31",
+    status: "In Progress",
+    completion_percent: 35,
+    created_at: "2025-07-01T00:00:00Z",
+    updated_at: "2025-07-15T00:00:00Z",
+    technical_owner_ids: [7, 8],
+    vendor_ids: [1, 14],
+    firewall_vendor_ids: [1],
+    vpn_vendor_ids: [2],
+    edr_xdr_vendor_ids: [2],
+    siem_vendor_ids: [2],
+    idp_vendor_ids: [1],
+    mfa_vendor_ids: [2],
+    mdm_vendor_ids: [1],
+    device_type_ids: [1, 2, 3, 4, 7, 9],
+    checklist_item_ids: [1, 2, 5, 9, 11, 14],
+    use_case_ids: ["UC-01", "UC-02", "UC-03", "UC-04"],
+    tasks: [],
+    test_case_statuses: [
+      { test_case_id: "TC-01", status: "passed" },
+      { test_case_id: "TC-02", status: "wip" },
     ],
+    requirement_statuses: [{ requirement_id: "REQ-01", status: "met" }],
   },
-]
-
-export const mockUsers: User[] = [
   {
-    id: "u-1",
-    name: "Alice Johnson",
-    email: "alice@example.com",
-    role: "Project Manager",
-    avatar: "/placeholder-user.jpg",
+    id: "EUR003",
+    name: "European HQ",
+    industry: "Finance",
+    project_goals: ["Guest Access", "Secure Remote Work"],
+    legacy_nac_systems: [],
+    region: "EMEA",
+    country: "Germany",
+    phase: 2,
+    users_count: 1200,
+    project_manager_id: 2,
+    radsec: "LRAD",
+    planned_start: "2025-09-01",
+    planned_end: "2025-11-30",
+    status: "Planned",
+    completion_percent: 0,
+    created_at: "2025-07-02T00:00:00Z",
+    updated_at: "2025-07-02T00:00:00Z",
+    technical_owner_ids: [8, 9],
+    vendor_ids: [4, 15],
+    firewall_vendor_ids: [2],
+    vpn_vendor_ids: [5],
+    edr_xdr_vendor_ids: [3],
+    siem_vendor_ids: [1],
+    idp_vendor_ids: [2],
+    mfa_vendor_ids: [3],
+    mdm_vendor_ids: [2],
+    device_type_ids: [1, 2, 3, 4],
+    checklist_item_ids: [],
+    use_case_ids: ["UC-02", "UC-05"],
+    tasks: [],
+    test_case_statuses: [],
+    requirement_statuses: [],
   },
-  { id: "u-2", name: "Bob Williams", email: "bob@example.com", role: "Engineer", avatar: "/placeholder-user.jpg" },
-  { id: "u-3", name: "Charlie Brown", email: "charlie@example.com", role: "Admin", avatar: "/placeholder-user.jpg" },
 ]
 
-export const notifications: Notification[] = [
+export const mockScopingQuestionnaires: ScopingQuestionnaire[] = [
   {
-    id: "n-1",
-    message: "ACME Corp - New York project is now In Progress.",
-    timestamp: new Date().toISOString(),
-    read: false,
-    type: "info",
+    id: "SCOPE-1",
+    organizationName: "Acme Corp",
+    totalUsers: 1500,
+    country: "United States",
+    region: "North America",
+    industry: "Manufacturing",
+    projectGoals: ["Zero Trust", "IoT Security"],
+    legacySystems: [{ name: "Aruba ClearPass" }],
+    idpVendors: ["Okta"],
+    mfaVendors: ["Okta Verify"],
+    wiredVendors: ["Cisco"],
+    wirelessVendors: ["Cisco/Meraki"],
+    mdmVendors: ["Microsoft Intune"],
+    edrVendors: ["CrowdStrike Falcon"],
+    siemVendors: ["Splunk"],
+    firewallVendors: ["Palo Alto Networks"],
+    vpnVendors: ["Palo Alto GlobalProtect"],
+    created_at: "2025-07-20T10:00:00Z",
+    updated_at: "2025-07-20T10:00:00Z",
+    status: "Completed",
   },
 ]
 
-export const milestones: Milestone[] = [
-  { id: "m-1", title: "Project Kick-off", date: "2024-08-01", description: "Initial meeting with all stakeholders." },
-]
+// Functions to manipulate the data for the session
+export const clearSites = () => {
+  mockSites.length = 0
+}
 
-export const useCases: UseCase[] = [
-  { id: "uc-1", category: "Access Control", title: "Secure Guest Access", priority: "High", is_custom: false },
-  { id: "uc-2", category: "Compliance", title: "Device Posture Check", priority: "High", is_custom: false },
-]
-
-export const testCases: TestCase[] = [
-  {
-    id: "tc-1",
-    name: "Guest connects to Wi-Fi",
-    expected_outcome: "Guest is redirected to captive portal.",
-    is_custom: false,
-  },
-]
-
-export const requirements: Requirement[] = [
-  {
-    id: "req-1",
-    description: "The system must support RADIUS.",
-    is_custom: false,
-  },
-]
+export const loadSampleSites = () => {
+  // This is a simplified way to reset. In a real app, you'd deep copy.
+  mockSites = [
+    {
+      id: "HQ001",
+      name: "Global Headquarters",
+      industry: "Technology",
+      project_goals: ["Zero Trust", "Device Compliance", "IoT Security"],
+      legacy_nac_systems: [{ name: "Cisco ISE", migration_timeline_months: 6 }],
+      region: "North America",
+      country: "United States",
+      phase: 1,
+      users_count: 2500,
+      project_manager_id: 1,
+      radsec: "Native",
+      planned_start: "2025-08-01",
+      planned_end: "2025-10-31",
+      status: "In Progress",
+      completion_percent: 35,
+      created_at: "2025-07-01T00:00:00Z",
+      updated_at: "2025-07-15T00:00:00Z",
+      technical_owner_ids: [7, 8],
+      vendor_ids: [1, 14],
+      firewall_vendor_ids: [1],
+      vpn_vendor_ids: [2],
+      edr_xdr_vendor_ids: [2],
+      siem_vendor_ids: [2],
+      idp_vendor_ids: [1],
+      mfa_vendor_ids: [2],
+      mdm_vendor_ids: [1],
+      device_type_ids: [1, 2, 3, 4, 7, 9],
+      checklist_item_ids: [1, 2, 5, 9, 11, 14],
+      use_case_ids: ["UC-01", "UC-02", "UC-03", "UC-04"],
+      tasks: [],
+      test_case_statuses: [
+        { test_case_id: "TC-01", status: "passed" },
+        { test_case_id: "TC-02", status: "wip" },
+      ],
+      requirement_statuses: [{ requirement_id: "REQ-01", status: "met" }],
+    },
+    {
+      id: "EUR003",
+      name: "European HQ",
+      industry: "Finance",
+      project_goals: ["Guest Access", "Secure Remote Work"],
+      legacy_nac_systems: [],
+      region: "EMEA",
+      country: "Germany",
+      phase: 2,
+      users_count: 1200,
+      project_manager_id: 2,
+      radsec: "LRAD",
+      planned_start: "2025-09-01",
+      planned_end: "2025-11-30",
+      status: "Planned",
+      completion_percent: 0,
+      created_at: "2025-07-02T00:00:00Z",
+      updated_at: "2025-07-02T00:00:00Z",
+      technical_owner_ids: [8, 9],
+      vendor_ids: [4, 15],
+      firewall_vendor_ids: [2],
+      vpn_vendor_ids: [5],
+      edr_xdr_vendor_ids: [3],
+      siem_vendor_ids: [1],
+      idp_vendor_ids: [2],
+      mfa_vendor_ids: [3],
+      mdm_vendor_ids: [2],
+      device_type_ids: [1, 2, 3, 4],
+      checklist_item_ids: [],
+      use_case_ids: ["UC-02", "UC-05"],
+      tasks: [],
+      test_case_statuses: [],
+      requirement_statuses: [],
+    },
+  ]
+}
