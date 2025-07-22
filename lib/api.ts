@@ -111,6 +111,24 @@ export async function createUser(userData: Omit<User, "id" | "avatar">): Promise
   return JSON.parse(JSON.stringify(newUser))
 }
 
+export async function updateUser(id: string, userData: Partial<User>): Promise<User | null> {
+  await simulateDelay(100)
+  const userIndex = state.users.findIndex((u: User) => u.id === id)
+  if (userIndex === -1) {
+    return null
+  }
+  state.users[userIndex] = { ...state.users[userIndex], ...userData }
+  return JSON.parse(JSON.stringify(state.users[userIndex]))
+}
+
+export async function deleteUser(id: string): Promise<void> {
+  await simulateDelay(100)
+  const userIndex = state.users.findIndex((u: User) => u.id === id)
+  if (userIndex > -1) {
+    state.users.splice(userIndex, 1)
+  }
+}
+
 export async function getNotifications(): Promise<Notification[]> {
   await simulateDelay(100)
   const sortedNotifications = [...state.notifications].sort(
@@ -231,6 +249,30 @@ export async function bulkUpdateSites(siteIds: string[], updates: any): Promise<
   state.sites = updatedSites
 }
 
+export async function bulkCreateSites(sitesData: Partial<Site>[]): Promise<Site[]> {
+  await simulateDelay(200)
+  const newSites: Site[] = sitesData.map((site, i) => ({
+    id: `${site.name?.replace(/\s+/g, "-").toUpperCase() || "SITE"}-${Date.now() + i}`,
+    name: site.name || "New Site",
+    customer: site.customer || "",
+    region: site.region || "",
+    country: site.country || "",
+    status: site.status || "Planning",
+    projectManager: site.projectManager || "",
+    technicalOwners: site.technicalOwners || [],
+    wiredVendors: site.wiredVendors || [],
+    wirelessVendors: site.wirelessVendors || [],
+    deviceTypes: site.deviceTypes || [],
+    radsec: site.radsec || "Native",
+    plannedStart: site.plannedStart || new Date().toISOString(),
+    plannedEnd: site.plannedEnd || new Date().toISOString(),
+    completionPercent: site.completionPercent || 0,
+    deploymentChecklist: site.deploymentChecklist || [],
+  }))
+  state.sites.push(...newSites)
+  return JSON.parse(JSON.stringify(newSites))
+}
+
 export async function getChecklistItems(): Promise<ChecklistItem[]> {
   const data = await getLibraryData()
   return data.deploymentChecklist
@@ -279,22 +321,25 @@ export async function createVendor(itemData: Omit<Vendor, "id">): Promise<Vendor
 
 export async function getQuestionnaires(): Promise<ScopingQuestionnaire[]> {
   await simulateDelay(50)
+  // This is a mock, returning an empty array for now.
   return []
 }
 
 export async function createQuestionnaire(data: Omit<ScopingQuestionnaire, "id">): Promise<ScopingQuestionnaire> {
   await simulateDelay(100)
-  const newQuestionnaire = { id: Date.now(), ...data }
+  const newQuestionnaire = { id: `${Date.now()}`, ...data }
   console.log("Created questionnaire (mock):", newQuestionnaire)
+  // This is a mock, just returning the created object.
   return newQuestionnaire
 }
 
 export async function updateQuestionnaire(
-  id: number,
+  id: string,
   data: Partial<ScopingQuestionnaire>,
 ): Promise<ScopingQuestionnaire> {
   await simulateDelay(100)
   console.log(`Updating questionnaire ${id} (mock):`, data)
+  // This is a mock, returning a merged object.
   const mockQuestionnaire: ScopingQuestionnaire = {
     id,
     siteName: "Updated Site",
@@ -308,9 +353,23 @@ export async function updateQuestionnaire(
   return mockQuestionnaire
 }
 
-export async function deleteQuestionnaire(id: number): Promise<void> {
+export async function deleteQuestionnaire(id: string): Promise<void> {
   await simulateDelay(100)
   console.log(`Deleting questionnaire ${id} (mock)`)
+}
+
+export async function seedDatabase(): Promise<void> {
+  await simulateDelay(200)
+  state.sites = JSON.parse(JSON.stringify(mockSites))
+  state.users = JSON.parse(JSON.stringify(mockUsers))
+  console.log("Database seeded with mock data.")
+}
+
+export async function clearDatabase(): Promise<void> {
+  await simulateDelay(200)
+  state.sites = []
+  state.users = []
+  console.log("Database cleared.")
 }
 
 export async function deleteLibraryItem(id: number | string, type: string): Promise<void> {
