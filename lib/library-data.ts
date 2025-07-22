@@ -107,22 +107,8 @@ export const mockSites: Site[] = [
     region: "North America",
     country: "United States",
     status: "In Progress",
-    projectManager: {
-      id: 1,
-      name: "Alice Johnson",
-      email: "alice@example.com",
-      role: "Project Manager",
-      avatar: "/placeholder-user.jpg",
-    },
-    technicalOwners: [
-      {
-        id: 2,
-        name: "Bob Williams",
-        email: "bob@example.com",
-        role: "Engineer",
-        avatar: "/placeholder-user.jpg",
-      },
-    ],
+    projectManager: "Alice Johnson",
+    technicalOwners: ["Bob Williams"],
     wiredVendors: ["Cisco"],
     wirelessVendors: ["Cisco Meraki"],
     deviceTypes: ["Corporate Laptops", "Smartphones", "VoIP Phones"],
@@ -130,29 +116,24 @@ export const mockSites: Site[] = [
     plannedStart: "2024-08-01",
     plannedEnd: "2024-09-30",
     completionPercent: 45,
-    deploymentChecklist: [],
-    notes: "",
-    useCaseIds: [],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    users_count: 100,
-    phase: "Deployment",
-    priority: "High",
-    project_manager_name: "Alice Johnson",
-    checklist_item_ids: [],
+    deploymentChecklist: [
+      { id: "p1-1", category: "Planning", task: "Define Project Scope", completed: true },
+      { id: "p1-2", category: "Planning", task: "Identify Stakeholders", completed: true },
+      { id: "p2-1", category: "Design", task: "Architect Network Integration", completed: false },
+    ],
   },
 ]
 
 export const mockUsers: User[] = [
   {
-    id: 1,
+    id: "u-1",
     name: "Alice Johnson",
     email: "alice@example.com",
     role: "Project Manager",
     avatar: "/placeholder-user.jpg",
   },
-  { id: 2, name: "Bob Williams", email: "bob@example.com", role: "Engineer", avatar: "/placeholder-user.jpg" },
-  { id: 3, name: "Charlie Brown", email: "charlie@example.com", role: "Admin", avatar: "/placeholder-user.jpg" },
+  { id: "u-2", name: "Bob Williams", email: "bob@example.com", role: "Engineer", avatar: "/placeholder-user.jpg" },
+  { id: "u-3", name: "Charlie Brown", email: "charlie@example.com", role: "Admin", avatar: "/placeholder-user.jpg" },
 ]
 
 export const notifications: Notification[] = [
@@ -170,13 +151,13 @@ export const milestones: Milestone[] = [
 ]
 
 export const useCases: UseCase[] = [
-  { id: 1, category: "Access Control", title: "Secure Guest Access", priority: "High", is_custom: false },
-  { id: 2, category: "Compliance", title: "Device Posture Check", priority: "High", is_custom: false },
+  { id: "uc-1", category: "Access Control", title: "Secure Guest Access", priority: "High", is_custom: false },
+  { id: "uc-2", category: "Compliance", title: "Device Posture Check", priority: "High", is_custom: false },
 ]
 
 export const testCases: TestCase[] = [
   {
-    id: 1,
+    id: "tc-1",
     name: "Guest connects to Wi-Fi",
     expected_outcome: "Guest is redirected to captive portal.",
     is_custom: false,
@@ -185,7 +166,7 @@ export const testCases: TestCase[] = [
 
 export const requirements: Requirement[] = [
   {
-    id: 1,
+    id: "req-1",
     description: "The system must support RADIUS.",
     is_custom: false,
   },

@@ -45,7 +45,7 @@ export default function Home() {
       console.error("Error fetching data:", error)
       toast({
         title: "Error fetching data",
-        description: error instanceof Error ? error.message : "Could not load initial application data.",
+        description: "Could not load initial application data. Please try again later.",
         variant: "destructive",
       })
     } finally {
@@ -56,6 +56,21 @@ export default function Home() {
   useEffect(() => {
     fetchData()
   }, [fetchData])
+
+  const handleAddSite = () => {
+    // Logic for adding a site would open a modal/form
+    toast({ title: "Add Site Clicked", description: "This would open a form to create a new site." })
+  }
+
+  const handleEditSite = (site: Site) => {
+    // Logic for editing a site
+    toast({ title: "Edit Site Clicked", description: `Editing ${site.name}` })
+  }
+
+  const handleBulkEdit = (selectedSites: Site[]) => {
+    // Logic for bulk editing sites
+    toast({ title: "Bulk Edit Clicked", description: `Editing ${selectedSites.length} sites.` })
+  }
 
   if (isLoading || !library || !stats) {
     return <Loading />
@@ -97,7 +112,7 @@ export default function Home() {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="sites" className="mt-4">
-            <SiteList sites={sites} library={library} users={users} onUpdate={fetchData} />
+            <SiteList sites={sites} onAddSite={handleAddSite} onEditSite={handleEditSite} onBulkEdit={handleBulkEdit} />
           </TabsContent>
           <TabsContent value="progress" className="mt-4">
             <ProgressDashboard stats={stats} sites={sites} milestones={milestones} />
@@ -112,10 +127,10 @@ export default function Home() {
             <LibraryDashboard libraryData={library} onUpdate={fetchData} />
           </TabsContent>
           <TabsContent value="reports" className="mt-4">
-            <ReportsDashboard />
+            <ReportsDashboard sites={sites} />
           </TabsContent>
           <TabsContent value="settings" className="mt-4">
-            <SettingsDashboard users={users} onUpdate={fetchData} />
+            <SettingsDashboard users={users} />
           </TabsContent>
         </Tabs>
       </main>

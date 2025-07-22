@@ -1,22 +1,28 @@
-import { pgTable, text, varchar, integer } from "drizzle-orm/pg-core"
-
-// This schema is reduced to its absolute minimum to guarantee successful queries
-// and diagnose the persistent schema mismatch.
+import { pgTable, text, serial, timestamp, integer, varchar, jsonb } from "drizzle-orm/pg-core"
 
 export const users = pgTable("users", {
-  id: text("id").primaryKey(),
-  name: varchar("name", { length: 255 }).notNull(),
-  email: varchar("email", { length: 255 }).notNull().unique(),
-  role: text("role").notNull(),
-  // `avatar`, `created_at`, `updated_at` removed to ensure query success.
+  id: serial("id").primaryKey(),
+  name: text("name"),
+  email: text("email").notNull(),
+  role: text("role"),
+  avatar: text("avatar"),
+  createdAt: timestamp("created_at").defaultNow(),
 })
 
 export const sites = pgTable("sites", {
-  id: text("id").primaryKey(),
-  name: varchar("name", { length: 255 }).notNull(),
+  id: varchar("id", { length: 256 }).primaryKey(),
+  name: text("name").notNull(),
+  customer: text("customer"),
   region: text("region"),
+  country: text("country"),
   status: text("status"),
-  completion_percent: integer("completion_percent").default(0),
-  project_manager: text("project_manager"), // Stores the user ID
-  // All other columns, especially complex jsonb types, are removed to create a stable base.
+  projectManager: text("project_manager"),
+  technicalOwners: jsonb("technical_owners").default([]),
+  wiredVendors: jsonb("wired_vendors").default([]),
+  wirelessVendors: jsonb("wireless_vendors").default([]),
+  deviceTypes: jsonb("device_types").default([]),
+  radsec: text("radsec"),
+  plannedStart: text("planned_start"),
+  plannedEnd: text("planned_end"),
+  completionPercent: integer("completion_percent").default(0),
 })

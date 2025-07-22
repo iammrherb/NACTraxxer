@@ -12,9 +12,9 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from "./ui/use-toast"
 import * as api from "@/lib/api"
-import type { Site, LibraryData, User } from "@/lib/types"
+import type { Site, LibraryData, DatabaseUser as User } from "@/lib/database"
 
 interface BulkCreateSitesModalProps {
   isOpen: boolean
@@ -24,12 +24,10 @@ interface BulkCreateSitesModalProps {
   users: User[]
 }
 
-export default function BulkCreateSitesModal({ isOpen, onClose, onUpdate }: BulkCreateSitesModalProps) {
+export function BulkCreateSitesModal({ isOpen, onClose, onUpdate }: BulkCreateSitesModalProps) {
   const [count, setCount] = useState(1)
   const [baseName, setBaseName] = useState("New Site")
   const [isSaving, setIsSaving] = useState(false)
-
-  const { toast } = useToast()
 
   const handleSave = async () => {
     if (count < 1) {
@@ -41,9 +39,6 @@ export default function BulkCreateSitesModal({ isOpen, onClose, onUpdate }: Bulk
     const sitesToCreate: Partial<Site>[] = Array.from({ length: count }, (_, i) => ({
       name: `${baseName} ${i + 1}`,
       id: `${baseName.replace(/\s+/g, "-").toUpperCase()}-${Date.now() + i}`,
-      status: "Planning",
-      phase: "Scoping",
-      completionPercent: 0,
     }))
 
     try {
@@ -52,7 +47,6 @@ export default function BulkCreateSitesModal({ isOpen, onClose, onUpdate }: Bulk
       onUpdate()
       onClose()
     } catch (error) {
-      console.error("Bulk create error:", error)
       toast({ title: "Error", description: "Failed to perform bulk create.", variant: "destructive" })
     } finally {
       setIsSaving(false)

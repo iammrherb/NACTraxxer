@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import {
   Dialog,
@@ -16,7 +15,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from "./ui/use-toast"
 import * as api from "@/lib/api"
 import type { User, LibraryData, UseCase } from "@/lib/types"
 
@@ -29,8 +28,7 @@ interface BulkEditModalProps {
   onUpdate: () => void
 }
 
-export default function BulkEditModal({ isOpen, onClose, siteIds, library, users = [], onUpdate }: BulkEditModalProps) {
-  const { toast } = useToast()
+export function BulkEditModal({ isOpen, onClose, siteIds, library, users = [], onUpdate }: BulkEditModalProps) {
   const [projectManagerId, setProjectManagerId] = useState<string>("")
   const [technicalOwnerIds, setTechnicalOwnerIds] = useState<string[]>([])
   const [useCaseIds, setUseCaseIds] = useState<string[]>([])

@@ -1,25 +1,26 @@
-import { NextResponse } from "next/server"
-import { db } from "@/lib/database"
-import { users } from "@/lib/database/schema"
+import { type NextRequest, NextResponse } from "next/server"
+import { getUsers, createUser } from "@/lib/api"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    // This query is now `SELECT id, name, email, role FROM users`, which is much more likely to succeed.
-    const allUsers = await db.select().from(users)
-    return NextResponse.json(allUsers)
-  } catch (error: any) {
-    console.error("API_USERS_GET_ERROR:", error)
-    return NextResponse.json({ message: `Failed to fetch users. ${error.message}` }, { status: 500 })
+    const { searchParams } = new URL(request.url)
+    const type = searchParams.get("type") as "project_manager" | "technical_owner" | null
+
+    const users = await getUsers(type || undefined)
+    return NextResponse.json(users)
+  } catch (error) {
+    console.error("Error fetching users:", error)
+    return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 })
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const newUser = await db.insert(users).values(body).returning()
-    return NextResponse.json(newUser[0], { status: 201 })
-  } catch (error: any) {
-    console.error("API_USERS_POST_ERROR:", error)
-    return NextResponse.json({ message: `Failed to create user. ${error.message}` }, { status: 500 })
+    const userData = await request.json()
+    const user = await createUser(userData)
+    return NextResponse.json(user)
+  } catch (error) {
+    console.error("Error creating user:", error)
+    return NextResponse.json({ error: "Failed to create user" }, { status: 500 })
   }
 }

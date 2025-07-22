@@ -1,22 +1,64 @@
-// lib/types.ts
+export interface Site {
+  id: string
+  name: string
+  customer: string
+  region: string
+  country: string
+  status: "Planning" | "In Progress" | "Completed" | "At Risk"
+  projectManager: string
+  technicalOwners: string[]
+  wiredVendors: string[]
+  wirelessVendors: string[]
+  deviceTypes: string[]
+  radsec: "Native" | "Proxy" | "None"
+  plannedStart: string
+  plannedEnd: string
+  completionPercent: number
+  deploymentChecklist: ChecklistItem[]
+  notes?: string
+  workbook?: SiteWorkbook
+}
+
+export interface SiteWorkbook {
+  networkDetails: {
+    totalSwitches: number
+    totalAPs: number
+    mainSwitchModels: string
+    mainAPModels: string
+    vlanCount: number
+    subnetDetails: string
+    existingAAA: string
+  }
+  portnoxConfig: {
+    policyGroups: string[]
+    authMethods: string[]
+    specialPolicies: string
+    highAvailability: string
+  }
+  testingPlan: {
+    pilotGroup: string
+    pilotDate: string
+    pilotDuration: string
+    successCriteria: string
+  }
+  contacts: { name: string; role: string; email: string; phone: string }[]
+}
+
+export interface ChecklistItem {
+  id: string
+  task: string
+  category: string
+  completed: boolean
+  completedBy?: string
+  completedDate?: string
+}
 
 export interface User {
   id: string
   name: string
   email: string
-  role: string
-}
-
-// This Site type matches the stable, minimal data structure.
-export interface Site {
-  id: string
-  name: string
-  region?: string | null
-  status?: string | null
-  completion_percent: number
-  project_manager?: User | null | string
-  technical_owners: User[]
-  // Other complex fields are temporarily removed.
+  role: "Admin" | "Project Manager" | "Engineer" | "Read-Only"
+  avatar: string
 }
 
 export interface Notification {
@@ -32,15 +74,6 @@ export interface Milestone {
   title: string
   date: string
   description: string
-}
-
-export interface ChecklistItem {
-  id: string
-  task: string
-  category: string
-  completed: boolean
-  completed_by?: string
-  completed_date?: string
 }
 
 export interface LibraryItem {
@@ -91,42 +124,42 @@ export interface Requirement {
 
 export interface ScopingQuestionnaire {
   id?: string
-  organization_name: string
-  total_users: number
-  site_count: number
+  organizationName: string
+  totalUsers: number
+  siteCount: number
   country: string
   region: string
   industry: string
-  project_goals: string[]
-  legacy_systems: string[]
-  idp_vendors: string[]
-  mfa_vendors: string[]
-  wired_vendors: string[]
-  wireless_vendors: string[]
-  mdm_vendors: string[]
-  edr_vendors: string[]
-  siem_vendors: string[]
-  firewall_vendors: string[]
-  vpn_vendors: string[]
+  projectGoals: string[]
+  legacySystems: string[]
+  idpVendors: string[]
+  mfaVendors: string[]
+  wiredVendors: string[]
+  wirelessVendors: string[]
+  mdmVendors: string[]
+  edrVendors: string[]
+  siemVendors: string[]
+  firewallVendors: string[]
+  vpnVendors: string[]
   status: "Draft" | "Completed"
 }
 
 export interface LibraryData {
-  deployment_checklist: LibraryItem[]
-  use_cases: UseCase[]
-  test_cases: TestCase[]
+  deploymentChecklist: LibraryItem[]
+  useCases: UseCase[]
+  testCases: TestCase[]
   requirements: Requirement[]
   regions: Region[]
-  idp_vendors: Vendor[]
-  mfa_vendors: Vendor[]
-  edr_vendors: Vendor[]
-  siem_vendors: Vendor[]
-  wired_vendors: Vendor[]
-  wireless_vendors: Vendor[]
-  firewall_vendors: Vendor[]
-  vpn_vendors: Vendor[]
-  mdm_vendors: Vendor[]
-  device_types: DeviceType[]
+  idpVendors: Vendor[]
+  mfaVendors: Vendor[]
+  edrVendors: Vendor[]
+  siemVendors: Vendor[]
+  wiredVendors: Vendor[]
+  wirelessVendors: Vendor[]
+  firewallVendors: Vendor[]
+  vpnVendors: Vendor[]
+  mdmVendors: Vendor[]
+  deviceTypes: DeviceType[]
 }
 
 export interface SiteStats {

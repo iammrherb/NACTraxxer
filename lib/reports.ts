@@ -2,6 +2,8 @@ import { sql } from "./database"
 import { put } from "@vercel/blob"
 import PDFDocument from "pdfkit"
 import { Buffer } from "buffer"
+import type { Site } from "./types"
+import type { ChecklistItem } from "./types"
 import type { PDFDocument as PDFKitDocument } from "pdfkit"
 import { ChartJSNodeCanvas } from "chartjs-node-canvas"
 import type { ChartConfiguration } from "chart.js"
@@ -256,8 +258,8 @@ export async function generateSiteSummaryPdf(doc: PDFKitDocument, parameters: Re
 async function generateProgressReport(doc: PDFKitDocument, parameters: ReportParameters) {
   doc.fontSize(18).text("Deployment Progress Report", { align: "left" }).moveDown()
 
-  const sites = await sql<any[]>`SELECT * FROM sites ORDER BY completion_percent DESC`
-  const checklistItems = await sql<any[]>`SELECT * FROM checklist_items`
+  const sites = await sql<Site[]>`SELECT * FROM sites ORDER BY completion_percent DESC`
+  const checklistItems = await sql<ChecklistItem[]>`SELECT * FROM checklist_items`
   const checklistMap = new Map(checklistItems.map((item) => [item.id, item]))
 
   doc.fontSize(16).text("Site Completion Status", { underline: true }).moveDown()
@@ -270,7 +272,7 @@ async function generateProgressReport(doc: PDFKitDocument, parameters: ReportPar
     doc.text(`Status: ${site.status} | Go-Live: ${new Date(site.planned_end).toLocaleDateString()}`)
 
     const completedItems = (site.checklist_item_ids || [])
-      .map((id: number) => checklistMap.get(id)?.name)
+      .map((id: any) => checklistMap.get(id)?.title)
       .filter(Boolean)
       .slice(0, 5) // Show first 5 for brevity
 
@@ -333,7 +335,7 @@ export async function getReports(userId?: number) {
     query = sql`${query} ORDER BY r.generated_at DESC`
 
     const result = await query
-    return result.map((row) => ({ ...row })) // Ensure plain objects are returned
+    return result.map((row) => ({ ...row }))
   } catch (error: any) {
     // A broad catch to handle any database error during initial setup.
     // This makes the dashboard more resilient if migrations/seeding are incomplete.

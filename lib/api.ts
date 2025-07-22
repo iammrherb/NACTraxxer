@@ -1,3 +1,24 @@
+import {
+  mockSites,
+  mockUsers,
+  notifications,
+  milestones,
+  checklistItems as libraryChecklistItems,
+  useCases,
+  testCases,
+  requirements,
+  initialRegions,
+  idpVendors,
+  mfaVendors,
+  edrVendors,
+  siemVendors,
+  wiredVendors,
+  wirelessVendors,
+  firewallVendors,
+  vpnVendors,
+  mdmVendors,
+  deviceTypes,
+} from "./library-data"
 import type {
   Site,
   User,
@@ -11,148 +32,156 @@ import type {
   ScopingQuestionnaire,
 } from "./types"
 
-// Helper to fetch data and handle errors
-async function fetchAPI<T>(url: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(url, options)
-
-  if (!response.ok) {
-    let errorDetails
-    try {
-      const errorData = await response.json()
-      errorDetails = errorData.message || errorData.details || JSON.stringify(errorData)
-    } catch (e) {
-      errorDetails = response.statusText || `Request failed with status ${response.status}`
-    }
-    console.error("API Error:", errorDetails)
-    throw new Error(errorDetails)
-  }
-
-  try {
-    const text = await response.text()
-    return text ? JSON.parse(text) : (null as T)
-  } catch (e) {
-    console.error("Failed to parse JSON response")
-    throw new Error("Invalid JSON response from server.")
-  }
+const state = {
+  sites: JSON.parse(JSON.stringify(mockSites)),
+  users: JSON.parse(JSON.stringify(mockUsers)),
+  notifications: JSON.parse(JSON.stringify(notifications)),
+  milestones: JSON.parse(JSON.stringify(milestones)),
 }
 
-// --- Site API ---
+const simulateDelay = (ms: number) => new Promise((res) => setTimeout(res, ms))
+
 export async function getSites(): Promise<Site[]> {
-  return fetchAPI<Site[]>("/api/sites")
+  await simulateDelay(50)
+  return JSON.parse(JSON.stringify(state.sites))
 }
 
 export async function getSite(id: string): Promise<Site | undefined> {
-  return fetchAPI<Site | undefined>(`/api/sites/${id}`)
+  await simulateDelay(50)
+  const site = state.sites.find((s: Site) => s.id === id)
+  return site ? JSON.parse(JSON.stringify(site)) : undefined
 }
 
 export async function createSite(siteData: Partial<Site>): Promise<Site> {
-  return fetchAPI<Site>("/api/sites", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(siteData),
-  })
-}
-
-export async function updateSite(id: string, updatedData: Partial<Site>): Promise<Site | null> {
-  return fetchAPI<Site | null>(`/api/sites/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(updatedData),
-  })
+  await simulateDelay(100)
+  const newSite: Site = {
+    id: `site-${Date.now()}`,
+    name: "New Site",
+    customer: "",
+    region: "",
+    country: "",
+    status: "Planned",
+    projectManager: "",
+    technicalOwners: [],
+    wiredVendors: [],
+    wirelessVendors: [],
+    deviceTypes: [],
+    radsec: "Native",
+    plannedStart: new Date().toISOString(),
+    plannedEnd: new Date().toISOString(),
+    completionPercent: 0,
+    deploymentChecklist: [],
+    ...siteData,
+  }
+  state.sites.push(newSite)
+  return JSON.parse(JSON.stringify(newSite))
 }
 
 export async function deleteSite(id: string): Promise<void> {
-  return fetchAPI<void>(`/api/sites/${id}`, { method: "DELETE" })
-}
-
-export async function bulkUpdateSites(siteIds: string[], updates: any): Promise<void> {
-  return fetchAPI<void>("/api/sites/bulk", {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ siteIds, updates }),
-  })
-}
-
-// --- User API ---
-export async function getUsers(): Promise<User[]> {
-  return fetchAPI<User[]>("/api/users")
-}
-
-export async function createUser(userData: Omit<User, "id" | "avatar">): Promise<User> {
-  return fetchAPI<User>("/api/users", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(userData),
-  })
-}
-
-export async function updateUser(id: string, userData: Partial<User>): Promise<User> {
-  return fetchAPI<User>(`/api/users/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(userData),
-  })
-}
-
-export async function deleteUser(id: string): Promise<void> {
-  return fetchAPI<void>(`/api/users/${id}`, { method: "DELETE" })
-}
-
-// --- Library & Static Data API ---
-export async function getLibraryData(): Promise<LibraryData> {
-  const {
-    checklistItems,
-    useCases,
-    testCases,
-    requirements,
-    initialRegions,
-    idpVendors,
-    mfaVendors,
-    edrVendors,
-    siemVendors,
-    wiredVendors,
-    wirelessVendors,
-    firewallVendors,
-    vpnVendors,
-    mdmVendors,
-    deviceTypes,
-  } = await import("./library-data")
-
-  return {
-    deploymentChecklist: checklistItems,
-    useCases,
-    testCases,
-    requirements,
-    regions: initialRegions,
-    idpVendors,
-    mfaVendors,
-    edrVendors,
-    siemVendors,
-    wiredVendors,
-    wirelessVendors,
-    firewallVendors,
-    vpnVendors,
-    mdmVendors,
-    deviceTypes,
+  await simulateDelay(100)
+  const siteIndex = state.sites.findIndex((s: Site) => s.id === id)
+  if (siteIndex > -1) {
+    state.sites.splice(siteIndex, 1)
   }
 }
 
-export async function getChecklistItems(): Promise<ChecklistItem[]> {
-  return fetchAPI<ChecklistItem[]>("/api/checklist-items")
+export async function updateSite(id: string, updatedData: Partial<Site>): Promise<Site | null> {
+  await simulateDelay(100)
+  const siteIndex = state.sites.findIndex((s: Site) => s.id === id)
+  if (siteIndex === -1) {
+    return null
+  }
+  state.sites[siteIndex] = { ...state.sites[siteIndex], ...updatedData }
+  return JSON.parse(JSON.stringify(state.sites[siteIndex]))
 }
 
-export async function createChecklistItem(itemData: Omit<ChecklistItem, "id">): Promise<ChecklistItem> {
-  return fetchAPI<ChecklistItem>("/api/checklist-items", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(itemData),
-  })
+export async function getUsers(): Promise<User[]> {
+  await simulateDelay(50)
+  return JSON.parse(JSON.stringify(state.users))
+}
+
+export async function createUser(userData: Omit<User, "id" | "avatar">): Promise<User> {
+  await simulateDelay(100)
+  const newUser: User = {
+    id: `user-${Date.now()}`,
+    avatar: "/placeholder-user.jpg",
+    ...userData,
+  }
+  state.users.push(newUser)
+  return JSON.parse(JSON.stringify(newUser))
+}
+
+export async function getNotifications(): Promise<Notification[]> {
+  await simulateDelay(100)
+  const sortedNotifications = [...state.notifications].sort(
+    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+  )
+  return JSON.parse(JSON.stringify(sortedNotifications))
+}
+
+export async function getMilestones(): Promise<Milestone[]> {
+  await simulateDelay(50)
+  return JSON.parse(JSON.stringify(state.milestones))
+}
+
+export async function getLibraryData(): Promise<LibraryData> {
+  await simulateDelay(20)
+  return JSON.parse(
+    JSON.stringify({
+      deploymentChecklist: libraryChecklistItems,
+      useCases,
+      testCases,
+      requirements,
+      regions: initialRegions,
+      idpVendors,
+      mfaVendors,
+      edrVendors,
+      siemVendors,
+      wiredVendors,
+      wirelessVendors,
+      firewallVendors,
+      vpnVendors,
+      mdmVendors,
+      deviceTypes,
+    }),
+  )
+}
+
+export async function getSiteStats(): Promise<SiteStats> {
+  await simulateDelay(150)
+  const total_sites = state.sites.length
+  const completed_sites = state.sites.filter((s: Site) => s.status === "Completed").length
+  const in_progress_sites = state.sites.filter((s: Site) => s.status === "In Progress").length
+  const planned_sites = state.sites.filter((s: Site) => s.status === "Planning").length
+  const delayed_sites = state.sites.filter((s: Site) => s.status === "At Risk").length
+  const total_users = state.users.length
+  const overall_completion =
+    total_sites > 0
+      ? Math.round(
+          state.sites.reduce((acc: number, site: Site) => {
+            const totalItems = site.deploymentChecklist.length
+            const completedItems = site.deploymentChecklist.filter((i) => i.completed).length
+            return acc + (totalItems > 0 ? (completedItems / totalItems) * 100 : 0)
+          }, 0) / total_sites,
+        )
+      : 0
+
+  return {
+    total_sites,
+    completed_sites,
+    in_progress_sites,
+    planned_sites,
+    delayed_sites,
+    total_users,
+    overall_completion,
+  }
 }
 
 export async function getChecklistStatus(siteId: string): Promise<Record<string, boolean>> {
-  const site = await getSite(siteId)
-  if (!site || !site.deploymentChecklist) {
-    console.error(`Site with id ${siteId} or its checklist not found.`)
+  await simulateDelay(50)
+  const site = state.sites.find((s: Site) => s.id === siteId)
+  if (!site) {
+    console.error(`Site with id ${siteId} not found in getChecklistStatus`)
     return {}
   }
   const status: Record<string, boolean> = {}
@@ -163,85 +192,138 @@ export async function getChecklistStatus(siteId: string): Promise<Record<string,
 }
 
 export async function updateChecklistStatus(siteId: string, newStatus: Record<string, boolean>): Promise<void> {
-  return fetchAPI<void>(`/api/checklist-items`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ siteId, updates: newStatus }),
+  await simulateDelay(100)
+  const siteIndex = state.sites.findIndex((s: Site) => s.id === siteId)
+
+  if (siteIndex === -1) {
+    console.error(`Site with id ${siteId} not found in updateChecklistStatus`)
+    return
+  }
+
+  const site = state.sites[siteIndex]
+  const updatedChecklist = site.deploymentChecklist.map((item) => ({
+    ...item,
+    completed: newStatus[item.id] ?? item.completed,
+  }))
+
+  state.sites[siteIndex].deploymentChecklist = updatedChecklist
+}
+
+export async function bulkUpdateSites(siteIds: string[], updates: any): Promise<void> {
+  await simulateDelay(200)
+
+  const updatedSites = state.sites.map((site: Site) => {
+    if (siteIds.includes(site.id)) {
+      const newSiteData = { ...site }
+      if (updates.project_manager_id) {
+        const pm = state.users.find((u: User) => u.id === updates.project_manager_id)
+        if (pm) newSiteData.projectManager = pm.name
+      }
+      if (updates.technical_owner_ids) {
+        newSiteData.technicalOwners = state.users
+          .filter((u: User) => updates.technical_owner_ids.includes(u.id))
+          .map((u: User) => u.name)
+      }
+      return newSiteData
+    }
+    return site
   })
+  state.sites = updatedSites
+}
+
+export async function getChecklistItems(): Promise<ChecklistItem[]> {
+  const data = await getLibraryData()
+  return data.deploymentChecklist
+}
+
+export async function createChecklistItem(itemData: Omit<ChecklistItem, "id">): Promise<ChecklistItem> {
+  await simulateDelay(100)
+  const newItem = { id: `chk-${Date.now()}`, ...itemData }
+  console.log("Created checklist item (mock):", newItem)
+  return newItem
 }
 
 export async function getDeviceTypes(): Promise<DeviceType[]> {
-  return fetchAPI<DeviceType[]>("/api/device-types")
+  const data = await getLibraryData()
+  return data.deviceTypes
 }
 
 export async function createDeviceType(itemData: Omit<DeviceType, "id">): Promise<DeviceType> {
-  return fetchAPI<DeviceType>("/api/device-types", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(itemData),
-  })
+  await simulateDelay(100)
+  const newItem = { id: `dev-${Date.now()}`, ...itemData }
+  console.log("Created device type (mock):", newItem)
+  return newItem
 }
 
 export async function getVendors(): Promise<Vendor[]> {
-  return fetchAPI<Vendor[]>("/api/vendors")
+  const data = await getLibraryData()
+  return [
+    ...data.wiredVendors,
+    ...data.wirelessVendors,
+    ...data.firewallVendors,
+    ...data.vpnVendors,
+    ...data.mdmVendors,
+    ...data.idpVendors,
+    ...data.mfaVendors,
+    ...data.edrVendors,
+    ...data.siemVendors,
+  ]
 }
 
 export async function createVendor(itemData: Omit<Vendor, "id">): Promise<Vendor> {
-  return fetchAPI<Vendor>("/api/vendors", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(itemData),
-  })
+  await simulateDelay(100)
+  const newItem = { id: `vendor-${Date.now()}`, ...itemData }
+  console.log("Created vendor (mock):", newItem)
+  return newItem
 }
 
-// --- Scoping Questionnaire API ---
 export async function getQuestionnaires(): Promise<ScopingQuestionnaire[]> {
-  return fetchAPI<ScopingQuestionnaire[]>("/api/scoping")
+  await simulateDelay(50)
+  return []
 }
 
 export async function createQuestionnaire(data: Omit<ScopingQuestionnaire, "id">): Promise<ScopingQuestionnaire> {
-  return fetchAPI<ScopingQuestionnaire>("/api/scoping", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  })
+  await simulateDelay(100)
+  const newQuestionnaire = { id: Date.now(), ...data }
+  console.log("Created questionnaire (mock):", newQuestionnaire)
+  return newQuestionnaire
 }
 
 export async function updateQuestionnaire(
   id: number,
   data: Partial<ScopingQuestionnaire>,
 ): Promise<ScopingQuestionnaire> {
-  return fetchAPI<ScopingQuestionnaire>(`/api/scoping/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  })
+  await simulateDelay(100)
+  console.log(`Updating questionnaire ${id} (mock):`, data)
+  const mockQuestionnaire: ScopingQuestionnaire = {
+    id,
+    siteName: "Updated Site",
+    customerName: "Updated Customer",
+    region: "North America",
+    country: "US",
+    projectManager: "Alice",
+    technicalOwner: "Bob",
+    ...data,
+  }
+  return mockQuestionnaire
 }
 
 export async function deleteQuestionnaire(id: number): Promise<void> {
-  return fetchAPI<void>(`/api/scoping/${id}`, { method: "DELETE" })
+  await simulateDelay(100)
+  console.log(`Deleting questionnaire ${id} (mock)`)
 }
 
-// --- Other ---
-export async function getNotifications(): Promise<Notification[]> {
-  const { notifications } = await import("./library-data")
-  return [...notifications].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+export async function deleteLibraryItem(id: number | string, type: string): Promise<void> {
+  console.log(`Deleting item with id ${id} of type ${type}`)
+  await simulateDelay(100)
 }
 
-export async function getMilestones(): Promise<Milestone[]> {
-  const { milestones } = await import("./library-data")
-  return milestones
+export async function updateLibraryItem(id: number | string, data: any, type: string): Promise<void> {
+  console.log(`Updating item with id ${id} of type ${type} with data:`, data)
+  await simulateDelay(100)
 }
 
-export async function getSiteStats(): Promise<SiteStats> {
-  return fetchAPI<SiteStats>("/api/stats")
-}
-
-// --- Debug API ---
-export async function seedDatabase(): Promise<void> {
-  return fetchAPI<void>("/api/debug/seed", { method: "POST" })
-}
-
-export async function clearDatabase(): Promise<void> {
-  return fetchAPI<void>("/api/debug/clear", { method: "DELETE" })
+export async function createLibraryItem(data: any, type: string): Promise<void> {
+  console.log(`Creating item of type ${type} with data:`, data)
+  await simulateDelay(100)
 }

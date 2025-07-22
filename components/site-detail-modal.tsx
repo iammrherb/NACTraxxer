@@ -19,9 +19,9 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from "./ui/use-toast"
 import * as api from "@/lib/api"
-import type { Site, User, UseCase, TestCase, SiteTestCaseStatus } from "@/lib/types"
+import type { Site, DatabaseUser as User, UseCase, TestCase, SiteTestCaseStatus } from "@/lib/database"
 
 interface SiteDetailModalProps {
   isOpen: boolean
@@ -59,10 +59,9 @@ const MultiSelectGrid = ({ title, options, selectedIds, onSelectionChange }: any
   </div>
 )
 
-export default function SiteDetailModal({ isOpen, onClose, site, onUpdate, library, users }: SiteDetailModalProps) {
+export function SiteDetailModal({ isOpen, onClose, site, onUpdate, library, users }: SiteDetailModalProps) {
   const [editedSite, setEditedSite] = useState<Site>(site)
   const [isSaving, setIsSaving] = useState(false)
-  const { toast } = useToast()
 
   useEffect(() => {
     setEditedSite(JSON.parse(JSON.stringify(site)))
