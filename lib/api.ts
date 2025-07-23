@@ -303,11 +303,11 @@ export const updateChecklistItem = (item: ChecklistItem) => updateLibraryItem(ch
 export const deleteChecklistItem = (id: number) => deleteLibraryItem(checklistItems, id)
 
 // --- Use Case CRUD ---
-export const createUseCase = async (item: Omit<UseCase, "id" | "is_custom">): Promise<UseCase> => {
+export const createUseCase = async (item: Omit<UseCase, "is_custom">): Promise<UseCase> => {
   await new Promise((res) => setTimeout(res, 200))
   const newItem: UseCase = {
     ...item,
-    id: `UC-CUSTOM-${Date.now()}`,
+    id: item.id || `UC-CUSTOM-${Date.now()}`,
     is_custom: true,
   }
   useCases.push(newItem)
@@ -318,7 +318,7 @@ export const updateUseCase = async (item: UseCase): Promise<UseCase> => {
   await new Promise((res) => setTimeout(res, 200))
   const index = useCases.findIndex((i) => i.id === item.id)
   if (index > -1) {
-    useCases[index] = item
+    useCases[index] = { ...useCases[index], ...item, updated_at: new Date().toISOString() }
     return item
   }
   throw new Error("Use case not found")
@@ -335,11 +335,11 @@ export const deleteUseCase = async (id: string): Promise<void> => {
 }
 
 // --- Test Case CRUD ---
-export const createTestCase = async (item: Omit<TestCase, "id" | "is_custom">): Promise<TestCase> => {
+export const createTestCase = async (item: Omit<TestCase, "is_custom">): Promise<TestCase> => {
   await new Promise((res) => setTimeout(res, 200))
   const newItem: TestCase = {
     ...item,
-    id: `TC-CUSTOM-${Date.now()}`,
+    id: item.id || `TC-CUSTOM-${Date.now()}`,
     is_custom: true,
   }
   testCases.push(newItem)
@@ -350,7 +350,7 @@ export const updateTestCase = async (item: TestCase): Promise<TestCase> => {
   await new Promise((res) => setTimeout(res, 200))
   const index = testCases.findIndex((i) => i.id === item.id)
   if (index > -1) {
-    testCases[index] = item
+    testCases[index] = { ...testCases[index], ...item }
     return item
   }
   throw new Error("Test case not found")
@@ -367,11 +367,11 @@ export const deleteTestCase = async (id: string): Promise<void> => {
 }
 
 // --- Requirement CRUD ---
-export const createRequirement = async (item: Omit<Requirement, "id" | "is_custom">): Promise<Requirement> => {
+export const createRequirement = async (item: Omit<Requirement, "is_custom">): Promise<Requirement> => {
   await new Promise((res) => setTimeout(res, 200))
   const newItem: Requirement = {
     ...item,
-    id: `R-CUSTOM-${Date.now()}`,
+    id: item.id || `R-CUSTOM-${Date.now()}`,
     is_custom: true,
   }
   requirements.push(newItem)
@@ -382,7 +382,7 @@ export const updateRequirement = async (item: Requirement): Promise<Requirement>
   await new Promise((res) => setTimeout(res, 200))
   const index = requirements.findIndex((i) => i.id === item.id)
   if (index > -1) {
-    requirements[index] = item
+    requirements[index] = { ...requirements[index], ...item }
     return item
   }
   throw new Error("Requirement not found")

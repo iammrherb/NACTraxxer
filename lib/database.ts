@@ -79,6 +79,8 @@ export interface UseCase {
   applicable_goals: string[]
   requirement_ids: string[]
   test_case_ids: string[]
+  created_at?: string
+  updated_at?: string
 }
 
 export interface TestMatrixEntry {
@@ -103,6 +105,8 @@ export interface Requirement {
   description: string
   justification: string
   is_custom?: boolean
+  created_at?: string
+  updated_at?: string
 }
 
 export interface TestCase {
@@ -111,6 +115,8 @@ export interface TestCase {
   description: string
   expected_outcome: string
   is_custom?: boolean
+  created_at?: string
+  updated_at?: string
 }
 
 export interface Task {
