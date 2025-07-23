@@ -34,6 +34,9 @@ import type {
   ChecklistItem,
   SiteStats,
   ScopingQuestionnaire,
+  UseCase,
+  TestCase,
+  Requirement,
 } from "./database"
 
 // Hold data in memory
@@ -45,6 +48,9 @@ const wirelessVendors: Vendor[] = JSON.parse(JSON.stringify(initialWirelessVendo
 const idpVendors: BaseVendor[] = JSON.parse(JSON.stringify(initialIdpVendors))
 const deviceTypes: DeviceType[] = JSON.parse(JSON.stringify(initialDeviceTypes))
 const checklistItems: ChecklistItem[] = JSON.parse(JSON.stringify(initialChecklistItems))
+let useCases = JSON.parse(JSON.stringify(initialUseCases))
+let testCases = JSON.parse(JSON.stringify(initialTestCases))
+let requirements = JSON.parse(JSON.stringify(initialRequirements))
 
 // --- Site Management ---
 export const getSites = async (): Promise<Site[]> => {
@@ -295,6 +301,145 @@ export const deleteDeviceType = (id: number) => deleteLibraryItem(deviceTypes, i
 export const createChecklistItem = (item: { name: string; category: string }) => createLibraryItem(checklistItems, item)
 export const updateChecklistItem = (item: ChecklistItem) => updateLibraryItem(checklistItems, item)
 export const deleteChecklistItem = (id: number) => deleteLibraryItem(checklistItems, id)
+
+// --- Use Case CRUD ---
+export const createUseCase = async (item: Omit<UseCase, "id" | "is_custom">): Promise<UseCase> => {
+  await new Promise((res) => setTimeout(res, 200))
+  const newItem: UseCase = {
+    ...item,
+    id: `UC-CUSTOM-${Date.now()}`,
+    is_custom: true,
+  }
+  useCases.push(newItem)
+  return newItem
+}
+
+export const updateUseCase = async (item: UseCase): Promise<UseCase> => {
+  await new Promise((res) => setTimeout(res, 200))
+  const index = useCases.findIndex((i) => i.id === item.id)
+  if (index > -1) {
+    useCases[index] = item
+    return item
+  }
+  throw new Error("Use case not found")
+}
+
+export const deleteUseCase = async (id: string): Promise<void> => {
+  await new Promise((res) => setTimeout(res, 200))
+  const index = useCases.findIndex((i) => i.id === id)
+  if (index > -1) {
+    useCases.splice(index, 1)
+  } else {
+    throw new Error("Use case not found")
+  }
+}
+
+// --- Test Case CRUD ---
+export const createTestCase = async (item: Omit<TestCase, "id" | "is_custom">): Promise<TestCase> => {
+  await new Promise((res) => setTimeout(res, 200))
+  const newItem: TestCase = {
+    ...item,
+    id: `TC-CUSTOM-${Date.now()}`,
+    is_custom: true,
+  }
+  testCases.push(newItem)
+  return newItem
+}
+
+export const updateTestCase = async (item: TestCase): Promise<TestCase> => {
+  await new Promise((res) => setTimeout(res, 200))
+  const index = testCases.findIndex((i) => i.id === item.id)
+  if (index > -1) {
+    testCases[index] = item
+    return item
+  }
+  throw new Error("Test case not found")
+}
+
+export const deleteTestCase = async (id: string): Promise<void> => {
+  await new Promise((res) => setTimeout(res, 200))
+  const index = testCases.findIndex((i) => i.id === id)
+  if (index > -1) {
+    testCases.splice(index, 1)
+  } else {
+    throw new Error("Test case not found")
+  }
+}
+
+// --- Requirement CRUD ---
+export const createRequirement = async (item: Omit<Requirement, "id" | "is_custom">): Promise<Requirement> => {
+  await new Promise((res) => setTimeout(res, 200))
+  const newItem: Requirement = {
+    ...item,
+    id: `R-CUSTOM-${Date.now()}`,
+    is_custom: true,
+  }
+  requirements.push(newItem)
+  return newItem
+}
+
+export const updateRequirement = async (item: Requirement): Promise<Requirement> => {
+  await new Promise((res) => setTimeout(res, 200))
+  const index = requirements.findIndex((i) => i.id === item.id)
+  if (index > -1) {
+    requirements[index] = item
+    return item
+  }
+  throw new Error("Requirement not found")
+}
+
+export const deleteRequirement = async (id: string): Promise<void> => {
+  await new Promise((res) => setTimeout(res, 200))
+  const index = requirements.findIndex((i) => i.id === id)
+  if (index > -1) {
+    requirements.splice(index, 1)
+  } else {
+    throw new Error("Requirement not found")
+  }
+}
+
+// --- Generic Library Item Functions ---
+export const createLibraryItem = async (data: any, type: string): Promise<any> => {
+  switch (type) {
+    case "use-cases":
+      return createUseCase(data)
+    case "test-cases":
+      return createTestCase(data)
+    case "requirements":
+      return createRequirement(data)
+    default:
+      throw new Error(`Unsupported library item type: ${type}`)
+  }
+}
+
+export const updateLibraryItem = async (id: string | number, data: any, type: string): Promise<any> => {
+  switch (type) {
+    case "use-cases":
+      return updateUseCase(data)
+    case "test-cases":
+      return updateTestCase(data)
+    case "requirements":
+      return updateRequirement(data)
+    default:
+      throw new Error(`Unsupported library item type: ${type}`)
+  }
+}
+
+export const deleteLibraryItem = async (id: string | number, type: string): Promise<void> => {
+  switch (type) {
+    case "useCase":
+    case "use-cases":
+      return deleteUseCase(id as string)
+    case "testCase":
+    case "test-cases":
+      return deleteTestCase(id as string)
+    case "requirement":
+    case "requirements":
+      return deleteRequirement(id as string)
+    default:
+      throw new Error(`Unsupported library item type: ${type}`)
+  }
+}
 
 // --- Debug/Settings Functions ---
 export const clearDatabase = async () => {
