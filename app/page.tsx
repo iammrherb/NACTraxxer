@@ -1,45 +1,48 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Header } from "@/components/header"
 import { ProgressDashboard } from "@/components/progress-dashboard"
-import { SiteTable } from "@/components/site-table"
-import { SiteForm } from "@/components/site-form"
-import { SiteDetailModal } from "@/components/site-detail-modal"
+import { SiteList } from "@/components/site-list"
 import { ScopingDashboard } from "@/components/scoping-dashboard"
 import { LibraryDashboard } from "@/components/library-dashboard"
+import { ReportsDashboard } from "@/components/reports-dashboard"
 import { SettingsDashboard } from "@/components/settings-dashboard"
-import { BulkEditModal } from "@/components/bulk-edit-modal"
+import { ImplementationDashboard } from "@/components/implementation-dashboard"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Toaster } from "@/components/ui/toaster"
 import { toast } from "@/components/ui/use-toast"
 import * as api from "@/lib/api"
-import type { Site, DatabaseUser, LibraryData } from "@/lib/database"
+import type { Site, User, LibraryData, SiteStats, Milestone } from "@/lib/types"
+import { Loading } from "@/components/loading"
+import { Settings, Telescope, ListTodo, LayoutDashboard, BookOpen, GanttChartSquare, BarChart3 } from "lucide-react"
 
 export default function Home() {
   const [sites, setSites] = useState<Site[]>([])
-  const [users, setUsers] = useState<DatabaseUser[]>([])
+  const [users, setUsers] = useState<User[]>([])
   const [library, setLibrary] = useState<LibraryData | null>(null)
+  const [stats, setStats] = useState<SiteStats | null>(null)
+  const [milestones, setMilestones] = useState<Milestone[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [isSiteFormOpen, setIsSiteFormOpen] = useState(false)
-  const [isSiteDetailOpen, setIsSiteDetailOpen] = useState(false)
-  const [isBulkEditOpen, setIsBulkEditOpen] = useState(false)
-  const [selectedSite, setSelectedSite] = useState<Site | null>(null)
-  const [bulkEditSiteIds, setBulkEditSiteIds] = useState<string[]>([])
   const [activeTab, setActiveTab] = useState("sites")
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setIsLoading(true)
     try {
-      const [sitesData, usersData, libraryData] = await Promise.all([
+      const [sitesData, usersData, libraryData, statsData, milestonesData] = await Promise.all([
         api.getSites(),
         api.getUsers(),
         api.getLibraryData(),
+        api.getSiteStats(),
+        api.getMilestones(),
       ])
       setSites(sitesData)
       setUsers(usersData)
       setLibrary(libraryData)
+      setStats(statsData)
+      setMilestones(milestonesData)
     } catch (error) {
+      console.error("Error fetching data:", error)
       toast({
         title: "Error fetching data",
         description: "Could not load initial application data. Please try again later.",
@@ -48,128 +51,89 @@ export default function Home() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     fetchData()
-  }, [])
+  }, [fetchData])
 
   const handleAddSite = () => {
-    setSelectedSite(null)
-    setIsSiteFormOpen(true)
+    // Logic for adding a site would open a modal/form
+    toast({ title: "Add Site Clicked", description: "This would open a form to create a new site." })
   }
 
   const handleEditSite = (site: Site) => {
-    setSelectedSite(site)
-    setIsSiteDetailOpen(true)
+    // Logic for editing a site
+    toast({ title: "Edit Site Clicked", description: `Editing ${site.name}` })
   }
 
-  const handleBulkEdit = (siteIds: string[]) => {
-    setBulkEditSiteIds(siteIds)
-    setIsBulkEditOpen(true)
+  const handleBulkEdit = (selectedSites: Site[]) => {
+    // Logic for bulk editing sites
+    toast({ title: "Bulk Edit Clicked", description: `Editing ${selectedSites.length} sites.` })
   }
 
-  const handleSaveSite = async (siteData: any) => {
-    try {
-      if (selectedSite) {
-        await api.updateSite(selectedSite.id, siteData)
-        toast({ title: "Success", description: "Site updated successfully." })
-      } else {
-        await api.createSite(siteData)
-        toast({ title: "Success", description: "Site created successfully." })
-      }
-      fetchData()
-      setIsSiteFormOpen(false)
-    } catch (error) {
-      toast({ title: "Error", description: "Failed to save site.", variant: "destructive" })
-    }
-  }
-
-  const handleSiteCreated = () => {
-    fetchData()
-    setActiveTab("sites")
-  }
-
-  if (isLoading || !library) {
-    return <div>Loading...</div>
+  if (isLoading || !library || !stats) {
+    return <Loading />
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="flex min-h-screen w-full flex-col bg-muted/40">
       <Header />
-      <main className="p-4 md:p-8">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="progress">Progress</TabsTrigger>
-            <TabsTrigger value="scoping">Scoping</TabsTrigger>
-            <TabsTrigger value="sites">Sites</TabsTrigger>
-            <TabsTrigger value="library">Library</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
+      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-7 h-auto">
+            <TabsTrigger value="sites">
+              <ListTodo className="w-4 h-4 mr-2" />
+              Sites
+            </TabsTrigger>
+            <TabsTrigger value="progress">
+              <LayoutDashboard className="w-4 h-4 mr-2" />
+              Progress
+            </TabsTrigger>
+            <TabsTrigger value="implementation">
+              <GanttChartSquare className="w-4 h-4 mr-2" />
+              Implementation
+            </TabsTrigger>
+            <TabsTrigger value="scoping">
+              <Telescope className="w-4 h-4 mr-2" />
+              Scoping
+            </TabsTrigger>
+            <TabsTrigger value="library">
+              <BookOpen className="w-4 h-4 mr-2" />
+              Library
+            </TabsTrigger>
+            <TabsTrigger value="reports">
+              <BarChart3 className="w-4 h-4 mr-2" />
+              Reports
+            </TabsTrigger>
+            <TabsTrigger value="settings">
+              <Settings className="w-4 h-4 mr-2" />
+              Settings
+            </TabsTrigger>
           </TabsList>
-          <TabsContent value="progress">
-            <ProgressDashboard sites={sites} />
+          <TabsContent value="sites" className="mt-4">
+            <SiteList sites={sites} onAddSite={handleAddSite} onEditSite={handleEditSite} onBulkEdit={handleBulkEdit} />
           </TabsContent>
-          <TabsContent value="scoping">
-            <ScopingDashboard library={library} onSiteCreate={handleSiteCreated} />
+          <TabsContent value="progress" className="mt-4">
+            <ProgressDashboard stats={stats} sites={sites} milestones={milestones} />
           </TabsContent>
-          <TabsContent value="sites">
-            <SiteTable
-              sites={sites}
-              onAddSite={handleAddSite}
-              onEditSite={handleEditSite}
-              onViewWorkbook={() => {}}
-              onShowNotes={() => {}}
-              onBulkEdit={handleBulkEdit}
-            />
+          <TabsContent value="implementation" className="mt-4">
+            <ImplementationDashboard sites={sites} checklist={library.deploymentChecklist} />
           </TabsContent>
-          <TabsContent value="library">
-            <LibraryDashboard library={library} onUpdate={fetchData} />
+          <TabsContent value="scoping" className="mt-4">
+            <ScopingDashboard useCases={library.useCases} requirements={library.requirements} />
           </TabsContent>
-          <TabsContent value="settings">
-            <SettingsDashboard onUpdate={fetchData} users={users} />
+          <TabsContent value="library" className="mt-4">
+            <LibraryDashboard libraryData={library} onUpdate={fetchData} />
+          </TabsContent>
+          <TabsContent value="reports" className="mt-4">
+            <ReportsDashboard sites={sites} />
+          </TabsContent>
+          <TabsContent value="settings" className="mt-4">
+            <SettingsDashboard users={users} />
           </TabsContent>
         </Tabs>
       </main>
-      {isSiteFormOpen && (
-        <SiteForm
-          isOpen={isSiteFormOpen}
-          onClose={() => setIsSiteFormOpen(false)}
-          onSave={handleSaveSite}
-          site={selectedSite}
-          users={users}
-          wiredVendors={library.wiredVendors}
-          wirelessVendors={library.wirelessVendors}
-          firewallVendors={library.firewallVendors}
-          vpnVendors={library.vpnVendors}
-          edrXdrVendors={library.edrXdrVendors}
-          siemVendors={library.siemVendors}
-          deviceTypes={library.deviceTypes}
-          checklistItems={library.checklistItems}
-          useCases={library.useCases}
-          testMatrix={library.testMatrix}
-          onUpdateLibraries={fetchData}
-        />
-      )}
-      {isSiteDetailOpen && selectedSite && (
-        <SiteDetailModal
-          isOpen={isSiteDetailOpen}
-          onClose={() => setIsSiteDetailOpen(false)}
-          site={selectedSite}
-          onUpdate={fetchData}
-          library={library}
-          users={users}
-        />
-      )}
-      {isBulkEditOpen && (
-        <BulkEditModal
-          isOpen={isBulkEditOpen}
-          onClose={() => setIsBulkEditOpen(false)}
-          siteIds={bulkEditSiteIds}
-          library={library}
-          users={users}
-          onUpdate={fetchData}
-        />
-      )}
       <Toaster />
     </div>
   )
