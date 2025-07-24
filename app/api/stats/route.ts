@@ -17,11 +17,6 @@ export async function GET() {
     const overall_completion = total_sites > 0 
       ? Math.round((sites?.reduce((acc, site) => acc + (site.completion_percent || 0), 0) || 0) / total_sites)
       : 0
-  } catch (error) {
-    console.error("Error fetching stats:", error)
-    return NextResponse.json({ error: "Failed to fetch stats" }, { status: 500 })
-  }
-}
 
     const stats = {
       total_sites,
@@ -38,3 +33,7 @@ export async function GET() {
     }
     
     return NextResponse.json(stats)
+  } catch (error) {
+    console.error("Error fetching stats:", error)
+    return NextResponse.json({ error: "Failed to fetch stats" }, { status: 500 })
+  }
