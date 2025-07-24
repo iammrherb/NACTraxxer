@@ -1,64 +1,118 @@
 export interface Site {
   id: string
   name: string
-  customer: string
+  organization_id?: string
+  parent_site_id?: string
+  site_hierarchy_path?: string
   region: string
   country: string
-  status: "Planning" | "In Progress" | "Completed" | "At Risk"
-  projectManager: string
-  technicalOwners: string[]
-  wiredVendors: string[]
-  wirelessVendors: string[]
-  deviceTypes: string[]
-  radsec: "Native" | "Proxy" | "None"
-  plannedStart: string
-  plannedEnd: string
-  completionPercent: number
-  deploymentChecklist: ChecklistItem[]
+  city?: string
+  address?: any
+  timezone?: string
+  priority: 'High' | 'Medium' | 'Low'
+  phase: number
+  users_count: number
+  project_manager_id?: number
+  deployment_type?: 'poc' | 'pilot' | 'production' | 'migration'
+  radsec: string
+  planned_start: string
+  planned_end: string
+  actual_start?: string
+  actual_end?: string
+  status: 'Planned' | 'In Progress' | 'Complete' | 'Delayed'
+  completion_percent: number
+  health_score?: number
+  risk_level?: 'low' | 'medium' | 'high' | 'critical'
+  budget_allocated?: number
+  budget_spent?: number
+  industry?: string
+  project_goals?: string[]
+  go_live_date?: string
   notes?: string
-  workbook?: SiteWorkbook
+  metadata?: any
+  created_at: string
+  updated_at: string
+  // Relations
+  project_manager?: User
+  technical_owners?: User[]
+  vendors?: Vendor[]
+  device_types?: DeviceType[]
+  checklist_items?: ChecklistItem[]
 }
 
-export interface SiteWorkbook {
-  networkDetails: {
-    totalSwitches: number
-    totalAPs: number
-    mainSwitchModels: string
-    mainAPModels: string
-    vlanCount: number
-    subnetDetails: string
-    existingAAA: string
-  }
-  portnoxConfig: {
-    policyGroups: string[]
-    authMethods: string[]
-    specialPolicies: string
-    highAvailability: string
-  }
-  testingPlan: {
-    pilotGroup: string
-    pilotDate: string
-    pilotDuration: string
-    successCriteria: string
-  }
-  contacts: { name: string; role: string; email: string; phone: string }[]
-}
-
-export interface ChecklistItem {
+export interface Organization {
   id: string
-  task: string
-  category: string
-  completed: boolean
-  completedBy?: string
-  completedDate?: string
+  name: string
+  slug: string
+  industry?: string
+  size_category?: 'startup' | 'small' | 'medium' | 'large' | 'enterprise'
+  headquarters_country?: string
+  annual_revenue_range?: string
+  employee_count_range?: string
+  compliance_requirements?: string[]
+  branding_config?: any
+  subscription_tier?: string
+  features_enabled?: string[]
+  settings?: any
+  created_at: string
+  updated_at: string
+}
+
+export interface Project {
+  id: string
+  name: string
+  organization_id: string
+  description?: string
+  project_type: 'poc' | 'pilot' | 'production' | 'migration' | 'expansion'
+  status: 'planning' | 'active' | 'completed' | 'cancelled' | 'on_hold'
+  priority: 'low' | 'medium' | 'high' | 'critical'
+  start_date?: string
+  end_date?: string
+  budget?: number
+  project_manager_id?: number
+  sponsor_id?: number
+  health_score?: number
+  risk_level?: 'low' | 'medium' | 'high' | 'critical'
+  metadata?: any
+  created_at: string
+  updated_at: string
+  // Relations
+  organization?: Organization
+  project_manager?: User
+  sponsor?: User
+  sites?: Site[]
 }
 
 export interface User {
-  id: string
+  id: number
   name: string
   email: string
-  role: "Admin" | "Project Manager" | "Engineer" | "Read-Only"
-  avatar: string
+  role: string
+  user_type: 'project_manager' | 'technical_owner'
+  department?: string
+  manager_id?: number
+  skills?: string[]
+  certifications?: string[]
+  timezone?: string
+  preferences?: any
+  last_login?: string
+  is_active: boolean
+  created_at: string
+  updated_at: string
+  // Relations
+  manager?: User
+  direct_reports?: User[]
+}
+
+export interface ChecklistItem {
+  id: number
+  name: string
+  category: string
+  is_custom: boolean
+  created_at: string
+  // Relations
+  completed?: boolean
+  completed_at?: string
 }
 
 export interface Notification {
