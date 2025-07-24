@@ -51,13 +51,20 @@ export function ReportsDashboard() {
         const data = await response.json()
         setReports(data)
       } else {
-        throw new Error("Failed to fetch reports")
+        let errorMessage = "Failed to fetch reports"
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.error || errorMessage
+        } catch (e) {
+          // Response was not JSON, use default message
+        }
+        throw new Error(errorMessage)
       }
     } catch (error) {
       console.error("Error loading reports:", error)
       toast({
-        title: "Error",
-        description: "Failed to load reports",
+        title: "Error Loading Reports",
+        description: error instanceof Error ? error.message : "An unknown error occurred.",
         variant: "destructive",
       })
     } finally {

@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { toast } from "./ui/use-toast"
 import * as api from "@/lib/api"
-import type { ScopingQuestionnaire as ScopingQuestionnaireType, LibraryData } from "@/lib/database"
+import type { ScopingQuestionnaire as ScopingQuestionnaireType, LibraryData, Site } from "@/lib/database"
 import { Plus, Edit, Trash2, FileText } from "lucide-react"
 
 export function ScopingDashboard({ library, onSiteCreate }: { library: LibraryData; onSiteCreate: () => void }) {
@@ -45,15 +45,20 @@ export function ScopingDashboard({ library, onSiteCreate }: { library: LibraryDa
 
   const handleSave = async (data: any) => {
     try {
+      let savedQuestionnaire
       if (selectedQuestionnaire) {
-        await api.updateQuestionnaire(selectedQuestionnaire.id, data)
+        savedQuestionnaire = await api.updateQuestionnaire(selectedQuestionnaire.id, data)
         toast({ title: "Success", description: "Questionnaire updated." })
       } else {
-        await api.createQuestionnaire(data)
+        savedQuestionnaire = await api.createQuestionnaire(data)
         toast({ title: "Success", description: "Questionnaire saved." })
       }
       fetchQuestionnaires()
       handleCloseModal()
+
+      if (savedQuestionnaire.status === "Completed") {
+        handleCreateSitesFromScoping(savedQuestionnaire)
+      }
     } catch (error) {
       toast({ title: "Error", description: "Failed to save questionnaire.", variant: "destructive" })
     }
@@ -71,28 +76,32 @@ export function ScopingDashboard({ library, onSiteCreate }: { library: LibraryDa
     }
   }
 
-  const handleCreateSite = async (scopingData: ScopingQuestionnaireType) => {
+  const handleCreateSitesFromScoping = async (scopingData: ScopingQuestionnaireType) => {
     try {
-      const sitePayload = {
-        name: scopingData.organizationName,
-        id: `SITE-${Math.floor(1000 + Math.random() * 9000)}`,
+      const sitesToCreate: Partial<Site>[] = Array.from({ length: scopingData.siteCount }, (_, i) => ({
+        name: `${scopingData.organizationName} - Site ${i + 1}`,
+        id: `${scopingData.organizationName.replace(/\s+/g, "-").toUpperCase()}-${Date.now() + i}`,
         industry: scopingData.industry,
         project_goals: scopingData.projectGoals,
-        users_count: scopingData.totalUsers,
+        users_count: Math.floor(scopingData.totalUsers / scopingData.siteCount),
         country: scopingData.country,
         region: scopingData.region,
-        // A more robust mapping would be needed here in a real app
-      }
-      await api.createSite(sitePayload)
+        // Map vendors from names to IDs
+        idp_vendor_ids: library.idpVendors.filter((v) => scopingData.idpVendors.includes(v.name)).map((v) => v.id),
+        mdm_vendor_ids: library.mdmVendors.filter((v) => scopingData.mdmVendors.includes(v.name)).map((v) => v.id),
+        // ... add other vendor types here
+      }))
+
+      await api.bulkCreateSites(sitesToCreate)
       toast({
-        title: "Site Created",
-        description: `Site "${sitePayload.name}" has been created.`,
+        title: "Sites Created",
+        description: `${scopingData.siteCount} sites have been created from the questionnaire.`,
       })
       onSiteCreate()
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to create site from scoping data.",
+        description: "Failed to create sites from scoping data.",
         variant: "destructive",
       })
     }
@@ -118,6 +127,7 @@ export function ScopingDashboard({ library, onSiteCreate }: { library: LibraryDa
               <TableRow>
                 <TableHead>Organization</TableHead>
                 <TableHead>Region</TableHead>
+                <TableHead>Sites</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Last Updated</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -126,13 +136,13 @@ export function ScopingDashboard({ library, onSiteCreate }: { library: LibraryDa
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center">
+                  <TableCell colSpan={6} className="text-center">
                     Loading...
                   </TableCell>
                 </TableRow>
               ) : questionnaires.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center">
+                  <TableCell colSpan={6} className="text-center">
                     No questionnaires found.
                   </TableCell>
                 </TableRow>
@@ -141,18 +151,25 @@ export function ScopingDashboard({ library, onSiteCreate }: { library: LibraryDa
                   <TableRow key={q.id}>
                     <TableCell className="font-medium">{q.organizationName}</TableCell>
                     <TableCell>{q.region}</TableCell>
+                    <TableCell>{q.siteCount}</TableCell>
                     <TableCell>
                       <Badge variant={q.status === "Completed" ? "default" : "secondary"}>{q.status}</Badge>
                     </TableCell>
                     <TableCell>{new Date(q.updated_at).toLocaleDateString()}</TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" onClick={() => handleCreateSite(q)}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleCreateSitesFromScoping(q)}
+                        disabled={q.status !== "Completed"}
+                        title="Create Sites from Questionnaire"
+                      >
                         <FileText className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleOpenModal(q)}>
+                      <Button variant="ghost" size="sm" onClick={() => handleOpenModal(q)} title="Edit">
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleDelete(q.id)}>
+                      <Button variant="ghost" size="sm" onClick={() => handleDelete(q.id)} title="Delete">
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </TableCell>
