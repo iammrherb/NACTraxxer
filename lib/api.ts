@@ -89,24 +89,37 @@ export async function createSite(siteData: Partial<Site>): Promise<Site> {
 }
 
 export async function deleteSite(id: string): Promise<void> {
-  await simulateDelay(100)
-  const siteIndex = state.sites.findIndex((s: Site) => s.id === id)
-  if (siteIndex > -1) {
-    state.sites.splice(siteIndex, 1)
+  try {
+    const { error } = await supabase
+      .from('sites')
+      .delete()
+      .eq('id', id)
+    
+    if (error) throw error
+  } catch (error) {
+    console.error('Error deleting site:', error)
+    throw error
   }
 }
 
 export async function updateSite(id: string, updatedData: Partial<Site>): Promise<Site | null> {
-  await simulateDelay(100)
-  const siteIndex = state.sites.findIndex((s: Site) => s.id === id)
-  if (siteIndex === -1) {
+  try {
+    const { data, error } = await supabase
+      .from('sites')
+      .update(updatedData)
+      .eq('id', id)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  } catch (error) {
+    console.error('Error updating site:', error)
     return null
   }
-  state.sites[siteIndex] = { ...state.sites[siteIndex], ...updatedData }
-  return JSON.parse(JSON.stringify(state.sites[siteIndex]))
 }
 
-export async function getUsers(): Promise<User[]> {
+export async function getUsers(type?: string): Promise<User[]> {
   try {
     let query = supabase.from('users').select('*')
     
@@ -143,8 +156,8 @@ export async function createUser(userData: Omit<User, "id" | "avatar">): Promise
 export async function updateUser(id: string, userData: Partial<User>): Promise<User | null> {
   try {
     const { data, error } = await supabase
-      .from('sites')
-      .update(updatedData)
+      .from('users')
+      .update(userData)
       .eq('id', id)
       .select()
       .single()
@@ -152,7 +165,7 @@ export async function updateUser(id: string, userData: Partial<User>): Promise<U
     if (error) throw error
     return data
   } catch (error) {
-    console.error('Error updating site:', error)
+    console.error('Error updating user:', error)
     return null
   }
 }
@@ -166,44 +179,75 @@ export async function deleteUser(id: string): Promise<void> {
 }
 
 export async function getNotifications(): Promise<Notification[]> {
-  await simulateDelay(100)
-  const sortedNotifications = [...state.notifications].sort(
-    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
-  )
-  return JSON.parse(JSON.stringify(sortedNotifications))
+  // Return empty array for now - notifications can be implemented later
+  return []
 }
 
 export async function getMilestones(): Promise<Milestone[]> {
-  await simulateDelay(50)
-  return JSON.parse(JSON.stringify(state.milestones))
+  // Return empty array for now - milestones can be implemented later
+  return []
 }
 
 export async function getLibraryData(): Promise<LibraryData> {
-  await simulateDelay(20)
-  return JSON.parse(
-    JSON.stringify({
-      deploymentChecklist: libraryChecklistItems,
-      useCases,
-      testCases,
-      requirements,
-      regions: initialRegions,
-      idpVendors,
-      mfaVendors,
-      edrVendors,
-      siemVendors,
-      wiredVendors,
-      wirelessVendors,
-      firewallVendors,
   try {
-    const { error } = await supabase
-      .from('sites')
-      .delete()
-      .eq('id', id)
-    
-    if (error) throw error
+    const [
+      { data: vendors },
+      { data: deviceTypes },
+      { data: checklistItems },
+      { data: useCases },
+      { data: testCases },
+      { data: requirements }
+    ] = await Promise.all([
+      supabase.from('vendors').select('*'),
+      supabase.from('device_types').select('*'),
+      supabase.from('checklist_items').select('*'),
+      supabase.from('use_cases').select('*'),
+      supabase.from('test_cases').select('*'),
+      supabase.from('requirements').select('*')
+    ])
+
+    return {
+      deploymentChecklist: checklistItems || [],
+      useCases: useCases || [],
+      testCases: testCases || [],
+      requirements: requirements || [],
+      regions: [
+        { name: "North America" },
+        { name: "Europe" },
+        { name: "Asia-Pacific (APAC)" },
+        { name: "Latin America (LATAM)" },
+        { name: "Middle East & Africa (MEA)" }
+      ],
+      wiredVendors: vendors?.filter(v => v.type === 'wired') || [],
+      wirelessVendors: vendors?.filter(v => v.type === 'wireless') || [],
+      firewallVendors: vendors?.filter(v => v.type === 'firewall') || [],
+      vpnVendors: vendors?.filter(v => v.type === 'vpn') || [],
+      mdmVendors: vendors?.filter(v => v.type === 'mdm') || [],
+      idpVendors: vendors?.filter(v => v.type === 'idp') || [],
+      mfaVendors: vendors?.filter(v => v.type === 'mfa') || [],
+      edrVendors: vendors?.filter(v => v.type === 'edr') || [],
+      siemVendors: vendors?.filter(v => v.type === 'siem') || [],
+      deviceTypes: deviceTypes || []
+    }
   } catch (error) {
-    console.error('Error deleting site:', error)
-    throw error
+    console.error('Error fetching library data:', error)
+    return {
+      deploymentChecklist: [],
+      useCases: [],
+      testCases: [],
+      requirements: [],
+      regions: [],
+      wiredVendors: [],
+      wirelessVendors: [],
+      firewallVendors: [],
+      vpnVendors: [],
+      mdmVendors: [],
+      idpVendors: [],
+      mfaVendors: [],
+      edrVendors: [],
+      siemVendors: [],
+      deviceTypes: []
+    }
   }
 }
 
@@ -256,14 +300,7 @@ export async function getSiteStats(): Promise<SiteStats> {
 }
 
 export async function getChecklistStatus(siteId: string): Promise<Record<string, boolean>> {
-  // Return empty array for now - notifications can be implemented later
-  return []
-  }
-  const status: Record<string, boolean> = {}
-  site.deploymentChecklist.forEach((item) => {
-    status[item.id] = item.completed
-  })
-  return status
+  return {}
 }
 
 export async function updateChecklistStatus(siteId: string, newStatus: Record<string, boolean>): Promise<void> {
@@ -327,74 +364,15 @@ export async function bulkCreateSites(sitesData: Partial<Site>[]): Promise<Site[
     deploymentChecklist: site.deploymentChecklist || [],
   }))
   state.sites.push(...newSites)
-  // Return empty array for now - milestones can be implemented later
-  return []
+  return newSites
+}
 
 export async function getChecklistItems(): Promise<ChecklistItem[]> {
   const data = await getLibraryData()
-  try {
-    const [
-      { data: vendors },
-      { data: deviceTypes },
-      { data: checklistItems },
-      { data: useCases },
-      { data: testCases },
-      { data: requirements }
-    ] = await Promise.all([
-      supabase.from('vendors').select('*'),
-      supabase.from('device_types').select('*'),
-      supabase.from('checklist_items').select('*'),
-      supabase.from('use_cases').select('*'),
-      supabase.from('test_cases').select('*'),
-      supabase.from('requirements').select('*')
-    ])
-
-    return {
-      deploymentChecklist: checklistItems || [],
-      useCases: useCases || [],
-      testCases: testCases || [],
-      requirements: requirements || [],
-      regions: [
-        { name: "North America" },
-        { name: "Europe" },
-        { name: "Asia-Pacific (APAC)" },
-        { name: "Latin America (LATAM)" },
-        { name: "Middle East & Africa (MEA)" }
-      ],
-      wiredVendors: vendors?.filter(v => v.type === 'wired') || [],
-      wirelessVendors: vendors?.filter(v => v.type === 'wireless') || [],
-      firewallVendors: vendors?.filter(v => v.type === 'firewall') || [],
-      vpnVendors: vendors?.filter(v => v.type === 'vpn') || [],
-      mdmVendors: vendors?.filter(v => v.type === 'mdm') || [],
-      idpVendors: vendors?.filter(v => v.type === 'idp') || [],
-      mfaVendors: vendors?.filter(v => v.type === 'mfa') || [],
-      edrVendors: vendors?.filter(v => v.type === 'edr') || [],
-      siemVendors: vendors?.filter(v => v.type === 'siem') || [],
-      deviceTypes: deviceTypes || []
-    }
-  } catch (error) {
-    console.error('Error fetching library data:', error)
-    return {
-      deploymentChecklist: [],
-      useCases: [],
-      testCases: [],
-      requirements: [],
-      regions: [],
-      wiredVendors: [],
-      wirelessVendors: [],
-      firewallVendors: [],
-      vpnVendors: [],
-      mdmVendors: [],
-      idpVendors: [],
-      mfaVendors: [],
-      edrVendors: [],
-      siemVendors: [],
-      deviceTypes: []
-    }
-  }
+  return data.deploymentChecklist
 }
 
-export async function getVendors(): Promise<Vendor[]> {
+export async function getVendors(type?: string): Promise<Vendor[]> {
   try {
     let query = supabase.from('vendors').select('*')
     
