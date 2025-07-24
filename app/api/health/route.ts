@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server"
-import { testDatabaseConnection } from "@/lib/database"
+import { supabase } from "@/lib/database"
 
 export async function GET() {
   try {
-    const dbConnected = await testDatabaseConnection()
+    const { data, error } = await supabase.from('users').select('count').limit(1)
+    const dbConnected = !error
 
     return NextResponse.json({
       status: "ok",
@@ -16,7 +17,7 @@ export async function GET() {
       {
         status: "error",
         database: "error",
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
         timestamp: new Date().toISOString(),
       },
       { status: 500 },

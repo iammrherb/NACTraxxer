@@ -1,24 +1,4 @@
-import {
-  mockSites,
-  mockUsers,
-  notifications,
-  milestones,
-  checklistItems as libraryChecklistItems,
-  useCases,
-  testCases,
-  requirements,
-  initialRegions,
-  idpVendors,
-  mfaVendors,
-  edrVendors,
-  siemVendors,
-  wiredVendors,
-  wirelessVendors,
-  firewallVendors,
-  vpnVendors,
-  mdmVendors,
-  deviceTypes,
-} from "./library-data"
+import { supabase, supabaseAdmin } from "./database"
 import type {
   Site,
   User,
@@ -32,49 +12,80 @@ import type {
   ScopingQuestionnaire,
 } from "./types"
 
-const state = {
-  sites: JSON.parse(JSON.stringify(mockSites)),
-  users: JSON.parse(JSON.stringify(mockUsers)),
-  notifications: JSON.parse(JSON.stringify(notifications)),
-  milestones: JSON.parse(JSON.stringify(milestones)),
-}
-
 const simulateDelay = (ms: number) => new Promise((res) => setTimeout(res, ms))
 
 export async function getSites(): Promise<Site[]> {
-  await simulateDelay(50)
-  return JSON.parse(JSON.stringify(state.sites))
+  try {
+    const { data, error } = await supabase
+      .from('sites')
+      .select(`
+        *,
+        project_manager:users!sites_project_manager_id_fkey(name),
+        technical_owners:site_technical_owners(user:users(name)),
+        vendors:site_vendors(vendor:vendors(name, type)),
+        device_types:site_device_types(device_type:device_types(name))
+      `)
+      .order('created_at', { ascending: false })
+    
+    if (error) throw error
+    return data || []
+  } catch (error) {
+    console.error('Error fetching sites:', error)
+    return []
+  }
 }
 
 export async function getSite(id: string): Promise<Site | undefined> {
-  await simulateDelay(50)
-  const site = state.sites.find((s: Site) => s.id === id)
-  return site ? JSON.parse(JSON.stringify(site)) : undefined
+  try {
+    const { data, error } = await supabase
+      .from('sites')
+      .select(`
+        *,
+        project_manager:users!sites_project_manager_id_fkey(name),
+        technical_owners:site_technical_owners(user:users(name)),
+        vendors:site_vendors(vendor:vendors(name, type)),
+        device_types:site_device_types(device_type:device_types(name))
+      `)
+      .eq('id', id)
+      .single()
+    
+    if (error) throw error
+    return data
+  } catch (error) {
+    console.error('Error fetching site:', error)
+    return undefined
+  }
 }
 
 export async function createSite(siteData: Partial<Site>): Promise<Site> {
-  await simulateDelay(100)
-  const newSite: Site = {
-    id: `site-${Date.now()}`,
-    name: "New Site",
-    customer: "",
-    region: "",
-    country: "",
-    status: "Planned",
-    projectManager: "",
-    technicalOwners: [],
-    wiredVendors: [],
-    wirelessVendors: [],
-    deviceTypes: [],
-    radsec: "Native",
-    plannedStart: new Date().toISOString(),
-    plannedEnd: new Date().toISOString(),
-    completionPercent: 0,
-    deploymentChecklist: [],
-    ...siteData,
+  try {
+    const { data, error } = await supabase
+      .from('sites')
+      .insert([{
+        id: siteData.id || `site-${Date.now()}`,
+        name: siteData.name || "New Site",
+        region: siteData.region || "",
+        country: siteData.country || "",
+        priority: siteData.priority || "Medium",
+        phase: siteData.phase || 1,
+        users_count: siteData.users_count || 0,
+        project_manager_id: siteData.project_manager_id || null,
+        radsec: siteData.radsec || "Native",
+        planned_start: siteData.planned_start || new Date().toISOString().split('T')[0],
+        planned_end: siteData.planned_end || new Date().toISOString().split('T')[0],
+        status: siteData.status || "Planned",
+        completion_percent: siteData.completion_percent || 0,
+        notes: siteData.notes || null
+      }])
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  } catch (error) {
+    console.error('Error creating site:', error)
+    throw error
   }
-  state.sites.push(newSite)
-  return JSON.parse(JSON.stringify(newSite))
 }
 
 export async function deleteSite(id: string): Promise<void> {
@@ -96,29 +107,54 @@ export async function updateSite(id: string, updatedData: Partial<Site>): Promis
 }
 
 export async function getUsers(): Promise<User[]> {
-  await simulateDelay(50)
-  return JSON.parse(JSON.stringify(state.users))
+  try {
+    let query = supabase.from('users').select('*')
+    
+    if (type) {
+      query = query.eq('user_type', type)
+    }
+    
+    const { data, error } = await query.order('name')
+    
+    if (error) throw error
+    return data || []
+  } catch (error) {
+    console.error('Error fetching users:', error)
+    return []
+  }
 }
 
 export async function createUser(userData: Omit<User, "id" | "avatar">): Promise<User> {
-  await simulateDelay(100)
-  const newUser: User = {
-    id: `user-${Date.now()}`,
-    avatar: "/placeholder-user.jpg",
-    ...userData,
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .insert([userData])
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  } catch (error) {
+    console.error('Error creating user:', error)
+    throw error
   }
-  state.users.push(newUser)
-  return JSON.parse(JSON.stringify(newUser))
 }
 
 export async function updateUser(id: string, userData: Partial<User>): Promise<User | null> {
-  await simulateDelay(100)
-  const userIndex = state.users.findIndex((u: User) => u.id === id)
-  if (userIndex === -1) {
+  try {
+    const { data, error } = await supabase
+      .from('sites')
+      .update(updatedData)
+      .eq('id', id)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  } catch (error) {
+    console.error('Error updating site:', error)
     return null
   }
-  state.users[userIndex] = { ...state.users[userIndex], ...userData }
-  return JSON.parse(JSON.stringify(state.users[userIndex]))
 }
 
 export async function deleteUser(id: string): Promise<void> {
@@ -158,49 +194,70 @@ export async function getLibraryData(): Promise<LibraryData> {
       wiredVendors,
       wirelessVendors,
       firewallVendors,
-      vpnVendors,
-      mdmVendors,
-      deviceTypes,
-    }),
-  )
+  try {
+    const { error } = await supabase
+      .from('sites')
+      .delete()
+      .eq('id', id)
+    
+    if (error) throw error
+  } catch (error) {
+    console.error('Error deleting site:', error)
+    throw error
+  }
 }
 
 export async function getSiteStats(): Promise<SiteStats> {
-  await simulateDelay(150)
-  const total_sites = state.sites.length
-  const completed_sites = state.sites.filter((s: Site) => s.status === "Completed").length
-  const in_progress_sites = state.sites.filter((s: Site) => s.status === "In Progress").length
-  const planned_sites = state.sites.filter((s: Site) => s.status === "Planning").length
-  const delayed_sites = state.sites.filter((s: Site) => s.status === "At Risk").length
-  const total_users = state.users.length
-  const overall_completion =
-    total_sites > 0
-      ? Math.round(
-          state.sites.reduce((acc: number, site: Site) => {
-            const totalItems = site.deploymentChecklist.length
-            const completedItems = site.deploymentChecklist.filter((i) => i.completed).length
-            return acc + (totalItems > 0 ? (completedItems / totalItems) * 100 : 0)
-          }, 0) / total_sites,
-        )
+  try {
+    const { data: sites, error: sitesError } = await supabase.from('sites').select('status, completion_percent')
+    const { data: users, error: usersError } = await supabase.from('users').select('id')
+    
+    if (sitesError || usersError) throw sitesError || usersError
+    
+    const total_sites = sites?.length || 0
+    const completed_sites = sites?.filter(s => s.status === 'Complete').length || 0
+    const in_progress_sites = sites?.filter(s => s.status === 'In Progress').length || 0
+    const planned_sites = sites?.filter(s => s.status === 'Planned').length || 0
+    const delayed_sites = sites?.filter(s => s.status === 'Delayed').length || 0
+    const total_users = users?.length || 0
+    const overall_completion = total_sites > 0 
+      ? Math.round((sites?.reduce((acc, site) => acc + (site.completion_percent || 0), 0) || 0) / total_sites)
       : 0
 
-  return {
-    total_sites,
-    completed_sites,
-    in_progress_sites,
-    planned_sites,
-    delayed_sites,
-    total_users,
-    overall_completion,
+    return {
+      total_sites,
+      completed_sites,
+      in_progress_sites,
+      planned_sites,
+      delayed_sites,
+      total_users,
+      overall_completion,
+      checklist_completion: 0,
+      completed_checklist_items: 0,
+      total_checklist_items: 0,
+      sites: sites || []
+    }
+  } catch (error) {
+    console.error('Error fetching site stats:', error)
+    return {
+      total_sites: 0,
+      completed_sites: 0,
+      in_progress_sites: 0,
+      planned_sites: 0,
+      delayed_sites: 0,
+      total_users: 0,
+      overall_completion: 0,
+      checklist_completion: 0,
+      completed_checklist_items: 0,
+      total_checklist_items: 0,
+      sites: []
+    }
   }
 }
 
 export async function getChecklistStatus(siteId: string): Promise<Record<string, boolean>> {
-  await simulateDelay(50)
-  const site = state.sites.find((s: Site) => s.id === siteId)
-  if (!site) {
-    console.error(`Site with id ${siteId} not found in getChecklistStatus`)
-    return {}
+  // Return empty array for now - notifications can be implemented later
+  return []
   }
   const status: Record<string, boolean> = {}
   site.deploymentChecklist.forEach((item) => {
@@ -270,53 +327,105 @@ export async function bulkCreateSites(sitesData: Partial<Site>[]): Promise<Site[
     deploymentChecklist: site.deploymentChecklist || [],
   }))
   state.sites.push(...newSites)
-  return JSON.parse(JSON.stringify(newSites))
-}
+  // Return empty array for now - milestones can be implemented later
+  return []
 
 export async function getChecklistItems(): Promise<ChecklistItem[]> {
   const data = await getLibraryData()
-  return data.deploymentChecklist
-}
+  try {
+    const [
+      { data: vendors },
+      { data: deviceTypes },
+      { data: checklistItems },
+      { data: useCases },
+      { data: testCases },
+      { data: requirements }
+    ] = await Promise.all([
+      supabase.from('vendors').select('*'),
+      supabase.from('device_types').select('*'),
+      supabase.from('checklist_items').select('*'),
+      supabase.from('use_cases').select('*'),
+      supabase.from('test_cases').select('*'),
+      supabase.from('requirements').select('*')
+    ])
 
-export async function createChecklistItem(itemData: Omit<ChecklistItem, "id">): Promise<ChecklistItem> {
-  await simulateDelay(100)
-  const newItem = { id: `chk-${Date.now()}`, ...itemData }
-  console.log("Created checklist item (mock):", newItem)
-  return newItem
-}
-
-export async function getDeviceTypes(): Promise<DeviceType[]> {
-  const data = await getLibraryData()
-  return data.deviceTypes
-}
-
-export async function createDeviceType(itemData: Omit<DeviceType, "id">): Promise<DeviceType> {
-  await simulateDelay(100)
-  const newItem = { id: `dev-${Date.now()}`, ...itemData }
-  console.log("Created device type (mock):", newItem)
-  return newItem
+    return {
+      deploymentChecklist: checklistItems || [],
+      useCases: useCases || [],
+      testCases: testCases || [],
+      requirements: requirements || [],
+      regions: [
+        { name: "North America" },
+        { name: "Europe" },
+        { name: "Asia-Pacific (APAC)" },
+        { name: "Latin America (LATAM)" },
+        { name: "Middle East & Africa (MEA)" }
+      ],
+      wiredVendors: vendors?.filter(v => v.type === 'wired') || [],
+      wirelessVendors: vendors?.filter(v => v.type === 'wireless') || [],
+      firewallVendors: vendors?.filter(v => v.type === 'firewall') || [],
+      vpnVendors: vendors?.filter(v => v.type === 'vpn') || [],
+      mdmVendors: vendors?.filter(v => v.type === 'mdm') || [],
+      idpVendors: vendors?.filter(v => v.type === 'idp') || [],
+      mfaVendors: vendors?.filter(v => v.type === 'mfa') || [],
+      edrVendors: vendors?.filter(v => v.type === 'edr') || [],
+      siemVendors: vendors?.filter(v => v.type === 'siem') || [],
+      deviceTypes: deviceTypes || []
+    }
+  } catch (error) {
+    console.error('Error fetching library data:', error)
+    return {
+      deploymentChecklist: [],
+      useCases: [],
+      testCases: [],
+      requirements: [],
+      regions: [],
+      wiredVendors: [],
+      wirelessVendors: [],
+      firewallVendors: [],
+      vpnVendors: [],
+      mdmVendors: [],
+      idpVendors: [],
+      mfaVendors: [],
+      edrVendors: [],
+      siemVendors: [],
+      deviceTypes: []
+    }
+  }
 }
 
 export async function getVendors(): Promise<Vendor[]> {
-  const data = await getLibraryData()
-  return [
-    ...data.wiredVendors,
-    ...data.wirelessVendors,
-    ...data.firewallVendors,
-    ...data.vpnVendors,
-    ...data.mdmVendors,
-    ...data.idpVendors,
-    ...data.mfaVendors,
-    ...data.edrVendors,
-    ...data.siemVendors,
-  ]
+  try {
+    let query = supabase.from('vendors').select('*')
+    
+    if (type) {
+      query = query.eq('type', type)
+    }
+    
+    const { data, error } = await query.order('name')
+    
+    if (error) throw error
+    return data || []
+  } catch (error) {
+    console.error('Error fetching vendors:', error)
+    return []
+  }
 }
 
 export async function createVendor(itemData: Omit<Vendor, "id">): Promise<Vendor> {
-  await simulateDelay(100)
-  const newItem = { id: `vendor-${Date.now()}`, ...itemData }
-  console.log("Created vendor (mock):", newItem)
-  return newItem
+  try {
+    const { data, error } = await supabase
+      .from('vendors')
+      .insert([{ ...itemData, is_custom: true }])
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  } catch (error) {
+    console.error('Error creating vendor:', error)
+    throw error
+  }
 }
 
 export async function getQuestionnaires(): Promise<ScopingQuestionnaire[]> {
@@ -359,17 +468,18 @@ export async function deleteQuestionnaire(id: string): Promise<void> {
 }
 
 export async function seedDatabase(): Promise<void> {
-  await simulateDelay(200)
-  state.sites = JSON.parse(JSON.stringify(mockSites))
-  state.users = JSON.parse(JSON.stringify(mockUsers))
-  console.log("Database seeded with mock data.")
+  // This would need to be implemented with actual Supabase seeding
+  console.log("Database seeding not implemented for Supabase yet.")
 }
 
 export async function clearDatabase(): Promise<void> {
-  await simulateDelay(200)
-  state.sites = []
-  state.users = []
-  console.log("Database cleared.")
+  try {
+    await supabase.from('sites').delete().neq('id', '')
+    console.log("Sites cleared from database.")
+  } catch (error) {
+    console.error('Error clearing database:', error)
+    throw error
+  }
 }
 
 export async function deleteLibraryItem(id: number | string, type: string): Promise<void> {

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { sql } from "@/lib/database"
+import { supabase } from "@/lib/database"
 
 export async function GET() {
   try {
@@ -24,7 +24,8 @@ export async function GET() {
 
     // Test database connection
     try {
-      await sql`SELECT 1 as test`
+      const { data, error } = await supabase.from('users').select('count').limit(1)
+      if (error) throw error
       healthInfo.database.connected = true
       healthInfo.services.database = "connected"
     } catch (error) {
@@ -35,8 +36,11 @@ export async function GET() {
     }
 
     // Check environment variables
-    if (!process.env.DATABASE_URL) {
-      healthInfo.environment.warnings.push("DATABASE_URL not configured")
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+      healthInfo.environment.warnings.push("NEXT_PUBLIC_SUPABASE_URL not configured")
+    }
+    if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      healthInfo.environment.warnings.push("NEXT_PUBLIC_SUPABASE_ANON_KEY not configured")
     }
 
     return NextResponse.json(healthInfo)
@@ -45,7 +49,7 @@ export async function GET() {
     return NextResponse.json(
       {
         status: "error",
-        message: error.message,
+        message: error instanceof Error ? error.message : 'Unknown error',
         timestamp: new Date().toISOString(),
       },
       { status: 500 }

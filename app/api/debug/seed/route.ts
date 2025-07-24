@@ -1,5 +1,5 @@
-import { neon } from "@neondatabase/serverless"
 import { NextResponse } from "next/server"
+import { supabaseAdmin } from "@/lib/database"
 import {
   mockUsers,
   mockWiredVendors,
@@ -15,70 +15,47 @@ import {
 export const dynamic = "force-dynamic"
 
 export async function POST() {
-  const sql = neon(process.env.DATABASE_URL!)
-
   try {
     console.log("Starting database seed process...")
 
     // Clear existing data in order
     console.log("Clearing existing data...")
-    await sql`DELETE FROM site_technical_owners;`
-    await sql`DELETE FROM site_vendors;`
-    await sql`DELETE FROM site_device_types;`
-    await sql`DELETE FROM site_checklist_items;`
-    await sql`DELETE FROM site_use_cases;`
-    await sql`DELETE FROM site_test_matrix;`
-    await sql`DELETE FROM sites;`
-    await sql`DELETE FROM users WHERE id > 0;`
-    await sql`DELETE FROM vendors;`
-    await sql`DELETE FROM device_types;`
-    await sql`DELETE FROM checklist_items;`
-    await sql`DELETE FROM use_cases;`
-    await sql`DELETE FROM requirements;`
-    await sql`DELETE FROM test_matrix;`
+    await supabaseAdmin.from('site_technical_owners').delete().neq('site_id', '')
+    await supabaseAdmin.from('site_vendors').delete().neq('site_id', '')
+    await supabaseAdmin.from('site_device_types').delete().neq('site_id', '')
+    await supabaseAdmin.from('site_checklist_items').delete().neq('site_id', '')
+    await supabaseAdmin.from('site_use_cases').delete().neq('site_id', '')
+    await supabaseAdmin.from('site_test_matrix').delete().neq('site_id', '')
+    await supabaseAdmin.from('sites').delete().neq('id', '')
+    await supabaseAdmin.from('users').delete().gt('id', 0)
+    await supabaseAdmin.from('vendors').delete().neq('id', '')
+    await supabaseAdmin.from('device_types').delete().neq('id', '')
+    await supabaseAdmin.from('checklist_items').delete().neq('id', '')
+    await supabaseAdmin.from('use_cases').delete().neq('id', '')
+    await supabaseAdmin.from('requirements').delete().neq('id', '')
+    await supabaseAdmin.from('test_matrix').delete().neq('id', '')
     console.log("Existing data cleared.")
 
     // Insert Users
     console.log("Seeding users...")
     if (mockUsers.length > 0) {
-      await sql`
-      INSERT INTO users (id, name, email, role, user_type)
-      SELECT * FROM UNNEST(
-        ${sql.array(mockUsers.map((u) => u.id))},
-        ${sql.array(mockUsers.map((u) => u.name))},
-        ${sql.array(mockUsers.map((u) => u.email))},
-        ${sql.array(mockUsers.map((u) => u.role))},
-        ${sql.array(mockUsers.map((u) => u.user_type))}
-      )
-    `
+      const { error } = await supabaseAdmin.from('users').insert(mockUsers)
+      if (error) throw error
     }
 
     // Insert Vendors
     console.log("Seeding vendors...")
     const allVendors = [...mockWiredVendors, ...mockWirelessVendors]
     if (allVendors.length > 0) {
-      await sql`
-      INSERT INTO vendors (id, name, type, is_custom)
-      SELECT * FROM UNNEST(
-        ${sql.array(allVendors.map((v) => v.id))},
-        ${sql.array(allVendors.map((v) => v.name))},
-        ${sql.array(allVendors.map((v) => v.type))},
-        ${sql.array(allVendors.map((v) => v.is_custom))}
-      )
-    `
+      const { error } = await supabaseAdmin.from('vendors').insert(allVendors)
+      if (error) throw error
     }
 
     // Insert Device Types
     console.log("Seeding device types...")
     if (mockDeviceTypes.length > 0) {
-      await sql`
-      INSERT INTO device_types (id, name, is_custom)
-      SELECT * FROM UNNEST(
-        ${sql.array(mockDeviceTypes.map((d) => d.id))},
-        ${sql.array(mockDeviceTypes.map((d) => d.name))},
-        ${sql.array(mockDeviceTypes.map((d) => d.is_custom))}
-      )
-    `
+      const { error } = await supabaseAdmin.from('device_types').insert(mockDeviceTypes)
+      if (error) throw error
     }
 
     // Insert Checklist Items
@@ -159,80 +136,40 @@ export async function POST() {
     // Insert Sites
     console.log("Seeding sites...")
     if (mockSites.length > 0) {
-      await sql`
-      INSERT INTO sites (id, name, region, country, priority, phase, users_count, project_manager_id, radsec, planned_start, planned_end, status, completion_percent, notes, deployment_type, auth_methods, os_details)
-      SELECT * FROM UNNEST(
-        ${sql.array(mockSites.map((s) => s.id))},
-        ${sql.array(mockSites.map((s) => s.name))},
-        ${sql.array(mockSites.map((s) => s.region))},
-        ${sql.array(mockSites.map((s) => s.country))},
-        ${sql.array(mockSites.map((s) => s.priority))},
-        ${sql.array(mockSites.map((s) => s.phase))},
-        ${sql.array(mockSites.map((s) => s.users_count))},
-        ${sql.array(mockSites.map((s) => s.project_manager_id))},
-        ${sql.array(mockSites.map((s) => s.radsec))},
-        ${sql.array(mockSites.map((s) => s.planned_start))},
-        ${sql.array(mockSites.map((s) => s.planned_end))},
-        ${sql.array(mockSites.map((s) => s.status))},
-        ${sql.array(mockSites.map((s) => s.completion_percent))},
-        ${sql.array(mockSites.map((s) => s.notes))},
-        ${sql.array(mockSites.map((s) => s.deployment_type))},
-        ${sql.array(
-          mockSites.map((s) => s.auth_methods),
-          "text[]",
-        )},
-        ${sql.array(
-          mockSites.map((s) => JSON.stringify(s.os_details)),
-          "jsonb",
-        )}
-      )
-    `
+      const { error } = await supabaseAdmin.from('sites').insert(mockSites)
+      if (error) throw error
     }
 
     // Insert Site Relations
     console.log("Seeding site relations...")
     for (const site of mockSites) {
       if (site.technical_owners?.length) {
-        await sql`
-          INSERT INTO site_technical_owners (site_id, user_id)
-          SELECT ${site.id}, UNNEST(${sql.array(site.technical_owners.map((u) => u.id))})
-        `
+        const relations = site.technical_owners.map(u => ({ site_id: site.id, user_id: u.id }))
+        await supabaseAdmin.from('site_technical_owners').insert(relations)
       }
-      const vendorIds = (site.vendors || []).map((v) => v.id)
-      if (vendorIds.length) {
-        await sql`
-          INSERT INTO site_vendors (site_id, vendor_id)
-          SELECT ${site.id}, UNNEST(${sql.array(vendorIds)})
-        `
+      if (site.vendors?.length) {
+        const relations = site.vendors.map(v => ({ site_id: site.id, vendor_id: v.id }))
+        await supabaseAdmin.from('site_vendors').insert(relations)
       }
-      const deviceTypeIds = (site.device_types || []).map((d) => d.id)
-      if (deviceTypeIds.length) {
-        await sql`
-          INSERT INTO site_device_types (site_id, device_type_id)
-          SELECT ${site.id}, UNNEST(${sql.array(deviceTypeIds)})
-        `
+      if (site.device_types?.length) {
+        const relations = site.device_types.map(d => ({ site_id: site.id, device_type_id: d.id }))
+        await supabaseAdmin.from('site_device_types').insert(relations)
       }
-      const checklistItems = site.checklist_items || []
-      if (checklistItems.length) {
-        await sql`
-          INSERT INTO site_checklist_items (site_id, checklist_item_id, completed)
-          SELECT ${site.id}, item_id, completed FROM UNNEST(
-            ${sql.array(checklistItems.map((i) => i.id))},
-            ${sql.array(checklistItems.map((i) => i.completed || false))}
-          ) AS t(item_id, completed)
-        `
+      if (site.checklist_items?.length) {
+        const relations = site.checklist_items.map(i => ({ 
+          site_id: site.id, 
+          checklist_item_id: i.id, 
+          completed: i.completed || false 
+        }))
+        await supabaseAdmin.from('site_checklist_items').insert(relations)
       }
       if (site.use_case_ids?.length) {
-        await sql`
-          INSERT INTO site_use_cases (site_id, use_case_id)
-          SELECT ${site.id}, UNNEST(${sql.array(site.use_case_ids)})
-        `
+        const relations = site.use_case_ids.map(id => ({ site_id: site.id, use_case_id: id }))
+        await supabaseAdmin.from('site_use_cases').insert(relations)
       }
       if (site.test_matrix_ids?.length) {
-        await sql`
-          INSERT INTO site_test_matrix (site_id, test_matrix_id)
-          SELECT ${site.id}, UNNEST(${sql.array(site.test_matrix_ids)})
-        `
+        const relations = site.test_matrix_ids.map(id => ({ site_id: site.id, test_matrix_id: id }))
+        await supabaseAdmin.from('site_test_matrix').insert(relations)
       }
     }
 
