@@ -1,7 +1,5 @@
 "use client"
 
-import type React from "react"
-
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -13,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { PlusCircle, Edit, Trash2, BookCopy } from "lucide-react"
-import type { Vendor, DeviceType, UseCase, TestCase, Requirement, LibraryData } from "@/lib/types"
+import type { Vendor, DeviceType, ChecklistItem, UseCase, TestMatrixEntry, TestCase, Requirement } from "@/lib/database"
 import { toast } from "@/components/ui/use-toast"
 import * as api from "@/lib/api"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -21,6 +19,23 @@ import { Skeleton } from "@/components/ui/skeleton"
 interface LibraryDashboardProps {
   libraryData: LibraryData | null
   onUpdate: () => void
+}
+
+type LibraryData = {
+  wiredVendors: Vendor[]
+  wirelessVendors: Vendor[]
+  idpVendors: Vendor[]
+  firewallVendors: Vendor[]
+  vpnVendors: Vendor[]
+  edrXdrVendors: Vendor[]
+  siemVendors: Vendor[]
+  mdmVendors: Vendor[]
+  deviceTypes: DeviceType[]
+  checklistItems: ChecklistItem[]
+  useCases: UseCase[]
+  testMatrix: TestMatrixEntry[]
+  testCases: TestCase[]
+  requirements: Requirement[]
 }
 
 const LibrarySkeleton = () => (
@@ -40,6 +55,8 @@ const LibrarySkeleton = () => (
 
 export function LibraryDashboard({ libraryData, onUpdate }: LibraryDashboardProps) {
   const [activeTab, setActiveTab] = useState("use-cases")
+
+  // Add/Edit State
   const [isEdit, setIsEdit] = useState(false)
   const [currentItem, setCurrentItem] = useState<any>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -70,8 +87,7 @@ export function LibraryDashboard({ libraryData, onUpdate }: LibraryDashboardProp
       toast({ title: "Success", description: "Item deleted successfully." })
       onUpdate()
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred"
-      toast({ title: "Error", description: `Failed to delete item: ${errorMessage}`, variant: "destructive" })
+      toast({ title: "Error", description: `Failed to delete item: ${error}`, variant: "destructive" })
     }
   }
 
@@ -87,8 +103,7 @@ export function LibraryDashboard({ libraryData, onUpdate }: LibraryDashboardProp
       onUpdate()
       setIsDialogOpen(false)
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred"
-      toast({ title: "Error", description: `Failed to save item: ${errorMessage}`, variant: "destructive" })
+      toast({ title: "Error", description: `Failed to save item: ${error}`, variant: "destructive" })
     }
   }
 
@@ -132,8 +147,8 @@ export function LibraryDashboard({ libraryData, onUpdate }: LibraryDashboardProp
                     <TableCell>{item.is_custom ? "Custom" : "Default"}</TableCell>
                   </>
                 )}
-                onEdit={(item: any) => handleEdit(item, "use-cases")}
-                onDelete={(id: any) => handleDelete(id, "useCase")}
+                onEdit={(item) => handleEdit(item, "use-cases")}
+                onDelete={(id) => handleDelete(id, "useCase")}
               />
             </TabsContent>
 
@@ -151,8 +166,8 @@ export function LibraryDashboard({ libraryData, onUpdate }: LibraryDashboardProp
                     <TableCell className="text-xs">{item.expected_outcome}</TableCell>
                   </>
                 )}
-                onEdit={(item: any) => handleEdit(item, "test-cases")}
-                onDelete={(id: any) => handleDelete(id, "testCase")}
+                onEdit={(item) => handleEdit(item, "test-cases")}
+                onDelete={(id) => handleDelete(id, "testCase")}
               />
             </TabsContent>
 
@@ -170,8 +185,8 @@ export function LibraryDashboard({ libraryData, onUpdate }: LibraryDashboardProp
                     <TableCell>{item.description}</TableCell>
                   </>
                 )}
-                onEdit={(item: any) => handleEdit(item, "requirements")}
-                onDelete={(id: any) => handleDelete(id, "requirement")}
+                onEdit={(item) => handleEdit(item, "requirements")}
+                onDelete={(id) => handleDelete(id, "requirement")}
               />
             </TabsContent>
 
@@ -183,14 +198,14 @@ export function LibraryDashboard({ libraryData, onUpdate }: LibraryDashboardProp
                 <VendorTable
                   title="Wired"
                   vendors={libraryData.wiredVendors}
-                  onEdit={(v: any) => handleEdit(v, "vendors-network")}
-                  onDelete={(id: any) => handleDelete(id, "wiredVendor")}
+                  onEdit={(v) => handleEdit(v, "vendors-network")}
+                  onDelete={(id) => handleDelete(id, "wiredVendor")}
                 />
                 <VendorTable
                   title="Wireless"
                   vendors={libraryData.wirelessVendors}
-                  onEdit={(v: any) => handleEdit(v, "vendors-network")}
-                  onDelete={(id: any) => handleDelete(id, "wirelessVendor")}
+                  onEdit={(v) => handleEdit(v, "vendors-network")}
+                  onDelete={(id) => handleDelete(id, "wirelessVendor")}
                 />
               </div>
             </TabsContent>
@@ -203,38 +218,38 @@ export function LibraryDashboard({ libraryData, onUpdate }: LibraryDashboardProp
                 <VendorTable
                   title="Firewall"
                   vendors={libraryData.firewallVendors}
-                  onEdit={(v: any) => handleEdit(v, "vendors-security")}
-                  onDelete={(id: any) => handleDelete(id, "firewallVendor")}
+                  onEdit={(v) => handleEdit(v, "vendors-security")}
+                  onDelete={(id) => handleDelete(id, "firewallVendor")}
                 />
                 <VendorTable
                   title="VPN"
                   vendors={libraryData.vpnVendors}
-                  onEdit={(v: any) => handleEdit(v, "vendors-security")}
-                  onDelete={(id: any) => handleDelete(id, "vpnVendor")}
+                  onEdit={(v) => handleEdit(v, "vendors-security")}
+                  onDelete={(id) => handleDelete(id, "vpnVendor")}
                 />
                 <VendorTable
-                  title="EDR"
-                  vendors={libraryData.edrVendors}
-                  onEdit={(v: any) => handleEdit(v, "vendors-security")}
-                  onDelete={(id: any) => handleDelete(id, "edrVendor")}
+                  title="EDR/XDR"
+                  vendors={libraryData.edrXdrVendors}
+                  onEdit={(v) => handleEdit(v, "vendors-security")}
+                  onDelete={(id) => handleDelete(id, "edrXdrVendor")}
                 />
                 <VendorTable
                   title="SIEM"
                   vendors={libraryData.siemVendors}
-                  onEdit={(v: any) => handleEdit(v, "vendors-security")}
-                  onDelete={(id: any) => handleDelete(id, "siemVendor")}
+                  onEdit={(v) => handleEdit(v, "vendors-security")}
+                  onDelete={(id) => handleDelete(id, "siemVendor")}
                 />
                 <VendorTable
                   title="IDP"
                   vendors={libraryData.idpVendors}
-                  onEdit={(v: any) => handleEdit(v, "vendors-security")}
-                  onDelete={(id: any) => handleDelete(id, "idpVendor")}
+                  onEdit={(v) => handleEdit(v, "vendors-security")}
+                  onDelete={(id) => handleDelete(id, "idpVendor")}
                 />
                 <VendorTable
                   title="MDM"
                   vendors={libraryData.mdmVendors}
-                  onEdit={(v: any) => handleEdit(v, "vendors-security")}
-                  onDelete={(id: any) => handleDelete(id, "mdmVendor")}
+                  onEdit={(v) => handleEdit(v, "vendors-security")}
+                  onDelete={(id) => handleDelete(id, "mdmVendor")}
                 />
               </div>
             </TabsContent>
@@ -253,8 +268,8 @@ export function LibraryDashboard({ libraryData, onUpdate }: LibraryDashboardProp
                     <TableCell>{item.is_custom ? "Custom" : "Default"}</TableCell>
                   </>
                 )}
-                onEdit={(item: any) => handleEdit(item, "device-types")}
-                onDelete={(id: any) => handleDelete(id, "deviceType")}
+                onEdit={(item) => handleEdit(item, "device-types")}
+                onDelete={(id) => handleDelete(id, "deviceType")}
               />
             </TabsContent>
           </Tabs>
@@ -272,12 +287,9 @@ export function LibraryDashboard({ libraryData, onUpdate }: LibraryDashboardProp
   )
 }
 
-function VendorTable({
-  title,
-  vendors = [],
-  onEdit,
-  onDelete,
-}: { title: string; vendors: Vendor[]; onEdit: (vendor: Vendor) => void; onDelete: (id: number) => void }) {
+// Sub-components for the dashboard
+
+function VendorTable({ title, vendors, onEdit, onDelete }: any) {
   return (
     <Card>
       <CardHeader>
@@ -314,21 +326,7 @@ function VendorTable({
   )
 }
 
-function ItemTable({
-  title,
-  items = [],
-  columns,
-  renderRow,
-  onEdit,
-  onDelete,
-}: {
-  title: string
-  items: any[]
-  columns: string[]
-  renderRow: (item: any) => React.ReactNode
-  onEdit: (item: any) => void
-  onDelete: (id: any) => void
-}) {
+function ItemTable({ title, items, columns, renderRow, onEdit, onDelete }: any) {
   return (
     <Card>
       <CardHeader>
@@ -365,6 +363,7 @@ function ItemTable({
   )
 }
 
+// Generic Dialog for Add/Edit
 function LibraryItemDialog({ isOpen, onClose, onSave, item, isEdit, type }: any) {
   const [formData, setFormData] = useState<any>({})
 
@@ -373,10 +372,11 @@ function LibraryItemDialog({ isOpen, onClose, onSave, item, isEdit, type }: any)
       if (item) {
         setFormData(item)
       } else {
+        // Set defaults for new items
         const defaults: any = {
-          "vendors-network": { name: "", type: "wired", is_custom: true },
-          "vendors-security": { name: "", type: "firewall", is_custom: true },
-          "device-types": { name: "", is_custom: true },
+          "vendors-network": { name: "", type: "wired" },
+          "vendors-security": { name: "", type: "firewall" },
+          "device-types": { name: "" },
           "use-cases": {
             id: `UC-CUSTOM-${Math.floor(100 + Math.random() * 900)}`,
             title: "",
@@ -432,7 +432,7 @@ function LibraryItemDialog({ isOpen, onClose, onSave, item, isEdit, type }: any)
                   <>
                     <SelectItem value="firewall">Firewall</SelectItem>
                     <SelectItem value="vpn">VPN</SelectItem>
-                    <SelectItem value="edr">EDR</SelectItem>
+                    <SelectItem value="edr-xdr">EDR/XDR</SelectItem>
                     <SelectItem value="siem">SIEM</SelectItem>
                     <SelectItem value="idp">IDP</SelectItem>
                     <SelectItem value="mdm">MDM</SelectItem>

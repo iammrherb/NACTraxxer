@@ -1,53 +1,55 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Header } from "@/components/header"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ProgressDashboard } from "@/components/progress-dashboard"
-import { SiteList } from "@/components/site-list"
+import { SiteTable } from "@/components/site-table"
+import { SiteForm } from "@/components/site-form"
+import { SiteDetailModal } from "@/components/site-detail-modal"
 import { ScopingDashboard } from "@/components/scoping-dashboard"
 import { LibraryDashboard } from "@/components/library-dashboard"
-import { ReportsDashboard } from "@/components/reports-dashboard"
 import { SettingsDashboard } from "@/components/settings-dashboard"
-import { ImplementationDashboard } from "@/components/implementation-dashboard"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { BulkEditModal } from "@/components/bulk-edit-modal"
+import { Header } from "@/components/header"
+import { Loading } from "@/components/loading"
 import { Toaster } from "@/components/ui/toaster"
 import { toast } from "@/components/ui/use-toast"
 import * as api from "@/lib/api"
-import type { Site, User, LibraryData, SiteStats, Milestone } from "@/lib/types"
-import { Loading } from "@/components/loading"
-import { Settings, Telescope, ListTodo, LayoutDashboard, BookOpen, GanttChartSquare, BarChart3 } from "lucide-react"
+import type { Site, DatabaseUser, LibraryData, SiteStats, ScopingQuestionnaire } from "@/lib/database"
 
-export default function Home() {
+export default function DashboardPage() {
   const [sites, setSites] = useState<Site[]>([])
-  const [users, setUsers] = useState<User[]>([])
-  const [library, setLibrary] = useState<LibraryData | null>(null)
+  const [users, setUsers] = useState<DatabaseUser[]>([])
+  const [libraryData, setLibraryData] = useState<LibraryData | null>(null)
   const [stats, setStats] = useState<SiteStats | null>(null)
-  const [milestones, setMilestones] = useState<Milestone[]>([])
+  const [questionnaires, setQuestionnaires] = useState<ScopingQuestionnaire[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState("sites")
+  const [isSiteFormOpen, setIsSiteFormOpen] = useState(false)
+  const [editingSite, setEditingSite] = useState<Site | null>(null)
+  const [isSiteDetailOpen, setIsSiteDetailOpen] = useState(false)
+  const [isBulkEditOpen, setIsBulkEditOpen] = useState(false)
+  const [selectedSite, setSelectedSite] = useState<Site | null>(null)
+  const [bulkEditSiteIds, setBulkEditSiteIds] = useState<string[]>([])
+  const [activeTab, setActiveTab] = useState("progress")
 
   const fetchData = useCallback(async () => {
     setIsLoading(true)
     try {
-      const [sitesData, usersData, libraryData, statsData, milestonesData] = await Promise.all([
+      const [sitesData, usersData, library, siteStats, questionnaireData] = await Promise.all([
         api.getSites(),
         api.getUsers(),
         api.getLibraryData(),
         api.getSiteStats(),
-        api.getMilestones(),
+        api.getQuestionnaires(),
       ])
       setSites(sitesData)
       setUsers(usersData)
-      setLibrary(libraryData)
-      setStats(statsData)
-      setMilestones(milestonesData)
+      setLibraryData(library)
+      setStats(siteStats)
+      setQuestionnaires(questionnaireData)
     } catch (error) {
-      console.error("Error fetching data:", error)
-      toast({
-        title: "Error fetching data",
-        description: "Could not load initial application data. Please try again later.",
-        variant: "destructive",
-      })
+      toast({ title: "Error", description: "Failed to fetch initial data.", variant: "destructive" })
+      console.error(error)
     } finally {
       setIsLoading(false)
     }
@@ -57,84 +59,212 @@ export default function Home() {
     fetchData()
   }, [fetchData])
 
-  const handleAddSite = () => {
-    // Logic for adding a site would open a modal/form
-    toast({ title: "Add Site Clicked", description: "This would open a form to create a new site." })
+  const handleOpenSiteForm = (site: Site | null) => {
+    setEditingSite(site)
+    setIsSiteFormOpen(true)
+  }
+
+  const handleSaveSite = async (siteData: any) => {
+    try {
+      if (editingSite) {
+        await api.updateSite(editingSite.id, siteData)
+        toast({ title: "Success", description: "Site updated successfully." })
+      } else {
+        await api.createSite(siteData)
+        toast({ title: "Success", description: "Site created successfully." })
+      }
+      setIsSiteFormOpen(false)
+      setEditingSite(null)
+      fetchData() // Refresh all data
+    } catch (error) {
+      toast({ title: "Error", description: `Failed to save site: ${error}`, variant: "destructive" })
+    }
+  }
+
+  const handleDeleteSite = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this site?")) return
+    try {
+      await api.deleteSite(id)
+      toast({ title: "Success", description: "Site deleted." })
+      fetchData()
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to delete site.", variant: "destructive" })
+    }
+  }
+
+  const handleBulkUpdate = async (siteIds: string[], updates: Partial<Site>) => {
+    try {
+      await api.bulkUpdateSites(siteIds, updates)
+      toast({ title: "Success", description: `${siteIds.length} sites updated.` })
+      fetchData()
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to bulk update sites.", variant: "destructive" })
+    }
+  }
+
+  const handleBulkCreate = async (count: number, prefix: string, start: number, defaults: Partial<Site>) => {
+    try {
+      const promises = []
+      for (let i = 0; i < count; i++) {
+        const siteData = {
+          ...defaults,
+          name: `${prefix}-${start + i}`,
+          id: `${prefix.toUpperCase().replace(/[^A-Z]/g, "")}${start + i}`,
+        }
+        promises.push(api.createSite(siteData))
+      }
+      await Promise.all(promises)
+      toast({ title: "Success", description: `${count} sites created successfully.` })
+      fetchData()
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to bulk create sites.", variant: "destructive" })
+    }
+  }
+
+  const handleSaveQuestionnaire = async (data: ScopingQuestionnaire) => {
+    try {
+      let savedQuestionnaire: ScopingQuestionnaire
+      if (data.id) {
+        savedQuestionnaire = await api.updateQuestionnaire(data.id, data)
+        toast({ title: "Success", description: "Questionnaire updated." })
+      } else {
+        savedQuestionnaire = await api.createQuestionnaire(data)
+        toast({ title: "Success", description: "Questionnaire saved." })
+      }
+
+      if (data.status === "Completed") {
+        const siteCount = data.siteCount || 1
+        const promises = []
+        for (let i = 0; i < siteCount; i++) {
+          const siteData = {
+            name: `${data.organizationName} - Site ${i + 1}`,
+            id: `${data.organizationName.substring(0, 3).toUpperCase()}${Date.now() + i}`,
+            region: data.region,
+            country: data.country,
+            users_count: Math.floor(data.totalUsers / siteCount),
+            // Map vendor names back to IDs
+            vendor_ids: [
+              ...libraryData.wiredVendors.filter((v) => data.wiredVendors.includes(v.name)).map((v) => v.id),
+              ...libraryData.wirelessVendors.filter((v) => data.wirelessVendors.includes(v.name)).map((v) => v.id),
+            ],
+            mdm_vendor_ids: libraryData.mdmVendors.filter((v) => data.mdmVendors.includes(v.name)).map((v) => v.id),
+            // ... map other vendor types similarly
+          }
+          promises.push(api.createSite(siteData))
+        }
+        await Promise.all(promises)
+        toast({ title: "Success", description: `${siteCount} site(s) created from questionnaire.` })
+        setActiveTab("sites")
+      }
+      fetchData()
+    } catch (error) {
+      toast({ title: "Error", description: `Failed to process questionnaire: ${error}`, variant: "destructive" })
+    }
   }
 
   const handleEditSite = (site: Site) => {
-    // Logic for editing a site
-    toast({ title: "Edit Site Clicked", description: `Editing ${site.name}` })
+    setSelectedSite(site)
+    setIsSiteDetailOpen(true)
   }
 
-  const handleBulkEdit = (selectedSites: Site[]) => {
-    // Logic for bulk editing sites
-    toast({ title: "Bulk Edit Clicked", description: `Editing ${selectedSites.length} sites.` })
+  const handleBulkEdit = (siteIds: string[]) => {
+    setBulkEditSiteIds(siteIds)
+    setIsBulkEditOpen(true)
   }
 
-  if (isLoading || !library || !stats) {
+  const handleSiteCreated = () => {
+    fetchData()
+    setActiveTab("sites")
+  }
+
+  if (isLoading) {
     return <Loading />
   }
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
-      <Header />
-      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+      <Header users={users} />
+      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-10">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-7 h-auto">
-            <TabsTrigger value="sites">
-              <ListTodo className="w-4 h-4 mr-2" />
-              Sites
-            </TabsTrigger>
-            <TabsTrigger value="progress">
-              <LayoutDashboard className="w-4 h-4 mr-2" />
-              Progress
-            </TabsTrigger>
-            <TabsTrigger value="implementation">
-              <GanttChartSquare className="w-4 h-4 mr-2" />
-              Implementation
-            </TabsTrigger>
-            <TabsTrigger value="scoping">
-              <Telescope className="w-4 h-4 mr-2" />
-              Scoping
-            </TabsTrigger>
-            <TabsTrigger value="library">
-              <BookOpen className="w-4 h-4 mr-2" />
-              Library
-            </TabsTrigger>
-            <TabsTrigger value="reports">
-              <BarChart3 className="w-4 h-4 mr-2" />
-              Reports
-            </TabsTrigger>
-            <TabsTrigger value="settings">
-              <Settings className="w-4 h-4 mr-2" />
-              Settings
-            </TabsTrigger>
+          <TabsList>
+            <TabsTrigger value="progress">Progress Dashboard</TabsTrigger>
+            <TabsTrigger value="sites">Sites</TabsTrigger>
+            <TabsTrigger value="scoping">Scoping</TabsTrigger>
+            <TabsTrigger value="library">Library</TabsTrigger>
+            <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
-          <TabsContent value="sites" className="mt-4">
-            <SiteList sites={sites} onAddSite={handleAddSite} onEditSite={handleEditSite} onBulkEdit={handleBulkEdit} />
+          <TabsContent value="progress">
+            <ProgressDashboard stats={stats} sites={sites} />
           </TabsContent>
-          <TabsContent value="progress" className="mt-4">
-            <ProgressDashboard stats={stats} sites={sites} milestones={milestones} />
+          <TabsContent value="sites">
+            <SiteTable
+              sites={sites}
+              users={users}
+              onAddSite={handleOpenSiteForm}
+              onEditSite={handleEditSite}
+              onViewWorkbook={() => {}}
+              onShowNotes={() => {}}
+              onBulkEdit={handleBulkEdit}
+            />
           </TabsContent>
-          <TabsContent value="implementation" className="mt-4">
-            <ImplementationDashboard sites={sites} checklist={library.deploymentChecklist} />
+          <TabsContent value="scoping">
+            <ScopingDashboard
+              questionnaires={questionnaires}
+              onSave={handleSaveQuestionnaire}
+              library={libraryData}
+              onDelete={api.deleteQuestionnaire}
+              onUpdate={fetchData}
+            />
           </TabsContent>
-          <TabsContent value="scoping" className="mt-4">
-            <ScopingDashboard useCases={library.useCases} requirements={library.requirements} />
+          <TabsContent value="library">
+            <LibraryDashboard libraryData={libraryData} onUpdate={fetchData} />
           </TabsContent>
-          <TabsContent value="library" className="mt-4">
-            <LibraryDashboard libraryData={library} onUpdate={fetchData} />
-          </TabsContent>
-          <TabsContent value="reports" className="mt-4">
-            <ReportsDashboard sites={sites} />
-          </TabsContent>
-          <TabsContent value="settings" className="mt-4">
-            <SettingsDashboard users={users} />
+          <TabsContent value="settings">
+            <SettingsDashboard onUpdate={fetchData} users={users} />
           </TabsContent>
         </Tabs>
       </main>
       <Toaster />
+      {isSiteFormOpen && (
+        <SiteForm
+          isOpen={isSiteFormOpen}
+          onClose={() => setIsSiteFormOpen(false)}
+          onSave={handleSaveSite}
+          site={editingSite}
+          users={users}
+          wiredVendors={libraryData?.wiredVendors || []}
+          wirelessVendors={libraryData?.wirelessVendors || []}
+          firewallVendors={libraryData?.firewallVendors || []}
+          vpnVendors={libraryData?.vpnVendors || []}
+          edrXdrVendors={libraryData?.edrXdrVendors || []}
+          siemVendors={libraryData?.siemVendors || []}
+          deviceTypes={libraryData?.deviceTypes || []}
+          checklistItems={libraryData?.checklistItems || []}
+          useCases={libraryData?.useCases || []}
+          testMatrix={libraryData?.testMatrix || []}
+          onUpdateLibraries={fetchData}
+        />
+      )}
+      {isSiteDetailOpen && selectedSite && (
+        <SiteDetailModal
+          isOpen={isSiteDetailOpen}
+          onClose={() => setIsSiteDetailOpen(false)}
+          site={selectedSite}
+          onUpdate={fetchData}
+          library={libraryData}
+          users={users}
+        />
+      )}
+      {isBulkEditOpen && (
+        <BulkEditModal
+          isOpen={isBulkEditOpen}
+          onClose={() => setIsBulkEditOpen(false)}
+          siteIds={bulkEditSiteIds}
+          library={libraryData}
+          users={users}
+          onUpdate={fetchData}
+        />
+      )}
     </div>
   )
 }

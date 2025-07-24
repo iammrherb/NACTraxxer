@@ -5,12 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { ChartContainer } from "@/components/ui/chart"
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts"
-import type { SiteStats, Milestone } from "@/lib/database"
+import type { SiteStats } from "@/lib/database"
 import { Skeleton } from "@/components/ui/skeleton"
 
 interface ProgressDashboardProps {
   stats: SiteStats | null
-  milestones: Milestone[]
 }
 
 const DashboardSkeleton = () => (
@@ -57,10 +56,22 @@ const DashboardSkeleton = () => (
         </CardContent>
       </Card>
     </div>
+    <Card>
+      <CardHeader>
+        <Skeleton className="h-6 w-48" />
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {[...Array(5)].map((_, i) => (
+            <Skeleton key={i} className="h-10 w-full" />
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   </div>
 )
 
-export function ProgressDashboard({ stats, milestones }: ProgressDashboardProps) {
+export function ProgressDashboard({ stats }: ProgressDashboardProps) {
   const sites = stats?.sites || []
 
   const statusData = [
@@ -70,16 +81,22 @@ export function ProgressDashboard({ stats, milestones }: ProgressDashboardProps)
     { name: "Delayed", value: stats?.delayed_sites, color: "#ef4444" },
   ]
 
-  const milestoneStats = useMemo(() => {
-    if (!milestones || milestones.length === 0) return { completed: 0, total: 0, percentage: 0 }
-    const completed = milestones.filter((m) => m.status === "completed").length
-    const total = milestones.length
-    return {
-      completed,
-      total,
-      percentage: total > 0 ? Math.round((completed / total) * 100) : 0,
-    }
-  }, [milestones])
+  const regionData = useMemo(() => {
+    if (!sites || sites.length === 0) return []
+    const regions = sites.reduce(
+      (acc, site) => {
+        acc[site.region] = (acc[site.region] || 0) + 1
+        return acc
+      },
+      {} as Record<string, number>,
+    )
+
+    return Object.entries(regions).map(([region, count]) => ({
+      region,
+      count,
+      completed: sites.filter((site) => site.region === region && site.status === "Complete").length,
+    }))
+  }, [sites])
 
   const phaseData = useMemo(() => {
     if (!sites || sites.length === 0) return []
@@ -129,13 +146,11 @@ export function ProgressDashboard({ stats, milestones }: ProgressDashboardProps)
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Milestones</CardTitle>
+            <CardTitle className="text-sm font-medium">In Progress</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-indigo-600">{milestoneStats.percentage}%</div>
-            <p className="text-xs text-muted-foreground">
-              {milestoneStats.completed} of {milestoneStats.total} completed
-            </p>
+            <div className="text-2xl font-bold text-blue-600">{stats.in_progress_sites}</div>
+            <p className="text-xs text-muted-foreground">Currently being deployed</p>
           </CardContent>
         </Card>
 
@@ -168,10 +183,10 @@ export function ProgressDashboard({ stats, milestones }: ProgressDashboardProps)
             </div>
             <div>
               <div className="flex justify-between text-sm mb-2">
-                <span>Milestone Completion</span>
-                <span>{milestoneStats.percentage}%</span>
+                <span>Checklist Items</span>
+                <span>{stats.checklist_completion}%</span>
               </div>
-              <Progress value={milestoneStats.percentage} className="h-3" />
+              <Progress value={stats.checklist_completion} className="h-3" />
             </div>
           </div>
         </CardContent>
@@ -207,16 +222,16 @@ export function ProgressDashboard({ stats, milestones }: ProgressDashboardProps)
           </CardContent>
         </Card>
 
-        {/* Phase Progress */}
+        {/* Regional Progress */}
         <Card>
           <CardHeader>
-            <CardTitle>Progress by Phase</CardTitle>
+            <CardTitle>Progress by Region</CardTitle>
           </CardHeader>
           <CardContent>
             <ChartContainer config={{}} className="h-[300px]">
-              <BarChart data={phaseData}>
+              <BarChart data={regionData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="phase" />
+                <XAxis dataKey="region" />
                 <YAxis />
                 <Tooltip />
                 <Legend />
@@ -227,6 +242,53 @@ export function ProgressDashboard({ stats, milestones }: ProgressDashboardProps)
           </CardContent>
         </Card>
       </div>
+
+      {/* Phase Progress */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Progress by Phase</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ChartContainer config={{}} className="h-[300px]">
+            <BarChart data={phaseData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="phase" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="count" fill="#3b82f6" name="Total Sites" />
+              <Bar dataKey="completed" fill="#10b981" name="Completed" />
+            </BarChart>
+          </ChartContainer>
+        </CardContent>
+      </Card>
+
+      {/* Site Progress List */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Individual Site Progress</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {sites
+              .sort((a, b) => b.completion_percent - a.completion_percent)
+              .map((site) => (
+                <div key={site.id} className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-medium">
+                        {site.name} ({site.id})
+                      </span>
+                      <span className="text-sm text-muted-foreground">{site.completion_percent}%</span>
+                    </div>
+                    <Progress value={site.completion_percent} className="h-2" />
+                  </div>
+                  <div className="ml-4 text-sm text-muted-foreground">{site.status}</div>
+                </div>
+              ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

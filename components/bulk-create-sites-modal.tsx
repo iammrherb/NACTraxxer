@@ -12,46 +12,35 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { toast } from "./ui/use-toast"
-import * as api from "@/lib/api"
-import type { Site, LibraryData, DatabaseUser as User } from "@/lib/database"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import type { DatabaseUser } from "@/lib/database"
+import { mockCountries, initialRegions } from "@/lib/library-data"
 
 interface BulkCreateSitesModalProps {
   isOpen: boolean
   onClose: () => void
-  onUpdate: () => void
-  library: LibraryData
-  users: User[]
+  onSave: (count: number, prefix: string, start: number, defaults: any) => void
+  users: DatabaseUser[]
 }
 
-export function BulkCreateSitesModal({ isOpen, onClose, onUpdate }: BulkCreateSitesModalProps) {
-  const [count, setCount] = useState(1)
-  const [baseName, setBaseName] = useState("New Site")
-  const [isSaving, setIsSaving] = useState(false)
+export function BulkCreateSitesModal({ isOpen, onClose, onSave, users }: BulkCreateSitesModalProps) {
+  const [count, setCount] = useState(5)
+  const [prefix, setPrefix] = useState("New-Site")
+  const [startNumber, setStartNumber] = useState(1)
+  const [defaults, setDefaults] = useState({
+    region: "North America",
+    country: "United States",
+    project_manager_id: 0,
+    status: "Planned",
+    priority: "Medium",
+  })
 
-  const handleSave = async () => {
-    if (count < 1) {
-      toast({ title: "Invalid count", description: "Please enter a number of sites greater than 0." })
-      return
-    }
-    setIsSaving(true)
-
-    const sitesToCreate: Partial<Site>[] = Array.from({ length: count }, (_, i) => ({
-      name: `${baseName} ${i + 1}`,
-      id: `${baseName.replace(/\s+/g, "-").toUpperCase()}-${Date.now() + i}`,
-    }))
-
-    try {
-      await api.bulkCreateSites(sitesToCreate)
-      toast({ title: "Success", description: `${count} sites have been created.` })
-      onUpdate()
-      onClose()
-    } catch (error) {
-      toast({ title: "Error", description: "Failed to perform bulk create.", variant: "destructive" })
-    } finally {
-      setIsSaving(false)
-    }
+  const handleSave = () => {
+    onSave(count, prefix, startNumber, defaults)
+    onClose()
   }
+
+  const projectManagers = users.filter((u) => u.user_type === "project_manager")
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -59,35 +48,117 @@ export function BulkCreateSitesModal({ isOpen, onClose, onUpdate }: BulkCreateSi
         <DialogHeader>
           <DialogTitle>Bulk Create Sites</DialogTitle>
           <DialogDescription>
-            Quickly create multiple sites with a common base name. You can edit details later.
+            Quickly generate multiple new sites with a common naming convention and default settings.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 py-4">
-          <div>
-            <Label htmlFor="baseName">Base Site Name</Label>
-            <Input id="baseName" value={baseName} onChange={(e) => setBaseName(e.target.value)} />
-          </div>
-          <div>
-            <Label htmlFor="siteCount">Number of Sites to Create</Label>
-            <Input
-              id="siteCount"
-              type="number"
-              min="1"
-              value={count}
-              onChange={(e) => setCount(Number.parseInt(e.target.value) || 1)}
-            />
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="prefix">Site Name Prefix</Label>
+              <Input id="prefix" value={prefix} onChange={(e) => setPrefix(e.target.value)} />
+            </div>
+            <div>
+              <Label htmlFor="count">Number of Sites</Label>
+              <Input
+                id="count"
+                type="number"
+                min="1"
+                value={count}
+                onChange={(e) => setCount(Number.parseInt(e.target.value) || 1)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="startNumber">Starting Number</Label>
+              <Input
+                id="startNumber"
+                type="number"
+                min="1"
+                value={startNumber}
+                onChange={(e) => setStartNumber(Number.parseInt(e.target.value) || 1)}
+              />
+            </div>
           </div>
           <p className="text-sm text-muted-foreground">
-            This will create sites named: {baseName} 1, {baseName} 2, ...
+            This will create sites named: {prefix}-{startNumber}, {prefix}-{startNumber + 1}, ...
           </p>
+          <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+            <div>
+              <Label>Default Region</Label>
+              <Select value={defaults.region} onValueChange={(value) => setDefaults((p) => ({ ...p, region: value }))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {initialRegions.map((r) => (
+                    <SelectItem key={r} value={r}>
+                      {r}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Default Country</Label>
+              <Select
+                value={defaults.country}
+                onValueChange={(value) => setDefaults((p) => ({ ...p, country: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {mockCountries
+                    .filter((c) => c.region === defaults.region)
+                    .map((c) => (
+                      <SelectItem key={c.code} value={c.name}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Default Project Manager</Label>
+              <Select
+                value={String(defaults.project_manager_id)}
+                onValueChange={(value) => setDefaults((p) => ({ ...p, project_manager_id: Number.parseInt(value) }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Unassigned" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">Unassigned</SelectItem>
+                  {projectManagers.map((pm) => (
+                    <SelectItem key={pm.id} value={String(pm.id)}>
+                      {pm.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Default Priority</Label>
+              <Select
+                value={defaults.priority}
+                onValueChange={(value) => setDefaults((p) => ({ ...p, priority: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="High">High</SelectItem>
+                  <SelectItem value="Medium">Medium</SelectItem>
+                  <SelectItem value="Low">Low</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? "Creating..." : `Create ${count} Sites`}
-          </Button>
+          <Button onClick={handleSave}>Create {count} Sites</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
