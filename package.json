@@ -6,6 +6,7 @@
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "dev:client": "vite",
     "dev:server": "tsx watch server/index.ts",
+    "setup": "node scripts/setup-env.js",
     "build": "tsc && vite build",
     "build:server": "tsc -p server/tsconfig.json",
     "preview": "vite preview",
