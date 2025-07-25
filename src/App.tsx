@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'sonner'
+import { Breadcrumbs } from './components/Breadcrumbs'
+import { RelatedLinks } from './components/InternalLinkHelper'
 import { Header } from './components/Header'
 import { Dashboard } from './pages/Dashboard'
 import { Sites } from './pages/Sites'
@@ -46,7 +48,13 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
+      <div className="container mx-auto px-4 py-2">
+        <Breadcrumbs />
+      </div>
       <main className="container mx-auto px-4 py-8">
+        <div className="mb-6">
+          <RelatedLinks currentPage={location.pathname.split('/')[1] || 'dashboard'} />
+        </div>
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/sites" element={<Sites />} />

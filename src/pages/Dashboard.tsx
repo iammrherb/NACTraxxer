@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { InternalLink } from '../components/InternalLinkHelper'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import { Badge } from '../components/ui/Badge'
 import { Progress } from '../components/ui/Progress'
@@ -76,6 +77,14 @@ export function Dashboard() {
         <Button className="bg-blue-600 hover:bg-blue-700">
           <Building2 className="h-4 w-4 mr-2" />
           New Deployment
+        </Button>
+        <div className="flex space-x-2">
+          <InternalLink to="/sites" variant="prominent" showIcon>
+            View All Sites
+          </InternalLink>
+          <InternalLink to="/analytics" variant="subtle">
+            Detailed Analytics
+          </InternalLink>
         </Button>
       </div>
 
@@ -159,6 +168,16 @@ export function Dashboard() {
                       <p className="text-sm font-medium">{site.completion_percent}%</p>
                       <Progress value={site.completion_percent} className="w-16 h-1" />
                     </div>
+                  </div>
+                </div>
+                <div className="mt-2 flex justify-between items-center">
+                  <InternalLink 
+                    to={`/sites/${site.id}`} 
+                    variant="subtle" 
+                    className="text-xs"
+                  >
+                    View Details
+                  </InternalLink>
                   </div>
                 </div>
               ))}
