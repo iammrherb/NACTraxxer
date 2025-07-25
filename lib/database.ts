@@ -58,6 +58,19 @@ export type TestMatrixEntry = Tables<"test_matrix">
 export type ScopingResponse = Tables<"scoping_responses">
 export type Project = Tables<"projects"> & { customer_name?: string }
 
+export type SiteChecklistItem = {
+  site_id: string
+  checklist_item_id: number
+  completed: boolean
+  assigned_user_id: string | null
+  due_date: string | null
+  title: string
+  description: string | null
+  category: string
+  assigned_user_name: string | null
+  assigned_user_avatar: string | null
+}
+
 export interface LibraryData {
   users: User[]
   wiredVendors: Vendor[]
