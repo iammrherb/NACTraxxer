@@ -25,9 +25,29 @@ const FormField = ({ label, children }: { label: string; children: React.ReactNo
   </div>
 )
 
+const CheckboxGrid = ({ label, options }: { label: string; options: string[] }) => (
+  <FormField label={label}>
+    <div className="grid grid-cols-2 gap-2">
+      {options.map((option) => (
+        <div key={option} className="flex items-center space-x-2">
+          <Checkbox id={`compliance-${option}`} />
+          <Label htmlFor={`compliance-${option}`} className="font-normal">
+            {option}
+          </Label>
+        </div>
+      ))}
+    </div>
+  </FormField>
+)
+
+// Dummy data - replace with actual data fetching
+const vendorOptions = ["Cisco", "Juniper", "Arista", "Other"]
+const useCaseOptions = ["Data Loss Prevention", "Threat Detection", "Compliance Monitoring"]
+
 export function ScopingQuestionnaire() {
   const [step, setStep] = useState(1)
   const [formData, setFormData] = useState({}) // In a real app, this would be a complex typed object
+  const [showCiscoModel, setShowCiscoModel] = useState(false)
 
   const handleSave = () => {
     console.log("Saving form data:", formData)
@@ -50,7 +70,17 @@ export function ScopingQuestionnaire() {
                   <Input placeholder="e.g., Acme Corporation" />
                 </FormField>
                 <FormField label="Industry Classification">
-                  <Input placeholder="e.g., Healthcare, Finance, Retail" />
+                  <Select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Industry" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Healthcare">Healthcare</SelectItem>
+                      <SelectItem value="Finance">Finance</SelectItem>
+                      <SelectItem value="Retail">Retail</SelectItem>
+                      {/* Add more industries as needed */}
+                    </SelectContent>
+                  </Select>
                 </FormField>
                 <FormField label="Number of Employees">
                   <Select>
@@ -64,6 +94,9 @@ export function ScopingQuestionnaire() {
                       <SelectItem value="20001+">20,001+</SelectItem>
                     </SelectContent>
                   </Select>
+                </FormField>
+                <FormField label="Annual Revenue">
+                  <Input placeholder="e.g., $10M - $50M" />
                 </FormField>
               </AccordionContent>
             </AccordionItem>
@@ -82,6 +115,9 @@ export function ScopingQuestionnaire() {
                 <FormField label="Network Team Lead">
                   <Input placeholder="Name & Title" />
                 </FormField>
+                <FormField label="Compliance Officer">
+                  <Input placeholder="Name & Title" />
+                </FormField>
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="item-3">
@@ -93,18 +129,10 @@ export function ScopingQuestionnaire() {
                 <FormField label="Key Security Concerns">
                   <Textarea placeholder="e.g., Ransomware, insider threats, data exfiltration..." />
                 </FormField>
-                <FormField label="Compliance Requirements">
-                  <div className="grid grid-cols-2 gap-2">
-                    {["PCI-DSS", "HIPAA", "SOX", "GDPR", "NIST", "CMMC"].map((c) => (
-                      <div key={c} className="flex items-center space-x-2">
-                        <Checkbox id={`compliance-${c}`} />
-                        <Label htmlFor={`compliance-${c}`} className="font-normal">
-                          {c}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </FormField>
+                <CheckboxGrid
+                  label="Compliance Requirements"
+                  options={["PCI-DSS", "HIPAA", "SOX", "GDPR", "NIST", "CMMC"]}
+                />
               </AccordionContent>
             </AccordionItem>
           </Accordion>
@@ -122,6 +150,39 @@ export function ScopingQuestionnaire() {
                 <FormField label="WAN Connectivity">
                   <Input placeholder="e.g., MPLS, SD-WAN, VPN" />
                 </FormField>
+                <FormField label="Wired Vendor">
+                  <Select onValueChange={(value) => setShowCiscoModel(value === "Cisco")}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Vendor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {vendorOptions.map((vendor) => (
+                        <SelectItem key={vendor} value={vendor}>
+                          {vendor}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormField>
+                {showCiscoModel && (
+                  <FormField label="Cisco Model">
+                    <Input placeholder="e.g., Catalyst 9300" />
+                  </FormField>
+                )}
+                <FormField label="Wireless Vendor">
+                  <Select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Vendor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {vendorOptions.map((vendor) => (
+                        <SelectItem key={vendor} value={vendor}>
+                          {vendor}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormField>
                 <FormField label="Network Segmentation Strategy">
                   <Textarea placeholder="Describe current VLANs, subnets, or segmentation approach..." />
                 </FormField>
@@ -137,6 +198,9 @@ export function ScopingQuestionnaire() {
                   <Input type="number" placeholder="Count" />
                 </FormField>
                 <FormField label="Mac Workstations">
+                  <Input type="number" placeholder="Count" />
+                </FormField>
+                <FormField label="Linux Workstations">
                   <Input type="number" placeholder="Count" />
                 </FormField>
                 <FormField label="Mobile Devices (iOS/Android)">
@@ -162,6 +226,34 @@ export function ScopingQuestionnaire() {
                 <FormField label="Certificate Authority">
                   <Input placeholder="e.g., Microsoft CA, DigiCert, Self-signed" />
                 </FormField>
+                <FormField label="Vulnerability Management">
+                  <Input placeholder="e.g., Nessus, Qualys, Rapid7" />
+                </FormField>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        )
+      case 3:
+        return (
+          <Accordion type="multiple" defaultValue={["item-1"]} className="w-full space-y-4">
+            <AccordionItem value="item-1">
+              <AccordionTrigger className="text-xl">Use Case Prioritization</AccordionTrigger>
+              <AccordionContent className="space-y-4 p-2">
+                <FormField label="Select Use Cases">
+                  <div className="grid grid-cols-2 gap-2">
+                    {useCaseOptions.map((useCase) => (
+                      <div key={useCase} className="flex items-center space-x-2">
+                        <Checkbox id={`use-case-${useCase}`} />
+                        <Label htmlFor={`use-case-${useCase}`} className="font-normal">
+                          {useCase}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </FormField>
+                <FormField label="Custom Use Cases">
+                  <Textarea placeholder="Describe any additional use cases..." />
+                </FormField>
               </AccordionContent>
             </AccordionItem>
           </Accordion>
@@ -177,7 +269,8 @@ export function ScopingQuestionnaire() {
         <CardTitle>Intelligent Scoping Questionnaire</CardTitle>
         <CardDescription>
           Complete this discovery questionnaire to automatically generate project requirements and use cases. Step{" "}
-          {step} of 2: {step === 1 ? "Business Discovery" : "Technical Discovery"}
+          {step} of 3:{" "}
+          {step === 1 ? "Business Discovery" : step === 2 ? "Technical Discovery" : "Use Case Prioritization"}
         </CardDescription>
       </CardHeader>
       <CardContent>{renderStep()}</CardContent>
@@ -189,7 +282,7 @@ export function ScopingQuestionnaire() {
           <Button variant="secondary" onClick={handleSave}>
             <Save className="mr-2 h-4 w-4" /> Save Progress
           </Button>
-          {step === 2 ? (
+          {step === 3 ? (
             <Button onClick={handleSave}>Finish & Generate Report</Button>
           ) : (
             <Button onClick={() => setStep(step + 1)}>
