@@ -1,25 +1,9 @@
 import { notFound } from "next/navigation"
 import { mockProjects } from "@/lib/mock-data"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { CheckCircle, Circle, Clock, GanttChartSquare } from "lucide-react"
 import type { Milestone, ProjectPhase } from "@/types"
-
-const getStatusBadgeVariant = (status: string) => {
-  switch (status) {
-    case "On Track":
-      return "success"
-    case "At Risk":
-      return "warning"
-    case "Off Track":
-      return "destructive"
-    case "Completed":
-      return "default"
-    default:
-      return "secondary"
-  }
-}
 
 const getHealthColor = (score: number) => {
   if (score > 90) return "text-green-500"
@@ -32,20 +16,26 @@ const PhaseStepper = ({ currentPhase }: { currentPhase: ProjectPhase }) => {
   const currentIndex = phases.indexOf(currentPhase)
 
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex items-center justify-between p-4">
       {phases.map((phase, index) => {
         const isCompleted = index < currentIndex
         const isCurrent = index === currentIndex
         return (
-          <div key={phase} className="flex flex-col items-center">
+          <div key={phase} className="flex flex-col items-center flex-1">
             <div
-              className={`flex h-8 w-8 items-center justify-center rounded-full ${
-                isCompleted ? "bg-green-500 text-white" : isCurrent ? "bg-blue-500 text-white" : "bg-gray-300"
+              className={`flex h-10 w-10 items-center justify-center rounded-full border-2 ${
+                isCompleted
+                  ? "bg-green-100 border-green-500 text-green-500"
+                  : isCurrent
+                    ? "bg-blue-100 border-blue-500 text-blue-500"
+                    : "bg-gray-100 border-gray-300 text-gray-400"
               }`}
             >
-              {isCompleted ? <CheckCircle className="h-5 w-5" /> : <GanttChartSquare className="h-5 w-5" />}
+              {isCompleted ? <CheckCircle className="h-6 w-6" /> : <GanttChartSquare className="h-6 w-6" />}
             </div>
-            <p className={`mt-2 text-xs font-medium ${isCurrent ? "text-blue-600" : "text-muted-foreground"}`}>
+            <p
+              className={`mt-2 text-center text-xs font-medium ${isCurrent ? "text-blue-600" : "text-muted-foreground"}`}
+            >
               {phase}
             </p>
           </div>
@@ -77,7 +67,7 @@ const MilestoneItem = ({ milestone }: { milestone: Milestone }) => {
   )
 }
 
-export default function ProjectDetailsPage({ params }: { params: { id: string } }) {
+export default function ProjectOverviewPage({ params }: { params: { id: string } }) {
   const project = mockProjects.find((p) => p.id === params.id)
 
   if (!project) {
@@ -85,19 +75,15 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
   }
 
   return (
-    <div className="grid auto-rows-max items-start gap-4 md:gap-8 lg:col-span-2">
-      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
+    <div className="grid auto-rows-max items-start gap-4 md:gap-8">
+      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Status</CardDescription>
-            <CardTitle className="text-3xl">
-              <Badge variant={getStatusBadgeVariant(project.status)} className="text-lg">
-                {project.status}
-              </Badge>
-            </CardTitle>
+            <CardDescription>Project Type</CardDescription>
+            <CardTitle className="text-3xl">{project.type}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-xs text-muted-foreground">Last updated 3 hours ago</div>
+            <div className="text-xs text-muted-foreground">{project.customer}</div>
           </CardContent>
         </Card>
         <Card>
@@ -109,7 +95,7 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
           </CardHeader>
           <CardContent>
             <div className="text-xs text-muted-foreground">
-              Schedule: {project.health_score.schedule}% | Budget: {project.health_score.budget}%
+              Schedule: {project.health_score.schedule}% | Risk: {project.health_score.technical_risk}%
             </div>
           </CardContent>
         </Card>
@@ -119,7 +105,7 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
             <CardTitle className="text-2xl">{project.project_manager}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-xs text-muted-foreground">{project.customer}</div>
+            <div className="text-xs text-muted-foreground">Primary Contact</div>
           </CardContent>
         </Card>
         <Card>
@@ -132,25 +118,29 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
           </CardContent>
         </Card>
       </div>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-        <Card className="flex flex-col">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+        <Card className="lg:col-span-4 flex flex-col">
           <CardHeader>
             <CardTitle>Implementation Phase</CardTitle>
             <CardDescription>Current stage of the project lifecycle.</CardDescription>
           </CardHeader>
-          <CardContent className="flex-grow">
+          <CardContent className="flex-grow flex items-center">
             <PhaseStepper currentPhase={project.phase} />
           </CardContent>
         </Card>
-        <Card>
+        <Card className="lg:col-span-3">
           <CardHeader>
             <CardTitle>Key Milestones</CardTitle>
             <CardDescription>Upcoming and recently completed milestones.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
-            {project.milestones.slice(0, 4).map((milestone) => (
-              <MilestoneItem key={milestone.name} milestone={milestone} />
-            ))}
+            {project.milestones.length > 0 ? (
+              project.milestones
+                .slice(0, 4)
+                .map((milestone) => <MilestoneItem key={milestone.name} milestone={milestone} />)
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-4">No milestones defined for this project.</p>
+            )}
           </CardContent>
         </Card>
       </div>

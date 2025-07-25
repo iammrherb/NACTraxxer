@@ -7,8 +7,8 @@ export type DetailedStatus = "On Track" | "At Risk" | "Off Track" | "On Hold" | 
 export interface HealthMetrics {
   overall: number // 0-100
   schedule: number
-  budget: number
-  resources: number
+  technical_risk: number
+  resource_adequacy: number
 }
 
 export interface Milestone {
@@ -55,5 +55,5 @@ export interface User {
   name: string
   email: string
   avatar: string
-  role: "Admin" | "Project Manager" | "Engineer"
+  role: "Admin" | "Project Manager" | "Engineer" | "Sales Engineer" | "Customer"
 }

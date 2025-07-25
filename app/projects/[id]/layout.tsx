@@ -1,60 +1,72 @@
-import type React from "react"
+import type { ReactNode } from "react"
+import Link from "next/link"
 import { notFound } from "next/navigation"
 import { mockProjects } from "@/lib/mock-data"
 import { Button } from "@/components/ui/button"
-import { File, PlusCircle } from "lucide-react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { FileText, GanttChartSquare, LayoutDashboard, ListTodo, Settings, Telescope } from "lucide-react"
 
-export default function ProjectLayout({
-  children,
-  params,
-}: {
-  children: React.ReactNode
-  params: { id: string }
-}) {
+const getStatusBadgeVariant = (status: string) => {
+  switch (status) {
+    case "On Track":
+      return "success"
+    case "At Risk":
+      return "warning"
+    case "Off Track":
+      return "destructive"
+    case "Completed":
+      return "default"
+    default:
+      return "secondary"
+  }
+}
+
+export default function ProjectLayout({ children, params }: { children: ReactNode; params: { id: string } }) {
   const project = mockProjects.find((p) => p.id === params.id)
 
   if (!project) {
     notFound()
   }
 
+  const tabs = [
+    { name: "Overview", href: `/projects/${project.id}`, icon: LayoutDashboard },
+    { name: "Scoping", href: `/projects/${project.id}/scoping`, icon: Telescope },
+    { name: "Timeline", href: `/projects/${project.id}/timeline`, icon: GanttChartSquare },
+    { name: "Sites", href: `/projects/${project.id}/sites`, icon: ListTodo },
+    { name: "Reports", href: `/projects/${project.id}/reports`, icon: FileText },
+    { name: "Settings", href: `/projects/${project.id}/settings`, icon: Settings },
+  ]
+
   return (
-    <div className="flex min-h-screen w-full flex-col bg-muted/40">
-      <div className="flex flex-col sm:gap-4 sm:py-4">
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
-          <h1 className="text-xl font-semibold">{project.name}</h1>
-          <div className="relative ml-auto flex-1 md:grow-0">{/* Search can go here if needed */}</div>
-          <Button size="sm" variant="outline" className="h-8 gap-1 bg-transparent">
-            <File className="h-3.5 w-3.5" />
-            <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Export</span>
-          </Button>
-          <Button size="sm" className="h-8 gap-1">
-            <PlusCircle className="h-3.5 w-3.5" />
-            <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Add Site</span>
-          </Button>
-        </header>
-        <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
-          <Tabs defaultValue="overview">
-            <div className="flex items-center">
-              <TabsList>
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="scoping">Scoping</TabsTrigger>
-                <TabsTrigger value="timeline">Timeline</TabsTrigger>
-                <TabsTrigger value="sites">Sites</TabsTrigger>
-                <TabsTrigger value="library">Library</TabsTrigger>
-                <TabsTrigger value="analytics">Analytics</TabsTrigger>
-              </TabsList>
-            </div>
-            <TabsContent value="overview">{children}</TabsContent>
-            <TabsContent value="scoping">
-              <div className="text-center py-10">
-                <p>Scoping & Discovery content will go here.</p>
-              </div>
-            </TabsContent>
-            {/* Other tab contents can be added here */}
-          </Tabs>
-        </main>
+    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+      <div className="flex items-center justify-between space-y-2">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">{project.name}</h2>
+          <p className="text-muted-foreground">
+            Customer: {project.customer} ({project.id})
+          </p>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Badge variant={getStatusBadgeVariant(project.status)} className="text-base">
+            {project.status}
+          </Badge>
+          <Button>Export Report</Button>
+        </div>
       </div>
+      <Tabs defaultValue={tabs[0].href} className="space-y-4">
+        <TabsList>
+          {tabs.map((tab) => (
+            <TabsTrigger key={tab.name} value={tab.href} asChild>
+              <Link href={tab.href}>
+                <tab.icon className="mr-2 h-4 w-4" />
+                {tab.name}
+              </Link>
+            </TabsTrigger>
+          ))}
+        </TabsList>
+        {children}
+      </Tabs>
     </div>
   )
 }
