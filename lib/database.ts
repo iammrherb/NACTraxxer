@@ -48,7 +48,9 @@ export type Site = Tables<"sites"> & {
   project_goals?: string[]
 }
 
-export type User = Tables<"users">
+export type User = Tables<"users"> & {
+  role: Enums<"user_role">
+}
 export type Vendor = Tables<"vendors">
 export type BaseVendor = Tables<"base_vendors">
 export type DeviceType = Tables<"device_types">
