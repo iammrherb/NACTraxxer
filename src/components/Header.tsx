@@ -1,6 +1,5 @@
 import { useNavigate } from 'react-router-dom'
 import { Button } from './ui/Button'
-import { QuickActions } from './NavigationEnhanced'
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -48,9 +47,6 @@ export function Header() {
           </div>
 
           <nav className="hidden md:flex items-center space-x-6">
-            <div className="mr-4">
-              <QuickActions />
-            </div>
             <Button 
               variant="ghost" 
               onClick={() => navigate('/')}
