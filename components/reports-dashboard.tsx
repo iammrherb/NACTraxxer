@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -39,11 +39,7 @@ export function ReportsDashboard() {
     includeCharts: true,
   })
 
-  useEffect(() => {
-    loadReports()
-  }, [])
-
-  const loadReports = async () => {
+  const loadReports = useCallback(async () => {
     setLoading(true)
     try {
       const response = await fetch("/api/reports")
@@ -63,7 +59,11 @@ export function ReportsDashboard() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [toast])
+
+  useEffect(() => {
+    loadReports()
+  }, [loadReports])
 
   const generateReport = async () => {
     setGenerating(true)
@@ -115,7 +115,7 @@ export function ReportsDashboard() {
   }
 
   const getReportTypeLabel = (type: string) => {
-    const labels = {
+    const labels: Record<string, string> = {
       site_summary: "Site Summary",
       progress_report: "Progress Report",
       deployment_status: "Deployment Status",
@@ -126,7 +126,7 @@ export function ReportsDashboard() {
   }
 
   const getReportTypeColor = (type: string) => {
-    const colors = {
+    const colors: Record<string, string> = {
       site_summary: "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300",
       progress_report: "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300",
       deployment_status: "bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300",

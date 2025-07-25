@@ -1,8 +1,6 @@
 "use client"
 
-import React from "react"
-
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { useDropzone } from "react-dropzone"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -37,6 +35,26 @@ export function FileUpload({ siteId, onUploadComplete }: FileUploadProps) {
   const [files, setFiles] = useState<UploadedFile[]>([])
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
+
+  const loadFiles = useCallback(async () => {
+    if (!siteId) return
+    setLoading(true)
+    try {
+      const response = await fetch(`/api/files/${siteId}`)
+      if (response.ok) {
+        const filesData = await response.json()
+        setFiles(filesData)
+      }
+    } catch (error) {
+      console.error("Error loading files:", error)
+    } finally {
+      setLoading(false)
+    }
+  }, [siteId])
+
+  useEffect(() => {
+    loadFiles()
+  }, [loadFiles])
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
@@ -85,7 +103,7 @@ export function FileUpload({ siteId, onUploadComplete }: FileUploadProps) {
         // Refresh file list
         loadFiles()
         onUploadComplete?.()
-      } catch (error) {
+      } catch (error: any) {
         console.error("Upload error:", error)
         toast({
           title: "Error",
@@ -97,7 +115,7 @@ export function FileUpload({ siteId, onUploadComplete }: FileUploadProps) {
         setUploadProgress(0)
       }
     },
-    [category, description, siteId, toast, onUploadComplete],
+    [category, description, siteId, toast, onUploadComplete, loadFiles],
   )
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -114,26 +132,6 @@ export function FileUpload({ siteId, onUploadComplete }: FileUploadProps) {
     },
   })
 
-  const loadFiles = async () => {
-    setLoading(true)
-    try {
-      const response = await fetch(`/api/files/${siteId}`)
-      if (response.ok) {
-        const filesData = await response.json()
-        setFiles(filesData)
-      }
-    } catch (error) {
-      console.error("Error loading files:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // Load files on component mount
-  React.useEffect(() => {
-    loadFiles()
-  }, [siteId])
-
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return "0 Bytes"
     const k = 1024
@@ -143,7 +141,7 @@ export function FileUpload({ siteId, onUploadComplete }: FileUploadProps) {
   }
 
   const getCategoryColor = (category: string) => {
-    const colors = {
+    const colors: Record<string, string> = {
       documentation: "bg-blue-100 text-blue-800",
       network_diagram: "bg-green-100 text-green-800",
       certificate: "bg-purple-100 text-purple-800",

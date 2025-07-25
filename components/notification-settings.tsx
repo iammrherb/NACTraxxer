@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
@@ -28,11 +28,7 @@ export function NotificationSettings() {
   const [saving, setSaving] = useState(false)
   const { toast } = useToast()
 
-  useEffect(() => {
-    loadPreferences()
-  }, [])
-
-  const loadPreferences = async () => {
+  const loadPreferences = useCallback(async () => {
     try {
       const response = await fetch("/api/notifications/preferences")
       if (response.ok) {
@@ -52,7 +48,11 @@ export function NotificationSettings() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    loadPreferences()
+  }, [loadPreferences])
 
   const savePreferences = async () => {
     setSaving(true)

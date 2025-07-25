@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -91,15 +91,7 @@ export function UseCasesDashboard() {
   const [priorityFilter, setPriorityFilter] = useState("all")
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    loadUseCases()
-  }, [])
-
-  useEffect(() => {
-    filterUseCases()
-  }, [useCases, searchTerm, statusFilter, categoryFilter, priorityFilter])
-
-  const loadUseCases = async () => {
+  const loadUseCases = useCallback(async () => {
     try {
       setLoading(true)
       const response = await fetch("/api/use-cases")
@@ -112,9 +104,13 @@ export function UseCasesDashboard() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  const filterUseCases = () => {
+  useEffect(() => {
+    loadUseCases()
+  }, [loadUseCases])
+
+  const filterUseCases = useCallback(() => {
     let filtered = useCases
 
     if (searchTerm) {
@@ -139,7 +135,11 @@ export function UseCasesDashboard() {
     }
 
     setFilteredUseCases(filtered)
-  }
+  }, [useCases, searchTerm, statusFilter, categoryFilter, priorityFilter])
+
+  useEffect(() => {
+    filterUseCases()
+  }, [filterUseCases])
 
   const updateUseCaseStatus = async (id: string, status: string, completionPercentage: number) => {
     try {
