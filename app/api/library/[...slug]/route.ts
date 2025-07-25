@@ -2,12 +2,12 @@ import { sql } from "@/lib/database"
 import { NextResponse } from "next/server"
 
 const TABLE_MAP: Record<string, string> = {
-  "use-cases": "use_cases",
-  "test-cases": "test_cases",
-  requirements: "requirements",
+  "network-vendors": "vendors",
+  "security-vendors": "base_vendors",
   "device-types": "device_types",
-  vendors: "vendors",
   "checklist-items": "checklist_items",
+  "use-cases": "use_cases",
+  "test-matrix": "test_matrix",
 }
 
 // GET /api/library/[itemType]
@@ -28,8 +28,8 @@ async function createItem(req: Request, itemType: string) {
   }
   const body = await req.json()
   // Basic validation
-  if (!body.name && !body.title && !body.description) {
-    return NextResponse.json({ error: "Required fields are missing" }, { status: 400 })
+  if (!body.name && !body.title && !body.scenario) {
+    return NextResponse.json({ error: "A name, title, or scenario is required" }, { status: 400 })
   }
 
   // Ensure is_custom is set for new items
@@ -76,7 +76,7 @@ async function deleteItem(itemType: string, id: string) {
   }
   const result = await sql`DELETE FROM ${sql(tableName)} WHERE id = ${id} AND is_custom = TRUE`
   if (result.count === 0) {
-    return NextResponse.json({ error: "Item not found or is not a custom item" }, { status: 404 })
+    return NextResponse.json({ error: "Item not found or is a default item that cannot be deleted" }, { status: 404 })
   }
   return new NextResponse(null, { status: 204 })
 }
