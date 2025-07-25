@@ -110,6 +110,9 @@ export function SiteForm({
   const [customVendorName, setCustomVendorName] = useState("")
   const [customVendorType, setCustomVendorType] = useState<"wired" | "wireless">("wired")
 
+  const stableScopingData = useMemo(() => JSON.stringify(scopingData), [scopingData])
+  const stableUseCases = useMemo(() => JSON.stringify(useCases), [useCases])
+
   useEffect(() => {
     if (site) {
       setFormData({
@@ -144,7 +147,7 @@ export function SiteForm({
         project_goals: scopingData?.projectGoals || [],
       })
     }
-  }, [site, isOpen, scopingData, useCases])
+  }, [site, isOpen, stableScopingData, stableUseCases])
 
   const handleAddCustomVendor = async () => {
     if (!customVendorName) {
