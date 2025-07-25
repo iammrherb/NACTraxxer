@@ -1,294 +1,109 @@
 "use client"
 
-import { useMemo } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useState, useEffect, useCallback } from "react"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { ChartContainer } from "@/components/ui/chart"
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts"
-import type { SiteStats } from "@/lib/database"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Terminal } from "lucide-react"
 
-interface ProgressDashboardProps {
-  stats: SiteStats | null
+interface SiteStats {
+  totalSites: number
+  sitesWithWorkbooks: number
+  sitesWithoutWorkbooks: number
+  completionPercentage: number
 }
 
-const DashboardSkeleton = () => (
-  <div className="space-y-6">
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      {[...Array(4)].map((_, i) => (
-        <Card key={i}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <Skeleton className="h-4 w-24" />
-          </CardHeader>
-          <CardContent>
-            <Skeleton className="h-7 w-12" />
-            <Skeleton className="h-3 w-32 mt-2" />
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-    <Card>
-      <CardHeader>
-        <Skeleton className="h-6 w-48" />
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
-        </div>
-      </CardContent>
-    </Card>
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+export default function ProgressDashboard() {
+  const [stats, setStats] = useState<SiteStats | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchStats = useCallback(async () => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const response = await fetch("/api/stats")
+      if (!response.ok) {
+        throw new Error("Failed to fetch deployment stats.")
+      }
+      const data: SiteStats = await response.json()
+      setStats(data)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An unknown error occurred.")
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchStats()
+  }, [fetchStats])
+
+  if (isLoading) {
+    return (
       <Card>
         <CardHeader>
-          <Skeleton className="h-6 w-40" />
+          <Skeleton className="h-6 w-1/2" />
+          <Skeleton className="h-4 w-1/3" />
         </CardHeader>
-        <CardContent>
-          <Skeleton className="h-[300px] w-full" />
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-4 w-full" />
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-4 w-full" />
+          </div>
         </CardContent>
       </Card>
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-6 w-40" />
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-[300px] w-full" />
-        </CardContent>
-      </Card>
-    </div>
-    <Card>
-      <CardHeader>
-        <Skeleton className="h-6 w-48" />
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {[...Array(5)].map((_, i) => (
-            <Skeleton key={i} className="h-10 w-full" />
-          ))}
-        </div>
-      </CardContent>
-    </Card>
-  </div>
-)
-
-export function ProgressDashboard({ stats }: ProgressDashboardProps) {
-  const sites = stats?.sites || []
-
-  const statusData = [
-    { name: "Complete", value: stats?.completed_sites, color: "#10b981" },
-    { name: "In Progress", value: stats?.in_progress_sites, color: "#3b82f6" },
-    { name: "Planned", value: stats?.planned_sites, color: "#6b7280" },
-    { name: "Delayed", value: stats?.delayed_sites, color: "#ef4444" },
-  ]
-
-  const regionData = useMemo(() => {
-    if (!sites || sites.length === 0) return []
-    const regions = sites.reduce(
-      (acc, site) => {
-        acc[site.region] = (acc[site.region] || 0) + 1
-        return acc
-      },
-      {} as Record<string, number>,
     )
+  }
 
-    return Object.entries(regions).map(([region, count]) => ({
-      region,
-      count,
-      completed: sites.filter((site) => site.region === region && site.status === "Complete").length,
-    }))
-  }, [sites])
-
-  const phaseData = useMemo(() => {
-    if (!sites || sites.length === 0) return []
-    const phases = sites.reduce(
-      (acc, site) => {
-        const phase = `Phase ${site.phase}`
-        acc[phase] = (acc[phase] || 0) + 1
-        return acc
-      },
-      {} as Record<string, number>,
+  if (error) {
+    return (
+      <Alert variant="destructive">
+        <Terminal className="h-4 w-4" />
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>{error}</AlertDescription>
+      </Alert>
     )
-
-    return Object.entries(phases).map(([phase, count]) => ({
-      phase,
-      count,
-      completed: sites.filter((site) => `Phase ${site.phase}` === phase && site.status === "Complete").length,
-    }))
-  }, [sites])
+  }
 
   if (!stats) {
-    return <DashboardSkeleton />
+    return null
   }
 
   return (
-    <div className="space-y-6">
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Sites</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.total_sites}</div>
-            <p className="text-xs text-muted-foreground">{stats.total_users.toLocaleString()} total users</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completed</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats.completed_sites}</div>
-            <p className="text-xs text-muted-foreground">{stats.overall_completion}% of all sites</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">In Progress</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{stats.in_progress_sites}</div>
-            <p className="text-xs text-muted-foreground">Currently being deployed</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Checklist Progress</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.checklist_completion}%</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.completed_checklist_items} of {stats.total_checklist_items} items
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Overall Progress */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Overall Project Progress</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div>
-              <div className="flex justify-between text-sm mb-2">
-                <span>Site Completion</span>
-                <span>{stats.overall_completion}%</span>
-              </div>
-              <Progress value={stats.overall_completion} className="h-3" />
-            </div>
-            <div>
-              <div className="flex justify-between text-sm mb-2">
-                <span>Checklist Items</span>
-                <span>{stats.checklist_completion}%</span>
-              </div>
-              <Progress value={stats.checklist_completion} className="h-3" />
-            </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Deployment Progress</CardTitle>
+        <CardDescription>Overview of site workbook completion across the project.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div>
+          <div className="flex justify-between mb-1">
+            <span className="text-sm font-medium text-muted-foreground">Overall Completion</span>
+            <span className="text-sm font-bold">{stats.completionPercentage.toFixed(1)}%</span>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Status Distribution */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Status Distribution</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ChartContainer config={{}} className="h-[300px]">
-              <PieChart>
-                <Pie
-                  data={statusData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {statusData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ChartContainer>
-          </CardContent>
-        </Card>
-
-        {/* Regional Progress */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Progress by Region</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ChartContainer config={{}} className="h-[300px]">
-              <BarChart data={regionData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="region" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="count" fill="#3b82f6" name="Total Sites" />
-                <Bar dataKey="completed" fill="#10b981" name="Completed" />
-              </BarChart>
-            </ChartContainer>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Phase Progress */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Progress by Phase</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ChartContainer config={{}} className="h-[300px]">
-            <BarChart data={phaseData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="phase" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="count" fill="#3b82f6" name="Total Sites" />
-              <Bar dataKey="completed" fill="#10b981" name="Completed" />
-            </BarChart>
-          </ChartContainer>
-        </CardContent>
-      </Card>
-
-      {/* Site Progress List */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Individual Site Progress</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {sites
-              .sort((a, b) => b.completion_percent - a.completion_percent)
-              .map((site) => (
-                <div key={site.id} className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium">
-                        {site.name} ({site.id})
-                      </span>
-                      <span className="text-sm text-muted-foreground">{site.completion_percent}%</span>
-                    </div>
-                    <Progress value={site.completion_percent} className="h-2" />
-                  </div>
-                  <div className="ml-4 text-sm text-muted-foreground">{site.status}</div>
-                </div>
-              ))}
+          <Progress value={stats.completionPercentage} aria-label={`${stats.completionPercentage}% complete`} />
+        </div>
+        <div className="grid gap-2 text-sm">
+          <div className="flex items-center justify-between">
+            <span>Total Sites</span>
+            <span className="font-semibold">{stats.totalSites}</span>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+          <div className="flex items-center justify-between">
+            <span>Workbooks Completed</span>
+            <span className="font-semibold text-green-600">{stats.sitesWithWorkbooks}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span>Workbooks Pending</span>
+            <span className="font-semibold text-orange-500">{stats.sitesWithoutWorkbooks}</span>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   )
 }

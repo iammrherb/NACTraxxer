@@ -1,239 +1,225 @@
 "use client"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { CheckCircle, Circle, Calendar, Users, MapPin, Settings } from "lucide-react"
-import type { Site } from "@/lib/database"
+import { useState, useEffect, useCallback } from "react"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { toast } from "@/components/ui/use-toast"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Terminal } from "lucide-react"
 
-interface SiteWorkbookProps {
-  site: Site | null
+interface ChecklistItem {
+  id: number
+  text: string
+  completed: boolean
 }
 
-export function SiteWorkbook({ site }: SiteWorkbookProps) {
-  if (!site) {
+interface Vendor {
+  id: number
+  name: string
+}
+
+interface DeviceType {
+  id: number
+  name: string
+}
+
+interface SiteWorkbookData {
+  checklist: ChecklistItem[]
+  selectedVendorId: number | null
+  selectedDeviceTypeId: number | null
+}
+
+interface SiteWorkbookProps {
+  siteId: number
+}
+
+export default function SiteWorkbook({ siteId }: SiteWorkbookProps) {
+  const [workbookData, setWorkbookData] = useState<SiteWorkbookData | null>(null)
+  const [vendors, setVendors] = useState<Vendor[]>([])
+  const [deviceTypes, setDeviceTypes] = useState<DeviceType[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchWorkbookData = useCallback(async () => {
+    // This endpoint needs to be created. For now, it's a placeholder.
+    // It should return data in SiteWorkbookData format.
+    // As a fallback, we can mock it.
+    console.log(`Fetching workbook data for site ${siteId}`)
+    // Mocking data since the endpoint likely doesn't exist yet.
+    const mockChecklist = [
+      { id: 1, text: "Verify network connectivity", completed: true },
+      { id: 2, text: "Configure RADIUS server", completed: false },
+      { id: 3, text: "Integrate with Active Directory", completed: false },
+    ]
+    setWorkbookData({
+      checklist: mockChecklist,
+      selectedVendorId: null,
+      selectedDeviceTypeId: null,
+    })
+  }, [siteId])
+
+  const fetchLibraryItems = useCallback(async () => {
+    try {
+      const [vendorsRes, deviceTypesRes] = await Promise.all([
+        fetch("/api/library/vendors"),
+        fetch("/api/library/device-types"),
+      ])
+      if (!vendorsRes.ok || !deviceTypesRes.ok) throw new Error("Failed to fetch library items.")
+      const vendorsData = await vendorsRes.json()
+      const deviceTypesData = await deviceTypesRes.json()
+      setVendors(vendorsData)
+      setDeviceTypes(deviceTypesData)
+    } catch (err) {
+      throw err
+    }
+  }, [])
+
+  const loadAllData = useCallback(async () => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      await Promise.all([fetchWorkbookData(), fetchLibraryItems()])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An unknown error occurred.")
+    } finally {
+      setIsLoading(false)
+    }
+  }, [fetchWorkbookData, fetchLibraryItems])
+
+  useEffect(() => {
+    loadAllData()
+  }, [loadAllData])
+
+  const handleChecklistItemChange = async (itemId: number, completed: boolean) => {
+    if (!workbookData) return
+
+    const updatedChecklist = workbookData.checklist.map((item) => (item.id === itemId ? { ...item, completed } : item))
+    setWorkbookData({ ...workbookData, checklist: updatedChecklist })
+
+    try {
+      const response = await fetch(`/api/checklist-items/${itemId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ completed }),
+      })
+      if (!response.ok) throw new Error("Failed to update checklist item.")
+      toast({ title: "Success", description: "Checklist updated." })
+    } catch (err) {
+      toast({ title: "Error", description: "Could not save checklist update.", variant: "destructive" })
+      loadAllData()
+    }
+  }
+
+  const handleSelectChange = async (type: "vendor" | "device-type", value: string) => {
+    if (!workbookData) return
+    const id = Number.parseInt(value, 10)
+    const key = type === "vendor" ? "selectedVendorId" : "selectedDeviceTypeId"
+
+    setWorkbookData({ ...workbookData, [key]: id })
+
+    try {
+      const response = await fetch(`/api/sites/${siteId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [type === "vendor" ? "vendor_id" : "device_type_id"]: id }),
+      })
+      if (!response.ok) throw new Error(`Failed to update site ${type}.`)
+      toast({ title: "Success", description: `Site ${type} updated.` })
+    } catch (err) {
+      toast({ title: "Error", description: `Could not save site ${type}.`, variant: "destructive" })
+      loadAllData()
+    }
+  }
+
+  if (isLoading) {
     return (
-      <Card>
-        <CardContent className="flex items-center justify-center h-64">
-          <div className="text-center text-muted-foreground">
-            <Settings className="h-12 w-12 mx-auto mb-4" />
-            <p>Select a site from the Master List to view its workbook</p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="space-y-4 p-4">
+        <Skeleton className="h-8 w-1/3" />
+        <div className="space-y-2">
+          <Skeleton className="h-6 w-full" />
+          <Skeleton className="h-6 w-full" />
+          <Skeleton className="h-6 w-2/3" />
+        </div>
+        <Skeleton className="h-8 w-1/3" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+      </div>
     )
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Complete":
-        return "bg-green-500"
-      case "In Progress":
-        return "bg-blue-500"
-      case "Delayed":
-        return "bg-red-500"
-      case "Planned":
-        return "bg-gray-500"
-      default:
-        return "bg-gray-500"
-    }
+  if (error) {
+    return (
+      <Alert variant="destructive">
+        <Terminal className="h-4 w-4" />
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>{error}</AlertDescription>
+      </Alert>
+    )
   }
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "High":
-        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-      case "Medium":
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
-      case "Low":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-      default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200"
-    }
-  }
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    })
-  }
+  if (!workbookData) return null
 
   return (
     <div className="space-y-6">
-      {/* Site Header */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-2xl">{site.name}</CardTitle>
-              <p className="text-muted-foreground">Site ID: {site.id}</p>
+      <div>
+        <h3 className="text-lg font-semibold mb-2">Deployment Checklist</h3>
+        <div className="space-y-2">
+          {workbookData.checklist.map((item) => (
+            <div key={item.id} className="flex items-center space-x-2">
+              <Checkbox
+                id={`checklist-${item.id}`}
+                checked={item.completed}
+                onCheckedChange={(checked) => handleChecklistItemChange(item.id, !!checked)}
+              />
+              <label
+                htmlFor={`checklist-${item.id}`}
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                {item.text}
+              </label>
             </div>
-            <div className="flex items-center space-x-2">
-              <div className={`w-3 h-3 rounded-full ${getStatusColor(site.status)}`} />
-              <span className="font-medium">{site.status}</span>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="flex items-center space-x-2">
-              <MapPin className="h-4 w-4 text-muted-foreground" />
-              <span>
-                {site.country}, {site.region}
-              </span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Users className="h-4 w-4 text-muted-foreground" />
-              <span>{site.users_count.toLocaleString()} users</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span>Phase {site.phase}</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Progress Overview */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Progress Overview</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium">Overall Completion</span>
-                <span className="text-sm font-bold">{site.completion_percent}%</span>
-              </div>
-              <Progress value={site.completion_percent} className="h-3" />
-            </div>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="text-muted-foreground">Start Date:</span>
-                <span className="ml-2 font-medium">{formatDate(site.planned_start)}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground">End Date:</span>
-                <span className="ml-2 font-medium">{formatDate(site.planned_end)}</span>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Site Details */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Site Information</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Priority:</span>
-              <Badge className={getPriorityColor(site.priority)}>{site.priority}</Badge>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">RADSEC:</span>
-              <span className="font-medium">{site.radsec}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Project Manager:</span>
-              <span className="font-medium">{site.project_manager_name}</span>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Technical Owners:</span>
-              <div className="mt-1 flex flex-wrap gap-1">
-                {site.technical_owners?.map((owner) => (
-                  <Badge key={owner.id} variant="outline" className="text-xs">
-                    {owner.name}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Network Infrastructure</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div>
-              <span className="text-muted-foreground">Wired Vendors:</span>
-              <div className="mt-1 flex flex-wrap gap-1">
-                {site.vendors
-                  ?.filter((v) => v.type === "wired")
-                  .map((vendor) => (
-                    <Badge key={vendor.id} variant="outline" className="text-xs">
-                      {vendor.name}
-                    </Badge>
-                  ))}
-              </div>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Wireless Vendors:</span>
-              <div className="mt-1 flex flex-wrap gap-1">
-                {site.vendors
-                  ?.filter((v) => v.type === "wireless")
-                  .map((vendor) => (
-                    <Badge key={vendor.id} variant="outline" className="text-xs">
-                      {vendor.name}
-                    </Badge>
-                  ))}
-              </div>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Device Types:</span>
-              <div className="mt-1 flex flex-wrap gap-1">
-                {site.device_types?.map((deviceType) => (
-                  <Badge key={deviceType.id} variant="outline" className="text-xs">
-                    {deviceType.name}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+          ))}
+        </div>
       </div>
-
-      {/* Deployment Checklist */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Deployment Checklist</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {site.checklist_items?.map((item) => (
-              <div key={item.id} className="flex items-center space-x-3">
-                {item.completed ? (
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                ) : (
-                  <Circle className="h-5 w-5 text-muted-foreground" />
-                )}
-                <span className={item.completed ? "line-through text-muted-foreground" : ""}>{item.name}</span>
-                {item.completed && item.completed_at && (
-                  <span className="text-xs text-muted-foreground ml-auto">{formatDate(item.completed_at)}</span>
-                )}
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Notes */}
-      {site.notes && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Notes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm leading-relaxed">{site.notes}</p>
-          </CardContent>
-        </Card>
-      )}
+      <div className="space-y-4">
+        <div>
+          <h3 className="text-lg font-semibold mb-2">Device Vendor</h3>
+          <Select
+            value={workbookData.selectedVendorId?.toString()}
+            onValueChange={(value) => handleSelectChange("vendor", value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select a vendor" />
+            </SelectTrigger>
+            <SelectContent>
+              {vendors.map((vendor) => (
+                <SelectItem key={vendor.id} value={vendor.id.toString()}>
+                  {vendor.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold mb-2">Primary Device Type</h3>
+          <Select
+            value={workbookData.selectedDeviceTypeId?.toString()}
+            onValueChange={(value) => handleSelectChange("device-type", value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select a device type" />
+            </SelectTrigger>
+            <SelectContent>
+              {deviceTypes.map((type) => (
+                <SelectItem key={type.id} value={type.id.toString()}>
+                  {type.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
     </div>
   )
 }

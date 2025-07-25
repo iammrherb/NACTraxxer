@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -13,6 +13,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ScopingQuestionnaire } from "./scoping-questionnaire"
+import { toast } from "@/components/ui/use-toast"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Search,
   Plus,
@@ -45,6 +47,7 @@ interface UseCase {
   requirements?: Requirement[]
   documentation_links?: DocumentationLink[]
   success_criteria?: SuccessCriteria[]
+  enabled: boolean
 }
 
 interface TestCase {
@@ -89,11 +92,12 @@ export function UseCasesDashboard() {
   const [statusFilter, setStatusFilter] = useState("all")
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [priorityFilter, setPriorityFilter] = useState("all")
-  const [loading, setLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
 
   const loadUseCases = useCallback(async () => {
     try {
-      setLoading(true)
+      setIsLoading(true)
       const response = await fetch("/api/use-cases")
       if (response.ok) {
         const data = await response.json()
@@ -102,7 +106,7 @@ export function UseCasesDashboard() {
     } catch (error) {
       console.error("Error loading use cases:", error)
     } finally {
-      setLoading(false)
+      setIsLoading(false)
     }
   }, [])
 
@@ -222,11 +226,60 @@ export function UseCasesDashboard() {
 
   const stats = getOverallStats()
 
-  if (loading) {
+  const handleToggleUseCase = (id: string) => {
+    setUseCases(useCases.map((uc) => (uc.id === id ? { ...uc, enabled: !uc.enabled } : uc)))
+  }
+
+  const handleSaveChanges = async () => {
+    setIsSaving(true)
+    try {
+      const response = await fetch("/api/use-cases", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ useCases }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to save use cases.")
+      }
+
+      toast({
+        title: "Success",
+        description: "Use cases have been updated.",
+      })
+      loadUseCases()
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Could not save your changes. Please try again.",
+        variant: "destructive",
+      })
+      loadUseCases()
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-6 w-1/2" />
+          <Skeleton className="h-4 w-2/3" />
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="flex items-start space-x-4">
+              <Skeleton className="h-5 w-5 mt-1" />
+              <div className="space-y-1.5 flex-1">
+                <Skeleton className="h-5 w-1/3" />
+                <Skeleton className="h-4 w-full" />
+              </div>
+            </div>
+          ))}
+          <Skeleton className="h-10 w-24" />
+        </CardContent>
+      </Card>
     )
   }
 
@@ -703,6 +756,42 @@ export function UseCasesDashboard() {
           }
         }}
       />
+
+      {/* Use Case Management */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Use Case Management</CardTitle>
+          <CardDescription>Enable or disable specific Zero Trust NAC use cases for this project.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {useCases.map((useCase) => (
+              <div key={useCase.id} className="flex items-start space-x-4">
+                <Checkbox
+                  id={useCase.id}
+                  checked={useCase.enabled}
+                  onCheckedChange={() => handleToggleUseCase(useCase.id)}
+                  className="mt-1"
+                />
+                <div className="grid gap-1.5 leading-none">
+                  <label
+                    htmlFor={useCase.id}
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    {useCase.title}
+                  </label>
+                  <p className="text-sm text-muted-foreground">{useCase.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-6">
+            <Button onClick={handleSaveChanges} disabled={isSaving}>
+              {isSaving ? "Saving..." : "Save Changes"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

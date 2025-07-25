@@ -1,523 +1,222 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import type React from "react"
+
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { PlusCircle, Edit, Trash2, BookCopy } from "lucide-react"
-import type { Vendor, DeviceType, UseCase, TestCase, Requirement } from "@/lib/database.types"
 import { toast } from "@/components/ui/use-toast"
+import { PlusCircle, Trash2 } from "lucide-react"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { Skeleton } from "@/components/ui/skeleton"
 
-type LibraryData = {
-  vendors: Vendor[]
-  deviceTypes: DeviceType[]
-  useCases: UseCase[]
-  testCases: TestCase[]
-  requirements: Requirement[]
+interface Vendor {
+  id: number
+  name: string
 }
 
-const LibrarySkeleton = () => (
-  <Card>
-    <CardHeader>
-      <Skeleton className="h-8 w-1/2" />
-      <Skeleton className="h-4 w-3/4" />
-    </CardHeader>
-    <CardContent>
-      <div className="space-y-4">
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-64 w-full" />
-      </div>
-    </CardContent>
-  </Card>
-)
+interface DeviceType {
+  id: number
+  name: string
+}
 
-export function LibraryDashboard() {
-  const [libraryData, setLibraryData] = useState<LibraryData | null>(null)
+type LibraryItem = Vendor | DeviceType
+type LibraryCategory = "vendors" | "device-types"
+
+export default function LibraryDashboard() {
+  const [vendors, setVendors] = useState<Vendor[]>([])
+  const [deviceTypes, setDeviceTypes] = useState<DeviceType[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState("use-cases")
+  const [newItemName, setNewItemName] = useState("")
+  const [activeCategory, setActiveCategory] = useState<LibraryCategory>("vendors")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [isEdit, setIsEdit] = useState(false)
-  const [currentItem, setCurrentItem] = useState<any>(null)
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (category: LibraryCategory) => {
     setIsLoading(true)
     try {
-      const [vendors, deviceTypes, useCases, testCases, requirements] = await Promise.all([
-        fetch("/api/library/vendors").then((res) => res.json()),
-        fetch("/api/library/device-types").then((res) => res.json()),
-        fetch("/api/library/use-cases").then((res) => res.json()),
-        fetch("/api/library/test-cases").then((res) => res.json()),
-        fetch("/api/library/requirements").then((res) => res.json()),
-      ])
-      setLibraryData({ vendors, deviceTypes, useCases, testCases, requirements })
+      const response = await fetch(`/api/library/${category}`)
+      if (!response.ok) {
+        throw new Error(`Failed to fetch ${category}`)
+      }
+      const data = await response.json()
+      if (category === "vendors") {
+        setVendors(data)
+      } else {
+        setDeviceTypes(data)
+      }
     } catch (error) {
-      toast({ title: "Error", description: "Failed to fetch library data.", variant: "destructive" })
+      console.error(error)
+      toast({
+        title: "Error",
+        description: `Could not load ${category}.`,
+        variant: "destructive",
+      })
     } finally {
       setIsLoading(false)
     }
   }, [])
 
   useEffect(() => {
-    fetchData()
-  }, [fetchData])
+    fetchData(activeCategory)
+  }, [activeCategory, fetchData])
 
-  const handleAddNew = (tab: string) => {
-    setIsEdit(false)
-    setCurrentItem(null)
-    setActiveTab(tab) // Ensure active tab is set before opening dialog
-    setIsDialogOpen(true)
-  }
-
-  const handleEdit = (item: any, tab: string) => {
-    setIsEdit(true)
-    setCurrentItem(item)
-    setActiveTab(tab)
-    setIsDialogOpen(true)
-  }
-
-  const handleDelete = async (id: number, itemType: string) => {
-    if (!confirm("Are you sure you want to delete this custom item? This action cannot be undone.")) return
+  const handleAddItem = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newItemName.trim()) return
 
     try {
-      const response = await fetch(`/api/library/${itemType}/${id}`, { method: "DELETE" })
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || "Failed to delete")
-      }
-      toast({ title: "Success", description: "Item deleted successfully." })
-      fetchData() // Refresh data
-    } catch (error: any) {
-      toast({ title: "Error", description: `Failed to delete item: ${error.message}`, variant: "destructive" })
-    }
-  }
-
-  const handleSave = async (data: any) => {
-    const itemType = activeTab
-    const url = isEdit ? `/api/library/${itemType}/${data.id}` : `/api/library/${itemType}`
-    const method = isEdit ? "PUT" : "POST"
-
-    try {
-      const response = await fetch(url, {
-        method,
+      const response = await fetch(`/api/library/${activeCategory}`, {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ name: newItemName }),
       })
+
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || "Failed to save")
+        throw new Error(`Failed to create ${activeCategory}`)
       }
-      toast({ title: "Success", description: `Item ${isEdit ? "updated" : "created"} successfully.` })
-      fetchData()
+
+      toast({
+        title: "Success",
+        description: `${activeCategory.slice(0, -1)} created successfully.`,
+      })
+      setNewItemName("")
       setIsDialogOpen(false)
-    } catch (error: any) {
-      toast({ title: "Error", description: `Failed to save item: ${error.message}`, variant: "destructive" })
+      fetchData(activeCategory) // Refresh data
+    } catch (error) {
+      console.error(error)
+      toast({
+        title: "Error",
+        description: `Could not create ${activeCategory.slice(0, -1)}.`,
+        variant: "destructive",
+      })
     }
   }
 
-  if (isLoading || !libraryData) {
-    return <LibrarySkeleton />
-  }
+  const handleDeleteItem = async (id: number) => {
+    if (!confirm(`Are you sure you want to delete this ${activeCategory.slice(0, -1)}?`)) {
+      return
+    }
 
-  const getVendorsByType = (type: string) => libraryData.vendors.filter((v) => v.type === type)
+    try {
+      const response = await fetch(`/api/library/${activeCategory}/${id}`, {
+        method: "DELETE",
+      })
 
-  return (
-    <>
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <BookCopy className="mr-2" />
-            Deployment Library Management
-          </CardTitle>
-          <CardDescription>
-            Manage the master lists of vendors, devices, use cases, and other assets for all deployments.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="use-cases" onValueChange={setActiveTab}>
-            <TabsList className="flex-wrap h-auto">
-              <TabsTrigger value="use-cases">Use Cases</TabsTrigger>
-              <TabsTrigger value="test-cases">Test Cases</TabsTrigger>
-              <TabsTrigger value="requirements">Requirements</TabsTrigger>
-              <TabsTrigger value="vendors">Vendors</TabsTrigger>
-              <TabsTrigger value="device-types">Device Types</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="use-cases" className="space-y-4 pt-4">
-              <Button onClick={() => handleAddNew("use-cases")}>
-                <PlusCircle className="mr-2 h-4 w-4" /> Add Use Case
-              </Button>
-              <ItemTable
-                title="Use Cases"
-                items={libraryData.useCases}
-                columns={["ID", "Title", "Category", "Priority", "Type"]}
-                renderRow={(item: UseCase) => (
-                  <>
-                    <TableCell>{item.id}</TableCell>
-                    <TableCell>{item.title}</TableCell>
-                    <TableCell>{item.category}</TableCell>
-                    <TableCell>{item.priority}</TableCell>
-                    <TableCell>{item.is_custom ? "Custom" : "Default"}</TableCell>
-                  </>
-                )}
-                onEdit={(item) => handleEdit(item, "use-cases")}
-                onDelete={(id) => handleDelete(id, "use-cases")}
-              />
-            </TabsContent>
-
-            <TabsContent value="test-cases" className="space-y-4 pt-4">
-              <Button onClick={() => handleAddNew("test-cases")}>
-                <PlusCircle className="mr-2 h-4 w-4" /> Add Test Case
-              </Button>
-              <ItemTable
-                title="Test Cases"
-                items={libraryData.testCases}
-                columns={["Name", "Expected Outcome"]}
-                renderRow={(item: TestCase) => (
-                  <>
-                    <TableCell>{item.name}</TableCell>
-                    <TableCell className="text-xs">{item.expected_outcome}</TableCell>
-                  </>
-                )}
-                onEdit={(item) => handleEdit(item, "test-cases")}
-                onDelete={(id) => handleDelete(id, "test-cases")}
-              />
-            </TabsContent>
-
-            <TabsContent value="requirements" className="space-y-4 pt-4">
-              <Button onClick={() => handleAddNew("requirements")}>
-                <PlusCircle className="mr-2 h-4 w-4" /> Add Requirement
-              </Button>
-              <ItemTable
-                title="Requirements"
-                items={libraryData.requirements}
-                columns={["ID", "Description"]}
-                renderRow={(item: Requirement) => (
-                  <>
-                    <TableCell>{item.id}</TableCell>
-                    <TableCell>{item.description}</TableCell>
-                  </>
-                )}
-                onEdit={(item) => handleEdit(item, "requirements")}
-                onDelete={(id) => handleDelete(id, "requirements")}
-              />
-            </TabsContent>
-
-            <TabsContent value="vendors" className="space-y-4 pt-4">
-              <Button onClick={() => handleAddNew("vendors")}>
-                <PlusCircle className="mr-2 h-4 w-4" /> Add Vendor
-              </Button>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <VendorTable
-                  title="Wired"
-                  vendors={getVendorsByType("wired")}
-                  onEdit={(v) => handleEdit(v, "vendors")}
-                  onDelete={(id) => handleDelete(id, "vendors")}
-                />
-                <VendorTable
-                  title="Wireless"
-                  vendors={getVendorsByType("wireless")}
-                  onEdit={(v) => handleEdit(v, "vendors")}
-                  onDelete={(id) => handleDelete(id, "vendors")}
-                />
-                <VendorTable
-                  title="Firewall"
-                  vendors={getVendorsByType("firewall")}
-                  onEdit={(v) => handleEdit(v, "vendors")}
-                  onDelete={(id) => handleDelete(id, "vendors")}
-                />
-                <VendorTable
-                  title="VPN"
-                  vendors={getVendorsByType("vpn")}
-                  onEdit={(v) => handleEdit(v, "vendors")}
-                  onDelete={(id) => handleDelete(id, "vendors")}
-                />
-                <VendorTable
-                  title="EDR/XDR"
-                  vendors={getVendorsByType("edr-xdr")}
-                  onEdit={(v) => handleEdit(v, "vendors")}
-                  onDelete={(id) => handleDelete(id, "vendors")}
-                />
-                <VendorTable
-                  title="SIEM"
-                  vendors={getVendorsByType("siem")}
-                  onEdit={(v) => handleEdit(v, "vendors")}
-                  onDelete={(id) => handleDelete(id, "vendors")}
-                />
-              </div>
-            </TabsContent>
-
-            <TabsContent value="device-types" className="space-y-4 pt-4">
-              <Button onClick={() => handleAddNew("device-types")}>
-                <PlusCircle className="mr-2 h-4 w-4" /> Add Device Type
-              </Button>
-              <ItemTable
-                title="Device Types"
-                items={libraryData.deviceTypes}
-                columns={["Name", "Type"]}
-                renderRow={(item: DeviceType) => (
-                  <>
-                    <TableCell>{item.name}</TableCell>
-                    <TableCell>{item.is_custom ? "Custom" : "Default"}</TableCell>
-                  </>
-                )}
-                onEdit={(item) => handleEdit(item, "device-types")}
-                onDelete={(id) => handleDelete(id, "device-types")}
-              />
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
-      <LibraryItemDialog
-        isOpen={isDialogOpen}
-        onClose={() => setIsDialogOpen(false)}
-        onSave={handleSave}
-        item={currentItem}
-        isEdit={isEdit}
-        type={activeTab}
-      />
-    </>
-  )
-}
-
-// Sub-components for the dashboard
-
-function VendorTable({ title, vendors, onEdit, onDelete }: any) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {vendors.map((vendor: Vendor) => (
-              <TableRow key={vendor.id}>
-                <TableCell>{vendor.name}</TableCell>
-                <TableCell>{vendor.is_custom ? "Custom" : "Default"}</TableCell>
-                <TableCell>
-                  <Button variant="ghost" size="icon" onClick={() => onEdit(vendor)}>
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => onDelete(vendor.id)} disabled={!vendor.is_custom}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
-  )
-}
-
-function ItemTable({ title, items, columns, renderRow, onEdit, onDelete }: any) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              {columns.map((col: string) => (
-                <TableHead key={col}>{col}</TableHead>
-              ))}
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {items.map((item: any) => (
-              <TableRow key={item.id}>
-                {renderRow(item)}
-                <TableCell>
-                  <Button variant="ghost" size="icon" onClick={() => onEdit(item)}>
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => onDelete(item.id)} disabled={!item.is_custom}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
-  )
-}
-
-// Generic Dialog for Add/Edit
-function LibraryItemDialog({ isOpen, onClose, onSave, item, isEdit, type }: any) {
-  const [formData, setFormData] = useState<any>({})
-
-  useEffect(() => {
-    if (isOpen) {
-      if (item) {
-        setFormData(item)
-      } else {
-        // Set defaults for new items
-        const defaults: any = {
-          vendors: { name: "", type: "wired", is_custom: true },
-          "device-types": { name: "", is_custom: true },
-          "use-cases": {
-            title: "",
-            category: "General",
-            description: "",
-            priority: "Optional",
-            is_custom: true,
-            complexity: "Medium",
-            deployment_time: "1 week",
-            prerequisites: [],
-            test_cases: [],
-          },
-          "test-cases": { name: "", expected_outcome: "", is_custom: true },
-          requirements: { description: "", is_custom: true },
-        }
-        setFormData(defaults[type] || {})
+      if (!response.ok) {
+        throw new Error(`Failed to delete ${activeCategory}`)
       }
-    }
-  }, [item, type, isOpen])
 
-  const handleChange = (field: string, value: any) => {
-    setFormData((prev: any) => ({ ...prev, [field]: value }))
-  }
-
-  const renderFormFields = () => {
-    switch (type) {
-      case "vendors":
-        return (
-          <>
-            <Label htmlFor="name">Name</Label>
-            <Input id="name" value={formData.name || ""} onChange={(e) => handleChange("name", e.target.value)} />
-            <Label htmlFor="type">Type</Label>
-            <Select value={formData.type || "wired"} onValueChange={(v) => handleChange("type", v)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="wired">Wired</SelectItem>
-                <SelectItem value="wireless">Wireless</SelectItem>
-                <SelectItem value="firewall">Firewall</SelectItem>
-                <SelectItem value="vpn">VPN</SelectItem>
-                <SelectItem value="edr-xdr">EDR/XDR</SelectItem>
-                <SelectItem value="siem">SIEM</SelectItem>
-                <SelectItem value="idp">IDP</SelectItem>
-                <SelectItem value="mdm">MDM</SelectItem>
-              </SelectContent>
-            </Select>
-          </>
-        )
-      case "device-types":
-        return (
-          <>
-            <Label htmlFor="name">Name</Label>
-            <Input id="name" value={formData.name || ""} onChange={(e) => handleChange("name", e.target.value)} />
-          </>
-        )
-      case "use-cases":
-        return (
-          <>
-            <Label htmlFor="title">Title</Label>
-            <Input id="title" value={formData.title || ""} onChange={(e) => handleChange("title", e.target.value)} />
-            <Label htmlFor="category">Category</Label>
-            <Input
-              id="category"
-              value={formData.category || ""}
-              onChange={(e) => handleChange("category", e.target.value)}
-            />
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={formData.description || ""}
-              onChange={(e) => handleChange("description", e.target.value)}
-            />
-            <Label htmlFor="priority">Priority</Label>
-            <Select value={formData.priority || "Optional"} onValueChange={(v) => handleChange("priority", v)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Mandatory">Mandatory</SelectItem>
-                <SelectItem value="Optional">Optional</SelectItem>
-                <SelectItem value="Nice to Have">Nice to Have</SelectItem>
-              </SelectContent>
-            </Select>
-            <Label htmlFor="complexity">Complexity</Label>
-            <Select value={formData.complexity || "Medium"} onValueChange={(v) => handleChange("complexity", v)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Low">Low</SelectItem>
-                <SelectItem value="Medium">Medium</SelectItem>
-                <SelectItem value="High">High</SelectItem>
-              </SelectContent>
-            </Select>
-          </>
-        )
-      case "test-cases":
-        return (
-          <>
-            <Label htmlFor="name">Name</Label>
-            <Input id="name" value={formData.name || ""} onChange={(e) => handleChange("name", e.target.value)} />
-            <Label htmlFor="expected_outcome">Expected Outcome</Label>
-            <Textarea
-              id="expected_outcome"
-              value={formData.expected_outcome || ""}
-              onChange={(e) => handleChange("expected_outcome", e.target.value)}
-            />
-          </>
-        )
-      case "requirements":
-        return (
-          <>
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={formData.description || ""}
-              onChange={(e) => handleChange("description", e.target.value)}
-            />
-          </>
-        )
-      default:
-        return <div>Form not implemented for this type.</div>
+      toast({
+        title: "Success",
+        description: `${activeCategory.slice(0, -1)} deleted successfully.`,
+      })
+      fetchData(activeCategory) // Refresh data
+    } catch (error) {
+      console.error(error)
+      toast({
+        title: "Error",
+        description: `Could not delete ${activeCategory.slice(0, -1)}.`,
+        variant: "destructive",
+      })
     }
   }
 
-  if (!isOpen) return null
+  const currentItems = useMemo(() => {
+    return activeCategory === "vendors" ? vendors : deviceTypes
+  }, [activeCategory, vendors, deviceTypes])
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {isEdit ? "Edit" : "Add"} {type.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
-          </DialogTitle>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">{renderFormFields()}</div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button onClick={() => onSave(formData)}>Save</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <Card>
+      <CardHeader>
+        <CardTitle>Configuration Library</CardTitle>
+        <div className="flex justify-between items-center pt-2">
+          <div className="flex space-x-1 rounded-md bg-muted p-1">
+            <Button
+              variant={activeCategory === "vendors" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setActiveCategory("vendors")}
+            >
+              Vendors
+            </Button>
+            <Button
+              variant={activeCategory === "device-types" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setActiveCategory("device-types")}
+            >
+              Device Types
+            </Button>
+          </div>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Add New {activeCategory === "vendors" ? "Vendor" : "Device Type"}
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add New {activeCategory === "vendors" ? "Vendor" : "Device Type"}</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleAddItem}>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="name" className="text-right">
+                      Name
+                    </Label>
+                    <Input
+                      id="name"
+                      value={newItemName}
+                      onChange={(e) => setNewItemName(e.target.value)}
+                      className="col-span-3"
+                      required
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button type="submit">Save</Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead className="text-right w-[100px]">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {currentItems.map((item: LibraryItem) => (
+                <TableRow key={item.id}>
+                  <TableCell>{item.name}</TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="ghost" size="icon" onClick={() => handleDeleteItem(item.id)}>
+                      <Trash2 className="h-4 w-4" />
+                      <span className="sr-only">Delete</span>
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+        {!isLoading && currentItems.length === 0 && (
+          <div className="text-center py-8 text-muted-foreground">No {activeCategory.replace("-", " ")} found.</div>
+        )}
+      </CardContent>
+    </Card>
   )
 }
