@@ -1,53 +1,27 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { sql } from "@/lib/database"
+import { sql } from "@vercel/postgres"
+import { NextResponse } from "next/server"
 
-export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url)
-    const type = searchParams.get("type") as
-      | "project_manager"
-      | "technical_owner"
-      | "engineer"
-      | "sales_engineer"
-      | "customer"
-      | null
+// POST /api/users
+export async function POST(req: Request) {
+  const { name, email, password, user_type, avatar } = await req.json()
 
-    let users
-    if (type) {
-      users = await sql`SELECT id, name, email, role, user_type FROM users WHERE user_type = ${type} ORDER BY name;`
-    } else {
-      users = await sql`SELECT id, name, email, role, user_type FROM users ORDER BY name;`
-    }
-
-    return NextResponse.json(users)
-  } catch (error) {
-    console.error("Error fetching users:", error)
-    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred"
-    return NextResponse.json({ error: "Failed to fetch users", details: errorMessage }, { status: 500 })
+  if (!name || !email || !password || !user_type) {
+    return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
   }
-}
 
-export async function POST(request: NextRequest) {
+  // In a real app, use a strong hashing library like bcrypt
+  const password_hash = `hashed_${password}`
+
   try {
-    const userData = await request.json()
-    const { name, email, role, user_type } = userData
-
-    if (!name || !email || !role || !user_type) {
-      return NextResponse.json({ error: "Missing required fields: name, email, role, user_type" }, { status: 400 })
+    const [newUser] =
+      await sql`INSERT INTO users (name, email, password_hash, user_type, avatar) VALUES (${name}, ${email}, ${password_hash}, ${user_type}, ${avatar}) RETURNING id, name, email, user_type, avatar`
+    return NextResponse.json(newUser, { status: 201 })
+  } catch (error: any) {
+    if (error.code === "23505") {
+      // Unique constraint violation
+      return NextResponse.json({ error: "User with this email already exists" }, { status: 409 })
     }
-
-    const newUser = await sql`
-      INSERT INTO users (name, email, role, user_type)
-      VALUES (${name}, ${email}, ${role}, ${user_type})
-      RETURNING id, name, email, role, user_type;
-    `
-    return NextResponse.json(newUser[0], { status: 201 })
-  } catch (error) {
-    console.error("Error creating user:", error)
-    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred"
-    if (errorMessage.includes('duplicate key value violates unique constraint "users_email_key"')) {
-      return NextResponse.json({ error: "A user with this email already exists." }, { status: 409 })
-    }
-    return NextResponse.json({ error: "Failed to create user", details: errorMessage }, { status: 500 })
+    console.error("Failed to create user:", error)
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
   }
 }

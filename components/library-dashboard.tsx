@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,29 +11,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { PlusCircle, Edit, Trash2, BookCopy } from "lucide-react"
-import type { Vendor, DeviceType, ChecklistItem, UseCase, TestMatrixEntry, TestCase, Requirement } from "@/lib/database"
+import type { Vendor, DeviceType, UseCase, TestCase, Requirement } from "@/lib/database.types"
 import { toast } from "@/components/ui/use-toast"
-import * as api from "@/lib/api"
 import { Skeleton } from "@/components/ui/skeleton"
 
-interface LibraryDashboardProps {
-  libraryData: LibraryData | null
-  onUpdate: () => void
-}
-
 type LibraryData = {
-  wiredVendors: Vendor[]
-  wirelessVendors: Vendor[]
-  idpVendors: Vendor[]
-  firewallVendors: Vendor[]
-  vpnVendors: Vendor[]
-  edrXdrVendors: Vendor[]
-  siemVendors: Vendor[]
-  mdmVendors: Vendor[]
+  vendors: Vendor[]
   deviceTypes: DeviceType[]
-  checklistItems: ChecklistItem[]
   useCases: UseCase[]
-  testMatrix: TestMatrixEntry[]
   testCases: TestCase[]
   requirements: Requirement[]
 }
@@ -53,22 +38,40 @@ const LibrarySkeleton = () => (
   </Card>
 )
 
-export function LibraryDashboard({ libraryData, onUpdate }: LibraryDashboardProps) {
+export function LibraryDashboard() {
+  const [libraryData, setLibraryData] = useState<LibraryData | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("use-cases")
-
-  // Add/Edit State
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isEdit, setIsEdit] = useState(false)
   const [currentItem, setCurrentItem] = useState<any>(null)
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
 
-  if (!libraryData) {
-    return <LibrarySkeleton />
-  }
+  const fetchData = useCallback(async () => {
+    setIsLoading(true)
+    try {
+      const [vendors, deviceTypes, useCases, testCases, requirements] = await Promise.all([
+        fetch("/api/library/vendors").then((res) => res.json()),
+        fetch("/api/library/device-types").then((res) => res.json()),
+        fetch("/api/library/use-cases").then((res) => res.json()),
+        fetch("/api/library/test-cases").then((res) => res.json()),
+        fetch("/api/library/requirements").then((res) => res.json()),
+      ])
+      setLibraryData({ vendors, deviceTypes, useCases, testCases, requirements })
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to fetch library data.", variant: "destructive" })
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
 
   const handleAddNew = (tab: string) => {
     setIsEdit(false)
     setCurrentItem(null)
-    setActiveTab(tab)
+    setActiveTab(tab) // Ensure active tab is set before opening dialog
     setIsDialogOpen(true)
   }
 
@@ -79,33 +82,50 @@ export function LibraryDashboard({ libraryData, onUpdate }: LibraryDashboardProp
     setIsDialogOpen(true)
   }
 
-  const handleDelete = async (id: number, type: string) => {
-    if (!confirm("Are you sure you want to delete this item? This action cannot be undone.")) return
+  const handleDelete = async (id: number, itemType: string) => {
+    if (!confirm("Are you sure you want to delete this custom item? This action cannot be undone.")) return
 
     try {
-      await api.deleteLibraryItem(id, type)
+      const response = await fetch(`/api/library/${itemType}/${id}`, { method: "DELETE" })
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to delete")
+      }
       toast({ title: "Success", description: "Item deleted successfully." })
-      onUpdate()
-    } catch (error) {
-      toast({ title: "Error", description: `Failed to delete item: ${error}`, variant: "destructive" })
+      fetchData() // Refresh data
+    } catch (error: any) {
+      toast({ title: "Error", description: `Failed to delete item: ${error.message}`, variant: "destructive" })
     }
   }
 
   const handleSave = async (data: any) => {
+    const itemType = activeTab
+    const url = isEdit ? `/api/library/${itemType}/${data.id}` : `/api/library/${itemType}`
+    const method = isEdit ? "PUT" : "POST"
+
     try {
-      if (isEdit) {
-        await api.updateLibraryItem(data.id, data, activeTab)
-        toast({ title: "Success", description: "Item updated successfully." })
-      } else {
-        await api.createLibraryItem(data, activeTab)
-        toast({ title: "Success", description: "Item created successfully." })
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      })
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to save")
       }
-      onUpdate()
+      toast({ title: "Success", description: `Item ${isEdit ? "updated" : "created"} successfully.` })
+      fetchData()
       setIsDialogOpen(false)
-    } catch (error) {
-      toast({ title: "Error", description: `Failed to save item: ${error}`, variant: "destructive" })
+    } catch (error: any) {
+      toast({ title: "Error", description: `Failed to save item: ${error.message}`, variant: "destructive" })
     }
   }
+
+  if (isLoading || !libraryData) {
+    return <LibrarySkeleton />
+  }
+
+  const getVendorsByType = (type: string) => libraryData.vendors.filter((v) => v.type === type)
 
   return (
     <>
@@ -125,8 +145,7 @@ export function LibraryDashboard({ libraryData, onUpdate }: LibraryDashboardProp
               <TabsTrigger value="use-cases">Use Cases</TabsTrigger>
               <TabsTrigger value="test-cases">Test Cases</TabsTrigger>
               <TabsTrigger value="requirements">Requirements</TabsTrigger>
-              <TabsTrigger value="vendors-network">Network Vendors</TabsTrigger>
-              <TabsTrigger value="vendors-security">Security Vendors</TabsTrigger>
+              <TabsTrigger value="vendors">Vendors</TabsTrigger>
               <TabsTrigger value="device-types">Device Types</TabsTrigger>
             </TabsList>
 
@@ -148,7 +167,7 @@ export function LibraryDashboard({ libraryData, onUpdate }: LibraryDashboardProp
                   </>
                 )}
                 onEdit={(item) => handleEdit(item, "use-cases")}
-                onDelete={(id) => handleDelete(id, "useCase")}
+                onDelete={(id) => handleDelete(id, "use-cases")}
               />
             </TabsContent>
 
@@ -167,7 +186,7 @@ export function LibraryDashboard({ libraryData, onUpdate }: LibraryDashboardProp
                   </>
                 )}
                 onEdit={(item) => handleEdit(item, "test-cases")}
-                onDelete={(id) => handleDelete(id, "testCase")}
+                onDelete={(id) => handleDelete(id, "test-cases")}
               />
             </TabsContent>
 
@@ -186,70 +205,50 @@ export function LibraryDashboard({ libraryData, onUpdate }: LibraryDashboardProp
                   </>
                 )}
                 onEdit={(item) => handleEdit(item, "requirements")}
-                onDelete={(id) => handleDelete(id, "requirement")}
+                onDelete={(id) => handleDelete(id, "requirements")}
               />
             </TabsContent>
 
-            <TabsContent value="vendors-network" className="space-y-4 pt-4">
-              <Button onClick={() => handleAddNew("vendors-network")}>
-                <PlusCircle className="mr-2 h-4 w-4" /> Add Network Vendor
-              </Button>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <VendorTable
-                  title="Wired"
-                  vendors={libraryData.wiredVendors}
-                  onEdit={(v) => handleEdit(v, "vendors-network")}
-                  onDelete={(id) => handleDelete(id, "wiredVendor")}
-                />
-                <VendorTable
-                  title="Wireless"
-                  vendors={libraryData.wirelessVendors}
-                  onEdit={(v) => handleEdit(v, "vendors-network")}
-                  onDelete={(id) => handleDelete(id, "wirelessVendor")}
-                />
-              </div>
-            </TabsContent>
-
-            <TabsContent value="vendors-security" className="space-y-4 pt-4">
-              <Button onClick={() => handleAddNew("vendors-security")}>
-                <PlusCircle className="mr-2 h-4 w-4" /> Add Security Vendor
+            <TabsContent value="vendors" className="space-y-4 pt-4">
+              <Button onClick={() => handleAddNew("vendors")}>
+                <PlusCircle className="mr-2 h-4 w-4" /> Add Vendor
               </Button>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <VendorTable
+                  title="Wired"
+                  vendors={getVendorsByType("wired")}
+                  onEdit={(v) => handleEdit(v, "vendors")}
+                  onDelete={(id) => handleDelete(id, "vendors")}
+                />
+                <VendorTable
+                  title="Wireless"
+                  vendors={getVendorsByType("wireless")}
+                  onEdit={(v) => handleEdit(v, "vendors")}
+                  onDelete={(id) => handleDelete(id, "vendors")}
+                />
+                <VendorTable
                   title="Firewall"
-                  vendors={libraryData.firewallVendors}
-                  onEdit={(v) => handleEdit(v, "vendors-security")}
-                  onDelete={(id) => handleDelete(id, "firewallVendor")}
+                  vendors={getVendorsByType("firewall")}
+                  onEdit={(v) => handleEdit(v, "vendors")}
+                  onDelete={(id) => handleDelete(id, "vendors")}
                 />
                 <VendorTable
                   title="VPN"
-                  vendors={libraryData.vpnVendors}
-                  onEdit={(v) => handleEdit(v, "vendors-security")}
-                  onDelete={(id) => handleDelete(id, "vpnVendor")}
+                  vendors={getVendorsByType("vpn")}
+                  onEdit={(v) => handleEdit(v, "vendors")}
+                  onDelete={(id) => handleDelete(id, "vendors")}
                 />
                 <VendorTable
                   title="EDR/XDR"
-                  vendors={libraryData.edrXdrVendors}
-                  onEdit={(v) => handleEdit(v, "vendors-security")}
-                  onDelete={(id) => handleDelete(id, "edrXdrVendor")}
+                  vendors={getVendorsByType("edr-xdr")}
+                  onEdit={(v) => handleEdit(v, "vendors")}
+                  onDelete={(id) => handleDelete(id, "vendors")}
                 />
                 <VendorTable
                   title="SIEM"
-                  vendors={libraryData.siemVendors}
-                  onEdit={(v) => handleEdit(v, "vendors-security")}
-                  onDelete={(id) => handleDelete(id, "siemVendor")}
-                />
-                <VendorTable
-                  title="IDP"
-                  vendors={libraryData.idpVendors}
-                  onEdit={(v) => handleEdit(v, "vendors-security")}
-                  onDelete={(id) => handleDelete(id, "idpVendor")}
-                />
-                <VendorTable
-                  title="MDM"
-                  vendors={libraryData.mdmVendors}
-                  onEdit={(v) => handleEdit(v, "vendors-security")}
-                  onDelete={(id) => handleDelete(id, "mdmVendor")}
+                  vendors={getVendorsByType("siem")}
+                  onEdit={(v) => handleEdit(v, "vendors")}
+                  onDelete={(id) => handleDelete(id, "vendors")}
                 />
               </div>
             </TabsContent>
@@ -269,7 +268,7 @@ export function LibraryDashboard({ libraryData, onUpdate }: LibraryDashboardProp
                   </>
                 )}
                 onEdit={(item) => handleEdit(item, "device-types")}
-                onDelete={(id) => handleDelete(id, "deviceType")}
+                onDelete={(id) => handleDelete(id, "device-types")}
               />
             </TabsContent>
           </Tabs>
@@ -374,28 +373,21 @@ function LibraryItemDialog({ isOpen, onClose, onSave, item, isEdit, type }: any)
       } else {
         // Set defaults for new items
         const defaults: any = {
-          "vendors-network": { name: "", type: "wired" },
-          "vendors-security": { name: "", type: "firewall" },
-          "device-types": { name: "" },
+          vendors: { name: "", type: "wired", is_custom: true },
+          "device-types": { name: "", is_custom: true },
           "use-cases": {
-            id: `UC-CUSTOM-${Math.floor(100 + Math.random() * 900)}`,
             title: "",
-            category: "",
+            category: "General",
             description: "",
-            priority: "optional",
+            priority: "Optional",
             is_custom: true,
+            complexity: "Medium",
+            deployment_time: "1 week",
+            prerequisites: [],
+            test_cases: [],
           },
-          "test-cases": {
-            id: `TC-CUSTOM-${Math.floor(100 + Math.random() * 900)}`,
-            name: "",
-            expected_outcome: "",
-            is_custom: true,
-          },
-          requirements: {
-            id: `R-CUSTOM-${Math.floor(100 + Math.random() * 900)}`,
-            description: "",
-            is_custom: true,
-          },
+          "test-cases": { name: "", expected_outcome: "", is_custom: true },
+          requirements: { description: "", is_custom: true },
         }
         setFormData(defaults[type] || {})
       }
@@ -408,36 +400,25 @@ function LibraryItemDialog({ isOpen, onClose, onSave, item, isEdit, type }: any)
 
   const renderFormFields = () => {
     switch (type) {
-      case "vendors-network":
-      case "vendors-security":
+      case "vendors":
         return (
           <>
             <Label htmlFor="name">Name</Label>
             <Input id="name" value={formData.name || ""} onChange={(e) => handleChange("name", e.target.value)} />
             <Label htmlFor="type">Type</Label>
-            <Select
-              value={formData.type || (type === "vendors-network" ? "wired" : "firewall")}
-              onValueChange={(v) => handleChange("type", v)}
-            >
+            <Select value={formData.type || "wired"} onValueChange={(v) => handleChange("type", v)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {type === "vendors-network" ? (
-                  <>
-                    <SelectItem value="wired">Wired</SelectItem>
-                    <SelectItem value="wireless">Wireless</SelectItem>
-                  </>
-                ) : (
-                  <>
-                    <SelectItem value="firewall">Firewall</SelectItem>
-                    <SelectItem value="vpn">VPN</SelectItem>
-                    <SelectItem value="edr-xdr">EDR/XDR</SelectItem>
-                    <SelectItem value="siem">SIEM</SelectItem>
-                    <SelectItem value="idp">IDP</SelectItem>
-                    <SelectItem value="mdm">MDM</SelectItem>
-                  </>
-                )}
+                <SelectItem value="wired">Wired</SelectItem>
+                <SelectItem value="wireless">Wireless</SelectItem>
+                <SelectItem value="firewall">Firewall</SelectItem>
+                <SelectItem value="vpn">VPN</SelectItem>
+                <SelectItem value="edr-xdr">EDR/XDR</SelectItem>
+                <SelectItem value="siem">SIEM</SelectItem>
+                <SelectItem value="idp">IDP</SelectItem>
+                <SelectItem value="mdm">MDM</SelectItem>
               </SelectContent>
             </Select>
           </>
@@ -467,14 +448,25 @@ function LibraryItemDialog({ isOpen, onClose, onSave, item, isEdit, type }: any)
               onChange={(e) => handleChange("description", e.target.value)}
             />
             <Label htmlFor="priority">Priority</Label>
-            <Select value={formData.priority || "optional"} onValueChange={(v) => handleChange("priority", v)}>
+            <Select value={formData.priority || "Optional"} onValueChange={(v) => handleChange("priority", v)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="mandatory">Mandatory</SelectItem>
-                <SelectItem value="optional">Optional</SelectItem>
-                <SelectItem value="nice-to-have">Nice to Have</SelectItem>
+                <SelectItem value="Mandatory">Mandatory</SelectItem>
+                <SelectItem value="Optional">Optional</SelectItem>
+                <SelectItem value="Nice to Have">Nice to Have</SelectItem>
+              </SelectContent>
+            </Select>
+            <Label htmlFor="complexity">Complexity</Label>
+            <Select value={formData.complexity || "Medium"} onValueChange={(v) => handleChange("complexity", v)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Low">Low</SelectItem>
+                <SelectItem value="Medium">Medium</SelectItem>
+                <SelectItem value="High">High</SelectItem>
               </SelectContent>
             </Select>
           </>
@@ -495,13 +487,6 @@ function LibraryItemDialog({ isOpen, onClose, onSave, item, isEdit, type }: any)
       case "requirements":
         return (
           <>
-            <Label htmlFor="id">ID</Label>
-            <Input
-              id="id"
-              value={formData.id || ""}
-              onChange={(e) => handleChange("id", e.target.value)}
-              disabled={isEdit}
-            />
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"

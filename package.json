@@ -44,6 +44,7 @@
     "@tanstack/react-table": "latest",
     "@types/bcryptjs": "^2.4.6",
     "@vercel/blob": "latest",
+    "@vercel/postgres": "latest",
     "bcryptjs": "latest",
     "buffer": "latest",
     "class-variance-authority": "^0.7.1",
