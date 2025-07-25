@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { apiClient } from '../lib/api'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
@@ -42,36 +43,29 @@ interface Site {
 }
 
 export function Sites() {
-  const { token } = useAuthStore()
+  const { token, user } = useAuthStore()
   const queryClient = useQueryClient()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid')
 
+  // Set token for API client
+  if (token) {
+    apiClient.setToken(token)
+  }
+
   const { data: sites, isLoading } = useQuery({
     queryKey: ['sites'],
     queryFn: async () => {
-      const response = await fetch('/api/sites', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      })
-      const result = await response.json()
+      const result = await apiClient.get('/api/sites')
       return result.data || []
     },
+    enabled: !!user,
   })
 
   const createSiteMutation = useMutation({
     mutationFn: async (siteData: Partial<Site>) => {
-      const response = await fetch('/api/sites', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(siteData),
-      })
-      const result = await response.json()
+      const result = await apiClient.post('/api/sites', siteData)
       if (!result.success) throw new Error(result.error?.message)
       return result.data
     },

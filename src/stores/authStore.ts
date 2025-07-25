@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { apiClient } from '../lib/api'
 
 interface User {
   id: string
@@ -29,19 +30,14 @@ export const useAuthStore = create<AuthState>()(
       login: async (email: string, password: string) => {
         set({ isLoading: true })
         try {
-          const response = await fetch('/api/auth/login', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ email, password }),
-          })
-
-          const result = await response.json()
+          const result = await apiClient.post('/api/auth/login', { email, password })
 
           if (!result.success) {
             throw new Error(result.error?.message || 'Login failed')
           }
+
+          // Set token for future requests
+          apiClient.setToken(result.data.token)
 
           set({
             user: result.data.user,
@@ -55,6 +51,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
+        apiClient.setToken(null)
         set({ user: null, token: null })
       },
 
@@ -66,20 +63,18 @@ export const useAuthStore = create<AuthState>()(
         }
 
         try {
-          // Verify token is still valid by making a test request
-          const response = await fetch('/api/users', {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-            },
-          })
+          apiClient.setToken(token)
+          const result = await apiClient.get('/api/users')
 
-          if (!response.ok) {
+          if (!result.success) {
             // Token is invalid, clear auth state
+            apiClient.setToken(null)
             set({ user: null, token: null, isLoading: false })
           } else {
             set({ isLoading: false })
           }
         } catch (error) {
+          apiClient.setToken(null)
           set({ user: null, token: null, isLoading: false })
         }
       },

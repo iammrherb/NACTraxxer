@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { apiClient } from '../lib/api'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import { Badge } from '../components/ui/Badge'
 import { Progress } from '../components/ui/Progress'
@@ -35,45 +36,37 @@ import { useAuthStore } from '../stores/authStore'
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4']
 
 export function Analytics() {
-  const { token } = useAuthStore()
+  const { token, user } = useAuthStore()
+
+  if (token) {
+    apiClient.setToken(token)
+  }
 
   const { data: analytics, isLoading } = useQuery({
     queryKey: ['analytics'],
     queryFn: async () => {
-      const response = await fetch('/api/analytics', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      })
-      const result = await response.json()
+      const result = await apiClient.get('/api/analytics')
       return result.data || {}
     },
+    enabled: !!user,
   })
 
   const { data: sites } = useQuery({
     queryKey: ['sites'],
     queryFn: async () => {
-      const response = await fetch('/api/sites', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      })
-      const result = await response.json()
+      const result = await apiClient.get('/api/sites')
       return result.data || []
     },
+    enabled: !!user,
   })
 
   const { data: projects } = useQuery({
     queryKey: ['projects'],
     queryFn: async () => {
-      const response = await fetch('/api/projects', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      })
-      const result = await response.json()
+      const result = await apiClient.get('/api/projects')
       return result.data || []
     },
+    enabled: !!user,
   })
 
   // Process data for charts

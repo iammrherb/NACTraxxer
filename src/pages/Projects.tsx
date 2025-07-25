@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { apiClient } from '../lib/api'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
@@ -46,36 +47,28 @@ interface Project {
 }
 
 export function Projects() {
-  const { token } = useAuthStore()
+  const { token, user } = useAuthStore()
   const queryClient = useQueryClient()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [typeFilter, setTypeFilter] = useState('all')
 
+  if (token) {
+    apiClient.setToken(token)
+  }
+
   const { data: projects, isLoading } = useQuery({
     queryKey: ['projects'],
     queryFn: async () => {
-      const response = await fetch('/api/projects', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      })
-      const result = await response.json()
+      const result = await apiClient.get('/api/projects')
       return result.data || []
     },
+    enabled: !!user,
   })
 
   const createProjectMutation = useMutation({
     mutationFn: async (projectData: Partial<Project>) => {
-      const response = await fetch('/api/projects', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(projectData),
-      })
-      const result = await response.json()
+      const result = await apiClient.post('/api/projects', projectData)
       if (!result.success) throw new Error(result.error?.message)
       return result.data
     },
