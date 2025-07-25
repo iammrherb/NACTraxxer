@@ -1,4 +1,22 @@
+import { neon } from "@neondatabase/serverless"
 import type { Database } from "./database.types"
+
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL environment variable is not set")
+}
+
+export const sql = neon(process.env.DATABASE_URL)
+
+export async function testDatabaseConnection() {
+  try {
+    await sql`SELECT 1`
+    console.log("Database connection successful.")
+    return { success: true, message: "Database connection successful." }
+  } catch (error) {
+    console.error("Database connection failed:", error)
+    return { success: false, message: "Database connection failed.", error }
+  }
+}
 
 export type Project = Database["public"]["Tables"]["projects"]["Row"]
 export type Site = Database["public"]["Tables"]["sites"]["Row"]
