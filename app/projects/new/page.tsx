@@ -1,13 +1,13 @@
 "use client"
 
-import { useFormState, useFormStatus } from "react-dom"
+import { useActionState, useEffect } from "react"
+import { useFormStatus } from "react-dom"
 import { createProject, type FormState } from "@/app/actions/projects"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
-import { useEffect } from "react"
 import { useToast } from "@/components/ui/use-toast"
 import { Textarea } from "@/components/ui/textarea"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
@@ -23,7 +23,7 @@ function SubmitButton() {
 
 export default function NewProjectPage() {
   const initialState: FormState = { message: "", errors: {} }
-  const [state, formAction] = useFormState(createProject, initialState)
+  const [state, formAction] = useActionState(createProject, initialState)
   const { toast } = useToast()
 
   useEffect(() => {
