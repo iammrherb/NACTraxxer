@@ -41,6 +41,7 @@
     "@radix-ui/react-tooltip": "latest",
     "@supabase/ssr": "latest",
     "@supabase/supabase-js": "latest",
+    "@tanstack/react-table": "latest",
     "@types/bcryptjs": "^2.4.6",
     "@vercel/blob": "latest",
     "bcryptjs": "latest",
