@@ -163,9 +163,10 @@ export function SiteForm({
       const newVendor = await response.json()
       toast({
         title: "Success",
-        description: `Added custom vendor: ${newVendor.name}. Please refresh the page to see it in the list.`,
+        description: `Added custom vendor: ${newVendor.name}. Please close and reopen the form to see it in the list.`,
       })
       setCustomVendorName("")
+      // The parent component will handle refetching library data.
     } catch (error) {
       toast({ title: "Error", description: "Failed to add custom vendor.", variant: "destructive" })
     }
