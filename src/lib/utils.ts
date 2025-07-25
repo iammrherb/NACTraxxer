@@ -38,3 +38,11 @@ export function generateId(prefix: string = ''): string {
   const randomStr = Math.random().toString(36).substring(2, 8)
   return prefix ? `${prefix}-${timestamp}-${randomStr}` : `${timestamp}-${randomStr}`
 }
+
+// Get base URL for the application
+export function getBaseUrl(): string {
+  if (typeof window !== 'undefined') {
+    return window.location.origin
+  }
+  return ''
+}
