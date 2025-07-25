@@ -1,11 +1,9 @@
 import { createBrowserClient } from "@supabase/auth-helpers-nextjs"
-import type { Database } from "./server"
+import type { Database } from "./server" // Reuse the Database type
 
-// Create a Supabase client for client-side operations
-// Note: These environment variables must be exposed to the browser
-// by prefixing them with NEXT_PUBLIC_ in your .env file.
+// Define a function to create a Supabase client for client-side operations
 export const createClient = () =>
-  createBrowserClient<Database>(
-    process.env.SUPABASE_NEXT_PUBLIC_SUPABASE_URL!,
-    proSUPABASE_NEXT_PUBLIC_SUPABASE_ANON_KEY_ANON_KEY!,
-  )
+  createBrowserClient<Database>({
+    supabaseUrl: process.env.SUPABASE_NEXT_PUBLIC_SUPABASE_URL!,
+    supabaseKey: proSUPABASE_NEXT_PUBLIC_SUPABASE_ANON_KEY_ANON_KEY!,
+  })
