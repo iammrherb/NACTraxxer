@@ -1,43 +1,40 @@
--- Drop trigger and function if they exist to ensure a clean setup
-DROP TRIGGER IF EXISTS update_scoping_questionnaires_updated_at ON scoping_questionnaires;
-DROP FUNCTION IF EXISTS update_updated_at_column();
+-- This script adds tables required for project scoping and management.
 
--- Function to update the updated_at column on any table
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-   NEW.updated_at = now();
-   RETURN NEW;
-END;
-$$ language 'plpgsql';
+-- Create the 'projects' table to store high-level project information.
+CREATE TABLE IF NOT EXISTS projects (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) NOT NULL,
+    customer VARCHAR(255) NOT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'Planning' CHECK (status IN ('Planning', 'Active', 'Completed')),
+    settings JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 
--- Table to store data from the multi-step scoping questionnaire
+-- Add the 'project_id' foreign key to the 'sites' table to link sites to projects.
+-- This assumes that for a new setup, the 'sites' table is empty or can be linked to new projects.
+ALTER TABLE sites ADD COLUMN IF NOT EXISTS project_id UUID;
+
+-- Add a foreign key constraint to ensure data integrity between sites and projects.
+-- This might need to be run after populating the project_id column if sites already exist.
+ALTER TABLE sites ADD CONSTRAINT fk_project
+    FOREIGN KEY(project_id) 
+    REFERENCES projects(id)
+    ON DELETE CASCADE;
+
+-- Create the 'scoping_questionnaires' table to store initial project scoping data.
 CREATE TABLE IF NOT EXISTS scoping_questionnaires (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     organization_name VARCHAR(255) NOT NULL,
-    total_users INTEGER NOT NULL,
-    site_count INTEGER DEFAULT 1,
-    country VARCHAR(255),
-    region VARCHAR(255),
     industry VARCHAR(255),
-    project_goals JSONB,
-    legacy_systems JSONB,
-    idp_vendors JSONB,
-    mfa_vendors JSONB,
-    wired_vendors JSONB,
-    wireless_vendors JSONB,
-    mdm_vendors JSONB,
-    edr_vendors JSONB,
-    siem_vendors JSONB,
-    firewall_vendors JSONB,
-    vpn_vendors JSONB,
-    status VARCHAR(50) DEFAULT 'Draft',
-    created_at TIMESTAMPTZ DEFAULT now(),
-    updated_at TIMESTAMPTZ DEFAULT now()
+    region VARCHAR(100),
+    country VARCHAR(100),
+    total_users INTEGER,
+    site_count INTEGER,
+    wired_vendors TEXT[],
+    wireless_vendors TEXT[],
+    mdm_vendors TEXT[],
+    status VARCHAR(50) NOT NULL DEFAULT 'Draft' CHECK (status IN ('Draft', 'Completed')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-
--- Trigger to automatically update updated_at on row update
-CREATE TRIGGER update_scoping_questionnaires_updated_at
-BEFORE UPDATE ON scoping_questionnaires
-FOR EACH ROW
-EXECUTE FUNCTION update_updated_at_column();
