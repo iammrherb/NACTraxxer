@@ -53,6 +53,15 @@ export const mockProjects: Project[] = [
     start_date: "2024-03-01",
     end_date: "2025-06-30",
     completion_percentage: 65,
+    description:
+      "A comprehensive NAC deployment for the new global headquarters, covering 15,000 endpoints, integrating with existing Cisco infrastructure and a new Zero Trust security model.",
+    milestones: [
+      { name: "Discovery Complete", status: "Completed", due_date: "2024-03-30" },
+      { name: "Design Approved", status: "Completed", due_date: "2024-05-15" },
+      { name: "Core Infrastructure Deployed", status: "In Progress", due_date: "2024-08-30" },
+      { name: "User Pilot Program", status: "Pending", due_date: "2024-10-01" },
+      { name: "Full Production Rollout", status: "Pending", due_date: "2025-02-01" },
+    ],
   },
   {
     id: "PROJ-002",
@@ -66,6 +75,14 @@ export const mockProjects: Project[] = [
     start_date: "2024-06-15",
     end_date: "2024-09-15",
     completion_percentage: 80,
+    description:
+      "A proof-of-concept to secure and segment critical medical IoT devices (infusion pumps, patient monitors) across three hospital wings. Facing challenges with legacy device compatibility.",
+    milestones: [
+      { name: "Device Profiling", status: "Completed", due_date: "2024-07-01" },
+      { name: "Policy Creation", status: "Completed", due_date: "2024-07-20" },
+      { name: "Lab Testing", status: "In Progress", due_date: "2024-08-15" },
+      { name: "Live Pilot", status: "Pending", due_date: "2024-09-01" },
+    ],
   },
   {
     id: "PROJ-003",
@@ -79,6 +96,8 @@ export const mockProjects: Project[] = [
     start_date: "2024-07-01",
     end_date: "2025-01-31",
     completion_percentage: 25,
+    description: "Expanding NAC coverage to 200+ new retail locations as part of a major SD-WAN upgrade.",
+    milestones: [],
   },
   {
     id: "PROJ-004",
@@ -92,6 +111,9 @@ export const mockProjects: Project[] = [
     start_date: "2024-02-01",
     end_date: "2024-12-20",
     completion_percentage: 70,
+    description:
+      "Securing the OT network for a large manufacturing plant. Delays due to supply chain issues for industrial switches.",
+    milestones: [],
   },
   {
     id: "PROJ-005",
@@ -105,6 +127,8 @@ export const mockProjects: Project[] = [
     start_date: "2023-08-01",
     end_date: "2024-05-30",
     completion_percentage: 100,
+    description: "Successfully migrated 50,000+ students and faculty to a new 802.1X-secured wireless network.",
+    milestones: [],
   },
   {
     id: "PROJ-006",
@@ -118,5 +142,7 @@ export const mockProjects: Project[] = [
     start_date: "2024-08-01",
     end_date: "2024-11-30",
     completion_percentage: 10,
+    description: "A pilot deployment for the new APAC headquarters in Singapore.",
+    milestones: [],
   },
 ]

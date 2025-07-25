@@ -14,6 +14,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table"
 import { ArrowUpDown, ChevronDown, MoreHorizontal } from "lucide-react"
+import Link from "next/link"
 
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -81,7 +82,11 @@ export const columns: ColumnDef<Project>[] = [
         </Button>
       )
     },
-    cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
+    cell: ({ row }) => (
+      <Link href={`/projects/${row.original.id}`} className="font-medium hover:underline">
+        {row.getValue("name")}
+      </Link>
+    ),
   },
   {
     accessorKey: "customer",
@@ -135,7 +140,9 @@ export const columns: ColumnDef<Project>[] = [
               Copy project ID
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>View project details</DropdownMenuItem>
+            <Link href={`/projects/${project.id}`}>
+              <DropdownMenuItem>View project details</DropdownMenuItem>
+            </Link>
             <DropdownMenuItem>View customer</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

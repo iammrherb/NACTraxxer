@@ -1,6 +1,6 @@
 // types/index.ts
 
-// Based on PRD Section 2.1: Project Hierarchy & Structure
+// Based on PRD Section 2.1, 2.3, 6.2
 export type ProjectPhase = "Discovery" | "Design" | "Implementation" | "Testing" | "Deployment" | "Optimization"
 export type DetailedStatus = "On Track" | "At Risk" | "Off Track" | "On Hold" | "Completed" | "Planning"
 
@@ -9,6 +9,12 @@ export interface HealthMetrics {
   schedule: number
   budget: number
   resources: number
+}
+
+export interface Milestone {
+  name: string
+  status: "Completed" | "In Progress" | "Pending"
+  due_date: string
 }
 
 export interface Project {
@@ -23,6 +29,8 @@ export interface Project {
   start_date: string
   end_date: string
   completion_percentage: number
+  description: string
+  milestones: Milestone[]
 }
 
 export interface Site {
