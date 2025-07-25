@@ -1,107 +1,53 @@
-"use client"
-
-import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Terminal } from "lucide-react"
+import type { SiteStats } from "@/lib/database"
 
-interface SiteStats {
-  totalSites: number
-  sitesWithWorkbooks: number
-  sitesWithoutWorkbooks: number
-  completionPercentage: number
+interface ProgressDashboardProps {
+  stats: SiteStats
 }
 
-export default function ProgressDashboard() {
-  const [stats, setStats] = useState<SiteStats | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  const fetchStats = useCallback(async () => {
-    setIsLoading(true)
-    setError(null)
-    try {
-      const response = await fetch("/api/stats")
-      if (!response.ok) {
-        throw new Error("Failed to fetch deployment stats.")
-      }
-      const data: SiteStats = await response.json()
-      setStats(data)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An unknown error occurred.")
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    fetchStats()
-  }, [fetchStats])
-
-  if (isLoading) {
-    return (
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-6 w-1/2" />
-          <Skeleton className="h-4 w-1/3" />
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-3/4" />
-            <Skeleton className="h-4 w-full" />
-          </div>
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-3/4" />
-            <Skeleton className="h-4 w-full" />
-          </div>
-        </CardContent>
-      </Card>
-    )
-  }
-
-  if (error) {
-    return (
-      <Alert variant="destructive">
-        <Terminal className="h-4 w-4" />
-        <AlertTitle>Error</AlertTitle>
-        <AlertDescription>{error}</AlertDescription>
-      </Alert>
-    )
-  }
-
-  if (!stats) {
-    return null
-  }
-
+export default function ProgressDashboard({ stats }: ProgressDashboardProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Deployment Progress</CardTitle>
-        <CardDescription>Overview of site workbook completion across the project.</CardDescription>
+        <CardTitle>Project Progress Overview</CardTitle>
+        <CardDescription>High-level statistics for this project.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
           <div className="flex justify-between mb-1">
-            <span className="text-sm font-medium text-muted-foreground">Overall Completion</span>
-            <span className="text-sm font-bold">{stats.completionPercentage.toFixed(1)}%</span>
+            <span className="text-sm font-medium text-muted-foreground">Overall Site Completion</span>
+            <span className="text-sm font-bold">{stats.overall_completion.toFixed(1)}%</span>
           </div>
-          <Progress value={stats.completionPercentage} aria-label={`${stats.completionPercentage}% complete`} />
+          <Progress value={stats.overall_completion} aria-label={`${stats.overall_completion}% complete`} />
         </div>
-        <div className="grid gap-2 text-sm">
-          <div className="flex items-center justify-between">
-            <span>Total Sites</span>
-            <span className="font-semibold">{stats.totalSites}</span>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+          <div className="flex flex-col items-center justify-center p-2 bg-muted rounded-lg">
+            <span className="text-lg font-bold">{stats.total_sites}</span>
+            <span className="text-xs text-muted-foreground">Total Sites</span>
           </div>
-          <div className="flex items-center justify-between">
-            <span>Workbooks Completed</span>
-            <span className="font-semibold text-green-600">{stats.sitesWithWorkbooks}</span>
+          <div className="flex flex-col items-center justify-center p-2 bg-muted rounded-lg">
+            <span className="text-lg font-bold text-green-600">{stats.completed_sites}</span>
+            <span className="text-xs text-muted-foreground">Completed</span>
           </div>
-          <div className="flex items-center justify-between">
-            <span>Workbooks Pending</span>
-            <span className="font-semibold text-orange-500">{stats.sitesWithoutWorkbooks}</span>
+          <div className="flex flex-col items-center justify-center p-2 bg-muted rounded-lg">
+            <span className="text-lg font-bold text-blue-600">{stats.in_progress_sites}</span>
+            <span className="text-xs text-muted-foreground">In Progress</span>
           </div>
+          <div className="flex flex-col items-center justify-center p-2 bg-muted rounded-lg">
+            <span className="text-lg font-bold text-red-600">{stats.delayed_sites}</span>
+            <span className="text-xs text-muted-foreground">Delayed</span>
+          </div>
+        </div>
+        <div>
+          <div className="flex justify-between mb-1">
+            <span className="text-sm font-medium text-muted-foreground">Deployment Checklist Completion</span>
+            <span className="text-sm font-bold">{stats.checklist_completion.toFixed(1)}%</span>
+          </div>
+          <Progress value={stats.checklist_completion} aria-label={`${stats.checklist_completion}% complete`} />
+          <p className="text-xs text-muted-foreground mt-1 text-right">
+            {stats.completed_checklist_items} / {stats.total_checklist_items} items completed
+          </p>
         </div>
       </CardContent>
     </Card>

@@ -1,59 +1,56 @@
-import { neon } from "@neondatabase/serverless"
 import type { Database } from "./database.types"
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL environment variable is not set")
+export type Tables<T extends keyof Database["public"]["Tables"]> = Database["public"]["Tables"][T]["Row"]
+export type Enums<T extends keyof Database["public"]["Enums"]> = Database["public"]["Enums"][T]
+
+export type Site = Tables<"sites"> & {
+  project_manager?: Pick<User, "id" | "name">
+  technical_owners?: Pick<User, "id" | "name">[]
+  vendors?: Pick<Vendor, "id" | "name">[]
+  firewall_vendors?: Pick<BaseVendor, "id" | "name">[]
+  vpn_vendors?: Pick<BaseVendor, "id" | "name">[]
+  edr_xdr_vendors?: Pick<BaseVendor, "id" | "name">[]
+  siem_vendors?: Pick<BaseVendor, "id" | "name">[]
+  device_types?: Pick<DeviceType, "id" | "name">[]
+  checklist_items?: Pick<ChecklistItem, "id" | "title" | "completed">[]
+  use_cases?: Pick<UseCase, "id" | "title">[]
+  test_matrix_entries?: Pick<TestMatrixEntry, "id" | "scenario">[]
 }
 
-export const sql = neon(process.env.DATABASE_URL)
+export type User = Tables<"users">
+export type Vendor = Tables<"vendors">
+export type BaseVendor = Tables<"base_vendors">
+export type DeviceType = Tables<"device_types">
+export type ChecklistItem = Tables<"checklist_items">
+export type UseCase = Tables<"use_cases">
+export type TestMatrixEntry = Tables<"test_matrix">
+export type ScopingResponse = Tables<"scoping_responses">
+export type Project = Tables<"projects">
 
-export async function testDatabaseConnection() {
-  try {
-    await sql`SELECT 1`
-    console.log("Database connection successful.")
-    return { success: true, message: "Database connection successful." }
-  } catch (error) {
-    console.error("Database connection failed:", error)
-    return { success: false, message: "Database connection failed.", error }
-  }
-}
-
-export type Project = Database["public"]["Tables"]["projects"]["Row"]
-export type Site = Database["public"]["Tables"]["sites"]["Row"]
-export type ScopingQuestionnaire = Database["public"]["Tables"]["scoping_questionnaires"]["Row"]
-export type DatabaseUser = Database["public"]["Tables"]["users"]["Row"]
-export type Vendor = Database["public"]["Tables"]["vendors"]["Row"]
-export type DeviceType = Database["public"]["Tables"]["device_types"]["Row"]
-export type ChecklistItem = Database["public"]["Tables"]["checklist_items"]["Row"]
-export type UseCase = Database["public"]["Tables"]["use_cases"]["Row"]
-
-// You can keep these composite types if they are still useful for your frontend logic
-export type TestMatrixItem = {
-  id: string
-  name: string
-  description: string
-}
-
-export type LibraryData = {
-  users: DatabaseUser[]
+export interface LibraryData {
+  users: User[]
   wiredVendors: Vendor[]
   wirelessVendors: Vendor[]
-  firewallVendors: Vendor[]
-  vpnVendors: Vendor[]
-  edrXdrVendors: Vendor[]
-  siemVendors: Vendor[]
-  mdmVendors: Vendor[]
+  firewallVendors: BaseVendor[]
+  vpnVendors: BaseVendor[]
+  edrXdrVendors: BaseVendor[]
+  siemVendors: BaseVendor[]
   deviceTypes: DeviceType[]
   checklistItems: ChecklistItem[]
   useCases: UseCase[]
-  testMatrix: TestMatrixItem[]
+  testMatrix: TestMatrixEntry[]
 }
 
-export type SiteStats = {
-  totalSites: number
-  completedSites: number
-  inProgressSites: number
-  onHoldSites: number
-  planningSites: number
-  overallCompletion: number
+export interface SiteStats {
+  total_sites: number
+  completed_sites: number
+  in_progress_sites: number
+  planned_sites: number
+  delayed_sites: number
+  total_users: number
+  overall_completion: number
+  total_checklist_items: number
+  completed_checklist_items: number
+  checklist_completion: number
+  sites: Site[]
 }
