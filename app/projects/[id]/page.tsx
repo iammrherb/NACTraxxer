@@ -2,12 +2,12 @@ import { createClient } from "@/lib/supabase/server"
 import ProgressDashboard from "@/components/progress-dashboard"
 import { SiteTable } from "@/components/site-table"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import type { Site, SiteStats, Project } from "@/lib/database"
+import type { Site, SiteStats, Project, LibraryData } from "@/lib/database"
 import { notFound } from "next/navigation"
 
 async function getProjectData(
   projectId: string,
-): Promise<{ project: Project; sites: Site[]; stats: SiteStats; libraryData: any }> {
+): Promise<{ project: Project; sites: Site[]; stats: SiteStats; libraryData: LibraryData }> {
   const supabase = createClient()
 
   const { data: project, error: projectError } = await supabase
@@ -21,13 +21,15 @@ async function getProjectData(
     notFound()
   }
 
-  let { data: sites, error: sitesError } = await supabase.from("sites").select("*").eq("project_id", projectId)
+  const { data: sitesData, error: sitesError } = await supabase
+    .from("sites")
+    .select("*, project_manager:project_manager_id(name)")
+    .eq("project_id", projectId)
 
   if (sitesError) {
     console.error("Error fetching sites:", sitesError)
-    sites = []
   }
-  sites = sites || []
+  const sites = (sitesData as Site[]) || []
 
   // Calculate stats on the server
   const total_sites = sites.length
@@ -85,7 +87,7 @@ async function getProjectData(
     supabase.from("test_matrix").select("*"),
   ])
 
-  const libraryData = {
+  const libraryData: LibraryData = {
     users: users || [],
     wiredVendors: wiredVendors || [],
     wirelessVendors: wirelessVendors || [],

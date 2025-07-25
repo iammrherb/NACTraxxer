@@ -1,6 +1,9 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+"use client"
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import type { SiteStats } from "@/lib/database"
+import { CheckCircle, Clock, ListTodo, Users, AlertTriangle } from "lucide-react"
 
 interface ProgressDashboardProps {
   stats: SiteStats
@@ -8,48 +11,63 @@ interface ProgressDashboardProps {
 
 export default function ProgressDashboard({ stats }: ProgressDashboardProps) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Project Progress Overview</CardTitle>
-        <CardDescription>High-level statistics for this project.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div>
-          <div className="flex justify-between mb-1">
-            <span className="text-sm font-medium text-muted-foreground">Overall Site Completion</span>
-            <span className="text-sm font-bold">{stats.overall_completion.toFixed(1)}%</span>
-          </div>
-          <Progress value={stats.overall_completion} aria-label={`${stats.overall_completion}% complete`} />
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-          <div className="flex flex-col items-center justify-center p-2 bg-muted rounded-lg">
-            <span className="text-lg font-bold">{stats.total_sites}</span>
-            <span className="text-xs text-muted-foreground">Total Sites</span>
-          </div>
-          <div className="flex flex-col items-center justify-center p-2 bg-muted rounded-lg">
-            <span className="text-lg font-bold text-green-600">{stats.completed_sites}</span>
-            <span className="text-xs text-muted-foreground">Completed</span>
-          </div>
-          <div className="flex flex-col items-center justify-center p-2 bg-muted rounded-lg">
-            <span className="text-lg font-bold text-blue-600">{stats.in_progress_sites}</span>
-            <span className="text-xs text-muted-foreground">In Progress</span>
-          </div>
-          <div className="flex flex-col items-center justify-center p-2 bg-muted rounded-lg">
-            <span className="text-lg font-bold text-red-600">{stats.delayed_sites}</span>
-            <span className="text-xs text-muted-foreground">Delayed</span>
-          </div>
-        </div>
-        <div>
-          <div className="flex justify-between mb-1">
-            <span className="text-sm font-medium text-muted-foreground">Deployment Checklist Completion</span>
-            <span className="text-sm font-bold">{stats.checklist_completion.toFixed(1)}%</span>
-          </div>
-          <Progress value={stats.checklist_completion} aria-label={`${stats.checklist_completion}% complete`} />
-          <p className="text-xs text-muted-foreground mt-1 text-right">
-            {stats.completed_checklist_items} / {stats.total_checklist_items} items completed
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Overall Progress</CardTitle>
+          <CheckCircle className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{stats.overall_completion}%</div>
+          <p className="text-xs text-muted-foreground">
+            {stats.completed_sites} of {stats.total_sites} sites complete
           </p>
-        </div>
-      </CardContent>
-    </Card>
+          <Progress value={stats.overall_completion} className="mt-2 h-2" />
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Sites In Progress</CardTitle>
+          <Clock className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{stats.in_progress_sites}</div>
+          <p className="text-xs text-muted-foreground">Currently active deployments</p>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Delayed Sites</CardTitle>
+          <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-red-500">{stats.delayed_sites}</div>
+          <p className="text-xs text-muted-foreground">Sites needing attention</p>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+          <Users className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{stats.total_users.toLocaleString()}</div>
+          <p className="text-xs text-muted-foreground">Across all sites in project</p>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Checklist Completion</CardTitle>
+          <ListTodo className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{stats.checklist_completion}%</div>
+          <p className="text-xs text-muted-foreground">
+            {stats.completed_checklist_items} of {stats.total_checklist_items} tasks done
+          </p>
+          <Progress value={stats.checklist_completion} className="mt-2 h-2" />
+        </CardContent>
+      </Card>
+    </div>
   )
 }
