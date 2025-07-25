@@ -39,8 +39,8 @@ export const createClient = () => {
       cookies: () => cookieStore,
     },
     {
-      supabaseUrl: process.env.SUPABASE_NEXT_PUBLIC_SUPABASE_URL!,
-      supabaseKey: proSUPABASE_NEXT_PUBLIC_SUPABASE_ANON_KEY_ANON_KEY!,
+      supabaseUrl: process.env.SUPABASE_SUPABASE_NEXT_PUBLIC_SUPABASE_URL!,
+      supabaseKey: process.env.SUPABASE_NEXT_PUBLIC_SUPABASE_ANON_KEY_ANON_KEY!,
     },
   )
 }
