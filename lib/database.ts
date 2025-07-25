@@ -1,65 +1,15 @@
-export type Site = {
-  id: string
-  project_id: string
-  name: string
-  status: "Planning" | "In Progress" | "Completed" | "On Hold"
-  region: string
-  country: string
-  users_count: number
-  completion_percentage: number
-  go_live_date: string | null
-  created_at: string
-  updated_at: string
-  // Foreign key IDs
-  pm_id?: string
-  tech_owner_ids?: string[]
-  vendor_ids?: string[]
-  mdm_vendor_ids?: string[]
-  // Optional details
-  details?: any
-  config?: any
-  progress?: any
-}
+import type { Database } from "./database.types"
 
-export type Project = {
-  id: string
-  name: string
-  customer: string
-  status: "Planning" | "Active" | "Completed"
-  created_at: string
-  updated_at: string
-  settings?: any
-}
+export type Project = Database["public"]["Tables"]["projects"]["Row"]
+export type Site = Database["public"]["Tables"]["sites"]["Row"]
+export type ScopingQuestionnaire = Database["public"]["Tables"]["scoping_questionnaires"]["Row"]
+export type DatabaseUser = Database["public"]["Tables"]["users"]["Row"]
+export type Vendor = Database["public"]["Tables"]["vendors"]["Row"]
+export type DeviceType = Database["public"]["Tables"]["device_types"]["Row"]
+export type ChecklistItem = Database["public"]["Tables"]["checklist_items"]["Row"]
+export type UseCase = Database["public"]["Tables"]["use_cases"]["Row"]
 
-export type DatabaseUser = {
-  id: string
-  name: string
-  role: "Admin" | "Project Manager" | "Technical Owner" | "Read-Only"
-}
-
-export type Vendor = {
-  id: string
-  name: string
-  type: "wired" | "wireless" | "firewall" | "vpn" | "edr_xdr" | "siem" | "mdm"
-}
-
-export type DeviceType = {
-  id: string
-  name: string
-}
-
-export type ChecklistItem = {
-  id: string
-  name: string
-  category: string
-}
-
-export type UseCase = {
-  id: string
-  name: string
-  description: string
-}
-
+// You can keep these composite types if they are still useful for your frontend logic
 export type TestMatrixItem = {
   id: string
   name: string
@@ -88,20 +38,4 @@ export type SiteStats = {
   onHoldSites: number
   planningSites: number
   overallCompletion: number
-}
-
-export type ScopingQuestionnaire = {
-  id?: string
-  organizationName: string
-  industry: string
-  region: string
-  country: string
-  totalUsers: number
-  siteCount: number
-  wiredVendors: string[]
-  wirelessVendors: string[]
-  mdmVendors: string[]
-  status: "Draft" | "Completed"
-  created_at?: string
-  updated_at?: string
 }

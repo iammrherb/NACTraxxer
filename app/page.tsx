@@ -17,7 +17,14 @@ export default async function Home() {
 
   if (error) {
     console.error("Error fetching projects:", error)
-    // You can render a more user-friendly error message here
+    return (
+      <div className="container mx-auto p-4 md:p-8 text-center">
+        <p className="text-red-500">Error: Could not load projects.</p>
+        <p className="text-sm text-muted-foreground">
+          Please check the database connection and ensure the 'projects' table exists.
+        </p>
+      </div>
+    )
   }
 
   const getStatusVariant = (status: Project["status"]) => {

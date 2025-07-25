@@ -1,47 +1,37 @@
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs"
+import { createServerClient, type CookieOptions } from "@supabase/ssr"
 import { cookies } from "next/headers"
-import type { ScopingQuestionnaire, Project, Site } from "@/lib/database"
+import type { Database } from "@/lib/database.types"
 
-// Define a type for your database schema
-export type Database = {
-  public: {
-    Tables: {
-      projects: {
-        Row: Project
-        Insert: Omit<Project, "id" | "created_at" | "updated_at">
-        Update: Partial<Project>
-      }
-      sites: {
-        Row: Site
-        Insert: Omit<Site, "id" | "created_at" | "updated_at">
-        Update: Partial<Site>
-      }
-      scoping_questionnaires: {
-        Row: ScopingQuestionnaire
-        Insert: Omit<ScopingQuestionnaire, "id" | "created_at" | "updated_at">
-        Update: Partial<ScopingQuestionnaire>
-      }
-      // Add other tables here as you create them
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      [_ in never]: never
-    }
-  }
-}
-
-// Define a function to create a Supabase client for server-side operations
 export const createClient = () => {
   const cookieStore = cookies()
-  return createServerComponentClient<Database>(
+
+  return createServerClient<Database>(
+    process.env.SUPABASE_SUPABASE_SUPABASE_NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_NEXT_PUBLIC_SUPABASE_ANON_KEY_ANON_KEY_ANON_KEY!,
     {
-      cookies: () => cookieStore,
-    },
-    {
-      supabaseUrl: process.env.SUPABASE_SUPABASE_NEXT_PUBLIC_SUPABASE_URL!,
-      supabaseKey: process.env.SUPABASE_NEXT_PUBLIC_SUPABASE_ANON_KEY_ANON_KEY!,
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value
+        },
+        set(name: string, value: string, options: CookieOptions) {
+          try {
+            cookieStore.set({ name, value, ...options })
+          } catch (error) {
+            // The `set` method was called from a Server Component.
+            // This can be ignored if you have middleware refreshing
+            // user sessions.
+          }
+        },
+        remove(name: string, options: CookieOptions) {
+          try {
+            cookieStore.set({ name, value: "", ...options })
+          } catch (error) {
+            // The `delete` method was called from a Server Component.
+            // This can be ignored if you have middleware refreshing
+            // user sessions.
+          }
+        },
+      },
     },
   )
 }
