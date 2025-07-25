@@ -6,36 +6,37 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { AlertCircle, RefreshCw, Home } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 
 export default function AuthError() {
   const searchParams = useSearchParams()
   const error = searchParams.get("error")
   const [debugInfo, setDebugInfo] = useState<any>(null)
-  const [allParams, setAllParams] = useState<any>({})
 
-  useEffect(() => {
-    // Capture all URL parameters
-    const params = {}
+  // Directly compute params from searchParams. useMemo ensures this is only re-calculated when searchParams changes.
+  const allParams = useMemo(() => {
+    const params: { [key: string]: string } = {}
     searchParams.forEach((value, key) => {
       params[key] = value
     })
-    setAllParams(params)
-
-    // Run debug tests
-    runDebugTests()
+    return params
   }, [searchParams])
 
-  const runDebugTests = async () => {
-    try {
-      // Test if our debug API works
-      const debugResponse = await fetch("/api/debug")
-      const debugData = await debugResponse.json()
-      setDebugInfo(debugData)
-    } catch (error) {
-      setDebugInfo({ error: "Debug API failed", message: error.message })
+  // This effect should run only once when the component mounts to fetch debug info.
+  useEffect(() => {
+    const runDebugTests = async () => {
+      try {
+        // Test if our debug API works
+        const debugResponse = await fetch("/api/debug")
+        const debugData = await debugResponse.json()
+        setDebugInfo(debugData)
+      } catch (error: any) {
+        setDebugInfo({ error: "Debug API failed", message: error.message })
+      }
     }
-  }
+
+    runDebugTests()
+  }, []) // <-- Empty dependency array ensures this runs only once on mount.
 
   const testNextAuthDirectly = async () => {
     try {
@@ -53,7 +54,7 @@ export default function AuthError() {
         console.log("Error response text:", text)
         alert(`NextAuth providers failed: ${response.status}\n${text}`)
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("NextAuth test error:", error)
       alert(`NextAuth test exception: ${error.message}`)
     }
@@ -82,7 +83,7 @@ export default function AuthError() {
         {/* Logo */}
         <div className="text-center">
           <Image
-            src="/placeholder.svg?height=60&width=200&text=Portnox"
+            src="/placeholder.svg?height=60&width=200"
             alt="Portnox Logo"
             width={200}
             height={60}
