@@ -81,7 +81,7 @@ export default async function Home() {
           )}
         </div>
         <Button asChild>
-          <Link href="/scoping">
+          <Link href="/projects/new">
             <PlusCircle className="mr-2 h-4 w-4" />
             New Project
           </Link>
