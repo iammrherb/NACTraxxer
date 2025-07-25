@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { PlusCircle } from "lucide-react"
+import { PlusCircle, AlertTriangle } from "lucide-react"
 import type { Project } from "@/lib/database"
 
 export default async function Home() {
@@ -15,7 +15,7 @@ export default async function Home() {
   } = await supabase.auth.getUser()
 
   // This log will appear in your server-side terminal
-  console.log("Current user from server component:", user)
+  console.log("Current user from server component:", user ? user.email : null)
 
   const { data: projects, error } = await supabase
     .from("projects")
@@ -25,15 +25,31 @@ export default async function Home() {
   if (error) {
     console.error("Error fetching projects:", error)
     return (
-      <div className="container mx-auto p-4 md:p-8 text-center">
-        <p className="text-red-500 font-bold text-lg">Error: Could not load projects.</p>
-        <p className="text-sm text-muted-foreground mt-2">
-          Database error: <span className="font-mono bg-red-100 text-red-800 p-1 rounded">{error.message}</span>
-        </p>
-        <p className="mt-4">
-          This usually means the 'projects' table is missing. Please ensure you have run the necessary SQL script in
-          your Supabase dashboard.
-        </p>
+      <div className="container mx-auto p-4 md:p-8">
+        <Card className="border-destructive">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-6 w-6 text-destructive" />
+              Database Connection Error
+            </CardTitle>
+            <CardDescription>The application could not fetch the list of projects from the database.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <p>
+                This error usually means the <code className="font-mono bg-muted p-1 rounded">projects</code> table is
+                missing from your database schema.
+              </p>
+              <p className="font-semibold">
+                Please ensure you have run the necessary SQL script in your Supabase project's SQL Editor.
+              </p>
+              <div className="p-4 bg-muted rounded-lg">
+                <p className="text-sm font-semibold text-destructive">Error Details:</p>
+                <code className="text-sm text-destructive">{error.message}</code>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     )
   }
