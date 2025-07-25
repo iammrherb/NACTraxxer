@@ -1,139 +1,85 @@
 "use client"
 
-import type React from "react"
+import { Input } from "@/components/ui/input"
 
 import { useState } from "react"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogDescription,
-} from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { toast } from "./ui/use-toast"
-import * as api from "@/lib/api"
-import type { DatabaseUser, LibraryData, Site } from "@/lib/database"
+import { Label } from "@/components/ui/label"
+import { toast } from "@/hooks/use-toast"
 
 interface BulkEditModalProps {
   isOpen: boolean
   onClose: () => void
+  onSave: () => void
   siteIds: string[]
-  library: LibraryData
-  users: DatabaseUser[]
-  onUpdate: () => void
 }
 
-export function BulkEditModal({ isOpen, onClose, siteIds, library, users, onUpdate }: BulkEditModalProps) {
-  const [projectManagerId, setProjectManagerId] = useState<string>("")
-  const [technicalOwnerIds, setTechnicalOwnerIds] = useState<number[]>([])
-  const [useCaseIds, setUseCaseIds] = useState<string[]>([])
+export function BulkEditModal({ isOpen, onClose, onSave, siteIds }: BulkEditModalProps) {
+  const [status, setStatus] = useState("")
+  const [phase, setPhase] = useState("")
   const [isSaving, setIsSaving] = useState(false)
-
-  const handleMultiSelectChange = (
-    setter: React.Dispatch<React.SetStateAction<any[]>>,
-    id: number | string,
-    checked: boolean,
-  ) => {
-    setter((prev: any[]) => (checked ? [...prev, id] : prev.filter((existingId) => existingId !== id)))
-  }
 
   const handleSave = async () => {
     setIsSaving(true)
-    const updates: Partial<Site> = {}
-    if (projectManagerId) updates.project_manager_id = Number(projectManagerId)
-    if (technicalOwnerIds.length > 0) updates.technical_owner_ids = technicalOwnerIds
-    if (useCaseIds.length > 0) updates.use_case_ids = useCaseIds
+    const payload: { status?: string; phase?: number } = {}
+    if (status) payload.status = status
+    if (phase) payload.phase = Number.parseInt(phase, 10)
 
-    if (Object.keys(updates).length === 0) {
-      toast({ title: "No changes", description: "Please select a value to apply.", variant: "destructive" })
+    if (Object.keys(payload).length === 0) {
+      toast({ title: "No changes", description: "Please select a value to update.", variant: "destructive" })
       setIsSaving(false)
       return
     }
 
     try {
-      await api.bulkUpdateSites(siteIds, updates)
-      toast({ title: "Success", description: `${siteIds.length} sites have been updated.` })
-      onUpdate()
-      onClose()
-    } catch (error) {
-      toast({ title: "Error", description: "Failed to perform bulk update.", variant: "destructive" })
+      const response = await fetch("/api/sites/bulk", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ siteIds, ...payload }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to bulk update sites")
+      }
+
+      toast({ title: "Success", description: `${siteIds.length} sites updated.` })
+      onSave()
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" })
     } finally {
       setIsSaving(false)
     }
   }
+
+  if (!isOpen) return null
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Bulk Edit {siteIds.length} Sites</DialogTitle>
-          <DialogDescription>
-            Apply changes to all selected sites. Fields left blank will not be changed.
-          </DialogDescription>
         </DialogHeader>
-        <div className="space-y-6 py-4">
+        <div className="grid gap-4 py-4">
           <div>
-            <Label>Assign Project Manager</Label>
-            <Select value={projectManagerId} onValueChange={setProjectManagerId}>
+            <Label htmlFor="status">Status</Label>
+            <Select value={status} onValueChange={setStatus}>
               <SelectTrigger>
-                <SelectValue placeholder="Select a Project Manager" />
+                <SelectValue placeholder="Change status" />
               </SelectTrigger>
               <SelectContent>
-                {users
-                  .filter((u) => u.user_type === "project_manager")
-                  .map((pm) => (
-                    <SelectItem key={pm.id} value={String(pm.id)}>
-                      {pm.name}
-                    </SelectItem>
-                  ))}
+                <SelectItem value="Planned">Planned</SelectItem>
+                <SelectItem value="In Progress">In Progress</SelectItem>
+                <SelectItem value="Complete">Complete</SelectItem>
+                <SelectItem value="Delayed">Delayed</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div>
-            <Label>Assign Technical Owners</Label>
-            <ScrollArea className="h-32 border rounded p-2">
-              <div className="space-y-1">
-                {users
-                  .filter((u) => u.user_type === "technical_owner")
-                  .map((to) => (
-                    <div key={to.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`to-${to.id}`}
-                        checked={technicalOwnerIds.includes(to.id)}
-                        onCheckedChange={(c) => handleMultiSelectChange(setTechnicalOwnerIds, to.id, c as boolean)}
-                      />
-                      <Label htmlFor={`to-${to.id}`} className="font-normal">
-                        {to.name}
-                      </Label>
-                    </div>
-                  ))}
-              </div>
-            </ScrollArea>
-          </div>
-          <div>
-            <Label>Assign Use Cases</Label>
-            <ScrollArea className="h-32 border rounded p-2">
-              <div className="space-y-1">
-                {library.useCases.map((uc) => (
-                  <div key={uc.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`uc-${uc.id}`}
-                      checked={useCaseIds.includes(uc.id)}
-                      onCheckedChange={(c) => handleMultiSelectChange(setUseCaseIds, uc.id, c as boolean)}
-                    />
-                    <Label htmlFor={`uc-${uc.id}`} className="font-normal">
-                      {uc.title}
-                    </Label>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
+            <Label htmlFor="phase">Phase</Label>
+            <Input type="number" value={phase} onChange={(e) => setPhase(e.target.value)} placeholder="Change phase" />
           </div>
         </div>
         <DialogFooter>
@@ -141,7 +87,7 @@ export function BulkEditModal({ isOpen, onClose, siteIds, library, users, onUpda
             Cancel
           </Button>
           <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? "Saving..." : "Apply Changes"}
+            {isSaving ? "Saving..." : "Save Changes"}
           </Button>
         </DialogFooter>
       </DialogContent>
