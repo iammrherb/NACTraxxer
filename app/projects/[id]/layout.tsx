@@ -1,72 +1,59 @@
-import type { ReactNode } from "react"
-import Link from "next/link"
+import type React from "react"
+import { createClient } from "@/lib/supabase/server"
 import { notFound } from "next/navigation"
-import { mockProjects } from "@/lib/mock-data"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { FileText, GanttChartSquare, LayoutDashboard, ListTodo, Settings, Telescope } from "lucide-react"
+import { ProjectTabs } from "@/components/project-tabs"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import type { Project } from "@/lib/database"
 
-const getStatusBadgeVariant = (status: string) => {
-  switch (status) {
-    case "On Track":
-      return "success"
-    case "At Risk":
-      return "warning"
-    case "Off Track":
-      return "destructive"
-    case "Completed":
-      return "default"
-    default:
-      return "secondary"
-  }
+// Helper function to get customer name safely
+function getCustomerName(project: Project & { customer: { name: string } | { name: string }[] | null }): string {
+  if (!project.customer) return project.name.charAt(0)
+  const customer = Array.isArray(project.customer) ? project.customer[0] : project.customer
+  return customer?.name ?? project.name
 }
 
-export default function ProjectLayout({ children, params }: { children: ReactNode; params: { id: string } }) {
-  const project = mockProjects.find((p) => p.id === params.id)
+export default async function ProjectLayout({
+  children,
+  params,
+}: {
+  children: React.ReactNode
+  params: { id: string }
+}) {
+  const supabase = createClient()
+  const { data: project, error } = await supabase
+    .from("projects")
+    .select("*, customer:customers(name)")
+    .eq("id", params.id)
+    .single()
 
-  if (!project) {
+  if (error || !project) {
     notFound()
   }
 
-  const tabs = [
-    { name: "Overview", href: `/projects/${project.id}`, icon: LayoutDashboard },
-    { name: "Scoping", href: `/projects/${project.id}/scoping`, icon: Telescope },
-    { name: "Timeline", href: `/projects/${project.id}/timeline`, icon: GanttChartSquare },
-    { name: "Sites", href: `/projects/${project.id}/sites`, icon: ListTodo },
-    { name: "Reports", href: `/projects/${project.id}/reports`, icon: FileText },
-    { name: "Settings", href: `/projects/${project.id}/settings`, icon: Settings },
-  ]
+  const customerName = getCustomerName(project)
 
   return (
-    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">{project.name}</h2>
-          <p className="text-muted-foreground">
-            Customer: {project.customer} ({project.id})
-          </p>
+    <div className="flex flex-col h-full">
+      <header className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-10">
+        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
+          <div className="flex items-center space-x-4">
+            <Avatar className="h-12 w-12">
+              <AvatarImage src={`/placeholder.svg?width=48&height=48&text=${customerName.charAt(0)}`} />
+              <AvatarFallback>{customerName.charAt(0)}</AvatarFallback>
+            </Avatar>
+            <div>
+              <h1 className="text-2xl font-bold leading-tight tracking-tight text-gray-900 dark:text-white">
+                {project.name}
+              </h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{customerName}</p>
+            </div>
+          </div>
         </div>
-        <div className="flex items-center space-x-2">
-          <Badge variant={getStatusBadgeVariant(project.status)} className="text-base">
-            {project.status}
-          </Badge>
-          <Button>Export Report</Button>
-        </div>
-      </div>
-      <Tabs defaultValue={tabs[0].href} className="space-y-4">
-        <TabsList>
-          {tabs.map((tab) => (
-            <TabsTrigger key={tab.name} value={tab.href} asChild>
-              <Link href={tab.href}>
-                <tab.icon className="mr-2 h-4 w-4" />
-                {tab.name}
-              </Link>
-            </TabsTrigger>
-          ))}
-        </TabsList>
-        {children}
-      </Tabs>
+        <ProjectTabs projectId={params.id} />
+      </header>
+      <main className="flex-grow p-4 sm:p-6 lg:p-8 bg-gray-50 dark:bg-gray-900">
+        <div className="mx-auto max-w-7xl">{children}</div>
+      </main>
     </div>
   )
 }
