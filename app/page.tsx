@@ -10,6 +10,13 @@ import type { Project } from "@/lib/database"
 export default async function Home() {
   const supabase = createClient()
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  // This log will appear in your server-side terminal
+  console.log("Current user from server component:", user)
+
   const { data: projects, error } = await supabase
     .from("projects")
     .select("*")
@@ -43,7 +50,16 @@ export default async function Home() {
   return (
     <div className="container mx-auto p-4 md:p-8">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">NAC Projects</h1>
+        <div>
+          <h1 className="text-3xl font-bold">NAC Projects</h1>
+          {user ? (
+            <p className="text-muted-foreground">
+              Logged in as: <span className="font-semibold">{user.email}</span>
+            </p>
+          ) : (
+            <p className="text-muted-foreground">You are not logged in.</p>
+          )}
+        </div>
         <Button asChild>
           <Link href="/scoping">
             <PlusCircle className="mr-2 h-4 w-4" />
