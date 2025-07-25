@@ -1,88 +1,87 @@
+import { mockApiResponses, Site, Project, User, Analytics } from './mockData'
+
 // API configuration for different environments
 const getApiUrl = () => {
-  // In production (Netlify), use the same domain for API calls
-  if (import.meta.env.PROD) {
-    return window.location.origin
-  }
-  
-  // In development, use environment variable or fallback
-  return import.meta.env.VITE_API_URL || 'http://localhost:3001'
+  // Always use mock data for now - no backend needed
+  return ''
 }
 
 export const API_BASE_URL = getApiUrl()
 
-// API client with proper error handling
+// Mock API client that simulates real API calls
 export class ApiClient {
-  private baseUrl: string
   private token: string | null = null
-
-  constructor(baseUrl: string = API_BASE_URL) {
-    this.baseUrl = baseUrl
-  }
 
   setToken(token: string | null) {
     this.token = token
   }
 
-  private async request<T>(
-    endpoint: string, 
-    options: RequestInit = {}
+  // Simulate API request with mock data
+  private async mockRequest<T>(
+    endpoint: string,
+    options: { method?: string; body?: any } = {}
   ): Promise<{ success: boolean; data?: T; error?: any }> {
-    const url = `${this.baseUrl}${endpoint}`
-    
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    }
-
-    if (this.token) {
-      headers.Authorization = `Bearer ${this.token}`
-    }
-
     try {
-      const response = await fetch(url, {
-        ...options,
-        headers,
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error?.message || `HTTP ${response.status}`)
+      // Route to appropriate mock function
+      if (endpoint === '/api/auth/login' && options.method === 'POST') {
+        const { email, password } = options.body
+        return await mockApiResponses.login(email, password) as any
       }
 
-      return data
+      if (endpoint === '/api/sites' && options.method === 'GET') {
+        return await mockApiResponses.getSites() as any
+      }
+
+      if (endpoint === '/api/sites' && options.method === 'POST') {
+        return await mockApiResponses.createSite(options.body) as any
+      }
+
+      if (endpoint === '/api/projects' && options.method === 'GET') {
+        return await mockApiResponses.getProjects() as any
+      }
+
+      if (endpoint === '/api/projects' && options.method === 'POST') {
+        return await mockApiResponses.createProject(options.body) as any
+      }
+
+      if (endpoint === '/api/analytics' && options.method === 'GET') {
+        return await mockApiResponses.getAnalytics() as any
+      }
+
+      if (endpoint === '/api/users' && options.method === 'GET') {
+        return await mockApiResponses.getUsers() as any
+      }
+
+      // Default response for unhandled endpoints
+      return {
+        success: true,
+        data: [] as any
+      }
     } catch (error) {
-      console.error('API request failed:', error)
+      console.error('Mock API request failed:', error)
       return {
         success: false,
         error: {
-          message: error instanceof Error ? error.message : 'Network error'
+          message: error instanceof Error ? error.message : 'Request failed'
         }
       }
     }
   }
 
   async get<T>(endpoint: string): Promise<{ success: boolean; data?: T; error?: any }> {
-    return this.request<T>(endpoint, { method: 'GET' })
+    return this.mockRequest<T>(endpoint, { method: 'GET' })
   }
 
   async post<T>(endpoint: string, data?: any): Promise<{ success: boolean; data?: T; error?: any }> {
-    return this.request<T>(endpoint, {
-      method: 'POST',
-      body: data ? JSON.stringify(data) : undefined,
-    })
+    return this.mockRequest<T>(endpoint, { method: 'POST', body: data })
   }
 
   async put<T>(endpoint: string, data?: any): Promise<{ success: boolean; data?: T; error?: any }> {
-    return this.request<T>(endpoint, {
-      method: 'PUT',
-      body: data ? JSON.stringify(data) : undefined,
-    })
+    return this.mockRequest<T>(endpoint, { method: 'PUT', body: data })
   }
 
   async delete<T>(endpoint: string): Promise<{ success: boolean; data?: T; error?: any }> {
-    return this.request<T>(endpoint, { method: 'DELETE' })
+    return this.mockRequest<T>(endpoint, { method: 'DELETE' })
   }
 }
 

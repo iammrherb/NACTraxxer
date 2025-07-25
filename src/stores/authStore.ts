@@ -1,15 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { apiClient } from '../lib/api'
-
-interface User {
-  id: string
-  name: string
-  email: string
-  role: string
-  user_type: string
-  organization_id?: string
-}
+import { User } from '../lib/mockData'
 
 interface AuthState {
   user: User | null
@@ -63,16 +55,9 @@ export const useAuthStore = create<AuthState>()(
         }
 
         try {
+          // For mock data, just validate token exists
           apiClient.setToken(token)
-          const result = await apiClient.get('/api/users')
-
-          if (!result.success) {
-            // Token is invalid, clear auth state
-            apiClient.setToken(null)
-            set({ user: null, token: null, isLoading: false })
-          } else {
-            set({ isLoading: false })
-          }
+          set({ isLoading: false })
         } catch (error) {
           apiClient.setToken(null)
           set({ user: null, token: null, isLoading: false })
