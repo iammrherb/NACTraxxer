@@ -1,21 +1,17 @@
 import { createClient } from "@/lib/supabase/server"
-import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { PlusCircle, AlertTriangle } from "lucide-react"
-import type { Project } from "@/lib/database"
+import Link from "next/link"
+import { PlusCircle } from "lucide-react"
 
 export default async function Home() {
   const supabase = createClient()
-
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // This log will appear in your server-side terminal
-  console.log("Current user from server component:", user ? user.email : null)
+  console.log("Current user from server component:", user?.email)
 
   const { data: projects, error } = await supabase
     .from("projects")
@@ -23,62 +19,24 @@ export default async function Home() {
     .order("created_at", { ascending: false })
 
   if (error) {
-    console.error("Error fetching projects:", error)
+    console.error("Error fetching projects:", error.message)
     return (
-      <div className="container mx-auto p-4 md:p-8">
-        <Card className="border-destructive">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-6 w-6 text-destructive" />
-              Database Connection Error
-            </CardTitle>
-            <CardDescription>The application could not fetch the list of projects from the database.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <p>
-                This error usually means the <code className="font-mono bg-muted p-1 rounded">projects</code> table is
-                missing from your database schema.
-              </p>
-              <p className="font-semibold">
-                Please ensure you have run the necessary SQL script in your Supabase project's SQL Editor.
-              </p>
-              <div className="p-4 bg-muted rounded-lg">
-                <p className="text-sm font-semibold text-destructive">Error Details:</p>
-                <code className="text-sm text-destructive">{error.message}</code>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-destructive">Error</h2>
+          <p>Could not fetch projects. The database table might be missing.</p>
+          <p className="text-sm text-muted-foreground">Please ensure you have run all the migration scripts.</p>
+        </div>
       </div>
     )
   }
 
-  const getStatusVariant = (status: Project["status"]) => {
-    switch (status) {
-      case "Active":
-        return "default"
-      case "Completed":
-        return "secondary"
-      case "Planning":
-        return "outline"
-      default:
-        return "default"
-    }
-  }
-
   return (
     <div className="container mx-auto p-4 md:p-8">
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-3xl font-bold">NAC Projects</h1>
-          {user ? (
-            <p className="text-muted-foreground">
-              Logged in as: <span className="font-semibold">{user.email}</span>
-            </p>
-          ) : (
-            <p className="text-muted-foreground">You are not logged in.</p>
-          )}
+          <h1 className="text-3xl font-bold tracking-tight">Projects Dashboard</h1>
+          <p className="text-muted-foreground">An overview of all your NAC design projects.</p>
         </div>
         <Button asChild>
           <Link href="/projects/new">
@@ -88,48 +46,42 @@ export default async function Home() {
         </Button>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>All Projects</CardTitle>
-          <CardDescription>A list of all NAC design and deployment projects.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Project Name</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Created</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {!projects || projects.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center">
-                    No projects found. Start by creating one.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                projects.map((project) => (
-                  <TableRow key={project.id}>
-                    <TableCell className="font-medium">
-                      <Link href={`/projects/${project.id}`} className="hover:underline">
-                        {project.name}
-                      </Link>
-                    </TableCell>
-                    <TableCell>{project.customer}</TableCell>
-                    <TableCell>
-                      <Badge variant={getStatusVariant(project.status)}>{project.status}</Badge>
-                    </TableCell>
-                    <TableCell>{new Date(project.created_at).toLocaleDateString()}</TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      {user ? (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {projects && projects.length > 0 ? (
+            projects.map((project) => (
+              <Card key={project.id}>
+                <CardHeader>
+                  <CardTitle className="truncate">{project.name}</CardTitle>
+                  <CardDescription>{project.customer}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between text-sm text-muted-foreground">
+                    <span>Status</span>
+                    <Badge variant={project.status === "Completed" ? "default" : "secondary"}>{project.status}</Badge>
+                  </div>
+                  <div className="flex items-center justify-between text-sm text-muted-foreground">
+                    <span>Phase</span>
+                    <Badge variant="outline">{project.implementation_phase}</Badge>
+                  </div>
+                  <p className="line-clamp-3 text-sm text-muted-foreground">
+                    {project.description || "No description provided."}
+                  </p>
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <div className="col-span-full text-center">
+              <h3 className="text-xl font-semibold">No projects yet</h3>
+              <p className="text-muted-foreground">Click "New Project" to get started.</p>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="text-center">
+          <p>Please log in to view projects.</p>
+        </div>
+      )}
     </div>
   )
 }
