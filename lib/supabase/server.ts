@@ -21,6 +21,7 @@ export type Database = {
         Insert: Omit<ScopingQuestionnaire, "id" | "created_at" | "updated_at">
         Update: Partial<ScopingQuestionnaire>
       }
+      // Add other tables here as you create them
     }
     Views: {
       [_ in never]: never
