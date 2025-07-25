@@ -1,39 +1,85 @@
-import type { Project } from "@/lib/database"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Package, CheckCircle, AlertTriangle, XCircle, Clock } from "lucide-react"
+import { CheckCircle, ListTodo, ShieldAlert, TrendingUp } from "lucide-react"
+import { createClient } from "@/lib/supabase/server"
 
-interface ProjectStatCardsProps {
-  projects: Project[]
+type ProjectStats = {
+  totalSites: number
+  completedSites: number
+  issues: number
+  avgCompletion: number
 }
 
-export function ProjectStatCards({ projects }: ProjectStatCardsProps) {
-  const totalProjects = projects.length
-  const onTrack = projects.filter((p) => p.status === "On Track").length
-  const atRisk = projects.filter((p) => p.status === "At Risk").length
-  const offTrack = projects.filter((p) => p.status === "Off Track").length
-  const completed = projects.filter((p) => p.status === "Completed").length
+async function getProjectStats(projectId: string): Promise<ProjectStats> {
+  const supabase = createClient()
 
-  const stats = [
-    { title: "Total Projects", value: totalProjects, icon: Package, color: "text-blue-500" },
-    { title: "On Track", value: onTrack, icon: CheckCircle, color: "text-green-500" },
-    { title: "At Risk", value: atRisk, icon: AlertTriangle, color: "text-yellow-500" },
-    { title: "Off Track", value: offTrack, icon: XCircle, color: "text-red-500" },
-    { title: "Completed", value: completed, icon: Clock, color: "text-gray-500" },
+  const { count: totalSites, error: totalSitesError } = await supabase
+    .from("sites")
+    .select("*", { count: "exact", head: true })
+    .eq("project_id", projectId)
+
+  if (totalSitesError) console.error("Error fetching total sites:", totalSitesError.message)
+
+  const { count: completedSites, error: completedSitesError } = await supabase
+    .from("sites")
+    .select("*", { count: "exact", head: true })
+    .eq("project_id", projectId)
+    .eq("status", "Complete")
+
+  if (completedSitesError) console.error("Error fetching completed sites:", completedSitesError.message)
+
+  // Mocking issues as this is not yet implemented
+  const issues = 0
+  const avgCompletion = totalSites && completedSites ? Math.round((completedSites / totalSites) * 100) : 0
+
+  return {
+    totalSites: totalSites ?? 0,
+    completedSites: completedSites ?? 0,
+    issues,
+    avgCompletion,
+  }
+}
+
+export async function ProjectStatCards({ projectId }: { projectId: string }) {
+  const stats = await getProjectStats(projectId)
+
+  const statCards = [
+    {
+      title: "Total Sites",
+      value: stats.totalSites,
+      icon: ListTodo,
+      description: "Total number of sites in this project.",
+    },
+    {
+      title: "Completed Sites",
+      value: stats.completedSites,
+      icon: CheckCircle,
+      description: "Sites that are fully deployed.",
+    },
+    {
+      title: "Avg. Completion",
+      value: `${stats.avgCompletion}%`,
+      icon: TrendingUp,
+      description: "Average progress across all sites.",
+    },
+    {
+      title: "Open Issues",
+      value: stats.issues,
+      icon: ShieldAlert,
+      description: "Number of tracked issues.",
+    },
   ]
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-5">
-      {stats.map((stat) => (
-        <Card key={stat.title}>
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {statCards.map((card) => (
+        <Card key={card.title}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-            <stat.icon className={`h-4 w-4 text-muted-foreground ${stat.color}`} />
+            <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
+            <card.icon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stat.value}</div>
-            <p className="text-xs text-muted-foreground">
-              {((stat.value / totalProjects) * 100 || 0).toFixed(0)}% of total projects
-            </p>
+            <div className="text-2xl font-bold">{card.value}</div>
+            <p className="text-xs text-muted-foreground">{card.description}</p>
           </CardContent>
         </Card>
       ))}
