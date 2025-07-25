@@ -11,9 +11,10 @@ import { toast } from "@/hooks/use-toast"
 import { SiteForm } from "./site-form"
 import { BulkEditModal } from "./bulk-edit-modal"
 import type { Site, LibraryData } from "@/lib/database"
-import { ArrowUpDown, Book, Download, Edit, Plus, Search, StickyNote, X } from "lucide-react"
+import { ArrowUpDown, Download, Edit, Plus, Search, X } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Progress } from "@/components/ui/progress"
+import Link from "next/link"
 
 interface SiteTableProps {
   initialSites: Site[]
@@ -277,16 +278,6 @@ export function SiteTable({ initialSites, projectId, libraryData }: SiteTablePro
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleSort("id")}
-                      className="h-auto p-0 font-semibold"
-                    >
-                      Site ID <ArrowUpDown className="ml-1 h-3 w-3" />
-                    </Button>
-                  </TableHead>
-                  <TableHead className="text-left p-3 font-semibold">
-                    <Button
-                      variant="ghost"
-                      size="sm"
                       onClick={() => handleSort("name")}
                       className="h-auto p-0 font-semibold"
                     >
@@ -302,7 +293,7 @@ export function SiteTable({ initialSites, projectId, libraryData }: SiteTablePro
                 {isLoading ? (
                   [...Array(5)].map((_, i) => (
                     <TableRow key={i}>
-                      <TableCell colSpan={6}>
+                      <TableCell colSpan={5}>
                         <Skeleton className="h-10 w-full" />
                       </TableCell>
                     </TableRow>
@@ -316,8 +307,11 @@ export function SiteTable({ initialSites, projectId, libraryData }: SiteTablePro
                           onCheckedChange={(checked) => handleSelectRow(site.id, checked as boolean)}
                         />
                       </TableCell>
-                      <TableCell className="p-3 font-mono text-sm">{site.id}</TableCell>
-                      <TableCell className="p-3 font-medium">{site.name}</TableCell>
+                      <TableCell className="p-3 font-medium">
+                        <Link href={`/projects/${projectId}/sites/${site.id}`} className="hover:underline">
+                          {site.name}
+                        </Link>
+                      </TableCell>
                       <TableCell className="p-3">
                         <div className="flex items-center gap-2">
                           <div className={`w-2 h-2 rounded-full ${getStatusColor(site.status)}`} />
@@ -331,23 +325,15 @@ export function SiteTable({ initialSites, projectId, libraryData }: SiteTablePro
                         </div>
                       </TableCell>
                       <TableCell className="p-3">
-                        <div className="flex items-center gap-1">
-                          <Button size="sm" variant="ghost" onClick={() => handleEditClick(site)}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button size="sm" variant="ghost" disabled>
-                            <Book className="h-4 w-4" />
-                          </Button>
-                          <Button size="sm" variant="ghost" disabled>
-                            <StickyNote className="h-4 w-4" />
-                          </Button>
-                        </div>
+                        <Button size="sm" variant="ghost" onClick={() => handleEditClick(site)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center">
+                    <TableCell colSpan={5} className="h-24 text-center">
                       No sites found.
                     </TableCell>
                   </TableRow>
