@@ -26,9 +26,13 @@ export default async function Home() {
     console.error("Error fetching projects:", error)
     return (
       <div className="container mx-auto p-4 md:p-8 text-center">
-        <p className="text-red-500">Error: Could not load projects.</p>
-        <p className="text-sm text-muted-foreground">
-          Please check the database connection and ensure the 'projects' table exists.
+        <p className="text-red-500 font-bold text-lg">Error: Could not load projects.</p>
+        <p className="text-sm text-muted-foreground mt-2">
+          Database error: <span className="font-mono bg-red-100 text-red-800 p-1 rounded">{error.message}</span>
+        </p>
+        <p className="mt-4">
+          This usually means the 'projects' table is missing. Please ensure you have run the necessary SQL script in
+          your Supabase dashboard.
         </p>
       </div>
     )
