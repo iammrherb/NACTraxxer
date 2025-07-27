@@ -1,43 +1,55 @@
-import { notFound } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { EditSiteForm } from "@/components/edit-site-form"
-import type { Site } from "@/types"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { notFound } from "next/navigation"
 
-interface EditSitePageProps {
-  params: {
-    projectId: string
-    siteId: string
-  }
-}
-
-async function getSite(siteId: string): Promise<Site | null> {
+async function getSiteData(siteId: string, projectId: string) {
   const supabase = createClient()
 
-  const { data, error } = await supabase.from("sites").select("*").eq("id", siteId).single()
+  const { data: site, error: siteError } = await supabase
+    .from("sites")
+    .select("*")
+    .eq("id", siteId)
+    .eq("project_id", projectId)
+    .single()
 
-  if (error) {
-    console.error("Error fetching site:", error)
-    return null
-  }
-
-  return data
-}
-
-export default async function EditSitePage({ params }: EditSitePageProps) {
-  const site = await getSite(params.siteId)
-
-  if (!site) {
+  if (siteError || !site) {
     notFound()
   }
 
+  const { data: projectManagers, error: managersError } = await supabase
+    .from("users")
+    .select("id, name, email")
+    .order("name")
+
+  if (managersError) {
+    console.error("Error fetching project managers:", managersError)
+  }
+
+  return {
+    site,
+    projectManagers: projectManagers || [],
+  }
+}
+
+export default async function EditSitePage({
+  params,
+}: {
+  params: { projectId: string; siteId: string }
+}) {
+  const { site, projectManagers } = await getSiteData(params.siteId, params.projectId)
+
   return (
     <div className="container mx-auto py-8">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold">Edit Site: {site.name}</h1>
-        <p className="text-muted-foreground">Update the site details below.</p>
-      </div>
-
-      <EditSiteForm site={site} projectId={params.projectId} />
+      <Card className="max-w-2xl mx-auto">
+        <CardHeader>
+          <CardTitle>Edit Site</CardTitle>
+          <CardDescription>Update the details for {site.name}.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <EditSiteForm site={site} projectId={params.projectId} projectManagers={projectManagers} />
+        </CardContent>
+      </Card>
     </div>
   )
 }

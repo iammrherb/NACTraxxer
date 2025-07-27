@@ -2,8 +2,6 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   Dialog,
   DialogContent,
@@ -12,27 +10,28 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { toast } from "@/components/ui/use-toast"
-import { useRouter } from "next/navigation"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useToast } from "@/hooks/use-toast"
 
 interface BulkEditModalProps {
-  isOpen: boolean
-  onClose: () => void
+  open: boolean
+  onOpenChange: (open: boolean) => void
   selectedSiteIds: string[]
   onSuccess: () => void
 }
 
-export function BulkEditModal({ isOpen, onClose, selectedSiteIds, onSuccess }: BulkEditModalProps) {
-  const [status, setStatus] = useState<string>("No change")
-  const [priority, setPriority] = useState<string>("No change")
+export function BulkEditModal({ open, onOpenChange, selectedSiteIds, onSuccess }: BulkEditModalProps) {
   const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
+  const [status, setStatus] = useState<string>("")
+  const [priority, setPriority] = useState<string>("")
+  const { toast } = useToast()
 
-  const handleSubmit = async () => {
-    if (status === "No change" && priority === "No change") {
+  async function handleSubmit() {
+    if (!status && !priority) {
       toast({
-        title: "No changes selected",
-        description: "Please select at least one field to update.",
+        title: "Error",
+        description: "Please select at least one field to update",
         variant: "destructive",
       })
       return
@@ -42,11 +41,11 @@ export function BulkEditModal({ isOpen, onClose, selectedSiteIds, onSuccess }: B
 
     try {
       const updates: any = {}
-      if (status !== "No change") updates.status = status
-      if (priority !== "No change") updates.priority = priority
+      if (status) updates.status = status
+      if (priority) updates.priority = priority
 
       const response = await fetch("/api/sites/bulk", {
-        method: "PUT",
+        method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
@@ -57,29 +56,25 @@ export function BulkEditModal({ isOpen, onClose, selectedSiteIds, onSuccess }: B
       })
 
       if (!response.ok) {
-        throw new Error("Failed to update sites")
+        const error = await response.json()
+        throw new Error(error.error || "Failed to update sites")
       }
 
-      const result = await response.json()
-
       toast({
-        title: "Sites updated successfully",
-        description: result.message,
+        title: "Success",
+        description: `Updated ${selectedSiteIds.length} site${selectedSiteIds.length > 1 ? "s" : ""}`,
       })
 
-      // Reset form
-      setStatus("No change")
-      setPriority("No change")
-
-      // Refresh the page to show updated data
-      router.refresh()
-
       onSuccess()
+
+      // Reset form
+      setStatus("")
+      setPriority("")
     } catch (error) {
-      console.error("Bulk edit error:", error)
+      console.error("Error updating sites:", error)
       toast({
         title: "Error",
-        description: "Failed to update sites. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to update sites",
         variant: "destructive",
       })
     } finally {
@@ -88,41 +83,39 @@ export function BulkEditModal({ isOpen, onClose, selectedSiteIds, onSuccess }: B
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Bulk Edit Sites</DialogTitle>
           <DialogDescription>
-            Update {selectedSiteIds.length} selected site{selectedSiteIds.length > 1 ? "s" : ""}. Only fields you change
+            Update {selectedSiteIds.length} selected site{selectedSiteIds.length > 1 ? "s" : ""}. Only fields you select
             will be updated.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="grid gap-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="bulk-status">Status</Label>
+            <Label htmlFor="status">Status</Label>
             <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger id="bulk-status">
-                <SelectValue placeholder="Select new status (optional)" />
+              <SelectTrigger>
+                <SelectValue placeholder="Select status (optional)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="No change">No change</SelectItem>
                 <SelectItem value="Planned">Planned</SelectItem>
                 <SelectItem value="In Progress">In Progress</SelectItem>
-                <SelectItem value="On Hold">On Hold</SelectItem>
                 <SelectItem value="Complete">Complete</SelectItem>
+                <SelectItem value="Delayed">Delayed</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="bulk-priority">Priority</Label>
+            <Label htmlFor="priority">Priority</Label>
             <Select value={priority} onValueChange={setPriority}>
-              <SelectTrigger id="bulk-priority">
-                <SelectValue placeholder="Select new priority (optional)" />
+              <SelectTrigger>
+                <SelectValue placeholder="Select priority (optional)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="No change">No change</SelectItem>
                 <SelectItem value="High">High</SelectItem>
                 <SelectItem value="Medium">Medium</SelectItem>
                 <SelectItem value="Low">Low</SelectItem>
@@ -132,7 +125,7 @@ export function BulkEditModal({ isOpen, onClose, selectedSiteIds, onSuccess }: B
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={isLoading}>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={isLoading}>

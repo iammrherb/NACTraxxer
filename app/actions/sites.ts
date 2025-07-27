@@ -9,48 +9,52 @@ import { z } from "zod"
 
 const siteSchema = z.object({
   name: z.string().min(1, "Site name is required"),
+  region: z.string().min(1, "Region is required"),
+  country: z.string().min(1, "Country is required"),
   priority: z.enum(["High", "Medium", "Low"]),
-  users_count: z.coerce.number().min(1, "Number of users must be at least 1"),
-  status: z.enum(["Planned", "In Progress", "On Hold", "Complete"]).optional(),
+  phase: z.string().min(1, "Phase is required"),
+  users_count: z.number().min(0, "Users count must be non-negative"),
+  project_manager_id: z.string().uuid("Invalid project manager ID"),
+  planned_start_date: z.string().min(1, "Planned start date is required"),
+  planned_end_date: z.string().min(1, "Planned end date is required"),
+  status: z.enum(["Planned", "In Progress", "Complete", "Delayed"]),
+  completion_percentage: z.number().min(0).max(100),
+  notes: z.string().optional(),
 })
 
-export async function createSiteAction(projectId: string, prevState: any, formData: FormData) {
+export async function createSiteAction(projectId: string, formData: FormData) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
       return { success: false, message: "Unauthorized", errors: {} }
     }
 
-    // Validate form data
-    const validatedFields = siteSchema.safeParse({
-      name: formData.get("name"),
-      priority: formData.get("priority"),
-      users_count: formData.get("users_count"),
-    })
-
-    if (!validatedFields.success) {
-      return {
-        success: false,
-        message: "Validation failed",
-        errors: validatedFields.error.flatten().fieldErrors,
-      }
+    // Parse form data
+    const rawData = {
+      name: formData.get("name") as string,
+      region: formData.get("region") as string,
+      country: formData.get("country") as string,
+      priority: formData.get("priority") as string,
+      phase: formData.get("phase") as string,
+      users_count: Number.parseInt(formData.get("users_count") as string) || 0,
+      project_manager_id: formData.get("project_manager_id") as string,
+      planned_start_date: formData.get("planned_start_date") as string,
+      planned_end_date: formData.get("planned_end_date") as string,
+      status: formData.get("status") as string,
+      completion_percentage: Number.parseInt(formData.get("completion_percentage") as string) || 0,
+      notes: (formData.get("notes") as string) || "",
     }
+
+    // Validate data
+    const validatedData = siteSchema.parse(rawData)
 
     const supabase = createClient()
 
-    // Create the site
-    const { data, error } = await supabase
-      .from("sites")
-      .insert({
-        ...validatedFields.data,
-        project_id: projectId,
-        status: "Planned",
-        completion_percent: 0,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .select()
-      .single()
+    // Insert site
+    const { error } = await supabase.from("sites").insert({
+      ...validatedData,
+      project_id: projectId,
+    })
 
     if (error) {
       console.error("Database error:", error)
@@ -65,41 +69,36 @@ export async function createSiteAction(projectId: string, prevState: any, formDa
   }
 }
 
-export async function updateSiteAction(siteId: string, projectId: string, prevState: any, formData: FormData) {
+export async function updateSiteAction(siteId: string, projectId: string, formData: FormData) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
       return { success: false, message: "Unauthorized", errors: {} }
     }
 
-    // Validate form data
-    const validatedFields = siteSchema.safeParse({
-      name: formData.get("name"),
-      priority: formData.get("priority"),
-      users_count: formData.get("users_count"),
-      status: formData.get("status"),
-    })
-
-    if (!validatedFields.success) {
-      return {
-        success: false,
-        message: "Validation failed",
-        errors: validatedFields.error.flatten().fieldErrors,
-      }
+    // Parse form data
+    const rawData = {
+      name: formData.get("name") as string,
+      region: formData.get("region") as string,
+      country: formData.get("country") as string,
+      priority: formData.get("priority") as string,
+      phase: formData.get("phase") as string,
+      users_count: Number.parseInt(formData.get("users_count") as string) || 0,
+      project_manager_id: formData.get("project_manager_id") as string,
+      planned_start_date: formData.get("planned_start_date") as string,
+      planned_end_date: formData.get("planned_end_date") as string,
+      status: formData.get("status") as string,
+      completion_percentage: Number.parseInt(formData.get("completion_percentage") as string) || 0,
+      notes: (formData.get("notes") as string) || "",
     }
+
+    // Validate data
+    const validatedData = siteSchema.parse(rawData)
 
     const supabase = createClient()
 
-    // Update the site
-    const { data, error } = await supabase
-      .from("sites")
-      .update({
-        ...validatedFields.data,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", siteId)
-      .select()
-      .single()
+    // Update site
+    const { error } = await supabase.from("sites").update(validatedData).eq("id", siteId)
 
     if (error) {
       console.error("Database error:", error)

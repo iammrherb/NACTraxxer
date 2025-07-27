@@ -1,76 +1,180 @@
 "use client"
 
-import { useActionState } from "react"
+import type React from "react"
+
+import { useState } from "react"
 import { createSiteAction } from "@/app/actions/sites"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import Link from "next/link"
+import { useToast } from "@/hooks/use-toast"
 
-export function NewSiteForm({ projectId }: { projectId: string }) {
-  const createSiteActionWithId = createSiteAction.bind(null, projectId)
-  const [state, formAction, isPending] = useActionState(createSiteActionWithId, {
-    success: false,
-    message: "",
-    errors: {},
-  })
+interface ProjectManager {
+  id: string
+  name: string
+  email: string
+}
+
+interface NewSiteFormProps {
+  projectId: string
+  projectManagers: ProjectManager[]
+}
+
+export function NewSiteForm({ projectId, projectManagers }: NewSiteFormProps) {
+  const [isLoading, setIsLoading] = useState(false)
+  const { toast } = useToast()
+
+  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setIsLoading(true)
+
+    try {
+      const formData = new FormData(event.currentTarget)
+      await createSiteAction(projectId, formData)
+
+      toast({
+        title: "Success",
+        description: "Site created successfully",
+      })
+    } catch (error) {
+      console.error("Error creating site:", error)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to create site",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>New Site Details</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form action={formAction} className="space-y-6">
-          {state.message && !state.success && (
-            <Alert variant="destructive">
-              <AlertTitle>Error</AlertTitle>
-              <AlertDescription>{state.message}</AlertDescription>
-            </Alert>
-          )}
+    <form action={createSiteAction.bind(null, projectId)} className="space-y-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="name">Site Name *</Label>
+          <Input id="name" name="name" placeholder="Enter site name" required />
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="name">Site Name</Label>
-            <Input id="name" name="name" placeholder="e.g., London Headquarters" required />
-            {state.errors?.name && <p className="text-sm text-red-500">{state.errors.name[0]}</p>}
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor="region">Region *</Label>
+          <Input id="region" name="region" placeholder="Enter region" required />
+        </div>
+      </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="priority">Priority</Label>
-              <Select name="priority" defaultValue="Medium">
-                <SelectTrigger>
-                  <SelectValue placeholder="Select priority" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="High">High</SelectItem>
-                  <SelectItem value="Medium">Medium</SelectItem>
-                  <SelectItem value="Low">Low</SelectItem>
-                </SelectContent>
-              </Select>
-              {state.errors?.priority && <p className="text-sm text-red-500">{state.errors.priority[0]}</p>}
-            </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="country">Country *</Label>
+          <Input id="country" name="country" placeholder="Enter country" required />
+        </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="users_count">Number of Users</Label>
-              <Input id="users_count" name="users_count" type="number" placeholder="e.g., 500" required />
-              {state.errors?.users_count && <p className="text-sm text-red-500">{state.errors.users_count[0]}</p>}
-            </div>
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor="priority">Priority *</Label>
+          <Select name="priority" required>
+            <SelectTrigger>
+              <SelectValue placeholder="Select priority" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="High">High</SelectItem>
+              <SelectItem value="Medium">Medium</SelectItem>
+              <SelectItem value="Low">Low</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
 
-          <div className="flex justify-end space-x-4 pt-4">
-            <Button variant="outline" asChild>
-              <Link href={`/projects/${projectId}`}>Cancel</Link>
-            </Button>
-            <Button type="submit" disabled={isPending}>
-              {isPending ? "Creating..." : "Create Site"}
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="phase">Phase *</Label>
+          <Input id="phase" name="phase" placeholder="Enter phase" required />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="users_count">Users Count *</Label>
+          <Input
+            id="users_count"
+            name="users_count"
+            type="number"
+            min="0"
+            placeholder="Enter number of users"
+            required
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="project_manager_id">Project Manager *</Label>
+        <Select name="project_manager_id" required>
+          <SelectTrigger>
+            <SelectValue placeholder="Select project manager" />
+          </SelectTrigger>
+          <SelectContent>
+            {projectManagers.map((manager) => (
+              <SelectItem key={manager.id} value={manager.id}>
+                {manager.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="planned_start_date">Planned Start Date *</Label>
+          <Input id="planned_start_date" name="planned_start_date" type="date" required />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="planned_end_date">Planned End Date *</Label>
+          <Input id="planned_end_date" name="planned_end_date" type="date" required />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="status">Status *</Label>
+          <Select name="status" defaultValue="Planned" required>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Planned">Planned</SelectItem>
+              <SelectItem value="In Progress">In Progress</SelectItem>
+              <SelectItem value="Complete">Complete</SelectItem>
+              <SelectItem value="Delayed">Delayed</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="completion_percentage">Completion %</Label>
+          <Input
+            id="completion_percentage"
+            name="completion_percentage"
+            type="number"
+            min="0"
+            max="100"
+            defaultValue="0"
+            placeholder="0"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="notes">Notes</Label>
+        <Textarea id="notes" name="notes" placeholder="Enter any additional notes" rows={3} />
+      </div>
+
+      <div className="flex justify-end space-x-4">
+        <Button type="button" variant="outline">
+          Cancel
+        </Button>
+        <Button type="submit" disabled={isLoading}>
+          {isLoading ? "Creating..." : "Create Site"}
+        </Button>
+      </div>
+    </form>
   )
 }

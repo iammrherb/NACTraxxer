@@ -1,20 +1,50 @@
+import { createClient } from "@/lib/supabase/server"
 import { NewSiteForm } from "@/components/new-site-form"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { notFound } from "next/navigation"
 
-interface NewSitePageProps {
-  params: {
-    id: string
+async function getProjectData(projectId: string) {
+  const supabase = createClient()
+
+  const { data: project, error: projectError } = await supabase
+    .from("projects")
+    .select("*")
+    .eq("id", projectId)
+    .single()
+
+  if (projectError || !project) {
+    notFound()
+  }
+
+  const { data: projectManagers, error: managersError } = await supabase
+    .from("users")
+    .select("id, name, email")
+    .order("name")
+
+  if (managersError) {
+    console.error("Error fetching project managers:", managersError)
+  }
+
+  return {
+    project,
+    projectManagers: projectManagers || [],
   }
 }
 
-export default function NewSitePage({ params }: NewSitePageProps) {
+export default async function NewSitePage({ params }: { params: { id: string } }) {
+  const { project, projectManagers } = await getProjectData(params.id)
+
   return (
     <div className="container mx-auto py-8">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold">Add New Site</h1>
-        <p className="text-muted-foreground">Create a new site for this project.</p>
-      </div>
-
-      <NewSiteForm projectId={params.id} />
+      <Card className="max-w-2xl mx-auto">
+        <CardHeader>
+          <CardTitle>Add New Site</CardTitle>
+          <CardDescription>Add a new site to the {project.name} project.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <NewSiteForm projectId={params.id} projectManagers={projectManagers} />
+        </CardContent>
+      </Card>
     </div>
   )
 }

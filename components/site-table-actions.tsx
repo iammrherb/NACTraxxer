@@ -14,8 +14,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { useToast } from "@/hooks/use-toast"
 import { deleteSiteAction } from "@/app/actions/sites"
-import { toast } from "@/components/ui/use-toast"
 import Link from "next/link"
 
 interface SiteTableActionsProps {
@@ -27,20 +27,22 @@ interface SiteTableActionsProps {
 export function SiteTableActions({ siteId, siteName, projectId }: SiteTableActionsProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const { toast } = useToast()
 
-  const handleDelete = async () => {
+  async function handleDelete() {
     setIsDeleting(true)
     try {
       await deleteSiteAction(siteId, projectId)
       toast({
-        title: "Site deleted",
-        description: `${siteName} has been successfully deleted.`,
+        title: "Success",
+        description: "Site deleted successfully",
       })
       setShowDeleteDialog(false)
     } catch (error) {
+      console.error("Error deleting site:", error)
       toast({
         title: "Error",
-        description: "Failed to delete site. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to delete site",
         variant: "destructive",
       })
     } finally {
@@ -76,7 +78,7 @@ export function SiteTableActions({ siteId, siteName, projectId }: SiteTableActio
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the site "{siteName}" and all associated data.
+              This will permanently delete the site "{siteName}". This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
