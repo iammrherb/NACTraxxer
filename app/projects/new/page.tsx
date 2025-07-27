@@ -1,18 +1,13 @@
 import { createClient } from "@/lib/supabase/server"
 import { NewProjectForm } from "@/components/new-project-form"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
-async function getProjectManagers() {
+async function getUsers() {
   const supabase = createClient()
 
-  const { data: users, error } = await supabase
-    .from("users")
-    .select("id, name, email")
-    .eq("role", "Manager")
-    .order("name")
+  const { data: users, error } = await supabase.from("users").select("id, name, email").order("name")
 
   if (error) {
-    console.error("Error fetching project managers:", error)
+    console.error("Error fetching users:", error)
     return []
   }
 
@@ -20,19 +15,18 @@ async function getProjectManagers() {
 }
 
 export default async function NewProjectPage() {
-  const projectManagers = await getProjectManagers()
+  const users = await getUsers()
 
   return (
     <div className="container mx-auto py-8">
-      <Card className="max-w-2xl mx-auto">
-        <CardHeader>
-          <CardTitle>Create New Project</CardTitle>
-          <CardDescription>Set up a new deployment project to track sites and progress.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <NewProjectForm projectManagers={projectManagers} />
-        </CardContent>
-      </Card>
+      <div className="max-w-2xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold">Create New Project</h1>
+          <p className="text-muted-foreground mt-2">Set up a new deployment project to track sites and progress.</p>
+        </div>
+
+        <NewProjectForm users={users} />
+      </div>
     </div>
   )
 }

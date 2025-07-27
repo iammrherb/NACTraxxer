@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { MoreHorizontal, Edit, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import {
@@ -14,9 +13,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { useToast } from "@/hooks/use-toast"
+import { MoreHorizontal, Edit, Trash2 } from "lucide-react"
 import { deleteSiteAction } from "@/app/actions/sites"
-import Link from "next/link"
+import { toast } from "sonner"
+import { useRouter } from "next/navigation"
 
 interface SiteTableActionsProps {
   siteId: string
@@ -25,26 +25,23 @@ interface SiteTableActionsProps {
 }
 
 export function SiteTableActions({ siteId, siteName, projectId }: SiteTableActionsProps) {
+  const router = useRouter()
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
-  const { toast } = useToast()
 
-  async function handleDelete() {
+  const handleEdit = () => {
+    router.push(`/projects/${projectId}/sites/${siteId}/edit`)
+  }
+
+  const handleDelete = async () => {
     setIsDeleting(true)
     try {
       await deleteSiteAction(siteId, projectId)
-      toast({
-        title: "Success",
-        description: "Site deleted successfully",
-      })
+      toast.success("Site deleted successfully")
       setShowDeleteDialog(false)
     } catch (error) {
       console.error("Error deleting site:", error)
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to delete site",
-        variant: "destructive",
-      })
+      toast.error("Failed to delete site")
     } finally {
       setIsDeleting(false)
     }
@@ -60,13 +57,11 @@ export function SiteTableActions({ siteId, siteName, projectId }: SiteTableActio
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem asChild>
-            <Link href={`/projects/${projectId}/sites/${siteId}/edit`}>
-              <Edit className="mr-2 h-4 w-4" />
-              Edit
-            </Link>
+          <DropdownMenuItem onClick={handleEdit}>
+            <Edit className="mr-2 h-4 w-4" />
+            Edit
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setShowDeleteDialog(true)} className="text-red-600">
+          <DropdownMenuItem onClick={() => setShowDeleteDialog(true)} className="text-destructive">
             <Trash2 className="mr-2 h-4 w-4" />
             Delete
           </DropdownMenuItem>
@@ -83,7 +78,11 @@ export function SiteTableActions({ siteId, siteName, projectId }: SiteTableActio
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="bg-red-600 hover:bg-red-700">
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               {isDeleting ? "Deleting..." : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>

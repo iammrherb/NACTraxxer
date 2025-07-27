@@ -17,7 +17,7 @@ export async function GET() {
 
     return NextResponse.json(projects)
   } catch (error) {
-    console.error("Unexpected error:", error)
+    console.error("Error in GET /api/projects:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
@@ -27,27 +27,29 @@ export async function POST(request: NextRequest) {
     const supabase = createClient()
     const body = await request.json()
 
-    const { name, description, customer_name, project_manager_id, start_date, end_date, status } = body
+    const { name, description, project_manager, start_date, end_date, status = "Planning", priority = "Medium" } = body
 
     // Validate required fields
-    if (!name || !customer_name || !project_manager_id) {
-      return NextResponse.json(
-        { error: "Missing required fields: name, customer_name, project_manager_id" },
-        { status: 400 },
-      )
+    if (!name || !project_manager || !start_date || !end_date) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    const { data: project, error } = await supabase
+    // Insert the new project
+    const { data, error } = await supabase
       .from("projects")
-      .insert({
-        name,
-        description: description || null,
-        customer_name,
-        project_manager_id,
-        start_date: start_date || null,
-        end_date: end_date || null,
-        status: status || "Planning",
-      })
+      .insert([
+        {
+          name,
+          description: description || "",
+          project_manager,
+          start_date,
+          end_date,
+          status,
+          priority,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+      ])
       .select()
       .single()
 
@@ -56,9 +58,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Failed to create project" }, { status: 500 })
     }
 
-    return NextResponse.json(project, { status: 201 })
+    return NextResponse.json(data, { status: 201 })
   } catch (error) {
-    console.error("Unexpected error:", error)
+    console.error("Error in POST /api/projects:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

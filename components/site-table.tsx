@@ -7,19 +7,22 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { SiteTableActions } from "./site-table-actions"
 import { BulkEditModal } from "./bulk-edit-modal"
+import { Edit, Trash2 } from "lucide-react"
 
 interface Site {
   id: string
-  name: string
+  site_name: string
+  site_id: string
   region: string
   country: string
   priority: string
   phase: string
   users_count: number
+  project_manager: string
   status: string
-  completion_percentage: number
-  planned_start_date: string
-  planned_end_date: string
+  planned_start: string
+  planned_end: string
+  completion_percent: number
 }
 
 interface SiteTableProps {
@@ -50,13 +53,13 @@ export function SiteTable({ sites, projectId }: SiteTableProps) {
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case "High":
-        return "bg-red-100 text-red-800"
+        return "destructive"
       case "Medium":
-        return "bg-yellow-100 text-yellow-800"
+        return "default"
       case "Low":
-        return "bg-green-100 text-green-800"
+        return "secondary"
       default:
-        return "bg-gray-100 text-gray-800"
+        return "default"
     }
   }
 
@@ -66,10 +69,10 @@ export function SiteTable({ sites, projectId }: SiteTableProps) {
         return "bg-green-100 text-green-800"
       case "In Progress":
         return "bg-blue-100 text-blue-800"
-      case "Planned":
+      case "Not Started":
         return "bg-gray-100 text-gray-800"
-      case "Delayed":
-        return "bg-red-100 text-red-800"
+      case "On Hold":
+        return "bg-yellow-100 text-yellow-800"
       default:
         return "bg-gray-100 text-gray-800"
     }
@@ -78,16 +81,25 @@ export function SiteTable({ sites, projectId }: SiteTableProps) {
   return (
     <div className="space-y-4">
       {selectedSites.length > 0 && (
-        <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
-          <span className="text-sm text-blue-700">
+        <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+          <span className="text-sm font-medium">
             {selectedSites.length} site{selectedSites.length > 1 ? "s" : ""} selected
           </span>
-          <div className="space-x-2">
-            <Button variant="outline" size="sm" onClick={() => setShowBulkEdit(true)}>
+          <div className="flex gap-2">
+            <Button size="sm" onClick={() => setShowBulkEdit(true)}>
+              <Edit className="h-4 w-4 mr-2" />
               Bulk Edit
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setSelectedSites([])}>
-              Clear Selection
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={() => {
+                // TODO: Implement bulk delete
+                console.log("Bulk delete:", selectedSites)
+              }}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete Selected
             </Button>
           </div>
         </div>
@@ -103,17 +115,15 @@ export function SiteTable({ sites, projectId }: SiteTableProps) {
                   onCheckedChange={handleSelectAll}
                 />
               </TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Region</TableHead>
-              <TableHead>Country</TableHead>
+              <TableHead>Site Name</TableHead>
+              <TableHead>Site ID</TableHead>
+              <TableHead>Location</TableHead>
               <TableHead>Priority</TableHead>
-              <TableHead>Phase</TableHead>
-              <TableHead>Users</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Progress</TableHead>
-              <TableHead>Start Date</TableHead>
-              <TableHead>End Date</TableHead>
-              <TableHead className="w-12"></TableHead>
+              <TableHead>Users</TableHead>
+              <TableHead>Phase</TableHead>
+              <TableHead className="w-12">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -125,22 +135,29 @@ export function SiteTable({ sites, projectId }: SiteTableProps) {
                     onCheckedChange={(checked) => handleSelectSite(site.id, checked as boolean)}
                   />
                 </TableCell>
-                <TableCell className="font-medium">{site.name}</TableCell>
-                <TableCell>{site.region}</TableCell>
-                <TableCell>{site.country}</TableCell>
+                <TableCell className="font-medium">{site.site_name}</TableCell>
+                <TableCell className="font-mono text-sm">{site.site_id}</TableCell>
                 <TableCell>
-                  <Badge className={getPriorityColor(site.priority)}>{site.priority}</Badge>
+                  {site.region}, {site.country}
                 </TableCell>
-                <TableCell>{site.phase}</TableCell>
-                <TableCell>{site.users_count}</TableCell>
+                <TableCell>
+                  <Badge variant={getPriorityColor(site.priority)}>{site.priority}</Badge>
+                </TableCell>
                 <TableCell>
                   <Badge className={getStatusColor(site.status)}>{site.status}</Badge>
                 </TableCell>
-                <TableCell>{site.completion_percentage}%</TableCell>
-                <TableCell>{new Date(site.planned_start_date).toLocaleDateString()}</TableCell>
-                <TableCell>{new Date(site.planned_end_date).toLocaleDateString()}</TableCell>
                 <TableCell>
-                  <SiteTableActions siteId={site.id} siteName={site.name} projectId={projectId} />
+                  <div className="flex items-center space-x-2">
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${site.completion_percent}%` }} />
+                    </div>
+                    <span className="text-sm text-muted-foreground">{site.completion_percent}%</span>
+                  </div>
+                </TableCell>
+                <TableCell>{site.users_count}</TableCell>
+                <TableCell>{site.phase}</TableCell>
+                <TableCell>
+                  <SiteTableActions siteId={site.id} siteName={site.site_name} projectId={projectId} />
                 </TableCell>
               </TableRow>
             ))}
