@@ -1,24 +1,34 @@
-import { sql } from "@/lib/database"
+import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 
 export async function POST(req: Request) {
+  const supabase = createClient()
   try {
-    const { siteIds, updates } = await req.json()
+    const { ids, updates } = await req.json()
 
-    if (!Array.isArray(siteIds) || siteIds.length === 0 || !updates || typeof updates !== "object") {
+    if (!Array.isArray(ids) || ids.length === 0 || !updates || typeof updates !== "object") {
       return NextResponse.json({ error: "Invalid request body" }, { status: 400 })
     }
 
-    // A transaction is crucial for bulk operations
-    const updatedSites = await sql.begin(async (sql) => {
-      const promises = siteIds.map((id) => sql`UPDATE sites SET ${sql(updates)} WHERE id = ${id} RETURNING *`)
-      const results = await Promise.all(promises)
-      return results.map((res) => res[0])
-    })
+    // Ensure only allowed fields are updated
+    const allowedUpdates: { [key: string]: any } = {}
+    if (updates.status) allowedUpdates.status = updates.status
+    if (updates.priority) allowedUpdates.priority = updates.priority
+    // Add other allowed fields here in the future
+
+    if (Object.keys(allowedUpdates).length === 0) {
+      return NextResponse.json({ error: "No valid fields to update" }, { status: 400 })
+    }
+
+    const { data, error } = await supabase.from("sites").update(allowedUpdates).in("id", ids).select()
+
+    if (error) {
+      throw error
+    }
 
     return NextResponse.json({
-      message: `${updatedSites.length} sites updated successfully.`,
-      data: updatedSites,
+      message: `${data.length} sites updated successfully.`,
+      data,
     })
   } catch (error: any) {
     console.error("Bulk update failed:", error)
