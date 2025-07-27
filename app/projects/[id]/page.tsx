@@ -1,80 +1,82 @@
-import { notFound } from "next/navigation"
+import { Suspense } from "react"
 import { createClient } from "@/lib/supabase/server"
 import { ProjectStatCards } from "@/components/project-stat-cards"
 import { SiteTable } from "@/components/site-table"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Plus } from "lucide-react"
 import Link from "next/link"
-import type { Project, Site } from "@/types"
 
-interface ProjectPageProps {
-  params: {
-    id: string
-  }
-}
-
-async function getProject(id: string): Promise<Project | null> {
+async function getProjectData(projectId: string) {
   const supabase = createClient()
 
-  const { data, error } = await supabase.from("projects").select("*").eq("id", id).single()
+  const { data: project, error: projectError } = await supabase
+    .from("projects")
+    .select("*")
+    .eq("id", projectId)
+    .single()
 
-  if (error) {
-    console.error("Error fetching project:", error)
-    return null
+  if (projectError) {
+    console.error("Error fetching project:", projectError)
+    return { project: null, sites: [] }
   }
 
-  return data
-}
-
-async function getProjectSites(projectId: string): Promise<Site[]> {
-  const supabase = createClient()
-
-  const { data, error } = await supabase
+  const { data: sites, error: sitesError } = await supabase
     .from("sites")
     .select("*")
     .eq("project_id", projectId)
     .order("created_at", { ascending: false })
 
-  if (error) {
-    console.error("Error fetching sites:", error)
-    return []
+  if (sitesError) {
+    console.error("Error fetching sites:", sitesError)
+    return { project, sites: [] }
   }
 
-  return data || []
+  return { project, sites: sites || [] }
 }
 
-export default async function ProjectPage({ params }: ProjectPageProps) {
-  const project = await getProject(params.id)
+export default async function ProjectDetailPage({ params }: { params: { id: string } }) {
+  const { project, sites } = await getProjectData(params.id)
 
   if (!project) {
-    notFound()
+    return (
+      <div className="container mx-auto py-8">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-destructive">Project Not Found</h1>
+          <p className="text-muted-foreground mt-2">The project you're looking for doesn't exist.</p>
+        </div>
+      </div>
+    )
   }
 
-  const sites = await getProjectSites(params.id)
-
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="container mx-auto py-8 space-y-8">
+      <div className="flex justify-between items-start">
         <div>
           <h1 className="text-3xl font-bold">{project.name}</h1>
-          <p className="text-muted-foreground">{project.description}</p>
+          <p className="text-muted-foreground mt-2">{project.description}</p>
         </div>
         <Button asChild>
           <Link href={`/projects/${params.id}/sites/new`}>
-            <Plus className="mr-2 h-4 w-4" />
+            <Plus className="h-4 w-4 mr-2" />
             Add Site
           </Link>
         </Button>
       </div>
 
-      <ProjectStatCards projectId={params.id} />
+      <Suspense fallback={<div>Loading statistics...</div>}>
+        <ProjectStatCards projectId={params.id} />
+      </Suspense>
 
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-semibold">Sites</h2>
-        </div>
-        <SiteTable sites={sites} projectId={params.id} />
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Sites</CardTitle>
+          <CardDescription>Manage all sites in this project. You can add, edit, or bulk update sites.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <SiteTable sites={sites} projectId={params.id} />
+        </CardContent>
+      </Card>
     </div>
   )
 }

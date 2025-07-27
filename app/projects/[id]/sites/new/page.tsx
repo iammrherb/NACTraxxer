@@ -1,26 +1,32 @@
+import { Suspense } from "react"
 import { createClient } from "@/lib/supabase/server"
 import { NewSiteForm } from "@/components/new-site-form"
-import { notFound } from "next/navigation"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
-async function getProject(id: string) {
+async function getProjectData(projectId: string) {
   const supabase = createClient()
 
-  const { data: project, error } = await supabase.from("projects").select("*").eq("id", id).single()
+  const { data: project, error } = await supabase.from("projects").select("id, name").eq("id", projectId).single()
 
-  if (error || !project) {
+  if (error) {
+    console.error("Error fetching project:", error)
     return null
   }
 
   return project
 }
 
-async function getUsers() {
+async function getProjectManagers() {
   const supabase = createClient()
 
-  const { data: users, error } = await supabase.from("users").select("id, name, email").order("name")
+  const { data: users, error } = await supabase
+    .from("users")
+    .select("id, name, email")
+    .eq("role", "Manager")
+    .order("name")
 
   if (error) {
-    console.error("Error fetching users:", error)
+    console.error("Error fetching project managers:", error)
     return []
   }
 
@@ -28,22 +34,34 @@ async function getUsers() {
 }
 
 export default async function NewSitePage({ params }: { params: { id: string } }) {
-  const project = await getProject(params.id)
-  const users = await getUsers()
+  const project = await getProjectData(params.id)
+  const projectManagers = await getProjectManagers()
 
   if (!project) {
-    notFound()
+    return (
+      <div className="container mx-auto py-8">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-destructive">Project Not Found</h1>
+          <p className="text-muted-foreground mt-2">The project you're looking for doesn't exist.</p>
+        </div>
+      </div>
+    )
   }
 
   return (
     <div className="container mx-auto py-8">
-      <div className="max-w-2xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold">Add New Site</h1>
-          <p className="text-muted-foreground mt-2">Add a new site to the project "{project.name}".</p>
-        </div>
-
-        <NewSiteForm projectId={params.id} users={users} />
+      <div className="max-w-4xl mx-auto">
+        <Card>
+          <CardHeader>
+            <CardTitle>Add New Site</CardTitle>
+            <CardDescription>Add a new site to the project "{project.name}".</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Suspense fallback={<div>Loading...</div>}>
+              <NewSiteForm projectId={params.id} projectManagers={projectManagers} />
+            </Suspense>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )
