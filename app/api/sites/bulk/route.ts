@@ -1,9 +1,9 @@
 import { createClient } from "@/lib/supabase/server"
-import { type NextRequest, NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 
-export async function PUT(request: NextRequest) {
+export async function PATCH(request: Request) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
@@ -27,6 +27,8 @@ export async function PUT(request: NextRequest) {
     const updateData: any = {}
     if (updates.status) updateData.status = updates.status
     if (updates.priority) updateData.priority = updates.priority
+    if (updates.project_manager) updateData.project_manager = updates.project_manager
+    if (updates.phase) updateData.phase = updates.phase
     if (updates.completion_percent !== undefined) updateData.completion_percent = updates.completion_percent
 
     // Add updated timestamp

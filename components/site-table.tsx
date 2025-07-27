@@ -1,28 +1,30 @@
 "use client"
 
 import { useState } from "react"
-import { Badge } from "@/components/ui/badge"
+import { useRouter } from "next/navigation"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Badge } from "@/components/ui/badge"
+import { Progress } from "@/components/ui/progress"
 import { SiteTableActions } from "./site-table-actions"
 import { BulkEditModal } from "./bulk-edit-modal"
-import { Edit, Trash2 } from "lucide-react"
+import { toast } from "sonner"
+import { Trash2, Edit } from "lucide-react"
 
 interface Site {
   id: string
-  site_name: string
-  site_id: string
-  region: string
-  country: string
+  name: string
+  hierarchy_path: string
   priority: string
-  phase: string
-  users_count: number
-  project_manager: string
   status: string
-  planned_start: string
-  planned_end: string
-  completion_percent: number
+  project_id: string
+  project_manager?: string
+  phase?: string
+  completion_percent?: number
+  users_count?: number
+  created_at: string
+  updated_at: string
 }
 
 interface SiteTableProps {
@@ -31,8 +33,10 @@ interface SiteTableProps {
 }
 
 export function SiteTable({ sites, projectId }: SiteTableProps) {
+  const router = useRouter()
   const [selectedSites, setSelectedSites] = useState<string[]>([])
-  const [showBulkEdit, setShowBulkEdit] = useState(false)
+  const [bulkEditOpen, setBulkEditOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -50,31 +54,63 @@ export function SiteTable({ sites, projectId }: SiteTableProps) {
     }
   }
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "High":
-        return "destructive"
-      case "Medium":
-        return "default"
-      case "Low":
-        return "secondary"
-      default:
-        return "default"
+  const handleBulkDelete = async () => {
+    if (selectedSites.length === 0) return
+
+    if (!confirm(`Are you sure you want to delete ${selectedSites.length} sites? This action cannot be undone.`)) {
+      return
+    }
+
+    setIsDeleting(true)
+    try {
+      const deletePromises = selectedSites.map((siteId) => fetch(`/api/sites/${siteId}`, { method: "DELETE" }))
+
+      const results = await Promise.all(deletePromises)
+      const failedDeletes = results.filter((result) => !result.ok)
+
+      if (failedDeletes.length > 0) {
+        toast.error(`Failed to delete ${failedDeletes.length} sites`)
+      } else {
+        toast.success(`Successfully deleted ${selectedSites.length} sites`)
+      }
+
+      setSelectedSites([])
+      router.refresh()
+    } catch (error) {
+      console.error("Error deleting sites:", error)
+      toast.error("Failed to delete sites")
+    } finally {
+      setIsDeleting(false)
     }
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Complete":
-        return "bg-green-100 text-green-800"
-      case "In Progress":
-        return "bg-blue-100 text-blue-800"
-      case "Not Started":
-        return "bg-gray-100 text-gray-800"
-      case "On Hold":
-        return "bg-yellow-100 text-yellow-800"
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "complete":
+        return "default"
+      case "in progress":
+        return "secondary"
+      case "not started":
+        return "outline"
+      case "on hold":
+        return "destructive"
+      case "delayed":
+        return "destructive"
       default:
-        return "bg-gray-100 text-gray-800"
+        return "outline"
+    }
+  }
+
+  const getPriorityBadgeVariant = (priority: string) => {
+    switch (priority.toLowerCase()) {
+      case "high":
+        return "destructive"
+      case "medium":
+        return "secondary"
+      case "low":
+        return "outline"
+      default:
+        return "outline"
     }
   }
 
@@ -86,20 +122,23 @@ export function SiteTable({ sites, projectId }: SiteTableProps) {
             {selectedSites.length} site{selectedSites.length > 1 ? "s" : ""} selected
           </span>
           <div className="flex gap-2">
-            <Button size="sm" onClick={() => setShowBulkEdit(true)}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setBulkEditOpen(true)}
+              disabled={selectedSites.length === 0}
+            >
               <Edit className="h-4 w-4 mr-2" />
               Bulk Edit
             </Button>
             <Button
-              size="sm"
               variant="destructive"
-              onClick={() => {
-                // TODO: Implement bulk delete
-                console.log("Bulk delete:", selectedSites)
-              }}
+              size="sm"
+              onClick={handleBulkDelete}
+              disabled={selectedSites.length === 0 || isDeleting}
             >
               <Trash2 className="h-4 w-4 mr-2" />
-              Delete Selected
+              {isDeleting ? "Deleting..." : "Delete Selected"}
             </Button>
           </div>
         </div>
@@ -113,65 +152,82 @@ export function SiteTable({ sites, projectId }: SiteTableProps) {
                 <Checkbox
                   checked={selectedSites.length === sites.length && sites.length > 0}
                   onCheckedChange={handleSelectAll}
+                  aria-label="Select all sites"
                 />
               </TableHead>
               <TableHead>Site Name</TableHead>
-              <TableHead>Site ID</TableHead>
-              <TableHead>Location</TableHead>
-              <TableHead>Priority</TableHead>
+              <TableHead>Hierarchy Path</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Priority</TableHead>
+              <TableHead>Project Manager</TableHead>
+              <TableHead>Phase</TableHead>
               <TableHead>Progress</TableHead>
               <TableHead>Users</TableHead>
-              <TableHead>Phase</TableHead>
               <TableHead className="w-12">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sites.map((site) => (
-              <TableRow key={site.id}>
-                <TableCell>
-                  <Checkbox
-                    checked={selectedSites.includes(site.id)}
-                    onCheckedChange={(checked) => handleSelectSite(site.id, checked as boolean)}
-                  />
-                </TableCell>
-                <TableCell className="font-medium">{site.site_name}</TableCell>
-                <TableCell className="font-mono text-sm">{site.site_id}</TableCell>
-                <TableCell>
-                  {site.region}, {site.country}
-                </TableCell>
-                <TableCell>
-                  <Badge variant={getPriorityColor(site.priority)}>{site.priority}</Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge className={getStatusColor(site.status)}>{site.status}</Badge>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${site.completion_percent}%` }} />
-                    </div>
-                    <span className="text-sm text-muted-foreground">{site.completion_percent}%</span>
-                  </div>
-                </TableCell>
-                <TableCell>{site.users_count}</TableCell>
-                <TableCell>{site.phase}</TableCell>
-                <TableCell>
-                  <SiteTableActions siteId={site.id} siteName={site.site_name} projectId={projectId} />
+            {sites.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                  No sites found.{" "}
+                  <Button variant="link" onClick={() => router.push(`/projects/${projectId}/sites/new`)}>
+                    Add your first site
+                  </Button>
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              sites.map((site) => (
+                <TableRow key={site.id}>
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedSites.includes(site.id)}
+                      onCheckedChange={(checked) => handleSelectSite(site.id, checked as boolean)}
+                      aria-label={`Select ${site.name}`}
+                    />
+                  </TableCell>
+                  <TableCell className="font-medium">
+                    <Button
+                      variant="link"
+                      className="p-0 h-auto font-medium"
+                      onClick={() => router.push(`/projects/${projectId}/sites/${site.id}`)}
+                    >
+                      {site.name}
+                    </Button>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">{site.hierarchy_path}</TableCell>
+                  <TableCell>
+                    <Badge variant={getStatusBadgeVariant(site.status)}>{site.status}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={getPriorityBadgeVariant(site.priority)}>{site.priority}</Badge>
+                  </TableCell>
+                  <TableCell>{site.project_manager || "Unassigned"}</TableCell>
+                  <TableCell>{site.phase || "Not Set"}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-2">
+                      <Progress value={site.completion_percent || 0} className="w-16" />
+                      <span className="text-sm text-muted-foreground">{site.completion_percent || 0}%</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>{site.users_count || 0}</TableCell>
+                  <TableCell>
+                    <SiteTableActions siteId={site.id} projectId={projectId} />
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>
 
       <BulkEditModal
-        open={showBulkEdit}
-        onOpenChange={setShowBulkEdit}
+        open={bulkEditOpen}
+        onOpenChange={setBulkEditOpen}
         selectedSiteIds={selectedSites}
         onSuccess={() => {
           setSelectedSites([])
-          setShowBulkEdit(false)
+          router.refresh()
         }}
       />
     </div>
