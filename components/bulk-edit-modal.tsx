@@ -2,106 +2,127 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
-  DialogDescription,
 } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { toast } from "@/hooks/use-toast"
+import { toast } from "@/components/ui/use-toast"
+import { useRouter } from "next/navigation"
 
 interface BulkEditModalProps {
   isOpen: boolean
   onClose: () => void
-  onSave: () => void
-  siteIds: string[]
+  selectedSiteIds: string[]
+  onSuccess: () => void
 }
 
-export function BulkEditModal({ isOpen, onClose, onSave, siteIds }: BulkEditModalProps) {
-  const [updates, setUpdates] = useState<{ status?: string; priority?: string }>({})
-  const [isSaving, setIsSaving] = useState(false)
+export function BulkEditModal({ isOpen, onClose, selectedSiteIds, onSuccess }: BulkEditModalProps) {
+  const [status, setStatus] = useState<string>("No change")
+  const [priority, setPriority] = useState<string>("No change")
+  const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter()
 
-  const handleSave = async () => {
-    if (Object.keys(updates).length === 0) {
+  const handleSubmit = async () => {
+    if (status === "No change" && priority === "No change") {
       toast({
-        title: "No changes",
-        description: "Please select a value to update.",
-        variant: "default",
+        title: "No changes selected",
+        description: "Please select at least one field to update.",
+        variant: "destructive",
       })
       return
     }
 
-    setIsSaving(true)
+    setIsLoading(true)
+
     try {
+      const updates: any = {}
+      if (status !== "No change") updates.status = status
+      if (priority !== "No change") updates.priority = priority
+
       const response = await fetch("/api/sites/bulk", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids: siteIds, updates }),
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ids: selectedSiteIds,
+          updates,
+        }),
       })
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || "Failed to bulk update sites.")
+        throw new Error("Failed to update sites")
       }
 
+      const result = await response.json()
+
       toast({
-        title: "Success!",
-        description: `${siteIds.length} sites have been updated.`,
+        title: "Sites updated successfully",
+        description: result.message,
       })
-      onSave()
-      onClose()
-    } catch (error: any) {
+
+      // Reset form
+      setStatus("No change")
+      setPriority("No change")
+
+      // Refresh the page to show updated data
+      router.refresh()
+
+      onSuccess()
+    } catch (error) {
+      console.error("Bulk edit error:", error)
       toast({
-        title: "Error updating sites",
-        description: error.message,
+        title: "Error",
+        description: "Failed to update sites. Please try again.",
         variant: "destructive",
       })
     } finally {
-      setIsSaving(false)
+      setIsLoading(false)
     }
   }
 
-  if (!isOpen) return null
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Bulk Edit {siteIds.length} Sites</DialogTitle>
+          <DialogTitle>Bulk Edit Sites</DialogTitle>
           <DialogDescription>
-            Apply changes to all selected sites. Only fields with a selected value will be updated.
+            Update {selectedSiteIds.length} selected site{selectedSiteIds.length > 1 ? "s" : ""}. Only fields you change
+            will be updated.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="status" className="text-right">
-              Status
-            </Label>
-            <Select onValueChange={(value) => setUpdates((prev) => ({ ...prev, status: value }))}>
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="-- No Change --" />
+
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="bulk-status">Status</Label>
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger id="bulk-status">
+                <SelectValue placeholder="Select new status (optional)" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="No change">No change</SelectItem>
                 <SelectItem value="Planned">Planned</SelectItem>
                 <SelectItem value="In Progress">In Progress</SelectItem>
+                <SelectItem value="On Hold">On Hold</SelectItem>
                 <SelectItem value="Complete">Complete</SelectItem>
-                <SelectItem value="Delayed">Delayed</SelectItem>
               </SelectContent>
             </Select>
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="priority" className="text-right">
-              Priority
-            </Label>
-            <Select onValueChange={(value) => setUpdates((prev) => ({ ...prev, priority: value }))}>
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="-- No Change --" />
+
+          <div className="space-y-2">
+            <Label htmlFor="bulk-priority">Priority</Label>
+            <Select value={priority} onValueChange={setPriority}>
+              <SelectTrigger id="bulk-priority">
+                <SelectValue placeholder="Select new priority (optional)" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="No change">No change</SelectItem>
                 <SelectItem value="High">High</SelectItem>
                 <SelectItem value="Medium">Medium</SelectItem>
                 <SelectItem value="Low">Low</SelectItem>
@@ -109,12 +130,13 @@ export function BulkEditModal({ isOpen, onClose, onSave, siteIds }: BulkEditModa
             </Select>
           </div>
         </div>
+
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={onClose} disabled={isLoading}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? "Saving..." : "Save Changes"}
+          <Button onClick={handleSubmit} disabled={isLoading}>
+            {isLoading ? "Updating..." : "Update Sites"}
           </Button>
         </DialogFooter>
       </DialogContent>

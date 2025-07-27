@@ -1,65 +1,42 @@
-import { createClient } from "@/lib/supabase/server"
 import { notFound } from "next/navigation"
+import { createClient } from "@/lib/supabase/server"
 import { EditSiteForm } from "@/components/edit-site-form"
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
-import Link from "next/link"
+import type { Site } from "@/types"
 
-async function getSite(siteId: string) {
-  const supabase = createClient()
-  const { data: site, error } = await supabase.from("sites").select("*").eq("id", siteId).single()
-
-  if (error || !site) {
-    notFound()
+interface EditSitePageProps {
+  params: {
+    projectId: string
+    siteId: string
   }
-  return site
 }
 
-async function getProject(projectId: string) {
+async function getSite(siteId: string): Promise<Site | null> {
   const supabase = createClient()
-  const { data: project, error } = await supabase.from("projects").select("id, name").eq("id", projectId).single()
-  if (error || !project) {
-    notFound()
+
+  const { data, error } = await supabase.from("sites").select("*").eq("id", siteId).single()
+
+  if (error) {
+    console.error("Error fetching site:", error)
+    return null
   }
-  return project
+
+  return data
 }
 
-export default async function EditSitePage({ params }: { params: { projectId: string; siteId: string } }) {
+export default async function EditSitePage({ params }: EditSitePageProps) {
   const site = await getSite(params.siteId)
-  const project = await getProject(params.projectId)
+
+  if (!site) {
+    notFound()
+  }
 
   return (
-    <div className="space-y-6">
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href="/projects">Projects</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href={`/projects/${project.id}`}>{project.name}</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>{site.name}</BreadcrumbPage>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>Edit</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
-      <h1 className="text-3xl font-bold">Edit Site</h1>
+    <div className="container mx-auto py-8">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold">Edit Site: {site.name}</h1>
+        <p className="text-muted-foreground">Update the site details below.</p>
+      </div>
+
       <EditSiteForm site={site} projectId={params.projectId} />
     </div>
   )

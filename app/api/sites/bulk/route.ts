@@ -1,37 +1,50 @@
 import { createClient } from "@/lib/supabase/server"
-import { NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
 
-export async function POST(req: Request) {
-  const supabase = createClient()
+export async function PUT(request: NextRequest) {
   try {
-    const { ids, updates } = await req.json()
-
-    if (!Array.isArray(ids) || ids.length === 0 || !updates || typeof updates !== "object") {
-      return NextResponse.json({ error: "Invalid request body" }, { status: 400 })
+    const session = await getServerSession(authOptions)
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Ensure only allowed fields are updated
-    const allowedUpdates: { [key: string]: any } = {}
-    if (updates.status) allowedUpdates.status = updates.status
-    if (updates.priority) allowedUpdates.priority = updates.priority
-    // Add other allowed fields here in the future
+    const body = await request.json()
+    const { ids, updates } = body
 
-    if (Object.keys(allowedUpdates).length === 0) {
-      return NextResponse.json({ error: "No valid fields to update" }, { status: 400 })
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return NextResponse.json({ error: "Site IDs are required" }, { status: 400 })
     }
 
-    const { data, error } = await supabase.from("sites").update(allowedUpdates).in("id", ids).select()
+    if (!updates || typeof updates !== "object") {
+      return NextResponse.json({ error: "Updates are required" }, { status: 400 })
+    }
+
+    const supabase = createClient()
+
+    // Build the update object with only provided fields
+    const updateData: any = {}
+    if (updates.status) updateData.status = updates.status
+    if (updates.priority) updateData.priority = updates.priority
+    if (updates.completion_percent !== undefined) updateData.completion_percent = updates.completion_percent
+
+    // Add updated timestamp
+    updateData.updated_at = new Date().toISOString()
+
+    const { data, error } = await supabase.from("sites").update(updateData).in("id", ids).select()
 
     if (error) {
-      throw error
+      console.error("Database error:", error)
+      return NextResponse.json({ error: "Failed to update sites" }, { status: 500 })
     }
 
     return NextResponse.json({
-      message: `${data.length} sites updated successfully.`,
-      data,
+      message: `Successfully updated ${data.length} sites`,
+      updatedSites: data,
     })
-  } catch (error: any) {
-    console.error("Bulk update failed:", error)
-    return NextResponse.json({ error: "Failed to perform bulk update.", details: error.message }, { status: 500 })
+  } catch (error) {
+    console.error("Bulk update error:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
