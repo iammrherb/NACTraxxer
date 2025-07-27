@@ -1,92 +1,66 @@
-"use client"
-
-import { useRouter } from "next/navigation"
-import { MoreHorizontal } from "lucide-react"
-
+import { createClient } from "@/lib/supabase/server"
+import { ProjectsDataTable } from "./projects-data-table"
+import type { ColumnDef } from "@tanstack/react-table"
 import type { Site } from "@/types"
-import { deleteSiteAction } from "@/app/actions/sites"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { toast } from "@/hooks/use-toast"
+import { Badge } from "./ui/badge"
+import { SiteTableActions } from "./site-table-actions"
+import { CheckCircle, Circle, Clock, XCircle } from "lucide-react"
 
-const statusVariant: { [key: string]: "default" | "secondary" | "destructive" | "outline" } = {
-  Complete: "default",
-  "In Progress": "secondary",
-  Delayed: "destructive",
-  Planned: "outline",
+async function getSites(projectId: string) {
+  const supabase = createClient()
+  const { data, error } = await supabase.from("sites").select("*").eq("project_id", projectId).order("name")
+
+  if (error) {
+    console.error("Error fetching sites:", error)
+    return []
+  }
+  return data
 }
 
-export function SiteTable({ sites, projectId }: { sites: Site[]; projectId: string }) {
-  const router = useRouter()
+export const columns: ColumnDef<Site>[] = [
+  {
+    accessorKey: "name",
+    header: "Name",
+  },
+  {
+    accessorKey: "status",
+    header: "Status",
+    cell: ({ row }) => {
+      const status = row.getValue("status") as string
+      const variant: "default" | "secondary" | "destructive" | "outline" =
+        status === "Complete" ? "default" : status === "In Progress" ? "secondary" : "destructive"
 
-  const handleNavigate = (path: string) => {
-    router.push(path)
-  }
+      const Icon =
+        status === "Complete" ? CheckCircle : status === "In Progress" ? Clock : status === "On Hold" ? XCircle : Circle
 
-  const handleDelete = async (siteId: string) => {
-    if (!confirm("Are you sure you want to delete this site? This action cannot be undone.")) {
-      return
-    }
+      return (
+        <Badge variant={variant} className="flex items-center w-fit">
+          <Icon className="mr-2 h-4 w-4" />
+          {status}
+        </Badge>
+      )
+    },
+  },
+  {
+    accessorKey: "priority",
+    header: "Priority",
+  },
+  {
+    accessorKey: "users_count",
+    header: "Users",
+  },
+  {
+    accessorKey: "updated_at",
+    header: "Last Updated",
+    cell: ({ row }) => new Date(row.getValue("updated_at")).toLocaleDateString(),
+  },
+  {
+    id: "actions",
+    cell: ({ row }) => <SiteTableActions site={row.original} />,
+  },
+]
 
-    const result = await deleteSiteAction(siteId, projectId)
-    if (result.success) {
-      toast({ title: "Success", description: result.message })
-      router.refresh()
-    } else {
-      toast({ title: "Error", description: result.message, variant: "destructive" })
-    }
-  }
-
-  return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Name</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead className="hidden md:table-cell">Priority</TableHead>
-          <TableHead className="hidden md:table-cell">Users</TableHead>
-          <TableHead>
-            <span className="sr-only">Actions</span>
-          </TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {sites.map((site) => (
-          <TableRow key={site.id}>
-            <TableCell className="font-medium">{site.name}</TableCell>
-            <TableCell>
-              <Badge variant={statusVariant[site.status] || "outline"}>{site.status}</Badge>
-            </TableCell>
-            <TableCell className="hidden md:table-cell">{site.priority}</TableCell>
-            <TableCell className="hidden md:table-cell">{site.users}</TableCell>
-            <TableCell>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button aria-haspopup="true" size="icon" variant="ghost">
-                    <MoreHorizontal className="h-4 w-4" />
-                    <span className="sr-only">Toggle menu</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                  <DropdownMenuItem onClick={() => handleNavigate(`/projects/${projectId}/sites/${site.id}`)}>
-                    View Details
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleDelete(site.id)}>Delete</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
-  )
+export async function SiteTable({ projectId }: { projectId: string }) {
+  const sites = await getSites(projectId)
+  return <ProjectsDataTable columns={columns} data={sites} />
 }
