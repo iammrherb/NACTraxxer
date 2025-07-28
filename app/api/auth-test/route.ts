@@ -11,13 +11,8 @@ export async function GET() {
     }
 
     return NextResponse.json({
-      message: "Authentication successful",
-      user: {
-        id: session.user.id,
-        email: session.user.email,
-        name: session.user.name,
-        role: session.user.role,
-      },
+      status: "ok",
+      message: "Auth test endpoint - authentication removed",
       timestamp: new Date().toISOString(),
     })
   } catch (error) {

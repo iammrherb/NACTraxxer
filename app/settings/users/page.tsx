@@ -1,52 +1,34 @@
-import { UserManagement } from "@/components/user-management"
-import { createClient } from "@/lib/supabase/server"
-import { redirect } from "next/navigation"
-import type { User } from "@/lib/database"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Terminal } from "lucide-react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Info } from "lucide-react"
 
-async function getUsers(): Promise<User[]> {
-  const supabase = createClient()
-  const { data, error } = await supabase.from("users").select("*")
-  if (error) {
-    console.error("Error fetching users:", error)
-    return []
-  }
-  return data as User[]
-}
+export default function UserManagementPage() {
+  return (
+    <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">User Management</h1>
+        <p className="text-muted-foreground">Manage users and permissions (Authentication removed)</p>
+      </div>
 
-async function getCurrentUserRole(userId: string): Promise<User["role"]> {
-  const supabase = createClient()
-  const { data, error } = await supabase.from("users").select("role").eq("id", userId).single()
-  if (error || !data) {
-    return "viewer" // Default to least permissive role on error
-  }
-  return data.role as User["role"]
-}
-
-export default async function UserManagementPage() {
-  const supabase = createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect("/auth/signin")
-  }
-
-  const currentUserRole = await getCurrentUserRole(user.id)
-
-  if (currentUserRole !== "admin") {
-    return (
       <Alert>
-        <Terminal className="h-4 w-4" />
-        <AlertTitle>Access Denied</AlertTitle>
-        <AlertDescription>You must be an administrator to manage users.</AlertDescription>
+        <Info className="h-4 w-4" />
+        <AlertDescription>
+          Authentication has been removed from this application. User management is not available.
+        </AlertDescription>
       </Alert>
-    )
-  }
 
-  const users = await getUsers()
-
-  return <UserManagement initialUsers={users} />
+      <Card>
+        <CardHeader>
+          <CardTitle>User Management</CardTitle>
+          <CardDescription>This feature requires authentication to be enabled</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">
+            To enable user management, you would need to implement authentication using a service like NextAuth.js,
+            Supabase Auth, or similar.
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  )
 }

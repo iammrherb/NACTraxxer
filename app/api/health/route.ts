@@ -1,38 +1,25 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
+import { sql } from "@/lib/database"
 
 export async function GET() {
   try {
-    const supabase = createClient()
-
     // Test database connection
-    const { data, error } = await supabase.from("projects").select("count").limit(1)
-
-    if (error) {
-      console.error("Database health check failed:", error)
-      return NextResponse.json(
-        {
-          status: "unhealthy",
-          database: "error",
-          message: error.message,
-          timestamp: new Date().toISOString(),
-        },
-        { status: 500 },
-      )
-    }
+    await sql`SELECT 1`
 
     return NextResponse.json({
       status: "healthy",
-      database: "connected",
       timestamp: new Date().toISOString(),
+      database: "connected",
+      version: "1.0.0",
     })
   } catch (error) {
-    console.error("Health check error:", error)
+    console.error("Health check failed:", error)
     return NextResponse.json(
       {
         status: "unhealthy",
-        message: "Service unavailable",
         timestamp: new Date().toISOString(),
+        database: "disconnected",
+        error: "Database connection failed",
       },
       { status: 500 },
     )

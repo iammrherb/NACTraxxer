@@ -1,57 +1,43 @@
-export const envConfig = {
-  // Database
-  DATABASE_URL: process.env.DATABASE_URL!,
-  SUPABASE_URL: process.env.SUPABASE_SUPABASE_URL!,
-  SUPABASE_ANON_KEY: process.env.SUPABASE_SUPABASE_ANON_KEY!,
-  SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SUPABASE_SERVICE_ROLE_KEY!,
+interface EnvConfig {
+  DATABASE_URL: string
+  NODE_ENV: string
+  PORT: string
+  SMTP_HOST?: string
+  SMTP_PORT?: string
+  SMTP_USER?: string
+  SMTP_PASS?: string
+  SMTP_FROM?: string
+}
 
-  // Authentication
-  NEXTAUTH_URL: process.env.NEXTAUTH_URL || "http://localhost:3000",
-  NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET!,
-  STACK_PROJECT_ID: process.env.NEXT_PUBLIC_STACK_PROJECT_ID!,
-  STACK_PUBLISHABLE_CLIENT_KEY: process.env.NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY!,
-  STACK_SECRET_SERVER_KEY: process.env.STACK_SECRET_SERVER_KEY!,
+function getEnvVar(name: string, defaultValue?: string): string {
+  const value = process.env[name]
+  if (!value && !defaultValue) {
+    throw new Error(`Environment variable ${name} is required`)
+  }
+  return value || defaultValue!
+}
 
-  // Email
+export const envConfig: EnvConfig = {
+  DATABASE_URL: getEnvVar("DATABASE_URL"),
+  NODE_ENV: getEnvVar("NODE_ENV", "development"),
+  PORT: getEnvVar("PORT", "3000"),
   SMTP_HOST: process.env.SMTP_HOST,
-  SMTP_PORT: process.env.SMTP_PORT ? Number.parseInt(process.env.SMTP_PORT) : 587,
+  SMTP_PORT: process.env.SMTP_PORT,
   SMTP_USER: process.env.SMTP_USER,
   SMTP_PASS: process.env.SMTP_PASS,
   SMTP_FROM: process.env.SMTP_FROM,
-
-  // File Storage
-  BLOB_READ_WRITE_TOKEN: process.env.BLOB_READ_WRITE_TOKEN,
-
-  // App Settings
-  NODE_ENV: process.env.NODE_ENV || "development",
-  APP_NAME: "Portnox Deployment Tracker",
-  APP_VERSION: "1.0.0",
 }
 
-// Validation
-const requiredEnvVars = [
-  "DATABASE_URL",
-  "SUPABASE_SUPABASE_URL",
-  "SUPABASE_SUPABASE_ANON_KEY",
-  "NEXTAUTH_SECRET",
-  "NEXT_PUBLIC_STACK_PROJECT_ID",
-  "NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY",
-  "STACK_SECRET_SERVER_KEY",
-]
+export const isDevelopment = envConfig.NODE_ENV === "development"
+export const isProduction = envConfig.NODE_ENV === "production"
+export const isTest = envConfig.NODE_ENV === "test"
 
+// Validate required environment variables
 export function validateEnvConfig() {
-  const missing = requiredEnvVars.filter((key) => !process.env[key])
+  const requiredVars = ["DATABASE_URL"]
+  const missing = requiredVars.filter((varName) => !process.env[varName])
 
   if (missing.length > 0) {
     throw new Error(`Missing required environment variables: ${missing.join(", ")}`)
   }
-}
-
-// Type-safe environment variable access
-export function getEnvVar(key: keyof typeof envConfig): string {
-  const value = envConfig[key]
-  if (!value) {
-    throw new Error(`Environment variable ${key} is not defined`)
-  }
-  return value.toString()
 }

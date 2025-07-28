@@ -1,76 +1,39 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { NextResponse } from "next/server"
+import { sql } from "@/lib/database"
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+    const preferences = await sql`
+      SELECT * FROM notification_preferences
+      ORDER BY created_at DESC
+    `
 
-    const supabase = createClient()
-
-    const { data: preferences, error } = await supabase
-      .from("notification_preferences")
-      .select("*")
-      .eq("user_id", session.user.id)
-      .single()
-
-    if (error && error.code !== "PGRST116") {
-      console.error("Database error:", error)
-      return NextResponse.json({ error: "Failed to fetch preferences" }, { status: 500 })
-    }
-
-    // Return default preferences if none exist
-    const defaultPreferences = {
-      email_notifications: true,
-      push_notifications: false,
-      site_updates: true,
-      project_updates: true,
-      system_alerts: true,
-    }
-
-    return NextResponse.json({
-      preferences: preferences || defaultPreferences,
-    })
+    return NextResponse.json(preferences)
   } catch (error) {
-    console.error("API error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    console.error("Error fetching notification preferences:", error)
+    return NextResponse.json({ error: "Failed to fetch preferences" }, { status: 500 })
   }
 }
 
-export async function PUT(request: NextRequest) {
+export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
     const body = await request.json()
-    const supabase = createClient()
+    const { email_notifications, push_notifications, sms_notifications } = body
 
-    const { data: preferences, error } = await supabase
-      .from("notification_preferences")
-      .upsert([
-        {
-          user_id: session.user.id,
-          ...body,
-          updated_at: new Date().toISOString(),
-        },
-      ])
-      .select()
-      .single()
+    const preference = await sql`
+      INSERT INTO notification_preferences (
+        email_notifications, 
+        push_notifications, 
+        sms_notifications,
+        created_at
+      )
+      VALUES (${email_notifications}, ${push_notifications}, ${sms_notifications}, NOW())
+      RETURNING *
+    `
 
-    if (error) {
-      console.error("Database error:", error)
-      return NextResponse.json({ error: "Failed to update preferences" }, { status: 500 })
-    }
-
-    return NextResponse.json({ preferences })
+    return NextResponse.json(preference[0])
   } catch (error) {
-    console.error("API error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    console.error("Error saving notification preferences:", error)
+    return NextResponse.json({ error: "Failed to save preferences" }, { status: 500 })
   }
 }
