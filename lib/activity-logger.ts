@@ -1,47 +1,97 @@
-import { sql } from "./database"
+import { createClient } from "@/lib/supabase/server"
 
 export interface ActivityLog {
-  userId?: number
+  id?: string
+  user_id: string
   action: string
-  entityType: string
-  entityId?: string
-  oldValues?: any
-  newValues?: any
-  ipAddress?: string
-  userAgent?: string
+  resource_type: string
+  resource_id: string
+  details?: Record<string, any>
+  created_at?: string
 }
 
-export async function logActivity(activity: ActivityLog) {
-  try {
-    await sql`
-      INSERT INTO activity_logs (
-        user_id, action, entity_type, entity_id, 
-        old_values, new_values, ip_address, user_agent
-      ) VALUES (
-        ${activity.userId || null}, ${activity.action}, ${activity.entityType}, 
-        ${activity.entityId || null}, ${JSON.stringify(activity.oldValues) || null}, 
-        ${JSON.stringify(activity.newValues) || null}, ${activity.ipAddress || null}, 
-        ${activity.userAgent || null}
-      )
-    `
-  } catch (error) {
-    console.error("Activity logging error:", error)
-  }
-}
+export class ActivityLogger {
+  private static async log(activity: Omit<ActivityLog, "id" | "created_at">) {
+    try {
+      const supabase = createClient()
 
-export async function getActivityLogs(limit = 50, userId?: number) {
-  let query = `
-    SELECT al.*, u.name as user_name
-    FROM activity_logs al
-    LEFT JOIN users u ON al.user_id = u.id
-  `
+      const { error } = await supabase.from("activity_logs").insert([
+        {
+          ...activity,
+          created_at: new Date().toISOString(),
+        },
+      ])
 
-  if (userId) {
-    query += ` WHERE al.user_id = $1`
+      if (error) {
+        console.error("Failed to log activity:", error)
+      }
+    } catch (error) {
+      console.error("Activity logging error:", error)
+    }
   }
 
-  query += ` ORDER BY al.created_at DESC LIMIT $${userId ? 2 : 1}`
+  static async logSiteCreated(userId: string, siteId: string, siteName: string) {
+    await this.log({
+      user_id: userId,
+      action: "created",
+      resource_type: "site",
+      resource_id: siteId,
+      details: { site_name: siteName },
+    })
+  }
 
-  const params = userId ? [userId, limit] : [limit]
-  return await sql(query, params)
+  static async logSiteUpdated(userId: string, siteId: string, changes: Record<string, any>) {
+    await this.log({
+      user_id: userId,
+      action: "updated",
+      resource_type: "site",
+      resource_id: siteId,
+      details: { changes },
+    })
+  }
+
+  static async logSiteDeleted(userId: string, siteId: string, siteName: string) {
+    await this.log({
+      user_id: userId,
+      action: "deleted",
+      resource_type: "site",
+      resource_id: siteId,
+      details: { site_name: siteName },
+    })
+  }
+
+  static async logProjectCreated(userId: string, projectId: string, projectName: string) {
+    await this.log({
+      user_id: userId,
+      action: "created",
+      resource_type: "project",
+      resource_id: projectId,
+      details: { project_name: projectName },
+    })
+  }
+
+  static async logBulkUpdate(
+    userId: string,
+    resourceType: string,
+    resourceIds: string[],
+    changes: Record<string, any>,
+  ) {
+    await this.log({
+      user_id: userId,
+      action: "bulk_updated",
+      resource_type: resourceType,
+      resource_id: resourceIds.join(","),
+      details: { count: resourceIds.length, changes },
+    })
+  }
+
+  static async logUserRoleChanged(userId: string, targetUserId: string, oldRole: string, newRole: string) {
+    await this.log({
+      user_id: userId,
+      action: "role_changed",
+      resource_type: "user",
+      resource_id: targetUserId,
+      details: { old_role: oldRole, new_role: newRole },
+    })
+  }
 }

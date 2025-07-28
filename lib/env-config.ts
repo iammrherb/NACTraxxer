@@ -1,70 +1,57 @@
-export interface EnvironmentConfig {
-  isValid: boolean
-  errors: string[]
-  warnings: string[]
-  database: {
-    url: string | undefined
-    configured: boolean
-  }
-  smtp: {
-    host: string | undefined
-    port: string | undefined
-    user: string | undefined
-    pass: string | undefined
-    from: string | undefined
-    configured: boolean
+export const envConfig = {
+  // Database
+  DATABASE_URL: process.env.DATABASE_URL!,
+  SUPABASE_URL: process.env.SUPABASE_SUPABASE_URL!,
+  SUPABASE_ANON_KEY: process.env.SUPABASE_SUPABASE_ANON_KEY!,
+  SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SUPABASE_SERVICE_ROLE_KEY!,
+
+  // Authentication
+  NEXTAUTH_URL: process.env.NEXTAUTH_URL || "http://localhost:3000",
+  NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET!,
+  STACK_PROJECT_ID: process.env.NEXT_PUBLIC_STACK_PROJECT_ID!,
+  STACK_PUBLISHABLE_CLIENT_KEY: process.env.NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY!,
+  STACK_SECRET_SERVER_KEY: process.env.STACK_SECRET_SERVER_KEY!,
+
+  // Email
+  SMTP_HOST: process.env.SMTP_HOST,
+  SMTP_PORT: process.env.SMTP_PORT ? Number.parseInt(process.env.SMTP_PORT) : 587,
+  SMTP_USER: process.env.SMTP_USER,
+  SMTP_PASS: process.env.SMTP_PASS,
+  SMTP_FROM: process.env.SMTP_FROM,
+
+  // File Storage
+  BLOB_READ_WRITE_TOKEN: process.env.BLOB_READ_WRITE_TOKEN,
+
+  // App Settings
+  NODE_ENV: process.env.NODE_ENV || "development",
+  APP_NAME: "Portnox Deployment Tracker",
+  APP_VERSION: "1.0.0",
+}
+
+// Validation
+const requiredEnvVars = [
+  "DATABASE_URL",
+  "SUPABASE_SUPABASE_URL",
+  "SUPABASE_SUPABASE_ANON_KEY",
+  "NEXTAUTH_SECRET",
+  "NEXT_PUBLIC_STACK_PROJECT_ID",
+  "NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY",
+  "STACK_SECRET_SERVER_KEY",
+]
+
+export function validateEnvConfig() {
+  const missing = requiredEnvVars.filter((key) => !process.env[key])
+
+  if (missing.length > 0) {
+    throw new Error(`Missing required environment variables: ${missing.join(", ")}`)
   }
 }
 
-export function validateEnvironment(): EnvironmentConfig {
-  const errors: string[] = []
-  const warnings: string[] = []
-
-  // Database configuration
-  const databaseUrl = process.env.DATABASE_URL
-  if (!databaseUrl) {
-    warnings.push("DATABASE_URL is not set - using fallback data")
-  }
-
-  // SMTP configuration (optional)
-  const smtpHost = process.env.SMTP_HOST
-  const smtpPort = process.env.SMTP_PORT
-  const smtpUser = process.env.SMTP_USER
-  const smtpPass = process.env.SMTP_PASS
-  const smtpFrom = process.env.SMTP_FROM
-
-  const smtpConfigured = !!(smtpHost && smtpPort && smtpUser && smtpPass)
-  if (!smtpConfigured) {
-    warnings.push("SMTP configuration incomplete - email features disabled")
-  }
-
-  return {
-    isValid: errors.length === 0,
-    errors,
-    warnings,
-    database: {
-      url: databaseUrl,
-      configured: !!databaseUrl,
-    },
-    smtp: {
-      host: smtpHost,
-      port: smtpPort,
-      user: smtpUser,
-      pass: smtpPass,
-      from: smtpFrom,
-      configured: smtpConfigured,
-    },
-  }
-}
-
-export function getRequiredEnvVar(name: string): string {
-  const value = process.env[name]
+// Type-safe environment variable access
+export function getEnvVar(key: keyof typeof envConfig): string {
+  const value = envConfig[key]
   if (!value) {
-    throw new Error(`Required environment variable ${name} is not set`)
+    throw new Error(`Environment variable ${key} is not defined`)
   }
-  return value
-}
-
-export function getOptionalEnvVar(name: string, defaultValue?: string): string | undefined {
-  return process.env[name] || defaultValue
+  return value.toString()
 }

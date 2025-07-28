@@ -1,191 +1,272 @@
 "use client"
 
-import { useState } from "react"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
+import { useState, useEffect } from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
-import { Checkbox } from "@/components/ui/checkbox"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu"
-import { MoreHorizontal, PlusCircle, Edit } from "lucide-react"
-import type { Site, DatabaseUser } from "@/lib/database"
-import { SiteDetailModal } from "./site-detail-modal"
-import { BulkEditModal } from "./bulk-edit-modal"
-import { BulkCreateSitesModal } from "./bulk-create-sites-modal" // New import
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Search, Plus, Download, Eye, Edit, Trash2 } from "lucide-react"
+import Link from "next/link"
+import { toast } from "sonner"
+import type { Site } from "@/types"
 
-type SiteListProps = {
-  sites: Site[]
-  users: DatabaseUser[]
-  onEdit: (site: Site) => void
-  onDelete: (id: string) => void
-  onBulkUpdate: (siteIds: string[], updates: Partial<Site>) => void
-  onBulkCreate: (count: number, prefix: string, start: number, defaults: Partial<Site>) => void
+interface SiteListProps {
+  projectId: string
 }
 
-const getStatusVariant = (status: Site["status"]) => {
-  switch (status) {
-    case "Live":
-      return "success"
-    case "In Progress":
-      return "default"
-    case "Planning":
-      return "outline"
-    case "Delayed":
-      return "destructive"
-    default:
-      return "secondary"
-  }
-}
+export function SiteList({ projectId }: SiteListProps) {
+  const [sites, setSites] = useState<Site[]>([])
+  const [loading, setLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [statusFilter, setStatusFilter] = useState("all")
+  const [priorityFilter, setPriorityFilter] = useState("all")
 
-export function SiteList({ sites, users, onEdit, onDelete, onBulkUpdate, onBulkCreate }: SiteListProps) {
-  const [selectedSite, setSelectedSite] = useState<Site | null>(null)
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
-  const [isBulkEditModalOpen, setIsBulkEditModalOpen] = useState(false)
-  const [isBulkCreateModalOpen, setIsBulkCreateModalOpen] = useState(false) // New state
-  const [selectedRows, setSelectedRows] = useState<string[]>([])
+  useEffect(() => {
+    fetchSites()
+  }, [projectId])
 
-  const handleViewDetails = (site: Site) => {
-    setSelectedSite(site)
-    setIsDetailModalOpen(true)
-  }
+  const fetchSites = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch(`/api/projects/${projectId}/sites`)
 
-  const handleSelectRow = (id: string) => {
-    setSelectedRows((prev) => (prev.includes(id) ? prev.filter((rowId) => rowId !== id) : [...prev, id]))
-  }
+      if (!response.ok) {
+        throw new Error("Failed to fetch sites")
+      }
 
-  const handleSelectAll = (checked: boolean) => {
-    setSelectedRows(checked ? sites.map((s) => s.id) : [])
+      const data = await response.json()
+      setSites(data)
+    } catch (error) {
+      console.error("Error fetching sites:", error)
+      toast.error("Failed to load sites")
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const isAllSelected = sites.length > 0 && selectedRows.length === sites.length
+  const handleDeleteSite = async (siteId: string) => {
+    if (!confirm("Are you sure you want to delete this site?")) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/sites/${siteId}`, {
+        method: "DELETE",
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to delete site")
+      }
+
+      setSites(sites.filter((site) => site.id !== siteId))
+      toast.success("Site deleted successfully")
+    } catch (error) {
+      console.error("Error deleting site:", error)
+      toast.error("Failed to delete site")
+    }
+  }
+
+  const filteredSites = sites.filter((site) => {
+    const matchesSearch =
+      site.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      site.location?.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesStatus = statusFilter === "all" || site.status === statusFilter
+    const matchesPriority = priorityFilter === "all" || site.priority === priorityFilter
+
+    return matchesSearch && matchesStatus && matchesPriority
+  })
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "Complete":
+        return "bg-green-100 text-green-800"
+      case "In Progress":
+        return "bg-blue-100 text-blue-800"
+      case "Not Started":
+        return "bg-gray-100 text-gray-800"
+      case "On Hold":
+        return "bg-yellow-100 text-yellow-800"
+      case "Delayed":
+        return "bg-red-100 text-red-800"
+      default:
+        return "bg-gray-100 text-gray-800"
+    }
+  }
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case "High":
+        return "bg-red-100 text-red-800"
+      case "Medium":
+        return "bg-yellow-100 text-yellow-800"
+      case "Low":
+        return "bg-green-100 text-green-800"
+      default:
+        return "bg-gray-100 text-gray-800"
+    }
+  }
+
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Sites</CardTitle>
+          <CardDescription>Loading sites...</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="h-16 bg-gray-100 rounded animate-pulse" />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
 
   return (
-    <>
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold">Site Inventory</h2>
-        <div>
-          <Button onClick={() => setIsBulkCreateModalOpen(true)} variant="outline" className="mr-2">
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Bulk Create
-          </Button>
-          <Button onClick={() => onEdit(null as any)}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Add New Site
-          </Button>
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Sites</CardTitle>
+            <CardDescription>
+              Manage all sites in this project ({filteredSites.length} of {sites.length})
+            </CardDescription>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm">
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
+            <Button asChild>
+              <Link href={`/projects/${projectId}/sites/new`}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Site
+              </Link>
+            </Button>
+          </div>
         </div>
-      </div>
-      {selectedRows.length > 0 && (
-        <div className="mb-4 bg-muted p-2 rounded-lg flex items-center justify-between">
-          <span>{selectedRows.length} sites selected</span>
-          <Button onClick={() => setIsBulkEditModalOpen(true)}>
-            <Edit className="mr-2 h-4 w-4" />
-            Bulk Edit
-          </Button>
+      </CardHeader>
+      <CardContent>
+        <div className="flex gap-4 mb-6">
+          <div className="flex-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Search sites..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="Not Started">Not Started</SelectItem>
+              <SelectItem value="In Progress">In Progress</SelectItem>
+              <SelectItem value="Complete">Complete</SelectItem>
+              <SelectItem value="On Hold">On Hold</SelectItem>
+              <SelectItem value="Delayed">Delayed</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Priority" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Priority</SelectItem>
+              <SelectItem value="High">High</SelectItem>
+              <SelectItem value="Medium">Medium</SelectItem>
+              <SelectItem value="Low">Low</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-      )}
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[40px]">
-                <Checkbox checked={isAllSelected} onCheckedChange={handleSelectAll} />
-              </TableHead>
-              <TableHead>Site Name</TableHead>
-              <TableHead>Location</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>User Count</TableHead>
-              <TableHead>Users</TableHead>
-              <TableHead>Project Manager</TableHead>
-              <TableHead className="w-[150px]">Completion</TableHead>
-              <TableHead className="w-[50px]">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sites.length === 0 ? (
+
+        {filteredSites.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-gray-500 mb-4">
+              {sites.length === 0 ? "No sites found in this project." : "No sites match your filters."}
+            </p>
+            {sites.length === 0 && (
+              <Button asChild>
+                <Link href={`/projects/${projectId}/sites/new`}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Your First Site
+                </Link>
+              </Button>
+            )}
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={9} className="text-center">
-                  No sites have been created for this project yet.
-                </TableCell>
+                <TableHead>Name</TableHead>
+                <TableHead>Location</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Priority</TableHead>
+                <TableHead>Progress</TableHead>
+                <TableHead>Manager</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
-            ) : (
-              sites.map((site) => (
-                <TableRow key={site.id} data-state={selectedRows.includes(site.id) ? "selected" : ""}>
-                  <TableCell>
-                    <Checkbox
-                      checked={selectedRows.includes(site.id)}
-                      onCheckedChange={() => handleSelectRow(site.id)}
-                    />
-                  </TableCell>
+            </TableHeader>
+            <TableBody>
+              {filteredSites.map((site) => (
+                <TableRow key={site.id}>
                   <TableCell className="font-medium">{site.name}</TableCell>
-                  <TableCell>{site.location}</TableCell>
+                  <TableCell>{site.location || "N/A"}</TableCell>
                   <TableCell>
-                    <Badge variant={getStatusVariant(site.status)}>{site.status}</Badge>
+                    <Badge className={getStatusColor(site.status)}>{site.status}</Badge>
                   </TableCell>
-                  <TableCell>{site.details?.userCount || "N/A"}</TableCell>
-                  <TableCell>{site.users_count}</TableCell>
-                  <TableCell>{site.project_manager_name || "Unassigned"}</TableCell>
+                  <TableCell>
+                    <Badge className={getPriorityColor(site.priority)}>{site.priority}</Badge>
+                  </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <Progress value={site.completion_percent} className="w-[100px]" />
-                      <span className="text-xs text-muted-foreground">{site.completion_percent}%</span>
+                      <div className="w-16 bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-blue-600 h-2 rounded-full"
+                          style={{ width: `${site.completion_percent || 0}%` }}
+                        />
+                      </div>
+                      <span className="text-sm text-gray-600">{site.completion_percent || 0}%</span>
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">Open menu</span>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleViewDetails(site)}>View Details</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onEdit(site)}>Edit Site</DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => onDelete(site.id)} className="text-red-600">
-                          Delete Site
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                  <TableCell>{site.project_manager || "Unassigned"}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <Button variant="ghost" size="sm" asChild>
+                        <Link href={`/projects/${projectId}/sites/${site.id}`}>
+                          <Eye className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                      <Button variant="ghost" size="sm" asChild>
+                        <Link href={`/projects/${projectId}/sites/${site.id}/edit`}>
+                          <Edit className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteSite(site.id)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-          <TableFooter>
-            <TableRow>
-              <TableCell colSpan={9}>{sites.length} sites</TableCell>
-            </TableRow>
-          </TableFooter>
-        </Table>
-      </div>
-      {selectedSite && (
-        <SiteDetailModal
-          site={selectedSite}
-          isOpen={isDetailModalOpen}
-          onClose={() => setIsDetailModalOpen(false)}
-          users={users}
-        />
-      )}
-      <BulkEditModal
-        isOpen={isBulkEditModalOpen}
-        onClose={() => setIsBulkEditModalOpen(false)}
-        selectedSiteIds={selectedRows}
-        onSave={onBulkUpdate}
-        users={users}
-      />
-      <BulkCreateSitesModal
-        isOpen={isBulkCreateModalOpen}
-        onClose={() => setIsBulkCreateModalOpen(false)}
-        onSave={onBulkCreate}
-        users={users}
-      />
-    </>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </CardContent>
+    </Card>
   )
 }
