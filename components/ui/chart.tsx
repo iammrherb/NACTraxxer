@@ -1,7 +1,13 @@
 "use client"
 
 import * as React from "react"
-import { ResponsiveContainer } from "recharts"
+import {
+  ResponsiveContainer,
+  BarChart as RechartsBarChart,
+  LineChart as RechartsLineChart,
+  PieChart as RechartsPieChart,
+  Pie,
+} from "recharts"
 
 import { cn } from "@/lib/utils"
 
@@ -52,7 +58,6 @@ const ChartContainer = React.forwardRef<
         )}
         {...props}
       >
-        {/* ChartStyle component can be kept as is or updated based on further requirements */}
         <ResponsiveContainer width="100%" height="100%">
           {children}
         </ResponsiveContainer>
@@ -257,6 +262,75 @@ const ChartLegendContent = React.forwardRef<
 })
 ChartLegendContent.displayName = "ChartLegend"
 
+// Chart Components
+const BarChart = React.forwardRef<
+  HTMLDivElement,
+  React.ComponentProps<typeof RechartsBarChart> & {
+    config: ChartConfig
+    className?: string
+  }
+>(({ className, config, children, ...props }, ref) => {
+  return (
+    <ChartContainer ref={ref} config={config} className={className}>
+      <RechartsBarChart {...props}>{children}</RechartsBarChart>
+    </ChartContainer>
+  )
+})
+BarChart.displayName = "BarChart"
+
+const LineChart = React.forwardRef<
+  HTMLDivElement,
+  React.ComponentProps<typeof RechartsLineChart> & {
+    config: ChartConfig
+    className?: string
+  }
+>(({ className, config, children, ...props }, ref) => {
+  return (
+    <ChartContainer ref={ref} config={config} className={className}>
+      <RechartsLineChart {...props}>{children}</RechartsLineChart>
+    </ChartContainer>
+  )
+})
+LineChart.displayName = "LineChart"
+
+const PieChart = React.forwardRef<
+  HTMLDivElement,
+  React.ComponentProps<typeof RechartsPieChart> & {
+    config: ChartConfig
+    className?: string
+  }
+>(({ className, config, children, ...props }, ref) => {
+  return (
+    <ChartContainer ref={ref} config={config} className={className}>
+      <RechartsPieChart {...props}>{children}</RechartsPieChart>
+    </ChartContainer>
+  )
+})
+PieChart.displayName = "PieChart"
+
+const DonutChart = React.forwardRef<
+  HTMLDivElement,
+  React.ComponentProps<typeof RechartsPieChart> & {
+    config: ChartConfig
+    className?: string
+    innerRadius?: number
+  }
+>(({ className, config, children, innerRadius = 60, ...props }, ref) => {
+  return (
+    <ChartContainer ref={ref} config={config} className={className}>
+      <RechartsPieChart {...props}>
+        {React.Children.map(children, (child) => {
+          if (React.isValidElement(child) && child.type === Pie) {
+            return React.cloneElement(child, { innerRadius })
+          }
+          return child
+        })}
+      </RechartsPieChart>
+    </ChartContainer>
+  )
+})
+DonutChart.displayName = "DonutChart"
+
 // Helper to extract item config from a payload.
 function getPayloadConfigFromPayload(config: ChartConfig, payload: unknown, key: string) {
   if (typeof payload !== "object" || payload === null) {
@@ -283,4 +357,14 @@ function getPayloadConfigFromPayload(config: ChartConfig, payload: unknown, key:
   return configLabelKey in config ? config[configLabelKey] : config[key as keyof typeof config]
 }
 
-export { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent }
+export {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
+  BarChart,
+  LineChart,
+  PieChart,
+  DonutChart,
+}

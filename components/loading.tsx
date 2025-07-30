@@ -1,40 +1,66 @@
-import { Loader2 } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 
-export function LoadingSpinner() {
+// Loading Spinner Component
+export function LoadingSpinner({ size = "md", className = "" }: { size?: "sm" | "md" | "lg"; className?: string }) {
+  const sizeClasses = {
+    sm: "h-4 w-4",
+    md: "h-8 w-8",
+    lg: "h-12 w-12",
+  }
+
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50">
-      <div className="text-center">
-        <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading Dashboard</h2>
-        <p className="text-gray-600">Please wait while we load your deployment data...</p>
-      </div>
-    </div>
+    <div
+      className={`animate-spin rounded-full border-2 border-gray-300 border-t-blue-600 ${sizeClasses[size]} ${className}`}
+    />
   )
 }
 
+// Loading Card Component
 export function LoadingCard() {
   return (
-    <div className="animate-pulse">
-      <div className="bg-gray-200 rounded-lg h-32 mb-4"></div>
-      <div className="space-y-2">
-        <div className="bg-gray-200 rounded h-4 w-3/4"></div>
-        <div className="bg-gray-200 rounded h-4 w-1/2"></div>
-      </div>
-    </div>
+    <Card>
+      <CardHeader>
+        <Skeleton className="h-4 w-[250px]" />
+        <Skeleton className="h-4 w-[200px]" />
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-3/4" />
+        </div>
+      </CardContent>
+    </Card>
   )
 }
 
-export function LoadingTable() {
+// Loading Table Component
+export function LoadingTable({ rows = 5, columns = 4 }: { rows?: number; columns?: number }) {
   return (
-    <div className="animate-pulse space-y-4">
-      <div className="bg-gray-200 rounded h-8 w-full"></div>
-      {Array.from({ length: 5 }).map((_, i) => (
-        <div key={i} className="bg-gray-200 rounded h-12 w-full"></div>
+    <div className="space-y-3">
+      <div className="grid grid-cols-4 gap-4">
+        {Array.from({ length: columns }).map((_, i) => (
+          <Skeleton key={i} className="h-4 w-full" />
+        ))}
+      </div>
+      {Array.from({ length: rows }).map((_, i) => (
+        <div key={i} className="grid grid-cols-4 gap-4">
+          {Array.from({ length: columns }).map((_, j) => (
+            <Skeleton key={j} className="h-4 w-full" />
+          ))}
+        </div>
       ))}
     </div>
   )
 }
 
-export default function Loading() {
-  return <LoadingSpinner />
+// Default Loading Component
+export default function Loading({ message = "Loading..." }: { message?: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[200px] space-y-4">
+      <LoadingSpinner size="lg" />
+      <p className="text-muted-foreground">{message}</p>
+    </div>
+  )
 }
