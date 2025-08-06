@@ -1,117 +1,142 @@
 'use client'
 
 import { useState } from 'react'
-import { Sun, Moon, Users, Palette, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Switch } from '@/components/ui/switch'
-import { useTheme } from '@/components/ThemeProvider'
-import UserManagementModal from './UserManagementModal'
-import ThemeCustomizer from './ThemeCustomizer'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { useTheme } from 'next-themes'
+import { Moon, Sun, Upload, Users, Palette, Settings, Shield, Download, Save } from 'lucide-react'
 
-export default function Header() {
-  const { theme, toggleTheme } = useTheme()
-  const [showUserModal, setShowUserModal] = useState(false)
-  const [showThemeCustomizer, setShowThemeCustomizer] = useState(false)
-  const [customerLogo, setCustomerLogo] = useState('/placeholder.svg?height=40&width=150&text=ABM+Industries')
+interface HeaderProps {
+  onUserManagement: () => void
+  onThemeCustomizer: () => void
+}
+
+export default function Header({ onUserManagement, onThemeCustomizer }: HeaderProps) {
+  const { theme, setTheme } = useTheme()
+  const [logoUrl, setLogoUrl] = useState('')
+  const [companyName, setCompanyName] = useState('ABM Industries')
 
   const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
-    if (file && file.type.match('image.*')) {
+    if (file) {
       const reader = new FileReader()
       reader.onload = (e) => {
-        setCustomerLogo(e.target?.result as string)
+        setLogoUrl(e.target?.result as string)
       }
       reader.readAsDataURL(file)
     }
   }
 
+  const exportConfiguration = () => {
+    const config = {
+      companyName,
+      logoUrl,
+      theme,
+      timestamp: new Date().toISOString()
+    }
+    
+    const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `portnox-config-${new Date().toISOString().split('T')[0]}.json`
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
   return (
-    <>
-      <header className="bg-gradient-to-r from-blue-600 to-blue-800 text-white shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-8">
-              <div className="flex items-center space-x-4">
-                <img 
-                  src="/placeholder.svg?height=50&width=150&text=Portnox+Logo" 
-                  alt="Portnox Logo" 
-                  className="h-12 filter drop-shadow-md hover:scale-105 transition-transform"
-                />
-                <div className="h-10 w-px bg-white/30" />
-                <div className="bg-white/10 rounded-lg p-2 hover:bg-white/20 transition-colors">
-                  <img 
-                    src={customerLogo || "/placeholder.svg"} 
-                    alt="Customer Logo" 
-                    className="h-10 max-w-[150px] object-contain"
-                  />
-                </div>
+    <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
+      <div className="container mx-auto px-4 py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            {logoUrl ? (
+              <img src={logoUrl || "/placeholder.svg"} alt="Company Logo" className="h-10 w-auto" />
+            ) : (
+              <div className="flex items-center justify-center w-10 h-10 bg-blue-600 rounded-lg">
+                <Shield className="h-6 w-6 text-white" />
               </div>
-              <h1 className="text-2xl font-bold text-shadow">
-                Portnox NAC Architecture Designer
+            )}
+            <div>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+                {companyName} - Zero Trust NAC Designer
               </h1>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              <div className="relative">
-                <input
-                  type="file"
-                  id="logo-upload"
-                  accept="image/*"
-                  onChange={handleLogoUpload}
-                  className="hidden"
-                />
-                <label
-                  htmlFor="logo-upload"
-                  className="flex items-center space-x-2 px-3 py-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors cursor-pointer"
-                >
-                  <Upload className="h-4 w-4" />
-                  <span className="text-sm">Change Logo</span>
-                </label>
-              </div>
-
-              <div className="flex items-center space-x-2 px-3 py-2 bg-white/10 rounded-full">
-                <Sun className="h-4 w-4" />
-                <Switch
-                  checked={theme === 'dark'}
-                  onCheckedChange={toggleTheme}
-                  className="data-[state=checked]:bg-blue-500"
-                />
-                <Moon className="h-4 w-4" />
-              </div>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowUserModal(true)}
-                className="text-white hover:bg-white/20"
-              >
-                <Users className="h-4 w-4 mr-2" />
-                Manage Users
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowThemeCustomizer(true)}
-                className="text-white hover:bg-white/20"
-              >
-                <Palette className="h-4 w-4 mr-2" />
-                Customize
-              </Button>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Portnox Architecture Planning & Deployment
+              </p>
             </div>
           </div>
-        </div>
-      </header>
 
-      <UserManagementModal 
-        open={showUserModal} 
-        onOpenChange={setShowUserModal} 
-      />
-      
-      <ThemeCustomizer 
-        open={showThemeCustomizer} 
-        onOpenChange={setShowThemeCustomizer} 
-      />
-    </>
+          <div className="flex items-center space-x-2">
+            <Button variant="outline" size="sm" onClick={exportConfiguration}>
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
+            
+            <Button variant="outline" size="sm">
+              <Save className="h-4 w-4 mr-2" />
+              Save
+            </Button>
+
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Settings
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Application Settings</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="company-name">Company Name</Label>
+                    <Input
+                      id="company-name"
+                      value={companyName}
+                      onChange={(e) => setCompanyName(e.target.value)}
+                      placeholder="Enter company name"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="logo-upload">Company Logo</Label>
+                    <Input
+                      id="logo-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoUpload}
+                    />
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            <Button variant="outline" size="sm" onClick={onUserManagement}>
+              <Users className="h-4 w-4 mr-2" />
+              Users
+            </Button>
+
+            <Button variant="outline" size="sm" onClick={onThemeCustomizer}>
+              <Palette className="h-4 w-4 mr-2" />
+              Theme
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            >
+              {theme === 'dark' ? (
+                <Sun className="h-4 w-4" />
+              ) : (
+                <Moon className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </header>
   )
 }
