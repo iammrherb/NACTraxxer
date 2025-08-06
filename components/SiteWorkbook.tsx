@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Book, MapPin, Users, Calendar, Settings, FileText } from 'lucide-react'
+import { Book, MapPin, Users, Calendar, Settings } from 'lucide-react'
 
 interface SiteWorkbookProps {
   siteId: string | null
@@ -36,18 +36,19 @@ export default function SiteWorkbook({ siteId }: SiteWorkbookProps) {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
-            <FileText className="h-6 w-6 text-blue-600" />
+            <Book className="h-6 w-6 text-blue-600" />
             <span>Site Workbook</span>
           </CardTitle>
-          <p className="text-gray-600 dark:text-gray-400">
-            Detailed site configuration and deployment documentation.
-          </p>
         </CardHeader>
         <CardContent>
           <div className="text-center py-12">
-            <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Site Workbook</h3>
-            <p className="text-gray-600 dark:text-gray-400">Site workbook functionality coming soon...</p>
+            <Book className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+              No Site Selected
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400">
+              Please select a site from the Master List to view its detailed workbook.
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -78,12 +79,9 @@ export default function SiteWorkbook({ siteId }: SiteWorkbookProps) {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
-            <FileText className="h-6 w-6 text-blue-600" />
+            <Book className="h-6 w-6 text-blue-600" />
             <span>Site Workbook: {siteData.name}</span>
           </CardTitle>
-          <p className="text-gray-600 dark:text-gray-400">
-            Detailed site configuration and deployment documentation.
-          </p>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

@@ -6,32 +6,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Download, Zap, Shield, Wifi, Server, Cloud, Settings } from 'lucide-react'
+import InteractiveDiagram from './InteractiveDiagram'
+import ArchitectureLegend from './ArchitectureLegend'
+import PolicyEditor from './PolicyEditor'
+import OnboardingScenarios from './OnboardingScenarios'
 
 type DiagramView = 'complete' | 'auth-flow' | 'pki' | 'policies' | 'connectivity' | 'intune' | 'onboarding'
 type CloudProvider = 'aws' | 'azure' | 'gcp' | 'onprem'
 type NetworkVendor = 'cisco' | 'meraki' | 'juniper' | 'aruba' | 'hpe' | 'extreme' | 'fortinet'
 type ConnectivityType = 'sdwan' | 'expressroute' | 'mpls' | 'vpn' | 'directconnect'
 
-interface ArchitectureDesignerProps {
-  config: any
-  setConfig: (config: any) => void
-  currentView: string
-  setCurrentView: (view: string) => void
-  animationSpeed: number
-  setAnimationSpeed: (speed: number) => void
-}
-
-export default function ArchitectureDesigner({ 
-  config, 
-  setConfig, 
-  currentView, 
-  setCurrentView, 
-  animationSpeed, 
-  setAnimationSpeed 
-}: ArchitectureDesignerProps) {
+export default function ArchitectureDesigner() {
+  const [currentView, setCurrentView] = useState<DiagramView>('complete')
   const [cloudProvider, setCloudProvider] = useState<CloudProvider>('azure')
   const [networkVendor, setNetworkVendor] = useState<NetworkVendor>('cisco')
   const [connectivityType, setConnectivityType] = useState<ConnectivityType>('sdwan')
+  const [animationSpeed, setAnimationSpeed] = useState(1)
   const diagramRef = useRef<HTMLDivElement>(null)
 
   const diagramViews = [
@@ -107,56 +97,57 @@ export default function ArchitectureDesigner({
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Server className="h-6 w-6 text-blue-600" />
-            <span>Architecture Designer</span>
+            <span>Portnox Cloud NAC Architecture Designer</span>
           </CardTitle>
           <p className="text-gray-600 dark:text-gray-400">
-            Configure your Zero Trust NAC architecture components and settings.
+            Interactive architecture diagrams with customizable components, export capabilities, and detailed legends.
           </p>
         </CardHeader>
         <CardContent>
-          {/* View Controls */}
-          <div className="flex flex-wrap items-center gap-3 mb-6">
-            {diagramViews.map((view) => {
-              const Icon = view.icon
-              return (
-                <Button
-                  key={view.id}
-                  variant={currentView === view.id ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setCurrentView(view.id)}
-                  className="flex items-center space-x-2"
-                >
-                  <Icon className="h-4 w-4" />
-                  <span>{view.label}</span>
-                </Button>
-              )
-            })}
-          </div>
-
-          {/* Export Controls */}
-          <div className="flex items-center space-x-3 mb-6">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => exportDiagram('svg')}
-              className="flex items-center space-x-2"
-            >
-              <Download className="h-4 w-4" />
-              <span>Export SVG</span>
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => exportDiagram('png')}
-              className="flex items-center space-x-2"
-            >
-              <Download className="h-4 w-4" />
-              <span>Export PNG</span>
-            </Button>
+          {/* Controls */}
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+            <div className="flex flex-wrap items-center gap-3">
+              {diagramViews.map((view) => {
+                const Icon = view.icon
+                return (
+                  <Button
+                    key={view.id}
+                    variant={currentView === view.id ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setCurrentView(view.id as DiagramView)}
+                    className="flex items-center space-x-2"
+                  >
+                    <Icon className="h-4 w-4" />
+                    <span>{view.label}</span>
+                  </Button>
+                )
+              })}
+            </div>
+            
+            <div className="flex items-center space-x-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => exportDiagram('svg')}
+                className="flex items-center space-x-2"
+              >
+                <Download className="h-4 w-4" />
+                <span>Export SVG</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => exportDiagram('png')}
+                className="flex items-center space-x-2"
+              >
+                <Download className="h-4 w-4" />
+                <span>Export PNG</span>
+              </Button>
+            </div>
           </div>
 
           {/* Configuration Options */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div>
               <label className="block text-sm font-medium mb-2">Cloud Provider</label>
               <div className="flex flex-wrap gap-2">
@@ -222,6 +213,34 @@ export default function ArchitectureDesigner({
               </Select>
             </div>
           </div>
+
+          {/* Interactive Diagram */}
+          <div ref={diagramRef} className="bg-white dark:bg-gray-800 rounded-lg border-2 border-gray-200 dark:border-gray-700 p-6 mb-6">
+            <InteractiveDiagram
+              view={currentView}
+              cloudProvider={cloudProvider}
+              networkVendor={networkVendor}
+              connectivityType={connectivityType}
+              animationSpeed={animationSpeed}
+            />
+          </div>
+
+          {/* Policy Editor for policies view */}
+          {currentView === 'policies' && (
+            <div className="mb-6">
+              <PolicyEditor />
+            </div>
+          )}
+
+          {/* Onboarding Scenarios for onboarding view */}
+          {currentView === 'onboarding' && (
+            <div className="mb-6">
+              <OnboardingScenarios />
+            </div>
+          )}
+
+          {/* Architecture Legend */}
+          <ArchitectureLegend currentView={currentView} />
         </CardContent>
       </Card>
     </div>

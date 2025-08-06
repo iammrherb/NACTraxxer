@@ -1,99 +1,126 @@
 'use client'
 
 import { useState } from 'react'
-import Header from '@/components/Header'
-import TabNavigation from '@/components/TabNavigation'
-import ArchitectureDesigner from '@/components/ArchitectureDesigner'
-import InteractiveDiagram from '@/components/InteractiveDiagram'
-import ArchitectureLegend from '@/components/ArchitectureLegend'
-import PolicyEditor from '@/components/PolicyEditor'
-import OnboardingScenarios from '@/components/OnboardingScenarios'
-import { ThemeProvider } from '@/components/theme-provider'
-import MasterSiteList from '@/components/MasterSiteList'
-import SiteWorkbook from '@/components/SiteWorkbook'
-import RolloutProgress from '@/components/RolloutProgress'
-import UserManagementModal from '@/components/UserManagementModal'
-import ThemeCustomizer from '@/components/ThemeCustomizer'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import ArchitectureDesigner from '@/components/architecture-designer'
+import SiteManagement from '@/components/site-management'
+import ProgressTracking from '@/components/progress-tracking'
+import SiteWorkbook from '@/components/site-workbook'
+import UserManagementModal from '@/components/user-management-modal'
+import ThemeCustomizer from '@/components/theme-customizer'
+import { Users, Palette, Upload } from 'lucide-react'
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState('architecture')
-  const [currentView, setCurrentView] = useState('complete')
-  const [animationSpeed, setAnimationSpeed] = useState(2)
-  const [showUserModal, setShowUserModal] = useState(false)
+  const [showUserManagement, setShowUserManagement] = useState(false)
   const [showThemeCustomizer, setShowThemeCustomizer] = useState(false)
 
-  const [config, setConfig] = useState({
-    cloudProvider: 'portnox-cloud',
-    networkVendor: 'cisco',
-    connectivityType: 'wired-wireless',
-    deploymentType: 'hybrid',
-    authMethod: 'certificate',
-    mdmIntegration: 'microsoft-intune'
-  })
-
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case 'architecture':
-        return (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-1">
-              <ArchitectureDesigner 
-                config={config} 
-                setConfig={setConfig}
-                currentView={currentView}
-                setCurrentView={setCurrentView}
-                animationSpeed={animationSpeed}
-                setAnimationSpeed={setAnimationSpeed}
-              />
-            </div>
-            <div className="lg:col-span-2 space-y-6">
-              <InteractiveDiagram 
-                config={config} 
-                currentView={currentView}
-                animationSpeed={animationSpeed}
-              />
-              <ArchitectureLegend currentView={currentView} />
-            </div>
-          </div>
-        )
-      case 'policies':
-        return <PolicyEditor />
-      case 'onboarding':
-        return <OnboardingScenarios />
-      case 'sites':
-        return <MasterSiteList />
-      case 'workbook':
-        return <SiteWorkbook />
-      case 'progress':
-        return <RolloutProgress />
-      default:
-        return null
-    }
-  }
-
   return (
-    <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">
-        <Header 
-          onUserManagement={() => setShowUserModal(true)}
-          onThemeCustomizer={() => setShowThemeCustomizer(true)}
-        />
-        
-        <main className="container mx-auto px-4 py-6">
-          <TabNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
-          <div className="mt-6">
-            {renderTabContent()}
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
+      {/* Header */}
+      <header className="bg-gradient-to-r from-blue-600 to-blue-800 text-white shadow-lg">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-20">
+            {/* Logo Section */}
+            <div className="flex items-center space-x-8">
+              <div className="flex items-center space-x-4">
+                <img 
+                  src="https://www.portnox.com/wp-content/uploads/2021/03/Portnotx_Logo_Color-768x193.png" 
+                  alt="Portnox Logo" 
+                  className="h-12 filter brightness-0 invert"
+                />
+                <div className="h-8 w-px bg-white/30" />
+                <img 
+                  src="https://ahorrainvierte.com/wp-content/uploads/abm-industries-inc.png" 
+                  alt="ABM Industries Logo" 
+                  className="h-10 bg-white/10 px-3 py-1 rounded filter brightness-0 invert"
+                />
+              </div>
+            </div>
+
+            {/* Title */}
+            <div className="flex-1 text-center">
+              <h1 className="text-2xl font-bold">Zero Trust NAC Architecture Designer</h1>
+              <p className="text-blue-100 text-sm">Enterprise Network Access Control Platform</p>
+            </div>
+
+            {/* Controls */}
+            <div className="flex items-center space-x-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-white hover:bg-white/10"
+                onClick={() => setShowUserManagement(true)}
+              >
+                <Users className="h-4 w-4 mr-2" />
+                Manage Users
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-white hover:bg-white/10"
+                onClick={() => setShowThemeCustomizer(true)}
+              >
+                <Palette className="h-4 w-4 mr-2" />
+                Customize
+              </Button>
+            </div>
           </div>
-        </main>
+        </div>
+      </header>
 
-        {showUserModal && (
-          <UserManagementModal onClose={() => setShowUserModal(false)} />
-        )}
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Tabs defaultValue="architecture" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="architecture">Architecture Designer</TabsTrigger>
+            <TabsTrigger value="sites">Site Management</TabsTrigger>
+            <TabsTrigger value="workbook">Site Workbook</TabsTrigger>
+            <TabsTrigger value="progress">Rollout Progress</TabsTrigger>
+            <TabsTrigger value="reports">Reports</TabsTrigger>
+          </TabsList>
 
-        {showThemeCustomizer && (
-          <ThemeCustomizer onClose={() => setShowThemeCustomizer(false)} />
-        )}
-      </div>
-    </ThemeProvider>
+          <TabsContent value="architecture" className="space-y-6">
+            <ArchitectureDesigner />
+          </TabsContent>
+
+          <TabsContent value="sites" className="space-y-6">
+            <SiteManagement />
+          </TabsContent>
+
+          <TabsContent value="workbook" className="space-y-6">
+            <SiteWorkbook />
+          </TabsContent>
+
+          <TabsContent value="progress" className="space-y-6">
+            <ProgressTracking />
+          </TabsContent>
+
+          <TabsContent value="reports" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Reports & Analytics</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Comprehensive reporting and analytics dashboard coming soon...
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </main>
+
+      {/* Modals */}
+      <UserManagementModal 
+        open={showUserManagement} 
+        onClose={() => setShowUserManagement(false)} 
+      />
+      <ThemeCustomizer 
+        open={showThemeCustomizer} 
+        onClose={() => setShowThemeCustomizer(false)} 
+      />
+    </div>
   )
 }

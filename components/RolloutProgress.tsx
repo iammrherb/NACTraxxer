@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
-import { TrendingUp, CheckCircle, Clock, AlertTriangle, Users, BarChart3 } from 'lucide-react'
+import { TrendingUp, CheckCircle, Clock, AlertTriangle, Users } from 'lucide-react'
 
 export default function RolloutProgress() {
   // Sample data - in a real app this would come from an API
@@ -55,10 +55,10 @@ export default function RolloutProgress() {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'High': return 'bg-red-100 text-red-800 border-red-200 dark:border-red-800'
-      case 'Medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:border-yellow-800'
-      case 'Low': return 'bg-green-100 text-green-800 border-green-200 dark:border-green-800'
-      default: return 'bg-gray-100 text-gray-800 border-gray-200 dark:border-gray-800'
+      case 'High': return 'bg-red-100 text-red-800 border-red-200'
+      case 'Medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200'
+      case 'Low': return 'bg-green-100 text-green-800 border-green-200'
+      default: return 'bg-gray-100 text-gray-800 border-gray-200'
     }
   }
 
@@ -77,14 +77,12 @@ export default function RolloutProgress() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
-            <BarChart3 className="h-6 w-6 text-blue-600" />
-            <span>Rollout Progress</span>
+            <TrendingUp className="h-6 w-6 text-blue-600" />
+            <span>Overall NAC & RADIUS Rollout Progress</span>
           </CardTitle>
-          <p className="text-gray-600 dark:text-gray-400">
-            Track deployment progress across all sites and locations.
-          </p>
         </CardHeader>
         <CardContent>
+          {/* Summary Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <div className="bg-green-50 dark:bg-green-900/20 p-6 rounded-lg border border-green-200 dark:border-green-800">
               <div className="flex items-center justify-between">
@@ -131,10 +129,16 @@ export default function RolloutProgress() {
             </div>
           </div>
 
-          <div className="text-center py-12">
-            <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Rollout Progress</h3>
-            <p className="text-gray-600 dark:text-gray-400">Progress tracking functionality coming soon...</p>
+          {/* Overall Progress */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Total Project Completion</h3>
+              <span className="text-2xl font-bold text-blue-600">{overallProgress}%</span>
+            </div>
+            <Progress value={overallProgress} className="h-4" />
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+              {stats.completedSites} of {stats.totalSites} sites completed
+            </p>
           </div>
 
           {/* Site Progress List */}

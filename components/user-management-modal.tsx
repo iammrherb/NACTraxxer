@@ -7,351 +7,208 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Avatar, AvatarFallback, AvatarInitials } from '@/components/ui/avatar'
-import { Plus, Edit, Trash2, Mail, Phone, User } from 'lucide-react'
+import { 
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Plus, Search, Edit, Trash2, Users, Shield, Mail, Phone } from 'lucide-react'
+
+interface User {
+  id: string
+  name: string
+  email: string
+  role: 'admin' | 'engineer' | 'viewer'
+  status: 'active' | 'inactive'
+  lastLogin: string
+}
 
 interface UserManagementModalProps {
   open: boolean
   onClose: () => void
 }
 
-interface User {
-  id: string
-  name: string
-  email: string
-  role: string
-  department: string
-  phone?: string
-  status: 'active' | 'inactive'
-}
-
 export default function UserManagementModal({ open, onClose }: UserManagementModalProps) {
-  const [projectManagers, setProjectManagers] = useState<User[]>([
-    {
-      id: '1',
-      name: 'Alex Rivera',
-      email: 'alex.rivera@abm.com',
-      role: 'Senior Project Manager',
-      department: 'IT Operations',
-      phone: '+1 (555) 123-4567',
-      status: 'active'
-    },
-    {
-      id: '2',
-      name: 'Marcus Chen',
-      email: 'marcus.chen@abm.com',
-      role: 'Project Manager',
-      department: 'IT Operations',
-      phone: '+1 (555) 234-5678',
-      status: 'active'
-    },
-    {
-      id: '3',
-      name: 'Sofia Linden',
-      email: 'sofia.linden@abm.com',
-      role: 'Project Manager',
-      department: 'IT Operations',
-      phone: '+1 (555) 345-6789',
-      status: 'active'
-    }
-  ])
-
-  const [technicalOwners, setTechnicalOwners] = useState<User[]>([
+  const [searchTerm, setSearchTerm] = useState('')
+  const [showAddUser, setShowAddUser] = useState(false)
+  const [users] = useState<User[]>([
     {
       id: '1',
       name: 'John Smith',
-      email: 'john.smith@abm.com',
-      role: 'Network Administrator',
-      department: 'Network Operations',
-      phone: '+1 (555) 456-7890',
-      status: 'active'
+      email: 'john.smith@company.com',
+      role: 'admin',
+      status: 'active',
+      lastLogin: '2024-01-15'
     },
     {
       id: '2',
-      name: 'Mark Wilson',
-      email: 'mark.wilson@abm.com',
-      role: 'Security Engineer',
-      department: 'Information Security',
-      phone: '+1 (555) 567-8901',
-      status: 'active'
+      name: 'Sarah Johnson',
+      email: 'sarah.johnson@company.com',
+      role: 'engineer',
+      status: 'active',
+      lastLogin: '2024-01-14'
     },
     {
       id: '3',
-      name: 'Emily Jones',
-      email: 'emily.jones@abm.com',
-      role: 'Network Engineer',
-      department: 'Network Operations',
-      phone: '+1 (555) 678-9012',
-      status: 'active'
+      name: 'Mike Wilson',
+      email: 'mike.wilson@company.com',
+      role: 'viewer',
+      status: 'active',
+      lastLogin: '2024-01-10'
     },
     {
       id: '4',
-      name: 'Paul Davis',
-      email: 'paul.davis@abm.com',
-      role: 'IT Manager',
-      department: 'IT Operations',
-      phone: '+1 (555) 789-0123',
-      status: 'active'
+      name: 'Lisa Brown',
+      email: 'lisa.brown@company.com',
+      role: 'engineer',
+      status: 'inactive',
+      lastLogin: '2024-01-05'
     }
   ])
 
-  const [newUser, setNewUser] = useState({
-    name: '',
-    email: '',
-    role: '',
-    department: '',
-    phone: ''
-  })
-
-  const [editingUser, setEditingUser] = useState<User | null>(null)
-
-  const addProjectManager = () => {
-    if (!newUser.name || !newUser.email || !newUser.role) return
-
-    const user: User = {
-      id: Date.now().toString(),
-      name: newUser.name,
-      email: newUser.email,
-      role: newUser.role,
-      department: newUser.department || 'IT Operations',
-      phone: newUser.phone,
-      status: 'active'
-    }
-
-    setProjectManagers([...projectManagers, user])
-    setNewUser({ name: '', email: '', role: '', department: '', phone: '' })
-  }
-
-  const addTechnicalOwner = () => {
-    if (!newUser.name || !newUser.email || !newUser.role) return
-
-    const user: User = {
-      id: Date.now().toString(),
-      name: newUser.name,
-      email: newUser.email,
-      role: newUser.role,
-      department: newUser.department || 'Network Operations',
-      phone: newUser.phone,
-      status: 'active'
-    }
-
-    setTechnicalOwners([...technicalOwners, user])
-    setNewUser({ name: '', email: '', role: '', department: '', phone: '' })
-  }
-
-  const deleteUser = (id: string, type: 'pm' | 'to') => {
-    if (type === 'pm') {
-      setProjectManagers(projectManagers.filter(user => user.id !== id))
-    } else {
-      setTechnicalOwners(technicalOwners.filter(user => user.id !== id))
-    }
-  }
-
-  const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase()
-  }
-
-  const UserCard = ({ user, type, onEdit, onDelete }: { 
-    user: User, 
-    type: 'pm' | 'to', 
-    onEdit: (user: User) => void, 
-    onDelete: (id: string) => void 
-  }) => (
-    <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors">
-      <div className="flex items-center space-x-3">
-        <Avatar>
-          <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
-        </Avatar>
-        <div>
-          <h4 className="font-medium">{user.name}</h4>
-          <p className="text-sm text-muted-foreground">{user.role}</p>
-          <div className="flex items-center space-x-4 mt-1">
-            <span className="flex items-center text-xs text-muted-foreground">
-              <Mail className="h-3 w-3 mr-1" />
-              {user.email}
-            </span>
-            {user.phone && (
-              <span className="flex items-center text-xs text-muted-foreground">
-                <Phone className="h-3 w-3 mr-1" />
-                {user.phone}
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-      <div className="flex items-center space-x-2">
-        <Badge variant={user.status === 'active' ? 'default' : 'secondary'}>
-          {user.status}
-        </Badge>
-        <Button variant="ghost" size="sm" onClick={() => onEdit(user)}>
-          <Edit className="h-4 w-4" />
-        </Button>
-        <Button variant="ghost" size="sm" onClick={() => onDelete(user.id)}>
-          <Trash2 className="h-4 w-4" />
-        </Button>
-      </div>
-    </div>
+  const filteredUsers = users.filter(user =>
+    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.email.toLowerCase().includes(searchTerm.toLowerCase())
   )
+
+  const getRoleBadge = (role: string) => {
+    const variants = {
+      admin: 'default',
+      engineer: 'secondary',
+      viewer: 'outline'
+    } as const
+
+    return (
+      <Badge variant={variants[role as keyof typeof variants]}>
+        {role.charAt(0).toUpperCase() + role.slice(1)}
+      </Badge>
+    )
+  }
+
+  const getStatusBadge = (status: string) => {
+    return (
+      <Badge variant={status === 'active' ? 'default' : 'destructive'}>
+        {status.charAt(0).toUpperCase() + status.slice(1)}
+      </Badge>
+    )
+  }
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
-            <User className="h-5 w-5" />
+            <Users className="h-5 w-5" />
             <span>User Management</span>
           </DialogTitle>
         </DialogHeader>
 
-        <Tabs defaultValue="project-managers" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="project-managers">Project Managers</TabsTrigger>
-            <TabsTrigger value="technical-owners">Technical Owners</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="project-managers" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Project Managers</h3>
-              <Badge variant="outline">{projectManagers.length} users</Badge>
+        <div className="space-y-6">
+          {/* Header Actions */}
+          <div className="flex items-center justify-between">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search users..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
             </div>
+            <Button onClick={() => setShowAddUser(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add User
+            </Button>
+          </div>
 
-            <div className="space-y-3">
-              {projectManagers.map((user) => (
-                <UserCard
-                  key={user.id}
-                  user={user}
-                  type="pm"
-                  onEdit={setEditingUser}
-                  onDelete={(id) => deleteUser(id, 'pm')}
-                />
-              ))}
-            </div>
+          {/* Users Table */}
+          <div className="border rounded-lg">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Last Login</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredUsers.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell className="font-medium">{user.name}</TableCell>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell>{getRoleBadge(user.role)}</TableCell>
+                    <TableCell>{getStatusBadge(user.status)}</TableCell>
+                    <TableCell>{user.lastLogin}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        <Button variant="ghost" size="sm">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
 
-            <div className="border-t pt-6">
-              <h4 className="font-medium mb-4">Add New Project Manager</h4>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="pm-name">Full Name</Label>
-                  <Input
-                    id="pm-name"
-                    value={newUser.name}
-                    onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
-                    placeholder="Enter full name"
-                  />
+          {/* Add User Form */}
+          {showAddUser && (
+            <div className="border rounded-lg p-6 space-y-4">
+              <h3 className="text-lg font-semibold">Add New User</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="user-name">Full Name</Label>
+                  <Input id="user-name" placeholder="Enter full name" />
                 </div>
-                <div>
-                  <Label htmlFor="pm-email">Email</Label>
-                  <Input
-                    id="pm-email"
-                    type="email"
-                    value={newUser.email}
-                    onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                    placeholder="Enter email address"
-                  />
+                <div className="space-y-2">
+                  <Label htmlFor="user-email">Email Address</Label>
+                  <Input id="user-email" type="email" placeholder="Enter email address" />
                 </div>
-                <div>
-                  <Label htmlFor="pm-role">Role</Label>
-                  <Select value={newUser.role} onValueChange={(value) => setNewUser({ ...newUser, role: value })}>
+                <div className="space-y-2">
+                  <Label htmlFor="user-role">Role</Label>
+                  <Select>
                     <SelectTrigger>
                       <SelectValue placeholder="Select role" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Senior Project Manager">Senior Project Manager</SelectItem>
-                      <SelectItem value="Project Manager">Project Manager</SelectItem>
-                      <SelectItem value="Associate Project Manager">Associate Project Manager</SelectItem>
+                      <SelectItem value="admin">Administrator</SelectItem>
+                      <SelectItem value="engineer">Engineer</SelectItem>
+                      <SelectItem value="viewer">Viewer</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <Label htmlFor="pm-phone">Phone (Optional)</Label>
-                  <Input
-                    id="pm-phone"
-                    value={newUser.phone}
-                    onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
-                    placeholder="Enter phone number"
-                  />
-                </div>
-              </div>
-              <Button onClick={addProjectManager} className="mt-4">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Project Manager
-              </Button>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="technical-owners" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Technical Owners</h3>
-              <Badge variant="outline">{technicalOwners.length} users</Badge>
-            </div>
-
-            <div className="space-y-3">
-              {technicalOwners.map((user) => (
-                <UserCard
-                  key={user.id}
-                  user={user}
-                  type="to"
-                  onEdit={setEditingUser}
-                  onDelete={(id) => deleteUser(id, 'to')}
-                />
-              ))}
-            </div>
-
-            <div className="border-t pt-6">
-              <h4 className="font-medium mb-4">Add New Technical Owner</h4>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="to-name">Full Name</Label>
-                  <Input
-                    id="to-name"
-                    value={newUser.name}
-                    onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
-                    placeholder="Enter full name"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="to-email">Email</Label>
-                  <Input
-                    id="to-email"
-                    type="email"
-                    value={newUser.email}
-                    onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                    placeholder="Enter email address"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="to-role">Role</Label>
-                  <Select value={newUser.role} onValueChange={(value) => setNewUser({ ...newUser, role: value })}>
+                <div className="space-y-2">
+                  <Label htmlFor="user-status">Status</Label>
+                  <Select>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select role" />
+                      <SelectValue placeholder="Select status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Network Administrator">Network Administrator</SelectItem>
-                      <SelectItem value="Security Engineer">Security Engineer</SelectItem>
-                      <SelectItem value="Network Engineer">Network Engineer</SelectItem>
-                      <SelectItem value="System Administrator">System Administrator</SelectItem>
-                      <SelectItem value="IT Manager">IT Manager</SelectItem>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <Label htmlFor="to-phone">Phone (Optional)</Label>
-                  <Input
-                    id="to-phone"
-                    value={newUser.phone}
-                    onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
-                    placeholder="Enter phone number"
-                  />
-                </div>
               </div>
-              <Button onClick={addTechnicalOwner} className="mt-4">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Technical Owner
-              </Button>
+              <div className="flex items-center space-x-2">
+                <Button>Add User</Button>
+                <Button variant="outline" onClick={() => setShowAddUser(false)}>
+                  Cancel
+                </Button>
+              </div>
             </div>
-          </TabsContent>
-        </Tabs>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   )

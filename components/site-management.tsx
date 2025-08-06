@@ -5,320 +5,177 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Progress } from '@/components/ui/progress'
-import { Plus, Search, Filter, Download, Edit, Eye, MapPin, Users, Calendar, AlertCircle } from 'lucide-react'
+import { 
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Plus, Search, MapPin, Users, Network, CheckCircle, AlertCircle, Clock, Edit, Trash2 } from 'lucide-react'
 
 interface Site {
   id: string
   name: string
-  region: string
-  country: string
-  priority: 'High' | 'Medium' | 'Low'
-  phase: number
+  location: string
+  status: 'active' | 'pending' | 'inactive'
+  devices: number
   users: number
-  projectManager: string
-  technicalOwners: string[]
-  status: 'Planned' | 'In Progress' | 'Complete' | 'Delayed'
-  completionPercent: number
-  plannedStart: string
-  plannedEnd: string
-  radsecType: 'Native' | 'LRAD' | 'None'
-  networkVendors: string[]
-  deviceTypes: string[]
-  notes?: string
+  lastUpdate: string
 }
 
 export default function SiteManagement() {
+  const [searchTerm, setSearchTerm] = useState('')
   const [sites] = useState<Site[]>([
     {
-      id: 'ABM-HQ001',
-      name: 'ABM Global Headquarters',
-      region: 'North America',
-      country: 'USA',
-      priority: 'High',
-      phase: 1,
-      users: 2500,
-      projectManager: 'Alex Rivera',
-      technicalOwners: ['John Smith', 'Mark Wilson'],
-      status: 'In Progress',
-      completionPercent: 65,
-      plannedStart: '2025-08-01',
-      plannedEnd: '2025-08-15',
-      radsecType: 'Native',
-      networkVendors: ['Cisco', 'Meraki'],
-      deviceTypes: ['Windows', 'macOS', 'iOS', 'Android'],
-      notes: 'Executive network requires priority handling'
+      id: '1',
+      name: 'Corporate Headquarters',
+      location: 'New York, NY',
+      status: 'active',
+      devices: 245,
+      users: 180,
+      lastUpdate: '2024-01-15'
     },
     {
-      id: 'ABM-DC002',
-      name: 'Primary Data Center',
-      region: 'North America',
-      country: 'USA',
-      priority: 'High',
-      phase: 1,
-      users: 150,
-      projectManager: 'Marcus Chen',
-      technicalOwners: ['Emily Jones', 'Paul Davis'],
-      status: 'Complete',
-      completionPercent: 100,
-      plannedStart: '2025-08-05',
-      plannedEnd: '2025-08-12',
-      radsecType: 'LRAD',
-      networkVendors: ['Cisco'],
-      deviceTypes: ['Windows', 'Linux'],
-      notes: '24/7 operation requires careful change windows'
+      id: '2',
+      name: 'West Coast Office',
+      location: 'San Francisco, CA',
+      status: 'active',
+      devices: 156,
+      users: 120,
+      lastUpdate: '2024-01-14'
     },
     {
-      id: 'ABM-EUR003',
-      name: 'European Headquarters',
-      region: 'EMEA',
-      country: 'Germany',
-      priority: 'Medium',
-      phase: 2,
-      users: 1200,
-      projectManager: 'Sofia Linden',
-      technicalOwners: ['Sarah Thompson'],
-      status: 'Planned',
-      completionPercent: 0,
-      plannedStart: '2025-09-01',
-      plannedEnd: '2025-09-15',
-      radsecType: 'Native',
-      networkVendors: ['Aruba'],
-      deviceTypes: ['Windows', 'macOS', 'iOS'],
-      notes: 'GDPR compliance requirements'
+      id: '3',
+      name: 'Manufacturing Plant',
+      location: 'Detroit, MI',
+      status: 'pending',
+      devices: 89,
+      users: 65,
+      lastUpdate: '2024-01-10'
     },
     {
-      id: 'ABM-APAC004',
-      name: 'APAC Regional Office',
-      region: 'APAC',
-      country: 'Singapore',
-      priority: 'Medium',
-      phase: 2,
-      users: 800,
-      projectManager: 'Michael Zhang',
-      technicalOwners: ['Carlos Mendez'],
-      status: 'Delayed',
-      completionPercent: 15,
-      plannedStart: '2025-09-10',
-      plannedEnd: '2025-09-25',
-      radsecType: 'LRAD',
-      networkVendors: ['Juniper'],
-      deviceTypes: ['Windows', 'macOS', 'Android'],
-      notes: 'Delayed due to local infrastructure issues'
+      id: '4',
+      name: 'Research Facility',
+      location: 'Austin, TX',
+      status: 'inactive',
+      devices: 34,
+      users: 25,
+      lastUpdate: '2024-01-08'
     }
   ])
 
-  const [searchTerm, setSearchTerm] = useState('')
-  const [regionFilter, setRegionFilter] = useState('')
-  const [statusFilter, setStatusFilter] = useState('')
-  const [priorityFilter, setPriorityFilter] = useState('')
+  const filteredSites = sites.filter(site =>
+    site.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    site.location.toLowerCase().includes(searchTerm.toLowerCase())
+  )
 
-  const filteredSites = sites.filter(site => {
-    const matchesSearch = site.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         site.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         site.country.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesRegion = !regionFilter || site.region === regionFilter
-    const matchesStatus = !statusFilter || site.status === statusFilter
-    const matchesPriority = !priorityFilter || site.priority === priorityFilter
-
-    return matchesSearch && matchesRegion && matchesStatus && matchesPriority
-  })
-
-  const getStatusColor = (status: string) => {
+  const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'Complete': return 'bg-green-100 text-green-800'
-      case 'In Progress': return 'bg-blue-100 text-blue-800'
-      case 'Delayed': return 'bg-red-100 text-red-800'
-      case 'Planned': return 'bg-gray-100 text-gray-800'
-      default: return 'bg-gray-100 text-gray-800'
+      case 'active':
+        return <CheckCircle className="h-4 w-4 text-green-500" />
+      case 'pending':
+        return <Clock className="h-4 w-4 text-yellow-500" />
+      case 'inactive':
+        return <AlertCircle className="h-4 w-4 text-red-500" />
+      default:
+        return null
     }
   }
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'High': return 'bg-red-100 text-red-800'
-      case 'Medium': return 'bg-yellow-100 text-yellow-800'
-      case 'Low': return 'bg-green-100 text-green-800'
-      default: return 'bg-gray-100 text-gray-800'
-    }
-  }
+  const getStatusBadge = (status: string) => {
+    const variants = {
+      active: 'default',
+      pending: 'secondary',
+      inactive: 'destructive'
+    } as const
 
-  const getProgressColor = (percent: number) => {
-    if (percent === 100) return 'bg-green-500'
-    if (percent >= 50) return 'bg-blue-500'
-    if (percent > 0) return 'bg-yellow-500'
-    return 'bg-gray-300'
-  }
-
-  const exportToCSV = () => {
-    const headers = ['Site ID', 'Site Name', 'Region', 'Country', 'Priority', 'Phase', 'Users', 'Status', 'Completion %']
-    const csvContent = [
-      headers.join(','),
-      ...filteredSites.map(site => [
-        site.id,
-        `"${site.name}"`,
-        site.region,
-        site.country,
-        site.priority,
-        site.phase,
-        site.users,
-        site.status,
-        site.completionPercent
-      ].join(','))
-    ].join('\n')
-
-    const blob = new Blob([csvContent], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `portnox-sites-${new Date().toISOString().split('T')[0]}.csv`
-    link.click()
-    URL.revokeObjectURL(url)
+    return (
+      <Badge variant={variants[status as keyof typeof variants]}>
+        {status.charAt(0).toUpperCase() + status.slice(1)}
+      </Badge>
+    )
   }
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Site Management</span>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Site Management</h2>
+          <p className="text-muted-foreground">Manage and monitor all deployment sites</p>
+        </div>
+        <Button>
+          <Plus className="h-4 w-4 mr-2" />
+          Add New Site
+        </Button>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-6">
             <div className="flex items-center space-x-2">
-              <Button onClick={exportToCSV} variant="outline" size="sm">
-                <Download className="h-4 w-4 mr-2" />
-                Export CSV
-              </Button>
-              <Button size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Site
-              </Button>
+              <MapPin className="h-5 w-5 text-blue-500" />
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Total Sites</p>
+                <p className="text-2xl font-bold">{sites.length}</p>
+              </div>
             </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {/* Filters */}
-          <div className="flex flex-wrap items-center gap-4 mb-6">
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
             <div className="flex items-center space-x-2">
-              <Search className="h-4 w-4 text-muted-foreground" />
+              <CheckCircle className="h-5 w-5 text-green-500" />
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Active Sites</p>
+                <p className="text-2xl font-bold">{sites.filter(s => s.status === 'active').length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-2">
+              <Network className="h-5 w-5 text-purple-500" />
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Total Devices</p>
+                <p className="text-2xl font-bold">{sites.reduce((sum, site) => sum + site.devices, 0)}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-2">
+              <Users className="h-5 w-5 text-orange-500" />
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Total Users</p>
+                <p className="text-2xl font-bold">{sites.reduce((sum, site) => sum + site.users, 0)}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Search and Filters */}
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center space-x-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search sites..."
+                placeholder="Search sites by name or location..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-64"
+                className="pl-10"
               />
             </div>
-            
-            <Select value={regionFilter} onValueChange={setRegionFilter}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="All Regions" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">All Regions</SelectItem>
-                <SelectItem value="North America">North America</SelectItem>
-                <SelectItem value="EMEA">EMEA</SelectItem>
-                <SelectItem value="APAC">APAC</SelectItem>
-                <SelectItem value="LATAM">LATAM</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="All Statuses" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">All Statuses</SelectItem>
-                <SelectItem value="Planned">Planned</SelectItem>
-                <SelectItem value="In Progress">In Progress</SelectItem>
-                <SelectItem value="Complete">Complete</SelectItem>
-                <SelectItem value="Delayed">Delayed</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="All Priorities" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">All Priorities</SelectItem>
-                <SelectItem value="High">High</SelectItem>
-                <SelectItem value="Medium">Medium</SelectItem>
-                <SelectItem value="Low">Low</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {(searchTerm || regionFilter || statusFilter || priorityFilter) && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setSearchTerm('')
-                  setRegionFilter('')
-                  setStatusFilter('')
-                  setPriorityFilter('')
-                }}
-              >
-                Clear Filters
-              </Button>
-            )}
-          </div>
-
-          {/* Summary Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-2">
-                  <MapPin className="h-5 w-5 text-blue-600" />
-                  <div>
-                    <p className="text-2xl font-bold">{filteredSites.length}</p>
-                    <p className="text-sm text-muted-foreground">Total Sites</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-2">
-                  <Users className="h-5 w-5 text-green-600" />
-                  <div>
-                    <p className="text-2xl font-bold">
-                      {filteredSites.reduce((sum, site) => sum + site.users, 0).toLocaleString()}
-                    </p>
-                    <p className="text-sm text-muted-foreground">Total Users</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-2">
-                  <Calendar className="h-5 w-5 text-purple-600" />
-                  <div>
-                    <p className="text-2xl font-bold">
-                      {filteredSites.filter(s => s.status === 'Complete').length}
-                    </p>
-                    <p className="text-sm text-muted-foreground">Completed</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-2">
-                  <AlertCircle className="h-5 w-5 text-red-600" />
-                  <div>
-                    <p className="text-2xl font-bold">
-                      {filteredSites.filter(s => s.status === 'Delayed').length}
-                    </p>
-                    <p className="text-sm text-muted-foreground">Delayed</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </CardContent>
       </Card>
@@ -329,82 +186,46 @@ export default function SiteManagement() {
           <CardTitle>Sites Overview</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Site</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead>Priority</TableHead>
-                  <TableHead>Phase</TableHead>
-                  <TableHead>Users</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Progress</TableHead>
-                  <TableHead>Timeline</TableHead>
-                  <TableHead>Actions</TableHead>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Site Name</TableHead>
+                <TableHead>Location</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Devices</TableHead>
+                <TableHead>Users</TableHead>
+                <TableHead>Last Update</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredSites.map((site) => (
+                <TableRow key={site.id}>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center space-x-2">
+                      {getStatusIcon(site.status)}
+                      <span>{site.name}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>{site.location}</TableCell>
+                  <TableCell>{getStatusBadge(site.status)}</TableCell>
+                  <TableCell>{site.devices}</TableCell>
+                  <TableCell>{site.users}</TableCell>
+                  <TableCell>{site.lastUpdate}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-2">
+                      <Button variant="ghost" size="sm">
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredSites.map((site) => (
-                  <TableRow key={site.id}>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{site.name}</div>
-                        <div className="text-sm text-muted-foreground">{site.id}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{site.country}</div>
-                        <div className="text-sm text-muted-foreground">{site.region}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getPriorityColor(site.priority)}>
-                        {site.priority}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">Phase {site.phase}</Badge>
-                    </TableCell>
-                    <TableCell>{site.users.toLocaleString()}</TableCell>
-                    <TableCell>
-                      <Badge className={getStatusColor(site.status)}>
-                        {site.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <Progress 
-                          value={site.completionPercent} 
-                          className="w-16 h-2"
-                        />
-                        <span className="text-sm font-medium">{site.completionPercent}%</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        <div>{new Date(site.plannedStart).toLocaleDateString()}</div>
-                        <div className="text-muted-foreground">
-                          to {new Date(site.plannedEnd).toLocaleDateString()}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-1">
-                        <Button variant="ghost" size="sm">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+              ))}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     </div>

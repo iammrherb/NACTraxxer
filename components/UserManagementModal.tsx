@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Trash2, User, Mail, Users } from 'lucide-react'
+import { Plus, Trash2, User, Mail } from 'lucide-react'
 
 interface User {
   id: string
@@ -18,10 +18,10 @@ interface User {
 
 interface UserManagementModalProps {
   open: boolean
-  onClose: () => void
+  onOpenChange: (open: boolean) => void
 }
 
-export default function UserManagementModal({ open, onClose }: UserManagementModalProps) {
+export default function UserManagementModal({ open, onOpenChange }: UserManagementModalProps) {
   const [projectManagers, setProjectManagers] = useState<User[]>([
     { id: '1', name: 'Alex Rivera', email: 'alex.rivera@abm.com', role: 'Senior Project Manager' },
     { id: '2', name: 'Marcus Chen', email: 'marcus.chen@abm.com', role: 'Project Manager' },
@@ -86,11 +86,11 @@ export default function UserManagementModal({ open, onClose }: UserManagementMod
   }
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
-            <Users className="h-6 w-6 text-blue-600" />
+            <User className="h-6 w-6 text-blue-600" />
             <span>User Management</span>
           </DialogTitle>
         </DialogHeader>
@@ -240,7 +240,7 @@ export default function UserManagementModal({ open, onClose }: UserManagementMod
         </div>
 
         <div className="flex justify-end pt-4 border-t">
-          <Button onClick={onClose}>
+          <Button onClick={() => onOpenChange(false)}>
             Done
           </Button>
         </div>

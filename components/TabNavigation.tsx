@@ -1,42 +1,52 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { Network, Shield, Users, FileText, BarChart3, Settings } from 'lucide-react'
+import { List, Book, TrendingUp, Network, type LucideIcon } from 'lucide-react'
 
-interface TabNavigationProps {
-  activeTab: string
-  setActiveTab: (tab: string) => void
+interface Tab {
+  id: string
+  label: string
+  icon: string
 }
 
-export default function TabNavigation({ activeTab, setActiveTab }: TabNavigationProps) {
-  const tabs = [
-    { id: 'architecture', label: 'Architecture Designer', icon: Network },
-    { id: 'policies', label: 'Policy Editor', icon: Shield },
-    { id: 'onboarding', label: 'Device Onboarding', icon: Users },
-    { id: 'sites', label: 'Site Management', icon: FileText },
-    { id: 'workbook', label: 'Site Workbook', icon: FileText },
-    { id: 'progress', label: 'Rollout Progress', icon: BarChart3 }
-  ]
+interface TabNavigationProps {
+  tabs: Tab[]
+  activeTab: string
+  onTabChange: (tabId: string) => void
+}
 
+const iconMap: Record<string, LucideIcon> = {
+  list: List,
+  book: Book,
+  'chart-line': TrendingUp,
+  sitemap: Network
+}
+
+export default function TabNavigation({ tabs, activeTab, onTabChange }: TabNavigationProps) {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-2">
-      <div className="flex flex-wrap gap-2">
+    <div className="border-b border-gray-200 dark:border-gray-700">
+      <nav className="flex space-x-1 overflow-x-auto">
         {tabs.map((tab) => {
-          const Icon = tab.icon
+          const Icon = iconMap[tab.icon]
+          const isActive = activeTab === tab.id
+          
           return (
             <Button
               key={tab.id}
-              variant={activeTab === tab.id ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setActiveTab(tab.id)}
-              className="flex items-center space-x-2"
+              variant={isActive ? 'default' : 'ghost'}
+              className={`flex items-center space-x-2 whitespace-nowrap ${
+                isActive 
+                  ? 'border-b-2 border-blue-500 rounded-b-none' 
+                  : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+              }`}
+              onClick={() => onTabChange(tab.id)}
             >
               <Icon className="h-4 w-4" />
               <span>{tab.label}</span>
             </Button>
           )
         })}
-      </div>
+      </nav>
     </div>
   )
 }

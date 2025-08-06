@@ -3,175 +3,156 @@
 import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Trash2, Plus, Shield, Users, Clock, MapPin } from 'lucide-react'
+import { Plus, Trash2, Settings, Shield } from 'lucide-react'
 
 interface PolicyRule {
   id: string
-  name: string
-  deviceType: string
-  userRole: string
-  timeRestriction: string
-  locationRestriction: string
-  vlanAssignment: string
-  bandwidthLimit: string
-  action: string
+  userGroup: string
+  authMethod: string
+  condition: string
+  action: 'Allow' | 'Deny' | 'Quarantine'
+  vlan: string
+  priority: number
 }
 
 export default function PolicyEditor() {
-  const [policies, setPolicies] = useState<PolicyRule[]>([
+  const [policyRules, setPolicyRules] = useState<PolicyRule[]>([
     {
       id: '1',
-      name: 'Corporate Laptops',
-      deviceType: 'laptop',
-      userRole: 'employee',
-      timeRestriction: 'business-hours',
-      locationRestriction: 'office',
-      vlanAssignment: 'vlan-100',
-      bandwidthLimit: 'unlimited',
-      action: 'allow'
+      userGroup: 'corporate-users',
+      authMethod: 'eap-tls',
+      condition: 'Certificate Valid',
+      action: 'Allow',
+      vlan: '100',
+      priority: 1
     },
     {
       id: '2',
-      name: 'Guest Devices',
-      deviceType: 'any',
-      userRole: 'guest',
-      timeRestriction: 'any',
-      locationRestriction: 'guest-area',
-      vlanAssignment: 'vlan-200',
-      bandwidthLimit: '10mbps',
-      action: 'allow'
+      userGroup: 'guest-users',
+      authMethod: 'captive-portal',
+      condition: 'Sponsor Approved',
+      action: 'Allow',
+      vlan: '200',
+      priority: 2
     },
     {
       id: '3',
-      name: 'IoT Sensors',
-      deviceType: 'iot',
-      userRole: 'system',
-      timeRestriction: 'any',
-      locationRestriction: 'any',
-      vlanAssignment: 'vlan-300',
-      bandwidthLimit: '1mbps',
-      action: 'allow'
+      userGroup: 'iot-devices',
+      authMethod: 'mab',
+      condition: 'MAC Registered',
+      action: 'Allow',
+      vlan: '300',
+      priority: 3
+    },
+    {
+      id: '4',
+      userGroup: 'unknown-devices',
+      authMethod: 'any',
+      condition: 'Not Compliant',
+      action: 'Quarantine',
+      vlan: '999',
+      priority: 4
     }
   ])
 
-  const [newPolicy, setNewPolicy] = useState<Partial<PolicyRule>>({
-    name: '',
-    deviceType: 'laptop',
-    userRole: 'employee',
-    timeRestriction: 'any',
-    locationRestriction: 'any',
-    vlanAssignment: 'vlan-100',
-    bandwidthLimit: 'unlimited',
-    action: 'allow'
-  })
-
-  const addPolicy = () => {
-    if (newPolicy.name) {
-      const policy: PolicyRule = {
-        id: Date.now().toString(),
-        name: newPolicy.name,
-        deviceType: newPolicy.deviceType || 'laptop',
-        userRole: newPolicy.userRole || 'employee',
-        timeRestriction: newPolicy.timeRestriction || 'any',
-        locationRestriction: newPolicy.locationRestriction || 'any',
-        vlanAssignment: newPolicy.vlanAssignment || 'vlan-100',
-        bandwidthLimit: newPolicy.bandwidthLimit || 'unlimited',
-        action: newPolicy.action || 'allow'
-      }
-      setPolicies([...policies, policy])
-      setNewPolicy({
-        name: '',
-        deviceType: 'laptop',
-        userRole: 'employee',
-        timeRestriction: 'any',
-        locationRestriction: 'any',
-        vlanAssignment: 'vlan-100',
-        bandwidthLimit: 'unlimited',
-        action: 'allow'
-      })
+  const addPolicyRule = () => {
+    const newRule: PolicyRule = {
+      id: Date.now().toString(),
+      userGroup: 'corporate-users',
+      authMethod: 'eap-tls',
+      condition: '',
+      action: 'Allow',
+      vlan: '',
+      priority: policyRules.length + 1
     }
+    setPolicyRules([...policyRules, newRule])
   }
 
-  const deletePolicy = (id: string) => {
-    setPolicies(policies.filter(p => p.id !== id))
+  const removePolicyRule = (id: string) => {
+    setPolicyRules(policyRules.filter(rule => rule.id !== id))
+  }
+
+  const updatePolicyRule = (id: string, field: keyof PolicyRule, value: string | number) => {
+    setPolicyRules(policyRules.map(rule => 
+      rule.id === id ? { ...rule, [field]: value } : rule
+    ))
   }
 
   const getActionBadgeColor = (action: string) => {
     switch (action) {
-      case 'allow': return 'bg-green-100 text-green-800'
-      case 'deny': return 'bg-red-100 text-red-800'
-      case 'quarantine': return 'bg-yellow-100 text-yellow-800'
-      default: return 'bg-gray-100 text-gray-800'
+      case 'Allow': return 'bg-green-100 text-green-800 border-green-200'
+      case 'Deny': return 'bg-red-100 text-red-800 border-red-200'
+      case 'Quarantine': return 'bg-yellow-100 text-yellow-800 border-yellow-200'
+      default: return 'bg-gray-100 text-gray-800 border-gray-200'
     }
   }
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Shield className="h-6 w-6 text-blue-600" />
-            <span>Access Policy Editor</span>
-          </CardTitle>
-          <p className="text-gray-600 dark:text-gray-400">
-            Define and manage network access policies based on device type, user role, time, and location.
-          </p>
-        </CardHeader>
-        <CardContent>
-          {/* Add New Policy */}
-          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 mb-6">
-            <h3 className="font-semibold mb-4">Add New Policy</h3>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Policy Name</label>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center space-x-2">
+          <Settings className="h-5 w-5 text-blue-600" />
+          <span>Access Control Policy Editor</span>
+        </CardTitle>
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          Configure authentication policies and access rules for different user groups and device types.
+        </p>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {policyRules.map((rule, index) => (
+            <div key={rule.id} className="flex items-center space-x-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border">
+              <div className="flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-800 rounded-full text-sm font-semibold">
+                {rule.priority}
+              </div>
+              
+              <div className="flex-1 grid grid-cols-1 md:grid-cols-6 gap-3">
+                <Select 
+                  value={rule.userGroup} 
+                  onValueChange={(value) => updatePolicyRule(rule.id, 'userGroup', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="User Group" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="corporate-users">Corporate Users</SelectItem>
+                    <SelectItem value="guest-users">Guest Users</SelectItem>
+                    <SelectItem value="iot-devices">IoT Devices</SelectItem>
+                    <SelectItem value="byod">BYOD</SelectItem>
+                    <SelectItem value="contractors">Contractors</SelectItem>
+                    <SelectItem value="unknown-devices">Unknown Devices</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select 
+                  value={rule.authMethod} 
+                  onValueChange={(value) => updatePolicyRule(rule.id, 'authMethod', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Auth Method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="eap-tls">EAP-TLS</SelectItem>
+                    <SelectItem value="peap-mschapv2">PEAP-MSCHAPv2</SelectItem>
+                    <SelectItem value="mab">MAB</SelectItem>
+                    <SelectItem value="captive-portal">Captive Portal</SelectItem>
+                    <SelectItem value="any">Any</SelectItem>
+                  </SelectContent>
+                </Select>
+
                 <Input
-                  value={newPolicy.name || ''}
-                  onChange={(e) => setNewPolicy({ ...newPolicy, name: e.target.value })}
-                  placeholder="Enter policy name"
+                  placeholder="Condition"
+                  value={rule.condition}
+                  onChange={(e) => updatePolicyRule(rule.id, 'condition', e.target.value)}
                 />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-1">Device Type</label>
-                <Select value={newPolicy.deviceType} onValueChange={(value) => setNewPolicy({ ...newPolicy, deviceType: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="laptop">Laptop</SelectItem>
-                    <SelectItem value="desktop">Desktop</SelectItem>
-                    <SelectItem value="mobile">Mobile Device</SelectItem>
-                    <SelectItem value="tablet">Tablet</SelectItem>
-                    <SelectItem value="iot">IoT Device</SelectItem>
-                    <SelectItem value="server">Server</SelectItem>
-                    <SelectItem value="printer">Printer</SelectItem>
-                    <SelectItem value="any">Any Device</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-1">User Role</label>
-                <Select value={newPolicy.userRole} onValueChange={(value) => setNewPolicy({ ...newPolicy, userRole: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="admin">Administrator</SelectItem>
-                    <SelectItem value="employee">Employee</SelectItem>
-                    <SelectItem value="contractor">Contractor</SelectItem>
-                    <SelectItem value="guest">Guest</SelectItem>
-                    <SelectItem value="system">System Account</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-1">Action</label>
-                <Select value={newPolicy.action} onValueChange={(value) => setNewPolicy({ ...newPolicy, action: value })}>
+
+                <Select 
+                  value={rule.action} 
+                  onValueChange={(value) => updatePolicyRule(rule.id, 'action', value as 'Allow' | 'Deny' | 'Quarantine')}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -181,143 +162,49 @@ export default function PolicyEditor() {
                     <SelectItem value="quarantine">Quarantine</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Time Restriction</label>
-                <Select value={newPolicy.timeRestriction} onValueChange={(value) => setNewPolicy({ ...newPolicy, timeRestriction: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="any">Any Time</SelectItem>
-                    <SelectItem value="business-hours">Business Hours</SelectItem>
-                    <SelectItem value="after-hours">After Hours</SelectItem>
-                    <SelectItem value="weekdays">Weekdays Only</SelectItem>
-                    <SelectItem value="weekends">Weekends Only</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-1">Location</label>
-                <Select value={newPolicy.locationRestriction} onValueChange={(value) => setNewPolicy({ ...newPolicy, locationRestriction: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="any">Any Location</SelectItem>
-                    <SelectItem value="office">Office</SelectItem>
-                    <SelectItem value="guest-area">Guest Area</SelectItem>
-                    <SelectItem value="datacenter">Data Center</SelectItem>
-                    <SelectItem value="warehouse">Warehouse</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-1">VLAN Assignment</label>
-                <Select value={newPolicy.vlanAssignment} onValueChange={(value) => setNewPolicy({ ...newPolicy, vlanAssignment: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="vlan-100">VLAN 100 (Corporate)</SelectItem>
-                    <SelectItem value="vlan-200">VLAN 200 (Guest)</SelectItem>
-                    <SelectItem value="vlan-300">VLAN 300 (IoT)</SelectItem>
-                    <SelectItem value="vlan-400">VLAN 400 (Quarantine)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-1">Bandwidth Limit</label>
-                <Select value={newPolicy.bandwidthLimit} onValueChange={(value) => setNewPolicy({ ...newPolicy, bandwidthLimit: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="unlimited">Unlimited</SelectItem>
-                    <SelectItem value="100mbps">100 Mbps</SelectItem>
-                    <SelectItem value="50mbps">50 Mbps</SelectItem>
-                    <SelectItem value="10mbps">10 Mbps</SelectItem>
-                    <SelectItem value="1mbps">1 Mbps</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            
-            <Button onClick={addPolicy} className="flex items-center space-x-2">
-              <Plus className="h-4 w-4" />
-              <span>Add Policy</span>
-            </Button>
-          </div>
 
-          {/* Policy List */}
-          <div className="space-y-4">
-            <h3 className="font-semibold">Current Policies</h3>
-            {policies.map((policy) => (
-              <div key={policy.id} className="border rounded-lg p-4 bg-white dark:bg-gray-800">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-medium">{policy.name}</h4>
-                  <div className="flex items-center space-x-2">
-                    <Badge className={getActionBadgeColor(policy.action)}>
-                      {policy.action.charAt(0).toUpperCase() + policy.action.slice(1)}
-                    </Badge>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => deletePolicy(policy.id)}
-                      className="text-red-600 hover:text-red-800"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                  <div className="flex items-center space-x-2">
-                    <Users className="h-4 w-4 text-gray-500" />
-                    <span className="text-gray-600 dark:text-gray-400">Device:</span>
-                    <span className="font-medium">{policy.deviceType}</span>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Shield className="h-4 w-4 text-gray-500" />
-                    <span className="text-gray-600 dark:text-gray-400">Role:</span>
-                    <span className="font-medium">{policy.userRole}</span>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Clock className="h-4 w-4 text-gray-500" />
-                    <span className="text-gray-600 dark:text-gray-400">Time:</span>
-                    <span className="font-medium">{policy.timeRestriction}</span>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <MapPin className="h-4 w-4 text-gray-500" />
-                    <span className="text-gray-600 dark:text-gray-400">Location:</span>
-                    <span className="font-medium">{policy.locationRestriction}</span>
-                  </div>
-                </div>
-                
-                <div className="mt-3 pt-3 border-t grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-600 dark:text-gray-400">VLAN:</span>
-                    <span className="font-medium ml-2">{policy.vlanAssignment}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600 dark:text-gray-400">Bandwidth:</span>
-                    <span className="font-medium ml-2">{policy.bandwidthLimit}</span>
-                  </div>
-                </div>
+                <Input
+                  placeholder="VLAN"
+                  value={rule.vlan}
+                  onChange={(e) => updatePolicyRule(rule.id, 'vlan', e.target.value)}
+                  className="w-20"
+                />
+
+                <Badge className={getActionBadgeColor(rule.action)}>
+                  {rule.action}
+                </Badge>
               </div>
-            ))}
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => removePolicyRule(rule.id)}
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+
+          <Button onClick={addPolicyRule} className="w-full" variant="outline">
+            <Plus className="h-4 w-4 mr-2" />
+            Add Policy Rule
+          </Button>
+        </div>
+
+        <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+          <div className="flex items-start space-x-2">
+            <Shield className="h-5 w-5 text-blue-600 mt-0.5" />
+            <div>
+              <h4 className="font-semibold text-blue-900 dark:text-blue-100">Policy Evaluation Order</h4>
+              <p className="text-sm text-blue-800 dark:text-blue-200 mt-1">
+                Policies are evaluated in priority order (1 = highest). The first matching policy determines the access decision.
+                Use specific conditions for higher priority rules and broader conditions for lower priority rules.
+              </p>
+            </div>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </CardContent>
+    </Card>
   )
 }

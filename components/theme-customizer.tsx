@@ -186,4 +186,176 @@ export default function ThemeCustomizer({ open, onClose }: ThemeCustomizerProps)
                   <CardTitle className="text-base">Primary Colors</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <ColorPicker label
+                  <ColorPicker label="Primary" colorKey="primary" value={colors.primary} />
+                  <ColorPicker label="Secondary" colorKey="secondary" value={colors.secondary} />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Status Colors</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <ColorPicker label="Success" colorKey="success" value={colors.success} />
+                  <ColorPicker label="Warning" colorKey="warning" value={colors.warning} />
+                  <ColorPicker label="Danger" colorKey="danger" value={colors.danger} />
+                  <ColorPicker label="Info" colorKey="info" value={colors.info} />
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="spacing" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Border Radius</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <Label>Border Radius: {spacing.borderRadius[0]}px</Label>
+                    <Slider
+                      value={spacing.borderRadius}
+                      onValueChange={(value) => setSpacing(prev => ({ ...prev, borderRadius: value }))}
+                      max={20}
+                      step={1}
+                      className="w-full"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Padding & Margin</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>Padding: {spacing.padding[0]}px</Label>
+                    <Slider
+                      value={spacing.padding}
+                      onValueChange={(value) => setSpacing(prev => ({ ...prev, padding: value }))}
+                      max={32}
+                      step={2}
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <Label>Margin: {spacing.margin[0]}px</Label>
+                    <Slider
+                      value={spacing.margin}
+                      onValueChange={(value) => setSpacing(prev => ({ ...prev, margin: value }))}
+                      max={32}
+                      step={2}
+                      className="w-full"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="typography" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Font Settings</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>Font Size: {typography.fontSize[0]}px</Label>
+                    <Slider
+                      value={typography.fontSize}
+                      onValueChange={(value) => setTypography(prev => ({ ...prev, fontSize: value }))}
+                      min={12}
+                      max={20}
+                      step={1}
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <Label>Line Height: {typography.lineHeight[0]}</Label>
+                    <Slider
+                      value={typography.lineHeight}
+                      onValueChange={(value) => setTypography(prev => ({ ...prev, lineHeight: value }))}
+                      min={1.2}
+                      max={2}
+                      step={0.1}
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <Label>Font Weight: {typography.fontWeight[0]}</Label>
+                    <Slider
+                      value={typography.fontWeight}
+                      onValueChange={(value) => setTypography(prev => ({ ...prev, fontWeight: value }))}
+                      min={300}
+                      max={700}
+                      step={100}
+                      className="w-full"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Preview Text</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div 
+                    className="p-4 border rounded"
+                    style={{
+                      fontSize: `${typography.fontSize[0]}px`,
+                      lineHeight: typography.lineHeight[0],
+                      fontWeight: typography.fontWeight[0]
+                    }}
+                  >
+                    <h3 className="font-bold mb-2">Sample Heading</h3>
+                    <p>This is a sample paragraph to demonstrate the typography settings. You can adjust the font size, line height, and font weight using the controls.</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="preview" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Theme Preview</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex space-x-2">
+                    <Button style={{ backgroundColor: colors.primary }}>Primary Button</Button>
+                    <Button variant="secondary" style={{ backgroundColor: colors.secondary }}>Secondary Button</Button>
+                    <Button variant="outline">Outline Button</Button>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="p-4 rounded" style={{ backgroundColor: colors.success, color: 'white' }}>
+                      <div className="font-semibold">Success</div>
+                      <div className="text-sm opacity-90">Operation completed</div>
+                    </div>
+                    <div className="p-4 rounded" style={{ backgroundColor: colors.warning, color: 'white' }}>
+                      <div className="font-semibold">Warning</div>
+                      <div className="text-sm opacity-90">Please review</div>
+                    </div>
+                    <div className="p-4 rounded" style={{ backgroundColor: colors.danger, color: 'white' }}>
+                      <div className="font-semibold">Error</div>
+                      <div className="text-sm opacity-90">Action required</div>
+                    </div>
+                    <div className="p-4 rounded" style={{ backgroundColor: colors.info, color: 'white' }}>
+                      <div className="font-semibold">Info</div>
+                      <div className="text-sm opacity-90">Additional details</div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </DialogContent>
+    </Dialog>
+  )
+}
