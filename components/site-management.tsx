@@ -1,648 +1,583 @@
-"use client"
+'use client'
 
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import {
+import { useState } from 'react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table'
+import { 
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Progress } from "@/components/ui/progress"
-import {
-  Building,
-  Plus,
-  Search,
-  MapPin,
-  Calendar,
-  CheckCircle,
-  Clock,
-  AlertCircle,
-  Edit,
-  Trash2,
-  Eye,
-  Grid3X3,
-  List,
-  Map,
-} from "lucide-react"
+} from '@/components/ui/dialog'
+import { Plus, Search, Download, Edit, Trash2, Eye, Building, MapPin, Users, Calendar, CheckCircle, Clock, AlertTriangle, XCircle } from 'lucide-react'
+import AddSiteModal from '@/components/add-site-modal'
 
 interface Site {
   id: string
   name: string
-  location: string
-  status: "planning" | "in-progress" | "completed" | "on-hold"
-  progress: number
-  assignedTo: string
-  startDate: string
-  targetDate: string
-  completedUseCases: number
-  totalUseCases: number
-  description?: string
-  priority: "low" | "medium" | "high"
+  region: string
+  country: string
+  priority: 'High' | 'Medium' | 'Low'
+  phase: string
+  users: number
+  projectManager: string
+  technicalOwners: string[]
+  status: 'Planned' | 'In Progress' | 'Complete' | 'Delayed'
+  completionPercent: number
+  wiredVendors: string[]
+  wirelessVendors: string[]
+  deviceTypes: string[]
+  radsec: string
+  plannedStart: string
+  plannedEnd: string
+  notes: string
 }
 
-const mockSites: Site[] = [
+interface SiteManagementProps {
+  onSiteSelect: (siteId: string) => void
+}
+
+const sampleSites: Site[] = [
   {
-    id: "1",
-    name: "Main Office",
-    location: "New York, NY",
-    status: "completed",
-    progress: 100,
-    assignedTo: "John Doe",
-    startDate: "2024-01-01",
-    targetDate: "2024-01-15",
-    completedUseCases: 16,
-    totalUseCases: 16,
-    description: "Primary headquarters deployment with full NAC implementation",
-    priority: "high",
+    id: 'ABM-HQ001',
+    name: 'ABM Global Headquarters',
+    region: 'North America',
+    country: 'USA',
+    priority: 'High',
+    phase: '1',
+    users: 2500,
+    projectManager: 'Alex Rivera',
+    technicalOwners: ['John Smith', 'Mark Wilson'],
+    status: 'In Progress',
+    completionPercent: 35,
+    wiredVendors: ['Cisco', 'Juniper'],
+    wirelessVendors: ['Cisco'],
+    deviceTypes: ['Windows', 'Apple', 'Mobile', 'IoT'],
+    radsec: 'Native',
+    plannedStart: '2025-08-01',
+    plannedEnd: '2025-08-15',
+    notes: 'Executive network needs priority handling. Board room has custom AV equipment requiring special considerations for IoT device authentication.'
   },
   {
-    id: "2",
-    name: "Branch Office East",
-    location: "Boston, MA",
-    status: "in-progress",
-    progress: 75,
-    assignedTo: "Jane Smith",
-    startDate: "2024-01-10",
-    targetDate: "2024-01-25",
-    completedUseCases: 12,
-    totalUseCases: 16,
-    description: "East coast branch office with 200 users",
-    priority: "medium",
+    id: 'ABM-DC002',
+    name: 'Primary Data Center',
+    region: 'North America',
+    country: 'USA',
+    priority: 'High',
+    phase: '1',
+    users: 150,
+    projectManager: 'Marcus Chen',
+    technicalOwners: ['Emily Jones', 'Paul Davis'],
+    status: 'In Progress',
+    completionPercent: 65,
+    wiredVendors: ['Cisco'],
+    wirelessVendors: ['Aruba'],
+    deviceTypes: ['Windows', 'IoT'],
+    radsec: 'LRAD',
+    plannedStart: '2025-08-05',
+    plannedEnd: '2025-08-12',
+    notes: '24/7 operation requires careful change windows. Critical infrastructure with redundant authentication paths.'
   },
   {
-    id: "3",
-    name: "Branch Office West",
-    location: "San Francisco, CA",
-    status: "planning",
-    progress: 25,
-    assignedTo: "Mike Johnson",
-    startDate: "2024-01-20",
-    targetDate: "2024-02-05",
-    completedUseCases: 4,
-    totalUseCases: 16,
-    description: "West coast branch office deployment",
-    priority: "medium",
+    id: 'ABM-EUR003',
+    name: 'European HQ',
+    region: 'EMEA',
+    country: 'Germany',
+    priority: 'Medium',
+    phase: '2',
+    users: 1200,
+    projectManager: 'Sofia Linden',
+    technicalOwners: ['Sarah Thompson'],
+    status: 'Planned',
+    completionPercent: 0,
+    wiredVendors: ['HPE'],
+    wirelessVendors: ['Cisco'],
+    deviceTypes: ['Windows', 'Apple', 'Mobile'],
+    radsec: 'Native',
+    plannedStart: '2025-09-01',
+    plannedEnd: '2025-09-15',
+    notes: 'GDPR compliance required. Multi-language support needed for user onboarding portal.'
   },
   {
-    id: "4",
-    name: "Remote Office",
-    location: "Austin, TX",
-    status: "on-hold",
-    progress: 40,
-    assignedTo: "Sarah Wilson",
-    startDate: "2024-01-05",
-    targetDate: "2024-01-30",
-    completedUseCases: 6,
-    totalUseCases: 16,
-    description: "Small remote office with limited infrastructure",
-    priority: "low",
+    id: 'ABM-MFG006',
+    name: 'Manufacturing Plant',
+    region: 'LATAM',
+    country: 'Mexico',
+    priority: 'High',
+    phase: '1',
+    users: 450,
+    projectManager: 'Maria Rodriguez',
+    technicalOwners: ['Carlos Mendez', 'Diego Ruiz'],
+    status: 'Complete',
+    completionPercent: 100,
+    wiredVendors: ['Extreme'],
+    wirelessVendors: ['Extreme'],
+    deviceTypes: ['Windows', 'IoT'],
+    radsec: 'Native',
+    plannedStart: '2025-08-15',
+    plannedEnd: '2025-08-30',
+    notes: 'Manufacturing floor required special considerations for IoT devices. Implemented using certificates for device authentication. Project completed ahead of schedule.'
   },
+  {
+    id: 'ABM-RD007',
+    name: 'Research & Development',
+    region: 'North America',
+    country: 'USA',
+    priority: 'High',
+    phase: '1',
+    users: 320,
+    projectManager: 'James Wilson',
+    technicalOwners: ['Jennifer Lee', 'Paul Davis'],
+    status: 'In Progress',
+    completionPercent: 55,
+    wiredVendors: ['Cisco', 'Aruba'],
+    wirelessVendors: ['Cisco', 'Aruba'],
+    deviceTypes: ['Windows', 'Apple', 'Linux', 'IoT'],
+    radsec: 'LRAD',
+    plannedStart: '2025-08-03',
+    plannedEnd: '2025-08-20',
+    notes: 'Specialized lab equipment needs custom authentication. Research environment requires flexible access policies.'
+  }
 ]
 
-export function SiteManagement() {
-  const [sites, setSites] = useState<Site[]>(mockSites)
-  const [filteredSites, setFilteredSites] = useState<Site[]>(mockSites)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [statusFilter, setStatusFilter] = useState<string>("all")
-  const [priorityFilter, setPriorityFilter] = useState<string>("all")
-  const [viewMode, setViewMode] = useState<"grid" | "table" | "map">("grid")
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
-  const [editingSite, setEditingSite] = useState<Site | null>(null)
-  const [newSite, setNewSite] = useState<Partial<Site>>({
-    name: "",
-    location: "",
-    status: "planning",
-    assignedTo: "",
-    startDate: "",
-    targetDate: "",
-    description: "",
-    priority: "medium",
+export default function SiteManagement({ onSiteSelect }: SiteManagementProps) {
+  const [sites, setSites] = useState<Site[]>(sampleSites)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [regionFilter, setRegionFilter] = useState('all')
+  const [priorityFilter, setPriorityFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [selectedSite, setSelectedSite] = useState<Site | null>(null)
+  const [showAddModal, setShowAddModal] = useState(false)
+
+  const filteredSites = sites.filter(site => {
+    const matchesSearch = site.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         site.id.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesRegion = regionFilter === 'all' || site.region === regionFilter
+    const matchesPriority = priorityFilter === 'all' || site.priority === priorityFilter
+    const matchesStatus = statusFilter === 'all' || site.status === statusFilter
+
+    return matchesSearch && matchesRegion && matchesPriority && matchesStatus
   })
-
-  useEffect(() => {
-    let filtered = sites
-
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (site) =>
-          site.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          site.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          site.assignedTo.toLowerCase().includes(searchTerm.toLowerCase()),
-      )
-    }
-
-    if (statusFilter !== "all") {
-      filtered = filtered.filter((site) => site.status === statusFilter)
-    }
-
-    if (priorityFilter !== "all") {
-      filtered = filtered.filter((site) => site.priority === priorityFilter)
-    }
-
-    setFilteredSites(filtered)
-  }, [sites, searchTerm, statusFilter, priorityFilter])
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "completed":
+      case 'Complete':
         return <CheckCircle className="h-4 w-4 text-green-600" />
-      case "in-progress":
+      case 'In Progress':
         return <Clock className="h-4 w-4 text-blue-600" />
-      case "planning":
-        return <Calendar className="h-4 w-4 text-orange-600" />
-      case "on-hold":
-        return <AlertCircle className="h-4 w-4 text-red-600" />
+      case 'Delayed':
+        return <AlertTriangle className="h-4 w-4 text-red-600" />
+      case 'Planned':
+        return <XCircle className="h-4 w-4 text-gray-600" />
       default:
         return null
     }
   }
 
-  const getStatusBadge = (status: string) => {
-    const variants = {
-      completed: "default",
-      "in-progress": "secondary",
-      planning: "outline",
-      "on-hold": "destructive",
-    } as const
-
-    return (
-      <Badge variant={variants[status as keyof typeof variants] || "secondary"}>
-        {status.replace("-", " ").replace(/\b\w/g, (l) => l.toUpperCase())}
-      </Badge>
-    )
-  }
-
-  const getPriorityBadge = (priority: string) => {
-    const variants = {
-      high: "destructive",
-      medium: "secondary",
-      low: "outline",
-    } as const
-
-    return (
-      <Badge variant={variants[priority as keyof typeof variants] || "secondary"}>
-        {priority.charAt(0).toUpperCase() + priority.slice(1)}
-      </Badge>
-    )
-  }
-
-  const handleAddSite = () => {
-    if (!newSite.name || !newSite.location || !newSite.assignedTo) return
-
-    const site: Site = {
-      id: Date.now().toString(),
-      name: newSite.name,
-      location: newSite.location,
-      status: newSite.status as Site["status"],
-      progress: 0,
-      assignedTo: newSite.assignedTo,
-      startDate: newSite.startDate || new Date().toISOString().split("T")[0],
-      targetDate: newSite.targetDate || "",
-      completedUseCases: 0,
-      totalUseCases: 16,
-      description: newSite.description,
-      priority: newSite.priority as Site["priority"],
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'High':
+        return 'destructive'
+      case 'Medium':
+        return 'default'
+      case 'Low':
+        return 'secondary'
+      default:
+        return 'outline'
     }
-
-    setSites((prev) => [...prev, site])
-    setIsAddDialogOpen(false)
-    setNewSite({
-      name: "",
-      location: "",
-      status: "planning",
-      assignedTo: "",
-      startDate: "",
-      targetDate: "",
-      description: "",
-      priority: "medium",
-    })
   }
 
-  const handleEditSite = (site: Site) => {
-    setEditingSite(site)
-    setNewSite(site)
-    setIsAddDialogOpen(true)
+  const exportToCSV = () => {
+    const headers = [
+      'Site ID', 'Site Name', 'Region', 'Country', 'Priority', 'Phase', 
+      'Users', 'Project Manager', 'Technical Owners', 'Status', 
+      'Completion %', 'RADSEC', 'Notes'
+    ]
+    
+    const csvContent = [
+      headers.join(','),
+      ...filteredSites.map(site => [
+        site.id,
+        `"${site.name}"`,
+        site.region,
+        site.country,
+        site.priority,
+        site.phase,
+        site.users,
+        `"${site.projectManager}"`,
+        `"${site.technicalOwners.join(', ')}"`,
+        site.status,
+        site.completionPercent,
+        site.radsec,
+        `"${site.notes}"`
+      ].join(','))
+    ].join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `portnox-sites-${Date.now()}.csv`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
   }
 
-  const handleUpdateSite = () => {
-    if (!editingSite || !newSite.name || !newSite.location || !newSite.assignedTo) return
-
-    setSites((prev) => prev.map((site) => (site.id === editingSite.id ? ({ ...site, ...newSite } as Site) : site)))
-    setIsAddDialogOpen(false)
-    setEditingSite(null)
-    setNewSite({
-      name: "",
-      location: "",
-      status: "planning",
-      assignedTo: "",
-      startDate: "",
-      targetDate: "",
-      description: "",
-      priority: "medium",
-    })
+  const handleAddSite = (newSite: Omit<Site, 'id'>) => {
+    const site: Site = {
+      ...newSite,
+      id: `ABM-${Date.now().toString().slice(-6).toUpperCase()}`
+    }
+    setSites(prev => [...prev, site])
   }
 
-  const handleDeleteSite = (id: string) => {
-    setSites((prev) => prev.filter((site) => site.id !== id))
+  const handleDeleteSite = (siteId: string) => {
+    setSites(prev => prev.filter(site => site.id !== siteId))
   }
 
-  const renderGridView = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {filteredSites.map((site) => (
-        <Card key={site.id} className="hover:shadow-md transition-shadow">
-          <CardHeader>
-            <div className="flex justify-between items-start">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Building className="h-5 w-5" />
-                  {site.name}
-                </CardTitle>
-                <CardDescription className="flex items-center gap-1 mt-1">
-                  <MapPin className="h-3 w-3" />
-                  {site.location}
-                </CardDescription>
-              </div>
-              <div className="flex gap-1">
-                <Button size="sm" variant="ghost" onClick={() => handleEditSite(site)}>
-                  <Edit className="h-4 w-4" />
-                </Button>
-                <Button size="sm" variant="ghost" onClick={() => handleDeleteSite(site.id)}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex justify-between items-center">
-              {getStatusBadge(site.status)}
-              {getPriorityBadge(site.priority)}
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Progress</span>
-                <span>{site.progress}%</span>
-              </div>
-              <Progress value={site.progress} className="h-2" />
-            </div>
-
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Assigned to:</span>
-                <span>{site.assignedTo}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Use Cases:</span>
-                <span>
-                  {site.completedUseCases}/{site.totalUseCases}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Target Date:</span>
-                <span>{new Date(site.targetDate).toLocaleDateString()}</span>
-              </div>
-            </div>
-
-            {site.description && <p className="text-sm text-muted-foreground line-clamp-2">{site.description}</p>}
-
-            <Button className="w-full bg-transparent" variant="outline">
-              <Eye className="h-4 w-4 mr-2" />
-              View Details
-            </Button>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  )
-
-  const renderTableView = () => (
-    <Card>
-      <CardContent className="p-0">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Site Name</TableHead>
-              <TableHead>Location</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Priority</TableHead>
-              <TableHead>Progress</TableHead>
-              <TableHead>Assigned To</TableHead>
-              <TableHead>Target Date</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredSites.map((site) => (
-              <TableRow key={site.id}>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Building className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">{site.name}</span>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-1">
-                    <MapPin className="h-3 w-3 text-muted-foreground" />
-                    {site.location}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    {getStatusIcon(site.status)}
-                    {getStatusBadge(site.status)}
-                  </div>
-                </TableCell>
-                <TableCell>{getPriorityBadge(site.priority)}</TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Progress value={site.progress} className="h-2 w-16" />
-                    <span className="text-sm">{site.progress}%</span>
-                  </div>
-                </TableCell>
-                <TableCell>{site.assignedTo}</TableCell>
-                <TableCell>{new Date(site.targetDate).toLocaleDateString()}</TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-1">
-                    <Button size="sm" variant="ghost" onClick={() => handleEditSite(site)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => handleDeleteSite(site.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
-  )
-
-  const renderMapView = () => (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Map className="h-5 w-5" />
-          Site Locations
-        </CardTitle>
-        <CardDescription>Geographic distribution of deployment sites</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="h-[400px] bg-muted rounded-lg flex items-center justify-center">
-          <div className="text-center">
-            <Map className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">Interactive map view coming soon</p>
-            <p className="text-sm text-muted-foreground mt-2">This will show all sites plotted on an interactive map</p>
-          </div>
-        </div>
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filteredSites.map((site) => (
-            <div key={site.id} className="flex items-center justify-between p-3 border rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
-                  {getStatusIcon(site.status)}
-                  <span className="font-medium">{site.name}</span>
-                </div>
-                <span className="text-sm text-muted-foreground">{site.location}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                {getPriorityBadge(site.priority)}
-                <span className="text-sm">{site.progress}%</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
-  )
+  const handleViewSite = (site: Site) => {
+    setSelectedSite(site)
+    onSiteSelect(site.id)
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold">Site Management</h2>
-          <p className="text-muted-foreground">Manage deployment sites and track progress</p>
-        </div>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Site
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>{editingSite ? "Edit Site" : "Add New Site"}</DialogTitle>
-              <DialogDescription>
-                {editingSite ? "Update site information" : "Create a new deployment site"}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="siteName">Site Name</Label>
-                <Input
-                  id="siteName"
-                  value={newSite.name}
-                  onChange={(e) => setNewSite((prev) => ({ ...prev, name: e.target.value }))}
-                  placeholder="Enter site name"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="location">Location</Label>
-                <Input
-                  id="location"
-                  value={newSite.location}
-                  onChange={(e) => setNewSite((prev) => ({ ...prev, location: e.target.value }))}
-                  placeholder="Enter location"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
-                <Select
-                  value={newSite.status}
-                  onValueChange={(value) => setNewSite((prev) => ({ ...prev, status: value as Site["status"] }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="planning">Planning</SelectItem>
-                    <SelectItem value="in-progress">In Progress</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="on-hold">On Hold</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="priority">Priority</Label>
-                <Select
-                  value={newSite.priority}
-                  onValueChange={(value) => setNewSite((prev) => ({ ...prev, priority: value as Site["priority"] }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low">Low</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="assignedTo">Assigned To</Label>
-                <Input
-                  id="assignedTo"
-                  value={newSite.assignedTo}
-                  onChange={(e) => setNewSite((prev) => ({ ...prev, assignedTo: e.target.value }))}
-                  placeholder="Enter assignee name"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="targetDate">Target Date</Label>
-                <Input
-                  id="targetDate"
-                  type="date"
-                  value={newSite.targetDate}
-                  onChange={(e) => setNewSite((prev) => ({ ...prev, targetDate: e.target.value }))}
-                />
-              </div>
-              <div className="col-span-2 space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={newSite.description}
-                  onChange={(e) => setNewSite((prev) => ({ ...prev, description: e.target.value }))}
-                  placeholder="Enter site description"
-                  rows={3}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setIsAddDialogOpen(false)
-                  setEditingSite(null)
-                  setNewSite({
-                    name: "",
-                    location: "",
-                    status: "planning",
-                    assignedTo: "",
-                    startDate: "",
-                    targetDate: "",
-                    description: "",
-                    priority: "medium",
-                  })
-                }}
-              >
-                Cancel
-              </Button>
-              <Button onClick={editingSite ? handleUpdateSite : handleAddSite}>
-                {editingSite ? "Update Site" : "Add Site"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {/* Filters and View Controls */}
       <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-            <div className="flex flex-col sm:flex-row gap-4 flex-1">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  placeholder="Search sites..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="planning">Planning</SelectItem>
-                  <SelectItem value="in-progress">In Progress</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="on-hold">On Hold</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="Priority" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Priority</SelectItem>
-                  <SelectItem value="low">Low</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
-                </SelectContent>
-              </Select>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Building className="h-5 w-5" />
+            <span>Master Site List</span>
+          </CardTitle>
+          <CardDescription>
+            Manage deployment sites, track progress, and configure site-specific settings for the Zero Trust NAC rollout
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {/* Filters and Controls */}
+          <div className="flex flex-wrap gap-4 items-center mb-6">
+            <div className="flex items-center space-x-2">
+              <Search className="h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search sites..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-64"
+              />
             </div>
-            <div className="flex gap-2">
-              <Button
-                variant={viewMode === "grid" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setViewMode("grid")}
-              >
-                <Grid3X3 className="h-4 w-4" />
+
+            <Select value={regionFilter} onValueChange={setRegionFilter}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="All Regions" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Regions</SelectItem>
+                <SelectItem value="North America">North America</SelectItem>
+                <SelectItem value="EMEA">EMEA</SelectItem>
+                <SelectItem value="APAC">APAC</SelectItem>
+                <SelectItem value="LATAM">LATAM</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="All Priorities" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Priorities</SelectItem>
+                <SelectItem value="High">High</SelectItem>
+                <SelectItem value="Medium">Medium</SelectItem>
+                <SelectItem value="Low">Low</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="All Statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="Planned">Planned</SelectItem>
+                <SelectItem value="In Progress">In Progress</SelectItem>
+                <SelectItem value="Complete">Complete</SelectItem>
+                <SelectItem value="Delayed">Delayed</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <div className="ml-auto flex space-x-2">
+              <Button variant="outline" onClick={exportToCSV}>
+                <Download className="h-4 w-4 mr-2" />
+                Export CSV
               </Button>
-              <Button
-                variant={viewMode === "table" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setViewMode("table")}
-              >
-                <List className="h-4 w-4" />
-              </Button>
-              <Button variant={viewMode === "map" ? "default" : "outline"} size="sm" onClick={() => setViewMode("map")}>
-                <Map className="h-4 w-4" />
+              <Button onClick={() => setShowAddModal(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Site
               </Button>
             </div>
           </div>
+
+          {/* Sites Table */}
+          <div className="border rounded-lg">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Site</TableHead>
+                  <TableHead>Region</TableHead>
+                  <TableHead>Priority</TableHead>
+                  <TableHead>Phase</TableHead>
+                  <TableHead>Users</TableHead>
+                  <TableHead>Project Manager</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Progress</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredSites.map((site) => (
+                  <TableRow key={site.id}>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{site.name}</div>
+                        <div className="text-sm text-muted-foreground">{site.id}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                        <span>{site.region}</span>
+                      </div>
+                      <div className="text-sm text-muted-foreground">{site.country}</div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={getPriorityColor(site.priority)}>
+                        {site.priority}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>Phase {site.phase}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                        <span>{site.users.toLocaleString()}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>{site.projectManager}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        {getStatusIcon(site.status)}
+                        <span>{site.status}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-2">
+                        <Progress value={site.completionPercent} className="w-20" />
+                        <span className="text-sm text-muted-foreground">
+                          {site.completionPercent}%
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleViewSite(site)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-destructive"
+                          onClick={() => handleDeleteSite(site.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          {filteredSites.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground">
+              No sites found matching your criteria.
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Content based on view mode */}
-      {viewMode === "grid" && renderGridView()}
-      {viewMode === "table" && renderTableView()}
-      {viewMode === "map" && renderMapView()}
+      {/* Site Details Dialog */}
+      <Dialog open={!!selectedSite} onOpenChange={() => setSelectedSite(null)}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Building className="h-5 w-5" />
+              <span>{selectedSite?.name}</span>
+            </DialogTitle>
+            <DialogDescription>
+              Site ID: {selectedSite?.id}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedSite && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-semibold mb-2">Basic Information</h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Region:</span>
+                        <span>{selectedSite.region}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Country:</span>
+                        <span>{selectedSite.country}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Priority:</span>
+                        <Badge variant={getPriorityColor(selectedSite.priority)}>
+                          {selectedSite.priority}
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Phase:</span>
+                        <span>Phase {selectedSite.phase}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Users:</span>
+                        <span>{selectedSite.users.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </div>
 
-      {filteredSites.length === 0 && (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <Building className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">No sites found</h3>
-            <p className="text-muted-foreground mb-4">
-              {searchTerm || statusFilter !== "all" || priorityFilter !== "all"
-                ? "Try adjusting your filters to see more results."
-                : "Get started by adding your first deployment site."}
-            </p>
-            {!searchTerm && statusFilter === "all" && priorityFilter === "all" && (
-              <Button onClick={() => setIsAddDialogOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Your First Site
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-      )}
+                  <div>
+                    <h4 className="font-semibold mb-2">Project Team</h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Project Manager:</span>
+                        <span>{selectedSite.projectManager}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Technical Owners:</span>
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {selectedSite.technicalOwners.map((owner, index) => (
+                            <Badge key={index} variant="outline" className="text-xs">
+                              {owner}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-semibold mb-2">Timeline</h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Planned Start:</span>
+                        <span>{selectedSite.plannedStart}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Planned End:</span>
+                        <span>{selectedSite.plannedEnd}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Status:</span>
+                        <div className="flex items-center space-x-2">
+                          {getStatusIcon(selectedSite.status)}
+                          <span>{selectedSite.status}</span>
+                        </div>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Progress:</span>
+                        <span>{selectedSite.completionPercent}%</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold mb-2">Technical Details</h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">RADSEC:</span>
+                        <span>{selectedSite.radsec}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Wired Vendors:</span>
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {selectedSite.wiredVendors.map((vendor, index) => (
+                            <Badge key={index} variant="secondary" className="text-xs">
+                              {vendor}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Wireless Vendors:</span>
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {selectedSite.wirelessVendors.map((vendor, index) => (
+                            <Badge key={index} variant="secondary" className="text-xs">
+                              {vendor}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-semibold mb-2">Device Types</h4>
+                <div className="flex flex-wrap gap-2">
+                  {selectedSite.deviceTypes.map((type, index) => (
+                    <Badge key={index} variant="outline">
+                      {type}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              {selectedSite.notes && (
+                <div>
+                  <h4 className="font-semibold mb-2">Notes</h4>
+                  <p className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">
+                    {selectedSite.notes}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Site Modal */}
+      <AddSiteModal 
+        open={showAddModal} 
+        onOpenChange={setShowAddModal}
+        onAddSite={handleAddSite}
+      />
     </div>
   )
 }

@@ -2,8 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
-import { Book, MapPin, Users, Calendar, Settings, CheckCircle, Clock, AlertTriangle, XCircle } from 'lucide-react'
+import { Book, MapPin, Users, Calendar, Settings } from 'lucide-react'
 
 interface SiteWorkbookProps {
   siteId: string | null
@@ -23,23 +22,13 @@ export default function SiteWorkbook({ siteId }: SiteWorkbookProps) {
     technicalOwners: ['John Smith', 'Mark Wilson'],
     status: 'In Progress',
     completionPercent: 35,
-    notes: 'Executive network needs priority handling. Board room has custom AV equipment requiring special considerations for IoT device authentication.',
+    notes: 'Executive network needs priority handling. Board room has custom AV equipment.',
     wiredVendors: ['Cisco', 'Juniper'],
     wirelessVendors: ['Cisco'],
     deviceTypes: ['Windows', 'Apple', 'Mobile', 'IoT'],
     radsec: 'Native',
     plannedStart: '2025-08-01',
-    plannedEnd: '2025-08-15',
-    deploymentChecklist: [
-      { item: 'Intune Configuration', status: 'complete' },
-      { item: 'Certificate Templates', status: 'complete' },
-      { item: 'RADIUS Configuration', status: 'in-progress' },
-      { item: 'Switch Configuration', status: 'in-progress' },
-      { item: 'Wireless Configuration', status: 'pending' },
-      { item: 'Policy Configuration', status: 'pending' },
-      { item: 'User Testing', status: 'pending' },
-      { item: 'Go-Live', status: 'pending' }
-    ]
+    plannedEnd: '2025-08-15'
   } : null
 
   if (!siteId || !siteData) {
@@ -58,7 +47,7 @@ export default function SiteWorkbook({ siteId }: SiteWorkbookProps) {
               No Site Selected
             </h3>
             <p className="text-gray-600 dark:text-gray-400">
-              Please select a site from the Master Site List to view its detailed workbook.
+              Please select a site from the Master List to view its detailed workbook.
             </p>
           </div>
         </CardContent>
@@ -68,10 +57,10 @@ export default function SiteWorkbook({ siteId }: SiteWorkbookProps) {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'High': return 'destructive'
-      case 'Medium': return 'default'
-      case 'Low': return 'secondary'
-      default: return 'outline'
+      case 'High': return 'bg-red-100 text-red-800 border-red-200'
+      case 'Medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200'
+      case 'Low': return 'bg-green-100 text-green-800 border-green-200'
+      default: return 'bg-gray-100 text-gray-800 border-gray-200'
     }
   }
 
@@ -82,19 +71,6 @@ export default function SiteWorkbook({ siteId }: SiteWorkbookProps) {
       case 'Planned': return 'text-gray-600'
       case 'Delayed': return 'text-red-600'
       default: return 'text-gray-600'
-    }
-  }
-
-  const getChecklistIcon = (status: string) => {
-    switch (status) {
-      case 'complete':
-        return <CheckCircle className="h-4 w-4 text-green-600" />
-      case 'in-progress':
-        return <Clock className="h-4 w-4 text-blue-600" />
-      case 'pending':
-        return <XCircle className="h-4 w-4 text-gray-400" />
-      default:
-        return <XCircle className="h-4 w-4 text-gray-400" />
     }
   }
 
@@ -131,7 +107,7 @@ export default function SiteWorkbook({ siteId }: SiteWorkbookProps) {
                 </div>
                 <div className="flex justify-between">
                   <span className="font-medium text-gray-600 dark:text-gray-400">Priority:</span>
-                  <Badge variant={getPriorityColor(siteData.priority)}>
+                  <Badge className={getPriorityColor(siteData.priority)}>
                     {siteData.priority}
                   </Badge>
                 </div>
@@ -177,7 +153,7 @@ export default function SiteWorkbook({ siteId }: SiteWorkbookProps) {
                   <div className="flex items-center space-x-2">
                     <div className="w-20 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                       <div 
-                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                        className="bg-blue-600 h-2 rounded-full"
                         style={{ width: `${siteData.completionPercent}%` }}
                       />
                     </div>
@@ -255,27 +231,6 @@ export default function SiteWorkbook({ siteId }: SiteWorkbookProps) {
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* Deployment Checklist */}
-          <div className="mt-6 pt-6 border-t">
-            <h3 className="text-lg font-semibold mb-4">Deployment Checklist</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {siteData.deploymentChecklist.map((item, index) => (
-                <div key={index} className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  {getChecklistIcon(item.status)}
-                  <span className={`flex-1 ${item.status === 'complete' ? 'line-through text-gray-500' : ''}`}>
-                    {item.item}
-                  </span>
-                  <Badge 
-                    variant={item.status === 'complete' ? 'default' : item.status === 'in-progress' ? 'secondary' : 'outline'}
-                    className="text-xs"
-                  >
-                    {item.status.replace('-', ' ')}
-                  </Badge>
-                </div>
-              ))}
             </div>
           </div>
 
