@@ -3,162 +3,114 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Upload, Moon, Sun, Settings, Download, Share2, Save, FileText, ImageIcon } from 'lucide-react'
-import { useTheme } from 'next-themes'
+import { Avatar, AvatarFallback, AvatarInitials } from '@/components/ui/avatar'
+import { Settings, Users, Upload, Download, Save, Palette, Bell, Search, Menu } from 'lucide-react'
 
-export default function Header() {
-  const { theme, setTheme } = useTheme()
-  const [logoUrl, setLogoUrl] = useState('')
-  const [companyName, setCompanyName] = useState('ABM Industries')
+interface HeaderProps {
+  onUserManagement: () => void
+  onThemeCustomizer: () => void
+}
 
-  const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        setLogoUrl(e.target?.result as string)
-      }
-      reader.readAsDataURL(file)
-    }
-  }
-
-  const handleExport = (format: 'pdf' | 'png' | 'json') => {
-    // Export functionality would be implemented here
-    console.log(`Exporting as ${format}`)
-  }
+export function Header({ onUserManagement, onThemeCustomizer }: HeaderProps) {
+  const [searchQuery, setSearchQuery] = useState('')
 
   return (
-    <header className="bg-white dark:bg-gray-800 shadow-lg border-b border-gray-200 dark:border-gray-700">
-      <div className="container mx-auto px-4 py-4">
+    <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-b border-slate-200 dark:border-slate-700 sticky top-0 z-50">
+      <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
-          {/* Logo and Company Info */}
+          {/* Logo and Title */}
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-3">
-              {logoUrl ? (
-                <img src={logoUrl || "/placeholder.svg"} alt="Company Logo" className="h-12 w-12 object-contain rounded-lg" />
-              ) : (
-                <div className="h-12 w-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">ABM</span>
-                </div>
-              )}
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-lg">P</span>
+              </div>
               <div>
-                <Input
-                  value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value)}
-                  className="text-xl font-bold bg-transparent border-none p-0 h-auto focus:ring-0"
-                  placeholder="Company Name"
-                />
-                <p className="text-sm text-gray-600 dark:text-gray-400">Portnox NAC Architecture Designer</p>
+                <h1 className="text-xl font-bold text-slate-900 dark:text-white">
+                  Portnox NAC Designer
+                </h1>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Architecture & Deployment Platform
+                </p>
               </div>
             </div>
-          </div>
-
-          {/* Status and Actions */}
-          <div className="flex items-center space-x-4">
-            {/* Project Status */}
-            <Card className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 border-green-200 dark:border-green-800">
-              <CardContent className="p-3">
-                <div className="flex items-center space-x-2">
-                  <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">
-                    Active Project
-                  </Badge>
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    NAC Deployment Phase 1
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Action Buttons */}
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => document.getElementById('logo-upload')?.click()}
-                className="hidden sm:flex"
-              >
-                <Upload className="h-4 w-4 mr-2" />
-                Logo
-              </Button>
-              <input
-                id="logo-upload"
-                type="file"
-                accept="image/*"
-                onChange={handleLogoUpload}
-                className="hidden"
-              />
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleExport('json')}
-                className="hidden md:flex"
-              >
-                <Save className="h-4 w-4 mr-2" />
-                Save
-              </Button>
-
-              <div className="flex items-center border rounded-lg">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleExport('pdf')}
-                  className="rounded-r-none border-r"
-                >
-                  <FileText className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleExport('png')}
-                  className="rounded-none border-r"
-                >
-                  <ImageIcon className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleExport('json')}
-                  className="rounded-l-none"
-                >
-                  <Download className="h-4 w-4" />
-                </Button>
-              </div>
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              >
-                {theme === 'dark' ? (
-                  <Sun className="h-4 w-4" />
-                ) : (
-                  <Moon className="h-4 w-4" />
-                )}
-              </Button>
-
-              <Button variant="outline" size="sm">
-                <Settings className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Project Summary Bar */}
-        <div className="mt-4 flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
-          <div className="flex items-center space-x-6">
-            <span>Sites: <strong className="text-gray-900 dark:text-gray-100">24</strong></span>
-            <span>Completed: <strong className="text-green-600">18</strong></span>
-            <span>In Progress: <strong className="text-yellow-600">4</strong></span>
-            <span>Planned: <strong className="text-blue-600">2</strong></span>
-          </div>
-          <div className="flex items-center space-x-4">
-            <span>Last Updated: <strong>Today, 2:30 PM</strong></span>
-            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-              Version 2.1
+            <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+              v2.1.0
             </Badge>
+          </div>
+
+          {/* Search Bar */}
+          <div className="hidden md:flex items-center space-x-4 flex-1 max-w-md mx-8">
+            <div className="relative w-full">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+              <Input
+                type="text"
+                placeholder="Search configurations, policies..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700"
+              />
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center space-x-2">
+            <Button variant="ghost" size="sm" className="hidden lg:flex">
+              <Upload className="w-4 h-4 mr-2" />
+              Import
+            </Button>
+            
+            <Button variant="ghost" size="sm" className="hidden lg:flex">
+              <Download className="w-4 h-4 mr-2" />
+              Export
+            </Button>
+            
+            <Button variant="ghost" size="sm" className="hidden lg:flex">
+              <Save className="w-4 h-4 mr-2" />
+              Save
+            </Button>
+
+            <div className="w-px h-6 bg-slate-300 dark:bg-slate-600 mx-2" />
+
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={onThemeCustomizer}
+              className="hidden lg:flex"
+            >
+              <Palette className="w-4 h-4 mr-2" />
+              Theme
+            </Button>
+
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={onUserManagement}
+              className="hidden lg:flex"
+            >
+              <Users className="w-4 h-4 mr-2" />
+              Users
+            </Button>
+
+            <Button variant="ghost" size="sm">
+              <Bell className="w-4 h-4" />
+            </Button>
+
+            <Button variant="ghost" size="sm">
+              <Settings className="w-4 h-4" />
+            </Button>
+
+            {/* User Avatar */}
+            <Avatar className="w-8 h-8">
+              <AvatarFallback>
+                <AvatarInitials name="John Doe" />
+              </AvatarFallback>
+            </Avatar>
+
+            {/* Mobile Menu */}
+            <Button variant="ghost" size="sm" className="lg:hidden">
+              <Menu className="w-4 h-4" />
+            </Button>
           </div>
         </div>
       </div>

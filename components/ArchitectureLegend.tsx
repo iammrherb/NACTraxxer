@@ -9,7 +9,7 @@ interface ArchitectureLegendProps {
   currentView: string
 }
 
-export default function ArchitectureLegend({ currentView = 'complete' }: ArchitectureLegendProps) {
+export default function ArchitectureLegend({ currentView }: ArchitectureLegendProps) {
   const legendSections = [
     {
       title: 'Cloud Services & Infrastructure',
@@ -190,10 +190,6 @@ export default function ArchitectureLegend({ currentView = 'complete' }: Archite
     ]
   }
 
-  // Safe access to currentView with fallback
-  const safeCurrentView = currentView || 'complete'
-  const viewDisplayName = safeCurrentView.charAt(0).toUpperCase() + safeCurrentView.slice(1).replace('-', ' ')
-
   return (
     <div className="space-y-6">
       <Card>
@@ -253,23 +249,18 @@ export default function ArchitectureLegend({ currentView = 'complete' }: Archite
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Shield className="h-5 w-5 text-green-600" />
-            <span>Technical Implementation Details - {viewDisplayName}</span>
+            <span>Technical Implementation Details - {currentView.charAt(0).toUpperCase() + currentView.slice(1).replace('-', ' ')}</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
             <ul className="space-y-2">
-              {technicalDetails[safeCurrentView as keyof typeof technicalDetails]?.map((detail, index) => (
+              {technicalDetails[currentView as keyof typeof technicalDetails]?.map((detail, index) => (
                 <li key={index} className="flex items-start space-x-2">
                   <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0" />
                   <span className="text-sm text-gray-700 dark:text-gray-300">{detail}</span>
                 </li>
-              )) || (
-                <li className="flex items-start space-x-2">
-                  <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0" />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">No technical details available for this view</span>
-                </li>
-              )}
+              ))}
             </ul>
           </div>
         </CardContent>

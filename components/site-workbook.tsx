@@ -41,23 +41,9 @@ interface SiteDetails {
   plannedEnd: string
 }
 
-interface SiteWorkbookProps {
-  siteId: string | null
-}
-
-export default function SiteWorkbook({ siteId }: SiteWorkbookProps) {
+export default function SiteWorkbook() {
+  const [selectedSite, setSelectedSite] = useState<string>('ABM-HQ001')
   const [activeTab, setActiveTab] = useState('overview')
-  const [primaryRadius, setPrimaryRadius] = useState('radius1.portnox.cloud')
-  const [secondaryRadius, setSecondaryRadius] = useState('radius2.portnox.cloud')
-  const [corporateVlan, setCorporateVlan] = useState('100')
-  const [guestVlan, setGuestVlan] = useState('200')
-  const [iotVlan, setIotVlan] = useState('300')
-  const [caUrl, setCaUrl] = useState('https://pki.portnox.cloud')
-  const [scepUrl, setScepUrl] = useState('https://scep.portnox.cloud')
-  const [ocspUrl, setOcspUrl] = useState('https://ocsp.portnox.cloud')
-  const [certValidity, setCertValidity] = useState('1year')
-  const [testNotes, setTestNotes] = useState('')
-  const [projectNotes, setProjectNotes] = useState('')
 
   const siteDetails: SiteDetails = {
     id: 'ABM-HQ001',
@@ -216,21 +202,6 @@ export default function SiteWorkbook({ siteId }: SiteWorkbookProps) {
   const progressPercentage = Math.round((completedTasks / totalTasks) * 100)
 
   const categories = [...new Set(checklist.map(item => item.category))]
-
-  if (!siteId) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Site Workbook</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-12 text-muted-foreground">
-            Select a site from the Site Management tab to view its workbook
-          </div>
-        </CardContent>
-      </Card>
-    )
-  }
 
   return (
     <div className="space-y-6">
@@ -499,23 +470,15 @@ export default function SiteWorkbook({ siteId }: SiteWorkbookProps) {
                   <div className="space-y-3">
                     <div>
                       <Label htmlFor="primary-radius">Primary RADIUS Server</Label>
-                      <Input 
-                        id="primary-radius" 
-                        value={primaryRadius} 
-                        onChange={(e) => setPrimaryRadius(e.target.value)}
-                      />
+                      <Input id="primary-radius" value="radius1.portnox.cloud" readOnly />
                     </div>
                     <div>
                       <Label htmlFor="secondary-radius">Secondary RADIUS Server</Label>
-                      <Input 
-                        id="secondary-radius" 
-                        value={secondaryRadius}
-                        onChange={(e) => setSecondaryRadius(e.target.value)}
-                      />
+                      <Input id="secondary-radius" value="radius2.portnox.cloud" readOnly />
                     </div>
                     <div>
                       <Label htmlFor="shared-secret">Shared Secret</Label>
-                      <Input id="shared-secret" type="password" defaultValue="••••••••••••" readOnly />
+                      <Input id="shared-secret" type="password" value="••••••••••••" readOnly />
                     </div>
                   </div>
                 </div>
@@ -525,27 +488,15 @@ export default function SiteWorkbook({ siteId }: SiteWorkbookProps) {
                   <div className="space-y-3">
                     <div>
                       <Label htmlFor="corporate-vlan">Corporate VLAN</Label>
-                      <Input 
-                        id="corporate-vlan" 
-                        value={corporateVlan}
-                        onChange={(e) => setCorporateVlan(e.target.value)}
-                      />
+                      <Input id="corporate-vlan" value="100" />
                     </div>
                     <div>
                       <Label htmlFor="guest-vlan">Guest VLAN</Label>
-                      <Input 
-                        id="guest-vlan" 
-                        value={guestVlan}
-                        onChange={(e) => setGuestVlan(e.target.value)}
-                      />
+                      <Input id="guest-vlan" value="200" />
                     </div>
                     <div>
                       <Label htmlFor="iot-vlan">IoT VLAN</Label>
-                      <Input 
-                        id="iot-vlan" 
-                        value={iotVlan}
-                        onChange={(e) => setIotVlan(e.target.value)}
-                      />
+                      <Input id="iot-vlan" value="300" />
                     </div>
                   </div>
                 </div>
@@ -562,33 +513,21 @@ export default function SiteWorkbook({ siteId }: SiteWorkbookProps) {
                 <div className="space-y-3">
                   <div>
                     <Label htmlFor="ca-url">Certificate Authority URL</Label>
-                    <Input 
-                      id="ca-url" 
-                      value={caUrl}
-                      onChange={(e) => setCaUrl(e.target.value)}
-                    />
+                    <Input id="ca-url" value="https://pki.portnox.cloud" readOnly />
                   </div>
                   <div>
                     <Label htmlFor="scep-url">SCEP Enrollment URL</Label>
-                    <Input 
-                      id="scep-url" 
-                      value={scepUrl}
-                      onChange={(e) => setScepUrl(e.target.value)}
-                    />
+                    <Input id="scep-url" value="https://scep.portnox.cloud" readOnly />
                   </div>
                 </div>
                 <div className="space-y-3">
                   <div>
                     <Label htmlFor="ocsp-url">OCSP Responder URL</Label>
-                    <Input 
-                      id="ocsp-url" 
-                      value={ocspUrl}
-                      onChange={(e) => setOcspUrl(e.target.value)}
-                    />
+                    <Input id="ocsp-url" value="https://ocsp.portnox.cloud" readOnly />
                   </div>
                   <div>
                     <Label htmlFor="cert-validity">Certificate Validity Period</Label>
-                    <Select value={certValidity} onValueChange={setCertValidity}>
+                    <Select defaultValue="1year">
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -663,8 +602,6 @@ export default function SiteWorkbook({ siteId }: SiteWorkbookProps) {
                     placeholder="Document test results, issues encountered, and resolutions..."
                     className="mt-2"
                     rows={6}
-                    value={testNotes}
-                    onChange={(e) => setTestNotes(e.target.value)}
                   />
                 </div>
               </div>
@@ -730,8 +667,6 @@ export default function SiteWorkbook({ siteId }: SiteWorkbookProps) {
                     placeholder="Document key decisions, challenges overcome, and recommendations for future deployments..."
                     className="mt-2"
                     rows={8}
-                    value={projectNotes}
-                    onChange={(e) => setProjectNotes(e.target.value)}
                   />
                 </div>
               </div>
