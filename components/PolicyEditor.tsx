@@ -22,8 +22,8 @@ export default function PolicyEditor() {
   const [policyRules, setPolicyRules] = useState<PolicyRule[]>([
     {
       id: '1',
-      userGroup: 'Corporate Users',
-      authMethod: 'EAP-TLS',
+      userGroup: 'corporate-users',
+      authMethod: 'eap-tls',
       condition: 'Certificate Valid',
       action: 'Allow',
       vlan: '100',
@@ -31,8 +31,8 @@ export default function PolicyEditor() {
     },
     {
       id: '2',
-      userGroup: 'Guest Users',
-      authMethod: 'Captive Portal',
+      userGroup: 'guest-users',
+      authMethod: 'captive-portal',
       condition: 'Sponsor Approved',
       action: 'Allow',
       vlan: '200',
@@ -40,8 +40,8 @@ export default function PolicyEditor() {
     },
     {
       id: '3',
-      userGroup: 'IoT Devices',
-      authMethod: 'MAB',
+      userGroup: 'iot-devices',
+      authMethod: 'mab',
       condition: 'MAC Registered',
       action: 'Allow',
       vlan: '300',
@@ -49,8 +49,8 @@ export default function PolicyEditor() {
     },
     {
       id: '4',
-      userGroup: 'Unknown Devices',
-      authMethod: 'Any',
+      userGroup: 'unknown-devices',
+      authMethod: 'any',
       condition: 'Not Compliant',
       action: 'Quarantine',
       vlan: '999',
@@ -61,8 +61,8 @@ export default function PolicyEditor() {
   const addPolicyRule = () => {
     const newRule: PolicyRule = {
       id: Date.now().toString(),
-      userGroup: '',
-      authMethod: '',
+      userGroup: 'corporate-users',
+      authMethod: 'eap-tls',
       condition: '',
       action: 'Allow',
       vlan: '',
@@ -118,12 +118,12 @@ export default function PolicyEditor() {
                     <SelectValue placeholder="User Group" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Corporate Users">Corporate Users</SelectItem>
-                    <SelectItem value="Guest Users">Guest Users</SelectItem>
-                    <SelectItem value="IoT Devices">IoT Devices</SelectItem>
-                    <SelectItem value="BYOD">BYOD</SelectItem>
-                    <SelectItem value="Contractors">Contractors</SelectItem>
-                    <SelectItem value="Unknown Devices">Unknown Devices</SelectItem>
+                    <SelectItem value="corporate-users">Corporate Users</SelectItem>
+                    <SelectItem value="guest-users">Guest Users</SelectItem>
+                    <SelectItem value="iot-devices">IoT Devices</SelectItem>
+                    <SelectItem value="byod">BYOD</SelectItem>
+                    <SelectItem value="contractors">Contractors</SelectItem>
+                    <SelectItem value="unknown-devices">Unknown Devices</SelectItem>
                   </SelectContent>
                 </Select>
 
@@ -135,11 +135,11 @@ export default function PolicyEditor() {
                     <SelectValue placeholder="Auth Method" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="EAP-TLS">EAP-TLS</SelectItem>
-                    <SelectItem value="PEAP-MSCHAPv2">PEAP-MSCHAPv2</SelectItem>
-                    <SelectItem value="MAB">MAB</SelectItem>
-                    <SelectItem value="Captive Portal">Captive Portal</SelectItem>
-                    <SelectItem value="Any">Any</SelectItem>
+                    <SelectItem value="eap-tls">EAP-TLS</SelectItem>
+                    <SelectItem value="peap-mschapv2">PEAP-MSCHAPv2</SelectItem>
+                    <SelectItem value="mab">MAB</SelectItem>
+                    <SelectItem value="captive-portal">Captive Portal</SelectItem>
+                    <SelectItem value="any">Any</SelectItem>
                   </SelectContent>
                 </Select>
 
@@ -157,9 +157,9 @@ export default function PolicyEditor() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Allow">Allow</SelectItem>
-                    <SelectItem value="Deny">Deny</SelectItem>
-                    <SelectItem value="Quarantine">Quarantine</SelectItem>
+                    <SelectItem value="allow">Allow</SelectItem>
+                    <SelectItem value="deny">Deny</SelectItem>
+                    <SelectItem value="quarantine">Quarantine</SelectItem>
                   </SelectContent>
                 </Select>
 
