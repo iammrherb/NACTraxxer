@@ -1,95 +1,66 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useState } from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
-import { Upload, Users, Palette, Network, List, BarChart3, Book } from 'lucide-react'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import ArchitectureDesigner from '@/components/architecture-designer'
 import SiteManagement from '@/components/site-management'
 import ProgressTracking from '@/components/progress-tracking'
 import SiteWorkbook from '@/components/site-workbook'
 import UserManagementModal from '@/components/user-management-modal'
 import ThemeCustomizer from '@/components/theme-customizer'
+import { Users, Palette, Upload } from 'lucide-react'
 
-export default function ABMDesigner() {
-  const [activeTab, setActiveTab] = useState('architecture')
-  const [selectedSiteId, setSelectedSiteId] = useState<string | null>(null)
-  const [showUserModal, setShowUserModal] = useState(false)
+export default function Home() {
+  const [showUserManagement, setShowUserManagement] = useState(false)
   const [showThemeCustomizer, setShowThemeCustomizer] = useState(false)
-  const [customerLogo, setCustomerLogo] = useState('https://ahorrainvierte.com/wp-content/uploads/abm-industries-inc.png')
-
-  const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file && file.type.match('image.*')) {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        setCustomerLogo(e.target?.result as string)
-      }
-      reader.readAsDataURL(file)
-    }
-  }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
       {/* Header */}
       <header className="bg-gradient-to-r from-blue-600 to-blue-800 text-white shadow-lg">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-20">
+            {/* Logo Section */}
             <div className="flex items-center space-x-8">
               <div className="flex items-center space-x-4">
                 <img 
                   src="https://www.portnox.com/wp-content/uploads/2021/03/Portnotx_Logo_Color-768x193.png" 
                   alt="Portnox Logo" 
-                  className="h-12 filter brightness-0 invert drop-shadow-md hover:scale-105 transition-transform"
+                  className="h-12 filter brightness-0 invert"
                 />
-                <Separator orientation="vertical" className="h-10 bg-white/30" />
-                <div className="bg-white/10 rounded-lg p-2 hover:bg-white/20 transition-colors">
-                  <img 
-                    src={customerLogo || "/placeholder.svg"} 
-                    alt="ABM Industries Logo" 
-                    className="h-10 max-w-[150px] object-contain"
-                  />
-                </div>
+                <div className="h-8 w-px bg-white/30" />
+                <img 
+                  src="https://ahorrainvierte.com/wp-content/uploads/abm-industries-inc.png" 
+                  alt="ABM Industries Logo" 
+                  className="h-10 bg-white/10 px-3 py-1 rounded filter brightness-0 invert"
+                />
               </div>
-              <h1 className="text-2xl font-bold">
-                Zero Trust NAC Architecture Designer
-              </h1>
             </div>
-            
+
+            {/* Title */}
+            <div className="flex-1 text-center">
+              <h1 className="text-2xl font-bold">Zero Trust NAC Architecture Designer</h1>
+              <p className="text-blue-100 text-sm">Enterprise Network Access Control Platform</p>
+            </div>
+
+            {/* Controls */}
             <div className="flex items-center space-x-4">
-              <div className="relative">
-                <input
-                  type="file"
-                  id="logo-upload"
-                  accept="image/*"
-                  onChange={handleLogoUpload}
-                  className="hidden"
-                />
-                <label
-                  htmlFor="logo-upload"
-                  className="flex items-center space-x-2 px-3 py-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors cursor-pointer"
-                >
-                  <Upload className="h-4 w-4" />
-                  <span className="text-sm">Change Logo</span>
-                </label>
-              </div>
-              
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setShowUserModal(true)}
-                className="text-white hover:bg-white/20"
+                className="text-white hover:bg-white/10"
+                onClick={() => setShowUserManagement(true)}
               >
                 <Users className="h-4 w-4 mr-2" />
                 Manage Users
               </Button>
-              
               <Button
                 variant="ghost"
                 size="sm"
+                className="text-white hover:bg-white/10"
                 onClick={() => setShowThemeCustomizer(true)}
-                className="text-white hover:bg-white/20"
               >
                 <Palette className="h-4 w-4 mr-2" />
                 Customize
@@ -100,54 +71,55 @@ export default function ABMDesigner() {
       </header>
 
       {/* Main Content */}
-      <div className="container mx-auto px-4 py-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-white shadow-sm">
-            <TabsTrigger value="architecture" className="flex items-center space-x-2">
-              <Network className="h-4 w-4" />
-              <span>Architecture Designer</span>
-            </TabsTrigger>
-            <TabsTrigger value="sites" className="flex items-center space-x-2">
-              <List className="h-4 w-4" />
-              <span>Master Site List</span>
-            </TabsTrigger>
-            <TabsTrigger value="progress" className="flex items-center space-x-2">
-              <BarChart3 className="h-4 w-4" />
-              <span>Rollout Progress</span>
-            </TabsTrigger>
-            <TabsTrigger value="workbook" className="flex items-center space-x-2">
-              <Book className="h-4 w-4" />
-              <span>Site Workbook</span>
-            </TabsTrigger>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Tabs defaultValue="architecture" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="architecture">Architecture Designer</TabsTrigger>
+            <TabsTrigger value="sites">Site Management</TabsTrigger>
+            <TabsTrigger value="workbook">Site Workbook</TabsTrigger>
+            <TabsTrigger value="progress">Rollout Progress</TabsTrigger>
+            <TabsTrigger value="reports">Reports</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="architecture">
+          <TabsContent value="architecture" className="space-y-6">
             <ArchitectureDesigner />
           </TabsContent>
 
-          <TabsContent value="sites">
-            <SiteManagement onSiteSelect={setSelectedSiteId} />
+          <TabsContent value="sites" className="space-y-6">
+            <SiteManagement />
           </TabsContent>
 
-          <TabsContent value="progress">
+          <TabsContent value="workbook" className="space-y-6">
+            <SiteWorkbook />
+          </TabsContent>
+
+          <TabsContent value="progress" className="space-y-6">
             <ProgressTracking />
           </TabsContent>
 
-          <TabsContent value="workbook">
-            <SiteWorkbook siteId={selectedSiteId} />
+          <TabsContent value="reports" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Reports & Analytics</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Comprehensive reporting and analytics dashboard coming soon...
+                </p>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
-      </div>
+      </main>
 
       {/* Modals */}
       <UserManagementModal 
-        open={showUserModal} 
-        onOpenChange={setShowUserModal} 
+        open={showUserManagement} 
+        onClose={() => setShowUserManagement(false)} 
       />
-      
       <ThemeCustomizer 
         open={showThemeCustomizer} 
-        onOpenChange={setShowThemeCustomizer} 
+        onClose={() => setShowThemeCustomizer(false)} 
       />
     </div>
   )

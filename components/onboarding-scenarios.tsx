@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
-import { X, Play, Pause, RotateCcw, CheckCircle } from 'lucide-react'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { X, Play, Pause, RotateCcw, CheckCircle, AlertCircle, Clock, Smartphone, Laptop, Users, Wifi } from 'lucide-react'
 
 interface OnboardingScenariosProps {
   onClose: () => void
@@ -15,22 +16,25 @@ interface OnboardingStep {
   id: string
   title: string
   description: string
+  status: 'pending' | 'active' | 'completed' | 'failed'
   duration: number
-  status: 'pending' | 'active' | 'complete'
+  details?: string
 }
 
 interface OnboardingScenario {
   id: string
   name: string
   description: string
-  deviceType: string
+  icon: React.ReactNode
+  color: string
   steps: OnboardingStep[]
-  totalDuration: number
+  requirements: string[]
+  estimatedTime: string
 }
 
 export default function OnboardingScenarios({ onClose }: OnboardingScenariosProps) {
   const [selectedScenario, setSelectedScenario] = useState<string>('corporate')
-  const [isPlaying, setIsPlaying] = useState(false)
+  const [isRunning, setIsRunning] = useState(false)
   const [currentStep, setCurrentStep] = useState(0)
   const [progress, setProgress] = useState(0)
 
@@ -39,50 +43,71 @@ export default function OnboardingScenarios({ onClose }: OnboardingScenariosProp
       id: 'corporate',
       name: 'Corporate Device Onboarding',
       description: 'Automated enrollment for company-managed devices via Intune',
-      deviceType: 'Windows/macOS Corporate Device',
-      totalDuration: 120,
+      icon: <Laptop className="h-6 w-6" />,
+      color: 'bg-blue-100 text-blue-800',
+      estimatedTime: '5-10 minutes',
+      requirements: [
+        'Device enrolled in Intune',
+        'Azure AD account',
+        'Corporate network access',
+        'SCEP certificate profile configured'
+      ],
       steps: [
         {
           id: '1',
           title: 'Device Detection',
-          description: 'Device connects to network and is detected by NAC',
-          duration: 10,
-          status: 'pending'
+          description: 'System detects corporate device attempting network access',
+          status: 'pending',
+          duration: 30,
+          details: 'Device MAC address checked against corporate device registry'
         },
         {
           id: '2',
-          title: 'Identity Verification',
-          description: 'User authenticates with Azure AD credentials',
-          duration: 15,
-          status: 'pending'
+          title: 'Intune Verification',
+          description: 'Verify device enrollment status in Microsoft Intune',
+          status: 'pending',
+          duration: 45,
+          details: 'Query Intune Graph API for device compliance and enrollment status'
         },
         {
           id: '3',
-          title: 'Device Registration',
-          description: 'Device is registered in Intune and assigned policies',
-          duration: 30,
-          status: 'pending'
+          title: 'Certificate Request',
+          description: 'Initiate SCEP certificate enrollment process',
+          status: 'pending',
+          duration: 60,
+          details: 'Generate SCEP challenge and send certificate signing request'
         },
         {
           id: '4',
-          title: 'Certificate Enrollment',
-          description: 'Device receives certificate via SCEP from Portnox PKI',
-          duration: 25,
-          status: 'pending'
+          title: 'Certificate Installation',
+          description: 'Deploy certificate to device certificate store',
+          status: 'pending',
+          duration: 30,
+          details: 'Install user and device certificates via Intune policy'
         },
         {
           id: '5',
-          title: 'Policy Application',
-          description: 'NAC policies are applied and VLAN assignment made',
-          duration: 20,
-          status: 'pending'
+          title: 'WiFi Profile Deployment',
+          description: 'Push WiFi configuration with EAP-TLS settings',
+          status: 'pending',
+          duration: 45,
+          details: 'Deploy WiFi profile with certificate-based authentication'
         },
         {
           id: '6',
-          title: 'Network Access Granted',
-          description: 'Device gains full network access with monitoring',
-          duration: 20,
-          status: 'pending'
+          title: 'Network Authentication',
+          description: 'Perform 802.1X authentication with new certificate',
+          status: 'pending',
+          duration: 15,
+          details: 'EAP-TLS handshake with network access server'
+        },
+        {
+          id: '7',
+          title: 'Policy Application',
+          description: 'Apply corporate network policies and VLAN assignment',
+          status: 'pending',
+          duration: 10,
+          details: 'Assign to corporate VLAN with full network access'
         }
       ]
     },
@@ -90,152 +115,215 @@ export default function OnboardingScenarios({ onClose }: OnboardingScenariosProp
       id: 'byod',
       name: 'BYOD Device Onboarding',
       description: 'Self-service enrollment for personal devices',
-      deviceType: 'Personal Mobile/Laptop Device',
-      totalDuration: 180,
+      icon: <Smartphone className="h-6 w-6" />,
+      color: 'bg-green-100 text-green-800',
+      estimatedTime: '10-15 minutes',
+      requirements: [
+        'Valid corporate email address',
+        'Device supports 802.1X',
+        'Self-service portal access',
+        'User acceptance of BYOD policy'
+      ],
       steps: [
         {
           id: '1',
-          title: 'Captive Portal Redirect',
-          description: 'Device is redirected to self-service portal',
-          duration: 5,
-          status: 'pending'
+          title: 'Portal Access',
+          description: 'User accesses self-service onboarding portal',
+          status: 'pending',
+          duration: 60,
+          details: 'Navigate to corporate BYOD enrollment portal'
         },
         {
           id: '2',
           title: 'User Authentication',
-          description: 'User logs in with corporate credentials',
-          duration: 20,
-          status: 'pending'
+          description: 'Authenticate with corporate credentials',
+          status: 'pending',
+          duration: 30,
+          details: 'Azure AD authentication with MFA if required'
         },
         {
           id: '3',
-          title: 'Device Information Collection',
-          description: 'System collects device type and OS information',
-          duration: 10,
-          status: 'pending'
+          title: 'Policy Acceptance',
+          description: 'Review and accept BYOD usage policies',
+          status: 'pending',
+          duration: 120,
+          details: 'User must acknowledge data usage and security policies'
         },
         {
           id: '4',
-          title: 'Policy Acceptance',
-          description: 'User accepts BYOD policy and terms of use',
-          duration: 30,
-          status: 'pending'
+          title: 'Device Registration',
+          description: 'Register device details and generate certificate',
+          status: 'pending',
+          duration: 45,
+          details: 'Collect device information and create certificate signing request'
         },
         {
           id: '5',
-          title: 'Certificate Installation',
-          description: 'User downloads and installs device certificate',
-          duration: 60,
-          status: 'pending'
+          title: 'Certificate Download',
+          description: 'Download and install user certificate',
+          status: 'pending',
+          duration: 30,
+          details: 'User downloads P12 certificate file with installation instructions'
         },
         {
           id: '6',
-          title: 'Network Profile Configuration',
-          description: 'WiFi profile is configured for 802.1X authentication',
-          duration: 30,
-          status: 'pending'
+          title: 'Network Configuration',
+          description: 'Configure WiFi settings for corporate network',
+          status: 'pending',
+          duration: 90,
+          details: 'Manual WiFi configuration with EAP-TLS settings'
         },
         {
           id: '7',
-          title: 'Access Validation',
-          description: 'Device reconnects and validates certificate-based access',
-          duration: 25,
-          status: 'pending'
+          title: 'Connection Test',
+          description: 'Test network connectivity and access',
+          status: 'pending',
+          duration: 30,
+          details: 'Verify successful authentication and limited network access'
         }
       ]
     },
     {
       id: 'guest',
       name: 'Guest Access Onboarding',
-      description: 'Sponsored guest access with time limitations',
-      deviceType: 'Guest Device (Any)',
-      totalDuration: 90,
+      description: 'Temporary access for visitors with sponsor approval',
+      icon: <Users className="h-6 w-6" />,
+      color: 'bg-yellow-100 text-yellow-800',
+      estimatedTime: '5-20 minutes',
+      requirements: [
+        'Sponsor employee approval',
+        'Valid email address or phone',
+        'Guest access policy configured',
+        'Time-limited access window'
+      ],
       steps: [
         {
           id: '1',
           title: 'Guest Portal Access',
           description: 'Guest accesses captive portal for registration',
-          duration: 5,
-          status: 'pending'
+          status: 'pending',
+          duration: 30,
+          details: 'Redirect to guest registration portal on network connection'
         },
         {
           id: '2',
-          title: 'Sponsor Request',
-          description: 'Guest requests access and provides sponsor information',
-          duration: 15,
-          status: 'pending'
+          title: 'Information Collection',
+          description: 'Collect guest information and contact details',
+          status: 'pending',
+          duration: 120,
+          details: 'Name, email, phone, company, and purpose of visit'
         },
         {
           id: '3',
-          title: 'Sponsor Notification',
-          description: 'Sponsor receives email/SMS notification for approval',
-          duration: 30,
-          status: 'pending'
+          title: 'Sponsor Selection',
+          description: 'Select corporate sponsor from directory',
+          status: 'pending',
+          duration: 60,
+          details: 'Search and select employee sponsor from corporate directory'
         },
         {
           id: '4',
-          title: 'Access Approval',
-          description: 'Sponsor approves access request',
-          duration: 20,
-          status: 'pending'
+          title: 'Approval Request',
+          description: 'Send approval request to sponsor',
+          status: 'pending',
+          duration: 300,
+          details: 'Email/SMS notification sent to sponsor for approval'
         },
         {
           id: '5',
-          title: 'Temporary Credentials',
-          description: 'Guest receives temporary network credentials',
-          duration: 10,
-          status: 'pending'
+          title: 'Sponsor Approval',
+          description: 'Waiting for sponsor to approve access request',
+          status: 'pending',
+          duration: 600,
+          details: 'Sponsor reviews request and approves/denies access'
         },
         {
           id: '6',
-          title: 'Limited Network Access',
-          description: 'Guest gains time-limited access to guest network',
+          title: 'Credentials Generation',
+          description: 'Generate temporary access credentials',
+          status: 'pending',
+          duration: 15,
+          details: 'Create time-limited guest account with network access'
+        },
+        {
+          id: '7',
+          title: 'Network Access',
+          description: 'Grant limited network access with restrictions',
+          status: 'pending',
           duration: 10,
-          status: 'pending'
+          details: 'Internet-only access with bandwidth and time limitations'
         }
       ]
     },
     {
       id: 'iot',
       name: 'IoT Device Onboarding',
-      description: 'MAC Authentication Bypass for IoT devices',
-      deviceType: 'IoT Device (Headless)',
-      totalDuration: 60,
+      description: 'Registration for Internet of Things devices',
+      icon: <Wifi className="h-6 w-6" />,
+      color: 'bg-purple-100 text-purple-800',
+      estimatedTime: '2-5 minutes',
+      requirements: [
+        'Device MAC address registration',
+        'IoT device category classification',
+        'Network segmentation policy',
+        'Device profiling enabled'
+      ],
       steps: [
         {
           id: '1',
-          title: 'MAC Address Detection',
-          description: 'Device MAC address is detected on network',
-          duration: 5,
-          status: 'pending'
+          title: 'Device Discovery',
+          description: 'Detect new IoT device on network',
+          status: 'pending',
+          duration: 15,
+          details: 'Network scanning detects unknown MAC address'
         },
         {
           id: '2',
           title: 'Device Profiling',
-          description: 'System profiles device based on network behavior',
-          duration: 20,
-          status: 'pending'
+          description: 'Analyze device characteristics and behavior',
+          status: 'pending',
+          duration: 60,
+          details: 'DHCP fingerprinting and traffic pattern analysis'
         },
         {
           id: '3',
-          title: 'Administrator Approval',
-          description: 'Network admin approves IoT device for access',
-          duration: 15,
-          status: 'pending'
+          title: 'Category Classification',
+          description: 'Classify device type and manufacturer',
+          status: 'pending',
+          duration: 30,
+          details: 'Match against device database and OUI lookup'
         },
         {
           id: '4',
-          title: 'MAC Whitelist Addition',
-          description: 'Device MAC is added to authorized device list',
-          duration: 10,
-          status: 'pending'
+          title: 'Security Assessment',
+          description: 'Evaluate device security posture',
+          status: 'pending',
+          duration: 45,
+          details: 'Vulnerability scanning and security policy check'
         },
         {
           id: '5',
-          title: 'IoT VLAN Assignment',
-          description: 'Device is assigned to IoT-specific network segment',
+          title: 'Policy Assignment',
+          description: 'Apply appropriate IoT access policies',
+          status: 'pending',
+          duration: 20,
+          details: 'Assign to IoT VLAN with micro-segmentation rules'
+        },
+        {
+          id: '6',
+          title: 'Network Placement',
+          description: 'Place device in appropriate network segment',
+          status: 'pending',
+          duration: 15,
+          details: 'VLAN assignment and firewall rule application'
+        },
+        {
+          id: '7',
+          title: 'Monitoring Setup',
+          description: 'Enable continuous monitoring and alerting',
+          status: 'pending',
           duration: 10,
-          status: 'pending'
+          details: 'Configure device monitoring and anomaly detection'
         }
       ]
     }
@@ -244,221 +332,231 @@ export default function OnboardingScenarios({ onClose }: OnboardingScenariosProp
   const currentScenario = scenarios.find(s => s.id === selectedScenario)!
 
   const startSimulation = () => {
-    setIsPlaying(true)
+    setIsRunning(true)
     setCurrentStep(0)
     setProgress(0)
     
-    // Reset all steps
-    currentScenario.steps.forEach(step => {
-      step.status = 'pending'
-    })
-
-    simulateSteps()
+    // Reset all steps to pending
+    const updatedSteps = currentScenario.steps.map(step => ({
+      ...step,
+      status: 'pending' as const
+    }))
+    
+    simulateSteps(updatedSteps, 0)
   }
 
-  const simulateSteps = () => {
-    let stepIndex = 0
-    let totalProgress = 0
-
-    const processStep = () => {
-      if (stepIndex >= currentScenario.steps.length) {
-        setIsPlaying(false)
-        return
-      }
-
-      const step = currentScenario.steps[stepIndex]
-      step.status = 'active'
-      setCurrentStep(stepIndex)
-
-      const stepDuration = step.duration * 100 // Convert to milliseconds for demo
-      const progressIncrement = (step.duration / currentScenario.totalDuration) * 100
-
-      setTimeout(() => {
-        step.status = 'complete'
-        totalProgress += progressIncrement
-        setProgress(totalProgress)
-        stepIndex++
-        processStep()
-      }, stepDuration)
+  const simulateSteps = (steps: OnboardingStep[], stepIndex: number) => {
+    if (stepIndex >= steps.length) {
+      setIsRunning(false)
+      setProgress(100)
+      return
     }
 
-    processStep()
+    // Mark current step as active
+    steps[stepIndex].status = 'active'
+    setCurrentStep(stepIndex)
+
+    // Simulate step execution
+    setTimeout(() => {
+      // Mark step as completed (or failed randomly for demo)
+      const success = Math.random() > 0.1 // 90% success rate
+      steps[stepIndex].status = success ? 'completed' : 'failed'
+      
+      if (success) {
+        const newProgress = ((stepIndex + 1) / steps.length) * 100
+        setProgress(newProgress)
+        
+        // Continue to next step
+        setTimeout(() => {
+          simulateSteps(steps, stepIndex + 1)
+        }, 500)
+      } else {
+        // Stop simulation on failure
+        setIsRunning(false)
+      }
+    }, steps[stepIndex].duration * 10) // Speed up for demo
   }
 
   const resetSimulation = () => {
-    setIsPlaying(false)
+    setIsRunning(false)
     setCurrentStep(0)
     setProgress(0)
-    currentScenario.steps.forEach(step => {
-      step.status = 'pending'
-    })
+  }
+
+  const getStepIcon = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return <CheckCircle className="h-5 w-5 text-green-600" />
+      case 'failed':
+        return <AlertCircle className="h-5 w-5 text-red-600" />
+      case 'active':
+        return <Clock className="h-5 w-5 text-blue-600 animate-pulse" />
+      default:
+        return <div className="h-5 w-5 rounded-full border-2 border-gray-300" />
+    }
   }
 
   return (
     <Card className="w-full max-w-6xl mx-auto">
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Device Onboarding Scenarios</CardTitle>
+        <CardTitle className="flex items-center space-x-2">
+          <Play className="h-6 w-6 text-blue-600" />
+          <span>Device Onboarding Scenarios</span>
+        </CardTitle>
         <Button variant="ghost" size="sm" onClick={onClose}>
           <X className="h-4 w-4" />
         </Button>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Scenario Selection */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Onboarding Scenarios</h3>
-            <div className="space-y-2">
-              {scenarios.map((scenario) => (
-                <Card
-                  key={scenario.id}
-                  className={`cursor-pointer transition-colors ${
-                    selectedScenario === scenario.id ? 'ring-2 ring-blue-500' : ''
-                  }`}
-                  onClick={() => setSelectedScenario(scenario.id)}
-                >
-                  <CardContent className="p-4">
-                    <h4 className="font-medium mb-2">{scenario.name}</h4>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      {scenario.description}
-                    </p>
-                    <div className="flex items-center justify-between">
-                      <Badge variant="outline" className="text-xs">
-                        {scenario.deviceType}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        ~{scenario.totalDuration}s
-                      </span>
+        <Tabs value={selectedScenario} onValueChange={setSelectedScenario} className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            {scenarios.map((scenario) => (
+              <TabsTrigger key={scenario.id} value={scenario.id} className="flex items-center space-x-2">
+                {scenario.icon}
+                <span className="hidden sm:inline">{scenario.name.split(' ')[0]}</span>
+              </TabsTrigger>
+            ))}
+          </TabsList>
+
+          {scenarios.map((scenario) => (
+            <TabsContent key={scenario.id} value={scenario.id} className="space-y-6">
+              {/* Scenario Overview */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-3">
+                    {scenario.icon}
+                    <span>{scenario.name}</span>
+                    <Badge className={scenario.color}>{scenario.estimatedTime}</Badge>
+                  </CardTitle>
+                  <p className="text-muted-foreground">{scenario.description}</p>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <h4 className="font-semibold mb-2">Requirements</h4>
+                      <ul className="space-y-1">
+                        {scenario.requirements.map((req, index) => (
+                          <li key={index} className="flex items-center space-x-2 text-sm">
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                            <span>{req}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold mb-2">Simulation Controls</h4>
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          onClick={startSimulation}
+                          disabled={isRunning}
+                          size="sm"
+                        >
+                          <Play className="h-4 w-4 mr-2" />
+                          Start Simulation
+                        </Button>
+                        <Button
+                          onClick={resetSimulation}
+                          variant="outline"
+                          size="sm"
+                        >
+                          <RotateCcw className="h-4 w-4 mr-2" />
+                          Reset
+                        </Button>
+                      </div>
+                      <div className="mt-3">
+                        <div className="flex items-center justify-between text-sm mb-1">
+                          <span>Progress</span>
+                          <span>{Math.round(progress)}%</span>
+                        </div>
+                        <Progress value={progress} className="h-2" />
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Steps Timeline */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Onboarding Steps</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {scenario.steps.map((step, index) => (
+                      <div
+                        key={step.id}
+                        className={`flex items-start space-x-4 p-4 rounded-lg border transition-all ${
+                          step.status === 'active' ? 'bg-blue-50 border-blue-200' :
+                          step.status === 'completed' ? 'bg-green-50 border-green-200' :
+                          step.status === 'failed' ? 'bg-red-50 border-red-200' :
+                          'bg-gray-50 border-gray-200'
+                        }`}
+                      >
+                        <div className="flex-shrink-0 mt-1">
+                          {getStepIcon(step.status)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-medium">
+                              Step {index + 1}: {step.title}
+                            </h4>
+                            <Badge variant="outline" className="text-xs">
+                              ~{step.duration}s
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {step.description}
+                          </p>
+                          {step.details && (
+                            <p className="text-xs text-muted-foreground mt-2 italic">
+                              {step.details}
+                            </p>
+                          )}
+                          {step.status === 'active' && (
+                            <div className="mt-2">
+                              <Progress value={50} className="h-1" />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Results Summary */}
+              {progress > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Simulation Results</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-green-600">
+                          {scenario.steps.filter(s => s.status === 'completed').length}
+                        </div>
+                        <div className="text-sm text-muted-foreground">Steps Completed</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-red-600">
+                          {scenario.steps.filter(s => s.status === 'failed').length}
+                        </div>
+                        <div className="text-sm text-muted-foreground">Steps Failed</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-blue-600">
+                          {Math.round(progress)}%
+                        </div>
+                        <div className="text-sm text-muted-foreground">Overall Progress</div>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
-              ))}
-            </div>
-          </div>
-
-          {/* Simulation Controls and Progress */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Controls */}
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">{currentScenario.name}</h3>
-              <div className="flex items-center space-x-2">
-                <Button
-                  onClick={startSimulation}
-                  disabled={isPlaying}
-                  size="sm"
-                >
-                  <Play className="h-4 w-4 mr-2" />
-                  Start Simulation
-                </Button>
-                <Button
-                  onClick={resetSimulation}
-                  variant="outline"
-                  size="sm"
-                >
-                  <RotateCcw className="h-4 w-4 mr-2" />
-                  Reset
-                </Button>
-              </div>
-            </div>
-
-            {/* Progress Bar */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Overall Progress</span>
-                <span className="text-sm text-muted-foreground">
-                  {Math.round(progress)}%
-                </span>
-              </div>
-              <Progress value={progress} className="h-2" />
-            </div>
-
-            {/* Steps */}
-            <div className="space-y-4">
-              <h4 className="font-medium">Onboarding Steps</h4>
-              <div className="space-y-3">
-                {currentScenario.steps.map((step, index) => (
-                  <div
-                    key={step.id}
-                    className={`flex items-start space-x-3 p-3 rounded-lg border transition-colors ${
-                      step.status === 'active' ? 'bg-blue-50 border-blue-200' :
-                      step.status === 'complete' ? 'bg-green-50 border-green-200' :
-                      'bg-gray-50 border-gray-200'
-                    }`}
-                  >
-                    <div className="flex-shrink-0 mt-1">
-                      {step.status === 'complete' ? (
-                        <CheckCircle className="h-5 w-5 text-green-600" />
-                      ) : step.status === 'active' ? (
-                        <div className="h-5 w-5 rounded-full border-2 border-blue-600 border-t-transparent animate-spin" />
-                      ) : (
-                        <div className="h-5 w-5 rounded-full border-2 border-gray-300" />
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <h5 className="font-medium text-sm">{step.title}</h5>
-                        <Badge
-                          variant={
-                            step.status === 'complete' ? 'default' :
-                            step.status === 'active' ? 'secondary' : 'outline'
-                          }
-                          className="text-xs"
-                        >
-                          {step.status}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {step.description}
-                      </p>
-                      <div className="flex items-center justify-between mt-2">
-                        <span className="text-xs text-muted-foreground">
-                          Step {index + 1} of {currentScenario.steps.length}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          ~{step.duration}s
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Scenario Details */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Scenario Details</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div>
-                    <span className="font-medium text-sm">Device Type: </span>
-                    <span className="text-sm text-muted-foreground">
-                      {currentScenario.deviceType}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="font-medium text-sm">Description: </span>
-                    <span className="text-sm text-muted-foreground">
-                      {currentScenario.description}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="font-medium text-sm">Total Duration: </span>
-                    <span className="text-sm text-muted-foreground">
-                      Approximately {currentScenario.totalDuration} seconds
-                    </span>
-                  </div>
-                  <div>
-                    <span className="font-medium text-sm">Steps: </span>
-                    <span className="text-sm text-muted-foreground">
-                      {currentScenario.steps.length} automated steps
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+              )}
+            </TabsContent>
+          ))}
+        </Tabs>
       </CardContent>
     </Card>
   )
