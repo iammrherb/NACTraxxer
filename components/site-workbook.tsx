@@ -46,20 +46,11 @@ export default function SiteWorkbook({ siteId }: SiteWorkbookProps) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Book className="h-6 w-6 text-blue-600" />
-            <span>Site Workbook</span>
-          </CardTitle>
+          <CardTitle>Site Workbook</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-12">
-            <Book className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-              No Site Selected
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400">
-              Please select a site from the Master Site List to view its detailed workbook.
-            </p>
+          <div className="text-center py-12 text-muted-foreground">
+            {siteId ? `Site workbook for ${siteId}` : 'Select a site to view its workbook'}
           </div>
         </CardContent>
       </Card>
@@ -102,10 +93,7 @@ export default function SiteWorkbook({ siteId }: SiteWorkbookProps) {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Book className="h-6 w-6 text-blue-600" />
-            <span>Site Workbook: {siteData.name}</span>
-          </CardTitle>
+          <CardTitle>Site Workbook: {siteData.name}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

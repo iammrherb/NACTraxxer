@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { BarChart3, TrendingUp, Clock, CheckCircle, AlertTriangle, XCircle, Users, Building, Calendar, Target } from 'lucide-react'
@@ -292,6 +292,18 @@ export default function ProgressTracking() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Rollout Progress */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Rollout Progress</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-12 text-muted-foreground">
+            Progress tracking functionality will be implemented here
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

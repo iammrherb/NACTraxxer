@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -22,7 +22,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Plus, Search, Download, Edit, Trash2, Eye, Building, MapPin, Users, Calendar, CheckCircle, Clock, AlertTriangle, XCircle } from 'lucide-react'
+import { Plus, Search, Download, Edit, Trash2, Eye, Building, MapPin, Users, Calendar, CheckCircle, Clock, AlertTriangle, XCircle, Filter } from 'lucide-react'
 import AddSiteModal from '@/components/add-site-modal'
 
 interface Site {
@@ -262,9 +262,6 @@ export default function SiteManagement({ onSiteSelect }: SiteManagementProps) {
             <Building className="h-5 w-5" />
             <span>Master Site List</span>
           </CardTitle>
-          <CardDescription>
-            Manage deployment sites, track progress, and configure site-specific settings for the Zero Trust NAC rollout
-          </CardDescription>
         </CardHeader>
         <CardContent>
           {/* Filters and Controls */}
@@ -275,54 +272,21 @@ export default function SiteManagement({ onSiteSelect }: SiteManagementProps) {
                 placeholder="Search sites..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-64"
+                className="pl-10 w-64"
               />
             </div>
 
-            <Select value={regionFilter} onValueChange={setRegionFilter}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="All Regions" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Regions</SelectItem>
-                <SelectItem value="North America">North America</SelectItem>
-                <SelectItem value="EMEA">EMEA</SelectItem>
-                <SelectItem value="APAC">APAC</SelectItem>
-                <SelectItem value="LATAM">LATAM</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="All Priorities" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Priorities</SelectItem>
-                <SelectItem value="High">High</SelectItem>
-                <SelectItem value="Medium">Medium</SelectItem>
-                <SelectItem value="Low">Low</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="All Statuses" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="Planned">Planned</SelectItem>
-                <SelectItem value="In Progress">In Progress</SelectItem>
-                <SelectItem value="Complete">Complete</SelectItem>
-                <SelectItem value="Delayed">Delayed</SelectItem>
-              </SelectContent>
-            </Select>
+            <Button variant="outline" size="sm">
+              <Filter className="h-4 w-4 mr-2" />
+              Filter
+            </Button>
 
             <div className="ml-auto flex space-x-2">
-              <Button variant="outline" onClick={exportToCSV}>
+              <Button variant="outline" size="sm" onClick={exportToCSV}>
                 <Download className="h-4 w-4 mr-2" />
                 Export CSV
               </Button>
-              <Button onClick={() => setShowAddModal(true)}>
+              <Button size="sm" onClick={() => setShowAddModal(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Site
               </Button>
