@@ -2,115 +2,109 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import { Avatar, AvatarFallback, AvatarInitials } from '@/components/ui/avatar'
-import { Settings, Users, Upload, Download, Save, Palette, Bell, Search, Menu } from 'lucide-react'
+import { Avatar, AvatarImage, AvatarInitials } from '@/components/ui/avatar'
+import { Users, Palette, Upload, Moon, Sun } from 'lucide-react'
+import { useTheme } from 'next-themes'
 
 interface HeaderProps {
   onUserManagement: () => void
   onThemeCustomizer: () => void
 }
 
-export function Header({ onUserManagement, onThemeCustomizer }: HeaderProps) {
-  const [searchQuery, setSearchQuery] = useState('')
+export default function Header({ onUserManagement, onThemeCustomizer }: HeaderProps) {
+  const { theme, setTheme } = useTheme()
+  const [customerLogo, setCustomerLogo] = useState('https://ahorrainvierte.com/wp-content/uploads/abm-industries-inc.png')
+
+  const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file && file.type.match('image.*')) {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        setCustomerLogo(e.target?.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
 
   return (
-    <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-b border-slate-200 dark:border-slate-700 sticky top-0 z-50">
-      <div className="container mx-auto px-4 py-3">
+    <header className="bg-gradient-to-r from-blue-600 to-blue-800 text-white shadow-lg">
+      <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
-          {/* Logo and Title */}
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">P</span>
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-slate-900 dark:text-white">
-                  Portnox NAC Designer
-                </h1>
-                <p className="text-sm text-slate-600 dark:text-slate-400">
-                  Architecture & Deployment Platform
-                </p>
-              </div>
-            </div>
-            <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-              v2.1.0
-            </Badge>
-          </div>
-
-          {/* Search Bar */}
-          <div className="hidden md:flex items-center space-x-4 flex-1 max-w-md mx-8">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
-              <Input
-                type="text"
-                placeholder="Search configurations, policies..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700"
+          {/* Logo Section */}
+          <div className="flex items-center space-x-8">
+            <div className="flex items-center space-x-4">
+              <img 
+                src="https://www.portnox.com/wp-content/uploads/2021/03/Portnotx_Logo_Color-768x193.png" 
+                alt="Portnox Logo" 
+                className="h-12 filter brightness-0 invert drop-shadow-md hover:scale-105 transition-transform"
               />
+              <div className="h-10 w-px bg-white/30" />
+              <div className="bg-white/10 rounded-lg p-2 hover:bg-white/20 transition-colors">
+                <img 
+                  src={customerLogo || "/placeholder.svg"} 
+                  alt="Customer Logo" 
+                  className="h-10 max-w-[150px] object-contain"
+                />
+              </div>
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold">Zero Trust NAC Architecture Designer</h1>
+              <p className="text-blue-100 text-sm">Enterprise Network Access Control Platform</p>
             </div>
           </div>
-
-          {/* Action Buttons */}
-          <div className="flex items-center space-x-2">
-            <Button variant="ghost" size="sm" className="hidden lg:flex">
-              <Upload className="w-4 h-4 mr-2" />
-              Import
-            </Button>
+          
+          {/* Controls */}
+          <div className="flex items-center space-x-4">
+            <div className="relative">
+              <input
+                type="file"
+                id="logo-upload"
+                accept="image/*"
+                onChange={handleLogoUpload}
+                className="hidden"
+              />
+              <label
+                htmlFor="logo-upload"
+                className="flex items-center space-x-2 px-3 py-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors cursor-pointer"
+              >
+                <Upload className="h-4 w-4" />
+                <span className="text-sm">Change Logo</span>
+              </label>
+            </div>
             
-            <Button variant="ghost" size="sm" className="hidden lg:flex">
-              <Download className="w-4 h-4 mr-2" />
-              Export
-            </Button>
-            
-            <Button variant="ghost" size="sm" className="hidden lg:flex">
-              <Save className="w-4 h-4 mr-2" />
-              Save
-            </Button>
-
-            <div className="w-px h-6 bg-slate-300 dark:bg-slate-600 mx-2" />
-
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={onThemeCustomizer}
-              className="hidden lg:flex"
-            >
-              <Palette className="w-4 h-4 mr-2" />
-              Theme
-            </Button>
-
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="sm"
               onClick={onUserManagement}
-              className="hidden lg:flex"
+              className="text-white hover:bg-white/20"
             >
-              <Users className="w-4 h-4 mr-2" />
-              Users
+              <Users className="h-4 w-4 mr-2" />
+              Manage Users
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onThemeCustomizer}
+              className="text-white hover:bg-white/20"
+            >
+              <Palette className="h-4 w-4 mr-2" />
+              Customize
             </Button>
 
-            <Button variant="ghost" size="sm">
-              <Bell className="w-4 h-4" />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="text-white hover:bg-white/20"
+            >
+              {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>
 
-            <Button variant="ghost" size="sm">
-              <Settings className="w-4 h-4" />
-            </Button>
-
-            {/* User Avatar */}
-            <Avatar className="w-8 h-8">
-              <AvatarFallback>
-                <AvatarInitials name="John Doe" />
-              </AvatarFallback>
+            <Avatar className="h-8 w-8">
+              <AvatarImage src="/placeholder.svg?height=32&width=32" alt="User" />
+              <AvatarInitials name="Admin User" />
             </Avatar>
-
-            {/* Mobile Menu */}
-            <Button variant="ghost" size="sm" className="lg:hidden">
-              <Menu className="w-4 h-4" />
-            </Button>
           </div>
         </div>
       </div>

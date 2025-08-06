@@ -1,19 +1,19 @@
 'use client'
 
 import { useState } from 'react'
-import { Header } from '@/components/Header'
-import { TabNavigation } from '@/components/TabNavigation'
-import { ArchitectureDesigner } from '@/components/ArchitectureDesigner'
-import { InteractiveDiagram } from '@/components/InteractiveDiagram'
-import { ArchitectureLegend } from '@/components/ArchitectureLegend'
-import { PolicyEditor } from '@/components/PolicyEditor'
-import { OnboardingScenarios } from '@/components/OnboardingScenarios'
-import { ThemeProvider } from '@/components/ThemeProvider'
-import { MasterSiteList } from '@/components/MasterSiteList'
-import { SiteWorkbook } from '@/components/SiteWorkbook'
-import { RolloutProgress } from '@/components/RolloutProgress'
-import { UserManagementModal } from '@/components/UserManagementModal'
-import { ThemeCustomizer } from '@/components/ThemeCustomizer'
+import Header from '@/components/Header'
+import TabNavigation from '@/components/TabNavigation'
+import ArchitectureDesigner from '@/components/ArchitectureDesigner'
+import InteractiveDiagram from '@/components/InteractiveDiagram'
+import ArchitectureLegend from '@/components/ArchitectureLegend'
+import PolicyEditor from '@/components/PolicyEditor'
+import OnboardingScenarios from '@/components/OnboardingScenarios'
+import { ThemeProvider } from '@/components/theme-provider'
+import MasterSiteList from '@/components/MasterSiteList'
+import SiteWorkbook from '@/components/SiteWorkbook'
+import RolloutProgress from '@/components/RolloutProgress'
+import UserManagementModal from '@/components/UserManagementModal'
+import ThemeCustomizer from '@/components/ThemeCustomizer'
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('architecture')
@@ -72,7 +72,7 @@ export default function Home() {
   }
 
   return (
-    <ThemeProvider>
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">
         <Header 
           onUserManagement={() => setShowUserModal(true)}

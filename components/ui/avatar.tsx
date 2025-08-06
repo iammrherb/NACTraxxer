@@ -48,10 +48,8 @@ const AvatarFallback = React.forwardRef<
 AvatarFallback.displayName = AvatarPrimitive.Fallback.displayName
 
 const AvatarInitials = React.forwardRef<
-  HTMLSpanElement,
-  React.HTMLAttributes<HTMLSpanElement> & {
-    name: string
-  }
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement> & { name: string }
 >(({ className, name, ...props }, ref) => {
   const initials = name
     .split(' ')
@@ -61,16 +59,16 @@ const AvatarInitials = React.forwardRef<
     .slice(0, 2)
 
   return (
-    <span
+    <div
       ref={ref}
       className={cn(
-        "flex h-full w-full items-center justify-center rounded-full bg-muted text-sm font-medium",
+        "flex h-full w-full items-center justify-center rounded-full bg-primary text-primary-foreground font-medium text-sm",
         className
       )}
       {...props}
     >
       {initials}
-    </span>
+    </div>
   )
 })
 AvatarInitials.displayName = "AvatarInitials"

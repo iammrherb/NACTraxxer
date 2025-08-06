@@ -1,17 +1,17 @@
 'use client'
 
 import { useState } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Palette, RotateCcw } from 'lucide-react'
 
 interface ThemeCustomizerProps {
   open: boolean
-  onOpenChange: (open: boolean) => void
+  onClose: () => void
 }
 
-export default function ThemeCustomizer({ open, onOpenChange }: ThemeCustomizerProps) {
+export default function ThemeCustomizer({ open, onClose }: ThemeCustomizerProps) {
   const [colors, setColors] = useState({
     primary: '#1a73e8',
     planned: '#17a2b8',
@@ -65,99 +65,100 @@ export default function ThemeCustomizer({ open, onOpenChange }: ThemeCustomizerP
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center space-x-2">
+    <div className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 ${open ? '' : 'hidden'}`}>
+      <Card className="w-full max-w-2xl mx-4">
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
             <Palette className="h-6 w-6 text-blue-600" />
             <span>Customize Theme Colors</span>
-          </DialogTitle>
-        </DialogHeader>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-6">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="primary-color">Primary Color</Label>
+                <div className="flex items-center space-x-2">
+                  <input
+                    id="primary-color"
+                    type="color"
+                    value={colors.primary}
+                    onChange={(e) => updateColor('primary', e.target.value)}
+                    className="w-12 h-8 rounded border border-gray-300 cursor-pointer"
+                  />
+                  <span className="text-sm text-gray-600 font-mono">{colors.primary}</span>
+                </div>
+              </div>
 
-        <div className="space-y-6">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="primary-color">Primary Color</Label>
-              <div className="flex items-center space-x-2">
-                <input
-                  id="primary-color"
-                  type="color"
-                  value={colors.primary}
-                  onChange={(e) => updateColor('primary', e.target.value)}
-                  className="w-12 h-8 rounded border border-gray-300 cursor-pointer"
-                />
-                <span className="text-sm text-gray-600 font-mono">{colors.primary}</span>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="planned-color">Planned Status</Label>
+                <div className="flex items-center space-x-2">
+                  <input
+                    id="planned-color"
+                    type="color"
+                    value={colors.planned}
+                    onChange={(e) => updateColor('planned', e.target.value)}
+                    className="w-12 h-8 rounded border border-gray-300 cursor-pointer"
+                  />
+                  <span className="text-sm text-gray-600 font-mono">{colors.planned}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <Label htmlFor="progress-color">In Progress Status</Label>
+                <div className="flex items-center space-x-2">
+                  <input
+                    id="progress-color"
+                    type="color"
+                    value={colors.inProgress}
+                    onChange={(e) => updateColor('inProgress', e.target.value)}
+                    className="w-12 h-8 rounded border border-gray-300 cursor-pointer"
+                  />
+                  <span className="text-sm text-gray-600 font-mono">{colors.inProgress}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <Label htmlFor="complete-color">Complete Status</Label>
+                <div className="flex items-center space-x-2">
+                  <input
+                    id="complete-color"
+                    type="color"
+                    value={colors.complete}
+                    onChange={(e) => updateColor('complete', e.target.value)}
+                    className="w-12 h-8 rounded border border-gray-300 cursor-pointer"
+                  />
+                  <span className="text-sm text-gray-600 font-mono">{colors.complete}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <Label htmlFor="delayed-color">Delayed Status</Label>
+                <div className="flex items-center space-x-2">
+                  <input
+                    id="delayed-color"
+                    type="color"
+                    value={colors.delayed}
+                    onChange={(e) => updateColor('delayed', e.target.value)}
+                    className="w-12 h-8 rounded border border-gray-300 cursor-pointer"
+                  />
+                  <span className="text-sm text-gray-600 font-mono">{colors.delayed}</span>
+                </div>
               </div>
             </div>
 
-            <div className="flex items-center justify-between">
-              <Label htmlFor="planned-color">Planned Status</Label>
-              <div className="flex items-center space-x-2">
-                <input
-                  id="planned-color"
-                  type="color"
-                  value={colors.planned}
-                  onChange={(e) => updateColor('planned', e.target.value)}
-                  className="w-12 h-8 rounded border border-gray-300 cursor-pointer"
-                />
-                <span className="text-sm text-gray-600 font-mono">{colors.planned}</span>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <Label htmlFor="progress-color">In Progress Status</Label>
-              <div className="flex items-center space-x-2">
-                <input
-                  id="progress-color"
-                  type="color"
-                  value={colors.inProgress}
-                  onChange={(e) => updateColor('inProgress', e.target.value)}
-                  className="w-12 h-8 rounded border border-gray-300 cursor-pointer"
-                />
-                <span className="text-sm text-gray-600 font-mono">{colors.inProgress}</span>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <Label htmlFor="complete-color">Complete Status</Label>
-              <div className="flex items-center space-x-2">
-                <input
-                  id="complete-color"
-                  type="color"
-                  value={colors.complete}
-                  onChange={(e) => updateColor('complete', e.target.value)}
-                  className="w-12 h-8 rounded border border-gray-300 cursor-pointer"
-                />
-                <span className="text-sm text-gray-600 font-mono">{colors.complete}</span>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <Label htmlFor="delayed-color">Delayed Status</Label>
-              <div className="flex items-center space-x-2">
-                <input
-                  id="delayed-color"
-                  type="color"
-                  value={colors.delayed}
-                  onChange={(e) => updateColor('delayed', e.target.value)}
-                  className="w-12 h-8 rounded border border-gray-300 cursor-pointer"
-                />
-                <span className="text-sm text-gray-600 font-mono">{colors.delayed}</span>
-              </div>
+            <div className="flex justify-between pt-4 border-t">
+              <Button variant="outline" onClick={resetColors}>
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Reset to Default
+              </Button>
+              <Button onClick={onClose}>
+                Done
+              </Button>
             </div>
           </div>
-
-          <div className="flex justify-between pt-4 border-t">
-            <Button variant="outline" onClick={resetColors}>
-              <RotateCcw className="h-4 w-4 mr-2" />
-              Reset to Default
-            </Button>
-            <Button onClick={() => onOpenChange(false)}>
-              Done
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </CardContent>
+      </Card>
+    </div>
   )
 }
