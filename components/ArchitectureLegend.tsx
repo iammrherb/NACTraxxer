@@ -121,6 +121,51 @@ export default function ArchitectureLegend({ currentView }: ArchitectureLegendPr
           { name: 'Portnox Cloud NAC', color: '#e3f2fd', icon: <Cloud className="w-4 h-4" />, description: 'Cloud-based NAC service with policy engine' },
           { name: 'Microsoft Entra ID', color: '#e1f5fe', icon: <Users className="w-4 h-4" />, description: 'Cloud identity and access management' }
         ]
+      case 'hpe-tacacs':
+        return [
+          { name: 'Portnox TACACS+ Server', color: '#e3f2fd', icon: <Server className="w-4 h-4" />, description: 'Enterprise TACACS+ server with HPE/H3C device support' },
+          { name: 'HPE Comware Switch', color: '#01a982', icon: <Network className="w-4 h-4" />, description: 'HPE Comware switch with user privilege levels' },
+          { name: 'HPE ProCurve Switch', color: '#01a982', icon: <Network className="w-4 h-4" />, description: 'HPE ProCurve with manager/operator levels' },
+          { name: 'H3C Router', color: '#01a982', icon: <Network className="w-4 h-4" />, description: 'H3C router with command authorization' },
+          { name: 'HPE IMC', color: '#01a982', icon: <Settings className="w-4 h-4" />, description: 'HPE Intelligent Management Center' },
+          { name: 'View-Based Access Control', color: '#fff3cd', icon: <Lock className="w-4 h-4" />, description: 'Custom command sets and view restrictions' }
+        ]
+      case 'extreme-tacacs':
+        return [
+          { name: 'Portnox TACACS+ Server', color: '#e3f2fd', icon: <Server className="w-4 h-4" />, description: 'Centralized TACACS+ with Extreme Networks support' },
+          { name: 'Extreme X-Series', color: '#7b2cbf', icon: <Network className="w-4 h-4" />, description: 'X-Series switch with role-based access' },
+          { name: 'Extreme Summit', color: '#7b2cbf', icon: <Network className="w-4 h-4" />, description: 'Summit switch with policy management' },
+          { name: 'Extreme Wing AP', color: '#7b2cbf', icon: <Network className="w-4 h-4" />, description: 'Wing wireless access point' },
+          { name: 'ExtremeCloud IQ', color: '#7b2cbf', icon: <Cloud className="w-4 h-4" />, description: 'Cloud management platform' },
+          { name: 'Advanced Analytics', color: '#f8d7da', icon: <Database className="w-4 h-4" />, description: 'ML-based anomaly detection' }
+        ]
+      case 'ruckus-tacacs':
+        return [
+          { name: 'Portnox TACACS+ Server', color: '#e3f2fd', icon: <Server className="w-4 h-4" />, description: 'Enterprise TACACS+ with Ruckus/CommScope support' },
+          { name: 'Ruckus ICX Switch', color: '#f39c12', icon: <Network className="w-4 h-4" />, description: 'ICX switch with privilege levels' },
+          { name: 'Ruckus Access Point', color: '#f39c12', icon: <Network className="w-4 h-4" />, description: 'Wireless AP with controller auth' },
+          { name: 'Ruckus SmartZone', color: '#f39c12', icon: <Settings className="w-4 h-4" />, description: 'SmartZone wireless controller' },
+          { name: 'Ruckus CloudPath', color: '#f39c12', icon: <Cloud className="w-4 h-4" />, description: 'CloudPath enrollment system' },
+          { name: 'RF Management', color: '#fff3cd', icon: <Zap className="w-4 h-4" />, description: 'Adaptive antenna and power control' }
+        ]
+      case 'ubiquiti-tacacs':
+        return [
+          { name: 'Portnox TACACS+ Server', color: '#e3f2fd', icon: <Server className="w-4 h-4" />, description: 'Centralized TACACS+ with UniFi integration' },
+          { name: 'UniFi Switch', color: '#0559c9', icon: <Network className="w-4 h-4" />, description: 'UniFi managed switch with role-based access' },
+          { name: 'UniFi Access Point', color: '#0559c9', icon: <Network className="w-4 h-4" />, description: 'UniFi wireless access point' },
+          { name: 'UniFi Gateway', color: '#0559c9', icon: <Shield className="w-4 h-4" />, description: 'UniFi security gateway' },
+          { name: 'UniFi Controller', color: '#0559c9', icon: <Settings className="w-4 h-4" />, description: 'UniFi Network Controller' },
+          { name: 'Zero-Touch Provisioning', color: '#cce5ff', icon: <Zap className="w-4 h-4" />, description: 'Automated device adoption' }
+        ]
+      case 'mikrotik-tacacs':
+        return [
+          { name: 'Portnox TACACS+ Server', color: '#e3f2fd', icon: <Server className="w-4 h-4" />, description: 'Enterprise TACACS+ with RouterOS support' },
+          { name: 'MikroTik Router', color: '#293133', icon: <Network className="w-4 h-4" />, description: 'RouterOS with TACACS+ authentication' },
+          { name: 'MikroTik Switch', color: '#293133', icon: <Network className="w-4 h-4" />, description: 'Managed switch with SwOS' },
+          { name: 'MikroTik Wireless', color: '#293133', icon: <Network className="w-4 h-4" />, description: 'Wireless device with CAPsMAN' },
+          { name: 'RouterOS Policies', color: '#d4edda', icon: <Lock className="w-4 h-4" />, description: 'Granular permission control framework' },
+          { name: 'Winbox Access', color: '#cce5ff', icon: <Settings className="w-4 h-4" />, description: 'GUI access with TACACS+ auth' }
+        ]
       default:
         return []
     }
@@ -245,6 +290,42 @@ export default function ArchitectureLegend({ currentView }: ArchitectureLegendPr
                 <span className="text-green-600 font-bold text-sm">A</span>
               </div>
               <p className="text-xs font-medium">Aruba</p>
+            </div>
+            <div className="text-center p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+              <div className="w-8 h-8 mx-auto mb-2 bg-teal-100 rounded-full flex items-center justify-center">
+                <span className="text-teal-600 font-bold text-sm">HP</span>
+              </div>
+              <p className="text-xs font-medium">HPE/H3C</p>
+            </div>
+            <div className="text-center p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+              <div className="w-8 h-8 mx-auto mb-2 bg-purple-100 rounded-full flex items-center justify-center">
+                <span className="text-purple-600 font-bold text-sm">EX</span>
+              </div>
+              <p className="text-xs font-medium">Extreme</p>
+            </div>
+            <div className="text-center p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+              <div className="w-8 h-8 mx-auto mb-2 bg-yellow-100 rounded-full flex items-center justify-center">
+                <span className="text-yellow-600 font-bold text-sm">RK</span>
+              </div>
+              <p className="text-xs font-medium">Ruckus</p>
+            </div>
+            <div className="text-center p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+              <div className="w-8 h-8 mx-auto mb-2 bg-blue-100 rounded-full flex items-center justify-center">
+                <span className="text-blue-600 font-bold text-sm">UB</span>
+              </div>
+              <p className="text-xs font-medium">Ubiquiti</p>
+            </div>
+            <div className="text-center p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+              <div className="w-8 h-8 mx-auto mb-2 bg-gray-100 rounded-full flex items-center justify-center">
+                <span className="text-gray-600 font-bold text-sm">MT</span>
+              </div>
+              <p className="text-xs font-medium">MikroTik</p>
+            </div>
+            <div className="text-center p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+              <div className="w-8 h-8 mx-auto mb-2 bg-green-100 rounded-full flex items-center justify-center">
+                <span className="text-green-600 font-bold text-sm">J</span>
+              </div>
+              <p className="text-xs font-medium">Juniper</p>
             </div>
           </div>
         </CardContent>

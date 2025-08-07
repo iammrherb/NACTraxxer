@@ -1825,7 +1825,627 @@ const generateJuniperTACACSConnections = (): DiagramConnection[] => {
   ]
 }
 
-// Update the getDiagramData function to include new diagrams
+// Add HPE/H3C TACACS+ diagram
+const generateHPETACACSNodes = (): DiagramNode[] => {
+  return [
+    {
+      id: 'portnox-tacacs-hpe',
+      x: 450, y: 50, width: 300, height: 100,
+      label: 'Portnox TACACS+ Server',
+      type: 'tacacs',
+      color: '#e3f2fd',
+      description: 'Enterprise TACACS+ server with HPE/H3C device support and IMC integration'
+    },
+    {
+      id: 'hpe-comware-switch',
+      x: 100, y: 250, width: 200, height: 120,
+      label: 'HPE Comware Switch',
+      type: 'hpe-comware',
+      color: '#01a982',
+      description: 'HPE Comware switch with TACACS+ authentication and user privilege levels',
+      vendor: 'hpe'
+    },
+    {
+      id: 'hpe-procurve-switch',
+      x: 350, y: 250, width: 200, height: 120,
+      label: 'HPE ProCurve Switch',
+      type: 'hpe-procurve',
+      color: '#01a982',
+      description: 'HPE ProCurve switch with TACACS+ and manager/operator privilege levels',
+      vendor: 'hpe'
+    },
+    {
+      id: 'h3c-router',
+      x: 600, y: 250, width: 200, height: 120,
+      label: 'H3C Router',
+      type: 'h3c-router',
+      color: '#01a982',
+      description: 'H3C router with TACACS+ authentication and command authorization',
+      vendor: 'h3c'
+    },
+    {
+      id: 'hpe-imc',
+      x: 850, y: 250, width: 200, height: 120,
+      label: 'HPE IMC',
+      type: 'hpe-imc',
+      color: '#01a982',
+      description: 'HPE Intelligent Management Center with TACACS+ admin authentication',
+      vendor: 'hpe'
+    },
+    {
+      id: 'entra-id-hpe',
+      x: 150, y: 450, width: 200, height: 100,
+      label: 'Microsoft Entra ID',
+      type: 'entra',
+      color: '#e1f5fe',
+      description: 'Cloud identity with HPE device management integration'
+    },
+    {
+      id: 'ad-server-hpe',
+      x: 400, y: 450, width: 200, height: 100,
+      label: 'Active Directory',
+      type: 'ad',
+      color: '#e1f5fe',
+      description: 'Active Directory with HPE network administrator groups'
+    },
+    {
+      id: 'hpe-user-levels',
+      x: 650, y: 450, width: 200, height: 100,
+      label: 'HPE User Levels',
+      type: 'user-levels',
+      color: '#fff3cd',
+      description: 'HPE user privilege levels: network-admin, network-operator, level-0 to level-15'
+    },
+    {
+      id: 'command-authorization-hpe',
+      x: 900, y: 450, width: 200, height: 100,
+      label: 'Command Authorization',
+      type: 'command',
+      color: '#d4edda',
+      description: 'Granular command authorization with view-based access control'
+    },
+    {
+      id: 'session-control-hpe',
+      x: 275, y: 600, width: 200, height: 80,
+      label: 'Session Control',
+      type: 'session',
+      color: '#cce5ff',
+      description: 'Active session management with idle timeout and privilege escalation'
+    },
+    {
+      id: 'view-based-access',
+      x: 525, y: 600, width: 200, height: 80,
+      label: 'View-Based Access',
+      type: 'view',
+      color: '#fff3cd',
+      description: 'View-based access control with custom command sets and restrictions'
+    },
+    {
+      id: 'hpe-logging',
+      x: 775, y: 600, width: 200, height: 80,
+      label: 'HPE Logging',
+      type: 'logging',
+      color: '#f8d7da',
+      description: 'Comprehensive logging with syslog and SNMP integration'
+    }
+  ]
+}
+
+const generateHPETACACSConnections = (): DiagramConnection[] => {
+  return [
+    { id: 'tacacs-hpe-to-comware', from: 'portnox-tacacs-hpe', to: 'hpe-comware-switch', type: 'secure', label: 'TACACS+ Auth' },
+    { id: 'tacacs-hpe-to-procurve', from: 'portnox-tacacs-hpe', to: 'hpe-procurve-switch', type: 'secure', label: 'Admin Auth' },
+    { id: 'tacacs-hpe-to-h3c', from: 'portnox-tacacs-hpe', to: 'h3c-router', type: 'secure', label: 'Router Auth' },
+    { id: 'tacacs-hpe-to-imc', from: 'portnox-tacacs-hpe', to: 'hpe-imc', type: 'secure', label: 'Management Auth' },
+    { id: 'tacacs-hpe-to-entra', from: 'portnox-tacacs-hpe', to: 'entra-id-hpe', type: 'standard', label: 'Cloud Identity' },
+    { id: 'tacacs-hpe-to-ad', from: 'portnox-tacacs-hpe', to: 'ad-server-hpe', type: 'standard', label: 'User Lookup' },
+    { id: 'entra-to-levels', from: 'entra-id-hpe', to: 'hpe-user-levels', type: 'standard', label: 'Level Assignment' },
+    { id: 'ad-to-levels', from: 'ad-server-hpe', to: 'hpe-user-levels', type: 'standard', label: 'Group Mapping' },
+    { id: 'levels-to-command', from: 'hpe-user-levels', to: 'command-authorization-hpe', type: 'standard', label: 'Command Rights' },
+    { id: 'comware-to-session', from: 'hpe-comware-switch', to: 'session-control-hpe', type: 'standard', label: 'Session Events' },
+    { id: 'procurve-to-view', from: 'hpe-procurve-switch', to: 'view-based-access', type: 'standard', label: 'View Access' },
+    { id: 'h3c-to-logging', from: 'h3c-router', to: 'hpe-logging', type: 'standard', label: 'Router Logs' },
+    { id: 'imc-to-logging', from: 'hpe-imc', to: 'hpe-logging', type: 'standard', label: 'Management Logs' }
+  ]
+}
+
+// Add Extreme Networks TACACS+ diagram
+const generateExtremeTACACSNodes = (): DiagramNode[] => {
+  return [
+    {
+      id: 'portnox-tacacs-extreme',
+      x: 450, y: 50, width: 300, height: 100,
+      label: 'Portnox TACACS+ Server',
+      type: 'tacacs',
+      color: '#e3f2fd',
+      description: 'Centralized TACACS+ server with Extreme Networks device support and ExtremeCloud integration'
+    },
+    {
+      id: 'extreme-x-series',
+      x: 100, y: 250, width: 200, height: 120,
+      label: 'Extreme X-Series',
+      type: 'extreme-x',
+      color: '#7b2cbf',
+      description: 'Extreme X-Series switch with TACACS+ authentication and role-based access',
+      vendor: 'extreme'
+    },
+    {
+      id: 'extreme-summit',
+      x: 350, y: 250, width: 200, height: 120,
+      label: 'Extreme Summit',
+      type: 'extreme-summit',
+      color: '#7b2cbf',
+      description: 'Extreme Summit switch with TACACS+ and policy-based management',
+      vendor: 'extreme'
+    },
+    {
+      id: 'extreme-wing-ap',
+      x: 600, y: 250, width: 200, height: 120,
+      label: 'Extreme Wing AP',
+      type: 'extreme-wing',
+      color: '#7b2cbf',
+      description: 'Extreme Wing wireless access point with TACACS+ controller authentication',
+      vendor: 'extreme'
+    },
+    {
+      id: 'extreme-cloud-iq',
+      x: 850, y: 250, width: 200, height: 120,
+      label: 'ExtremeCloud IQ',
+      type: 'extreme-cloud',
+      color: '#7b2cbf',
+      description: 'ExtremeCloud IQ management platform with TACACS+ administrative access',
+      vendor: 'extreme'
+    },
+    {
+      id: 'entra-id-extreme',
+      x: 150, y: 450, width: 200, height: 100,
+      label: 'Microsoft Entra ID',
+      type: 'entra',
+      color: '#e1f5fe',
+      description: 'Cloud identity with SAML integration for Extreme device management'
+    },
+    {
+      id: 'ad-server-extreme',
+      x: 400, y: 450, width: 200, height: 100,
+      label: 'Active Directory',
+      type: 'ad',
+      color: '#e1f5fe',
+      description: 'Active Directory with Extreme network administrator groups'
+    },
+    {
+      id: 'extreme-roles',
+      x: 650, y: 450, width: 200, height: 100,
+      label: 'Extreme User Roles',
+      type: 'roles',
+      color: '#fff3cd',
+      description: 'Extreme user roles: admin, operator, user with custom policy assignments'
+    },
+    {
+      id: 'policy-management',
+      x: 900, y: 450, width: 200, height: 100,
+      label: 'Policy Management',
+      type: 'policy',
+      color: '#d4edda',
+      description: 'Dynamic policy management with role-based network access control'
+    },
+    {
+      id: 'session-tracking-extreme',
+      x: 275, y: 600, width: 200, height: 80,
+      label: 'Session Tracking',
+      type: 'session',
+      color: '#cce5ff',
+      description: 'Real-time session tracking with user activity monitoring'
+    },
+    {
+      id: 'command-filtering-extreme',
+      x: 525, y: 600, width: 200, height: 80,
+      label: 'Command Filtering',
+      type: 'command',
+      color: '#fff3cd',
+      description: 'Advanced command filtering with context-aware authorization'
+    },
+    {
+      id: 'extreme-analytics',
+      x: 775, y: 600, width: 200, height: 80,
+      label: 'Extreme Analytics',
+      type: 'analytics',
+      color: '#f8d7da',
+      description: 'Advanced analytics with machine learning-based anomaly detection'
+    }
+  ]
+}
+
+const generateExtremeTACACSConnections = (): DiagramConnection[] => {
+  return [
+    { id: 'tacacs-extreme-to-x', from: 'portnox-tacacs-extreme', to: 'extreme-x-series', type: 'secure', label: 'TACACS+ Auth' },
+    { id: 'tacacs-extreme-to-summit', from: 'portnox-tacacs-extreme', to: 'extreme-summit', type: 'secure', label: 'Switch Auth' },
+    { id: 'tacacs-extreme-to-wing', from: 'portnox-tacacs-extreme', to: 'extreme-wing-ap', type: 'secure', label: 'AP Auth' },
+    { id: 'tacacs-extreme-to-cloud', from: 'portnox-tacacs-extreme', to: 'extreme-cloud-iq', type: 'secure', label: 'Cloud Auth' },
+    { id: 'tacacs-extreme-to-entra', from: 'portnox-tacacs-extreme', to: 'entra-id-extreme', type: 'standard', label: 'Identity Lookup' },
+    { id: 'tacacs-extreme-to-ad', from: 'portnox-tacacs-extreme', to: 'ad-server-extreme', type: 'standard', label: 'User Auth' },
+    { id: 'entra-to-roles-extreme', from: 'entra-id-extreme', to: 'extreme-roles', type: 'standard', label: 'Role Assignment' },
+    { id: 'ad-to-roles-extreme', from: 'ad-server-extreme', to: 'extreme-roles', type: 'standard', label: 'Group Mapping' },
+    { id: 'roles-to-policy', from: 'extreme-roles', to: 'policy-management', type: 'standard', label: 'Policy Application' },
+    { id: 'x-to-session', from: 'extreme-x-series', to: 'session-tracking-extreme', type: 'standard', label: 'Session Data' },
+    { id: 'summit-to-command', from: 'extreme-summit', to: 'command-filtering-extreme', type: 'standard', label: 'Command Requests' },
+    { id: 'wing-to-analytics', from: 'extreme-wing-ap', to: 'extreme-analytics', type: 'standard', label: 'AP Analytics' },
+    { id: 'cloud-to-analytics', from: 'extreme-cloud-iq', to: 'extreme-analytics', type: 'standard', label: 'Cloud Analytics' }
+  ]
+}
+
+// Add Ruckus/CommScope TACACS+ diagram
+const generateRuckusTACACSNodes = (): DiagramNode[] => {
+  return [
+    {
+      id: 'portnox-tacacs-ruckus',
+      x: 450, y: 50, width: 300, height: 100,
+      label: 'Portnox TACACS+ Server',
+      type: 'tacacs',
+      color: '#e3f2fd',
+      description: 'Enterprise TACACS+ server with Ruckus/CommScope device support and SmartZone integration'
+    },
+    {
+      id: 'ruckus-icx-switch',
+      x: 100, y: 250, width: 200, height: 120,
+      label: 'Ruckus ICX Switch',
+      type: 'ruckus-icx',
+      color: '#f39c12',
+      description: 'Ruckus ICX switch with TACACS+ authentication and privilege levels',
+      vendor: 'ruckus'
+    },
+    {
+      id: 'ruckus-ap',
+      x: 350, y: 250, width: 200, height: 120,
+      label: 'Ruckus Access Point',
+      type: 'ruckus-ap',
+      color: '#f39c12',
+      description: 'Ruckus wireless access point with TACACS+ controller authentication',
+      vendor: 'ruckus'
+    },
+    {
+      id: 'ruckus-smartzone',
+      x: 600, y: 250, width: 200, height: 120,
+      label: 'Ruckus SmartZone',
+      type: 'ruckus-smartzone',
+      color: '#f39c12',
+      description: 'Ruckus SmartZone controller with TACACS+ administrative access',
+      vendor: 'ruckus'
+    },
+    {
+      id: 'ruckus-cloudpath',
+      x: 850, y: 250, width: 200, height: 120,
+      label: 'Ruckus CloudPath',
+      type: 'ruckus-cloudpath',
+      color: '#f39c12',
+      description: 'Ruckus CloudPath enrollment system with TACACS+ integration',
+      vendor: 'ruckus'
+    },
+    {
+      id: 'entra-id-ruckus',
+      x: 150, y: 450, width: 200, height: 100,
+      label: 'Microsoft Entra ID',
+      type: 'entra',
+      color: '#e1f5fe',
+      description: 'Cloud identity with Ruckus device management integration'
+    },
+    {
+      id: 'ad-server-ruckus',
+      x: 400, y: 450, width: 200, height: 100,
+      label: 'Active Directory',
+      type: 'ad',
+      color: '#e1f5fe',
+      description: 'Active Directory with Ruckus network administrator groups'
+    },
+    {
+      id: 'ruckus-admin-roles',
+      x: 650, y: 450, width: 200, height: 100,
+      label: 'Ruckus Admin Roles',
+      type: 'roles',
+      color: '#fff3cd',
+      description: 'Ruckus administrative roles: super-admin, admin, operator, monitor'
+    },
+    {
+      id: 'wireless-policy',
+      x: 900, y: 450, width: 200, height: 100,
+      label: 'Wireless Policy',
+      type: 'policy',
+      color: '#d4edda',
+      description: 'Wireless policy management with dynamic VLAN assignment'
+    },
+    {
+      id: 'session-mgmt-ruckus',
+      x: 275, y: 600, width: 200, height: 80,
+      label: 'Session Management',
+      type: 'session',
+      color: '#cce5ff',
+      description: 'Wireless session management with roaming and handoff control'
+    },
+    {
+      id: 'rf-management',
+      x: 525, y: 600, width: 200, height: 80,
+      label: 'RF Management',
+      type: 'rf',
+      color: '#fff3cd',
+      description: 'Radio frequency management with adaptive antenna and power control'
+    },
+    {
+      id: 'ruckus-analytics',
+      x: 775, y: 600, width: 200, height: 80,
+      label: 'Ruckus Analytics',
+      type: 'analytics',
+      color: '#f8d7da',
+      description: 'Advanced wireless analytics with location services and user behavior'
+    }
+  ]
+}
+
+const generateRuckusTACACSConnections = (): DiagramConnection[] => {
+  return [
+    { id: 'tacacs-ruckus-to-icx', from: 'portnox-tacacs-ruckus', to: 'ruckus-icx-switch', type: 'secure', label: 'TACACS+ Auth' },
+    { id: 'tacacs-ruckus-to-ap', from: 'portnox-tacacs-ruckus', to: 'ruckus-ap', type: 'secure', label: 'AP Auth' },
+    { id: 'tacacs-ruckus-to-smartzone', from: 'portnox-tacacs-ruckus', to: 'ruckus-smartzone', type: 'secure', label: 'Controller Auth' },
+    { id: 'tacacs-ruckus-to-cloudpath', from: 'portnox-tacacs-ruckus', to: 'ruckus-cloudpath', type: 'secure', label: 'Enrollment Auth' },
+    { id: 'tacacs-ruckus-to-entra', from: 'portnox-tacacs-ruckus', to: 'entra-id-ruckus', type: 'standard', label: 'Cloud Identity' },
+    { id: 'tacacs-ruckus-to-ad', from: 'portnox-tacacs-ruckus', to: 'ad-server-ruckus', type: 'standard', label: 'User Lookup' },
+    { id: 'entra-to-roles-ruckus', from: 'entra-id-ruckus', to: 'ruckus-admin-roles', type: 'standard', label: 'Role Assignment' },
+    { id: 'ad-to-roles-ruckus', from: 'ad-server-ruckus', to: 'ruckus-admin-roles', type: 'standard', label: 'Group Mapping' },
+    { id: 'roles-to-wireless-policy', from: 'ruckus-admin-roles', to: 'wireless-policy', type: 'standard', label: 'Policy Rights' },
+    { id: 'icx-to-session', from: 'ruckus-icx-switch', to: 'session-mgmt-ruckus', type: 'standard', label: 'Switch Sessions' },
+    { id: 'ap-to-rf', from: 'ruckus-ap', to: 'rf-management', type: 'standard', label: 'RF Control' },
+    { id: 'smartzone-to-analytics', from: 'ruckus-smartzone', to: 'ruckus-analytics', type: 'standard', label: 'Controller Analytics' },
+    { id: 'cloudpath-to-analytics', from: 'ruckus-cloudpath', to: 'ruckus-analytics', type: 'standard', label: 'Enrollment Analytics' }
+  ]
+}
+
+// Add Ubiquiti TACACS+ diagram
+const generateUbiquitiTACACSNodes = (): DiagramNode[] => {
+  return [
+    {
+      id: 'portnox-tacacs-ubiquiti',
+      x: 450, y: 50, width: 300, height: 100,
+      label: 'Portnox TACACS+ Server',
+      type: 'tacacs',
+      color: '#e3f2fd',
+      description: 'Centralized TACACS+ server with Ubiquiti device support and UniFi integration'
+    },
+    {
+      id: 'unifi-switch',
+      x: 100, y: 250, width: 200, height: 120,
+      label: 'UniFi Switch',
+      type: 'unifi-switch',
+      color: '#0559c9',
+      description: 'UniFi managed switch with TACACS+ authentication and role-based access',
+      vendor: 'ubiquiti'
+    },
+    {
+      id: 'unifi-ap',
+      x: 350, y: 250, width: 200, height: 120,
+      label: 'UniFi Access Point',
+      type: 'unifi-ap',
+      color: '#0559c9',
+      description: 'UniFi wireless access point with controller-based TACACS+ authentication',
+      vendor: 'ubiquiti'
+    },
+    {
+      id: 'unifi-gateway',
+      x: 600, y: 250, width: 200, height: 120,
+      label: 'UniFi Gateway',
+      type: 'unifi-gateway',
+      color: '#0559c9',
+      description: 'UniFi security gateway with TACACS+ administrative access',
+      vendor: 'ubiquiti'
+    },
+    {
+      id: 'unifi-controller',
+      x: 850, y: 250, width: 200, height: 120,
+      label: 'UniFi Controller',
+      type: 'unifi-controller',
+      color: '#0559c9',
+      description: 'UniFi Network Controller with TACACS+ user management',
+      vendor: 'ubiquiti'
+    },
+    {
+      id: 'entra-id-ubiquiti',
+      x: 150, y: 450, width: 200, height: 100,
+      label: 'Microsoft Entra ID',
+      type: 'entra',
+      color: '#e1f5fe',
+      description: 'Cloud identity with UniFi SSO integration'
+    },
+    {
+      id: 'ad-server-ubiquiti',
+      x: 400, y: 450, width: 200, height: 100,
+      label: 'Active Directory',
+      type: 'ad',
+      color: '#e1f5fe',
+      description: 'Active Directory with UniFi administrator groups'
+    },
+    {
+      id: 'unifi-roles',
+      x: 650, y: 450, width: 200, height: 100,
+      label: 'UniFi User Roles',
+      type: 'roles',
+      color: '#fff3cd',
+      description: 'UniFi user roles: admin, limited-admin, read-only with custom permissions'
+    },
+    {
+      id: 'network-topology',
+      x: 900, y: 450, width: 200, height: 100,
+      label: 'Network Topology',
+      type: 'topology',
+      color: '#d4edda',
+      description: 'Dynamic network topology management with auto-discovery'
+    },
+    {
+      id: 'device-adoption',
+      x: 275, y: 600, width: 200, height: 80,
+      label: 'Device Adoption',
+      type: 'adoption',
+      color: '#cce5ff',
+      description: 'Automated device adoption with zero-touch provisioning'
+    },
+    {
+      id: 'traffic-analysis',
+      x: 525, y: 600, width: 200, height: 80,
+      label: 'Traffic Analysis',
+      type: 'traffic',
+      color: '#fff3cd',
+      description: 'Deep packet inspection with application-aware traffic shaping'
+    },
+    {
+      id: 'unifi-insights',
+      x: 775, y: 600, width: 200, height: 80,
+      label: 'UniFi Insights',
+      type: 'insights',
+      color: '#f8d7da',
+      description: 'Network insights with predictive analytics and optimization'
+    }
+  ]
+}
+
+const generateUbiquitiTACACSConnections = (): DiagramConnection[] => {
+  return [
+    { id: 'tacacs-ubiquiti-to-switch', from: 'portnox-tacacs-ubiquiti', to: 'unifi-switch', type: 'secure', label: 'TACACS+ Auth' },
+    { id: 'tacacs-ubiquiti-to-ap', from: 'portnox-tacacs-ubiquiti', to: 'unifi-ap', type: 'secure', label: 'AP Auth' },
+    { id: 'tacacs-ubiquiti-to-gateway', from: 'portnox-tacacs-ubiquiti', to: 'unifi-gateway', type: 'secure', label: 'Gateway Auth' },
+    { id: 'tacacs-ubiquiti-to-controller', from: 'portnox-tacacs-ubiquiti', to: 'unifi-controller', type: 'secure', label: 'Controller Auth' },
+    { id: 'tacacs-ubiquiti-to-entra', from: 'portnox-tacacs-ubiquiti', to: 'entra-id-ubiquiti', type: 'standard', label: 'SSO Integration' },
+    { id: 'tacacs-ubiquiti-to-ad', from: 'portnox-tacacs-ubiquiti', to: 'ad-server-ubiquiti', type: 'standard', label: 'User Lookup' },
+    { id: 'entra-to-roles-ubiquiti', from: 'entra-id-ubiquiti', to: 'unifi-roles', type: 'standard', label: 'Role Assignment' },
+    { id: 'ad-to-roles-ubiquiti', from: 'ad-server-ubiquiti', to: 'unifi-roles', type: 'standard', label: 'Group Mapping' },
+    { id: 'roles-to-topology', from: 'unifi-roles', to: 'network-topology', type: 'standard', label: 'Topology Access' },
+    { id: 'switch-to-adoption', from: 'unifi-switch', to: 'device-adoption', type: 'standard', label: 'Device Discovery' },
+    { id: 'ap-to-traffic', from: 'unifi-ap', to: 'traffic-analysis', type: 'standard', label: 'Traffic Data' },
+    { id: 'gateway-to-insights', from: 'unifi-gateway', to: 'unifi-insights', type: 'standard', label: 'Gateway Analytics' },
+    { id: 'controller-to-insights', from: 'unifi-controller', to: 'unifi-insights', type: 'standard', label: 'Network Insights' }
+  ]
+}
+
+// Add Mikrotik TACACS+ diagram
+const generateMikrotikTACACSNodes = (): DiagramNode[] => {
+  return [
+    {
+      id: 'portnox-tacacs-mikrotik',
+      x: 450, y: 50, width: 300, height: 100,
+      label: 'Portnox TACACS+ Server',
+      type: 'tacacs',
+      color: '#e3f2fd',
+      description: 'Enterprise TACACS+ server with MikroTik RouterOS support and Winbox integration'
+    },
+    {
+      id: 'mikrotik-router',
+      x: 100, y: 250, width: 200, height: 120,
+      label: 'MikroTik Router',
+      type: 'mikrotik-router',
+      color: '#293133',
+      description: 'MikroTik router with RouterOS and TACACS+ authentication support',
+      vendor: 'mikrotik'
+    },
+    {
+      id: 'mikrotik-switch',
+      x: 350, y: 250, width: 200, height: 120,
+      label: 'MikroTik Switch',
+      type: 'mikrotik-switch',
+      color: '#293133',
+      description: 'MikroTik managed switch with SwOS and TACACS+ integration',
+      vendor: 'mikrotik'
+    },
+    {
+      id: 'mikrotik-wireless',
+      x: 600, y: 250, width: 200, height: 120,
+      label: 'MikroTik Wireless',
+      type: 'mikrotik-wireless',
+      color: '#293133',
+      description: 'MikroTik wireless device with CAPsMAN and TACACS+ authentication',
+      vendor: 'mikrotik'
+    },
+    {
+      id: 'mikrotik-capsman',
+      x: 850, y: 250, width: 200, height: 120,
+      label: 'MikroTik CAPsMAN',
+      type: 'mikrotik-capsman',
+      color: '#293133',
+      description: 'MikroTik CAPsMAN controller with centralized wireless management',
+      vendor: 'mikrotik'
+    },
+    {
+      id: 'entra-id-mikrotik',
+      x: 150, y: 450, width: 200, height: 100,
+      label: 'Microsoft Entra ID',
+      type: 'entra',
+      color: '#e1f5fe',
+      description: 'Cloud identity with RADIUS integration for MikroTik devices'
+    },
+    {
+      id: 'ad-server-mikrotik',
+      x: 400, y: 450, width: 200, height: 100,
+      label: 'Active Directory',
+      type: 'ad',
+      color: '#e1f5fe',
+      description: 'Active Directory with MikroTik administrator groups'
+    },
+    {
+      id: 'mikrotik-user-groups',
+      x: 650, y: 450, width: 200, height: 100,
+      label: 'MikroTik User Groups',
+      type: 'groups',
+      color: '#fff3cd',
+      description: 'RouterOS user groups: full, read, write, reboot, test with custom policies'
+    },
+    {
+      id: 'routeros-policies',
+      x: 900, y: 450, width: 200, height: 100,
+      label: 'RouterOS Policies',
+      type: 'policies',
+      color: '#d4edda',
+      description: 'RouterOS policy framework with granular permission control'
+    },
+    {
+      id: 'winbox-access',
+      x: 275, y: 600, width: 200, height: 80,
+      label: 'Winbox Access',
+      type: 'winbox',
+      color: '#cce5ff',
+      description: 'Winbox GUI access control with TACACS+ authentication'
+    },
+    {
+      id: 'api-access',
+      x: 525, y: 600, width: 200, height: 80,
+      label: 'API Access',
+      type: 'api',
+      color: '#fff3cd',
+      description: 'RouterOS API access with programmatic device management'
+    },
+    {
+      id: 'mikrotik-logging',
+      x: 775, y: 600, width: 200, height: 80,
+      label: 'MikroTik Logging',
+      type: 'logging',
+      color: '#f8d7da',
+      description: 'Comprehensive RouterOS logging with remote syslog support'
+    }
+  ]
+}
+
+const generateMikrotikTACACSConnections = (): DiagramConnection[] => {
+  return [
+    { id: 'tacacs-mikrotik-to-router', from: 'portnox-tacacs-mikrotik', to: 'mikrotik-router', type: 'secure', label: 'TACACS+ Auth' },
+    { id: 'tacacs-mikrotik-to-switch', from: 'portnox-tacacs-mikrotik', to: 'mikrotik-switch', type: 'secure', label: 'Switch Auth' },
+    { id: 'tacacs-mikrotik-to-wireless', from: 'portnox-tacacs-mikrotik', to: 'mikrotik-wireless', type: 'secure', label: 'Wireless Auth' },
+    { id: 'tacacs-mikrotik-to-capsman', from: 'portnox-tacacs-mikrotik', to: 'mikrotik-capsman', type: 'secure', label: 'CAPsMAN Auth' },
+    { id: 'tacacs-mikrotik-to-entra', from: 'portnox-tacacs-mikrotik', to: 'entra-id-mikrotik', type: 'standard', label: 'Cloud Identity' },
+    { id: 'tacacs-mikrotik-to-ad', from: 'portnox-tacacs-mikrotik', to: 'ad-server-mikrotik', type: 'standard', label: 'User Lookup' },
+    { id: 'entra-to-groups-mikrotik', from: 'entra-id-mikrotik', to: 'mikrotik-user-groups', type: 'standard', label: 'Group Assignment' },
+    { id: 'ad-to-groups-mikrotik', from: 'ad-server-mikrotik', to: 'mikrotik-user-groups', type: 'standard', label: 'Group Mapping' },
+    { id: 'groups-to-policies', from: 'mikrotik-user-groups', to: 'routeros-policies', type: 'standard', label: 'Policy Application' },
+    { id: 'router-to-winbox', from: 'mikrotik-router', to: 'winbox-access', type: 'standard', label: 'GUI Access' },
+    { id: 'switch-to-api', from: 'mikrotik-switch', to: 'api-access', type: 'standard', label: 'API Management' },
+    { id: 'wireless-to-logging', from: 'mikrotik-wireless', to: 'mikrotik-logging', type: 'standard', label: 'Wireless Logs' },
+    { id: 'capsman-to-logging', from: 'mikrotik-capsman', to: 'mikrotik-logging', type: 'standard', label: 'Controller Logs' }
+  ]
+}
+
+// Update the getDiagramData function to include all new vendors
 const getDiagramData = (diagramType: string) => {
   switch (diagramType) {
     case 'corporate-wifi':
@@ -1846,6 +2466,16 @@ const getDiagramData = (diagramType: string) => {
       return { nodes: generateArubaTACACSNodes(), connections: generateArubaTACACSConnections() }
     case 'juniper-tacacs':
       return { nodes: generateJuniperTACACSNodes(), connections: generateJuniperTACACSConnections() }
+      case 'hpe-tacacs':
+        return { nodes: generateHPETACACSNodes(), connections: generateHPETACACSConnections() }
+      case 'extreme-tacacs':
+        return { nodes: generateExtremeTACACSNodes(), connections: generateExtremeTACACSConnections() }
+      case 'ruckus-tacacs':
+        return { nodes: generateRuckusTACACSNodes(), connections: generateRuckusTACACSConnections() }
+      case 'ubiquiti-tacacs':
+        return { nodes: generateUbiquitiTACACSNodes(), connections: generateUbiquitiTACACSConnections() }
+      case 'mikrotik-tacacs':
+        return { nodes: generateMikrotikTACACSNodes(), connections: generateMikrotikTACACSConnections() }
     case 'palo-alto-userid':
       return getPaloAltoUserIdData()
     case 'fortigate-fsso':
@@ -1894,6 +2524,12 @@ const getDiagramData = (diagramType: string) => {
       case 'cisco': return 'C'
       case 'aruba': return 'A'
       case 'juniper': return 'J'
+      case 'hpe': return 'HP'
+      case 'h3c': return 'H3'
+      case 'extreme': return 'EX'
+      case 'ruckus': return 'RK'
+      case 'ubiquiti': return 'UB'
+      case 'mikrotik': return 'MT'
       default: return '?'
     }
   }
