@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -50,117 +50,27 @@ interface SiteManagementProps {
   onSiteSelect: (siteId: string) => void
 }
 
-const sampleSites: Site[] = [
-  {
-    id: 'ABM-HQ001',
-    name: 'ABM Global Headquarters',
-    region: 'North America',
-    country: 'USA',
-    priority: 'High',
-    phase: '1',
-    users: 2500,
-    projectManager: 'Alex Rivera',
-    technicalOwners: ['John Smith', 'Mark Wilson'],
-    status: 'In Progress',
-    completionPercent: 35,
-    wiredVendors: ['Cisco', 'Juniper'],
-    wirelessVendors: ['Cisco'],
-    deviceTypes: ['Windows', 'Apple', 'Mobile', 'IoT'],
-    radsec: 'Native',
-    plannedStart: '2025-08-01',
-    plannedEnd: '2025-08-15',
-    notes: 'Executive network needs priority handling. Board room has custom AV equipment requiring special considerations for IoT device authentication.'
-  },
-  {
-    id: 'ABM-DC002',
-    name: 'Primary Data Center',
-    region: 'North America',
-    country: 'USA',
-    priority: 'High',
-    phase: '1',
-    users: 150,
-    projectManager: 'Marcus Chen',
-    technicalOwners: ['Emily Jones', 'Paul Davis'],
-    status: 'In Progress',
-    completionPercent: 65,
-    wiredVendors: ['Cisco'],
-    wirelessVendors: ['Aruba'],
-    deviceTypes: ['Windows', 'IoT'],
-    radsec: 'LRAD',
-    plannedStart: '2025-08-05',
-    plannedEnd: '2025-08-12',
-    notes: '24/7 operation requires careful change windows. Critical infrastructure with redundant authentication paths.'
-  },
-  {
-    id: 'ABM-EUR003',
-    name: 'European HQ',
-    region: 'EMEA',
-    country: 'Germany',
-    priority: 'Medium',
-    phase: '2',
-    users: 1200,
-    projectManager: 'Sofia Linden',
-    technicalOwners: ['Sarah Thompson'],
-    status: 'Planned',
-    completionPercent: 0,
-    wiredVendors: ['HPE'],
-    wirelessVendors: ['Cisco'],
-    deviceTypes: ['Windows', 'Apple', 'Mobile'],
-    radsec: 'Native',
-    plannedStart: '2025-09-01',
-    plannedEnd: '2025-09-15',
-    notes: 'GDPR compliance required. Multi-language support needed for user onboarding portal.'
-  },
-  {
-    id: 'ABM-MFG006',
-    name: 'Manufacturing Plant',
-    region: 'LATAM',
-    country: 'Mexico',
-    priority: 'High',
-    phase: '1',
-    users: 450,
-    projectManager: 'Maria Rodriguez',
-    technicalOwners: ['Carlos Mendez', 'Diego Ruiz'],
-    status: 'Complete',
-    completionPercent: 100,
-    wiredVendors: ['Extreme'],
-    wirelessVendors: ['Extreme'],
-    deviceTypes: ['Windows', 'IoT'],
-    radsec: 'Native',
-    plannedStart: '2025-08-15',
-    plannedEnd: '2025-08-30',
-    notes: 'Manufacturing floor required special considerations for IoT devices. Implemented using certificates for device authentication. Project completed ahead of schedule.'
-  },
-  {
-    id: 'ABM-RD007',
-    name: 'Research & Development',
-    region: 'North America',
-    country: 'USA',
-    priority: 'High',
-    phase: '1',
-    users: 320,
-    projectManager: 'James Wilson',
-    technicalOwners: ['Jennifer Lee', 'Paul Davis'],
-    status: 'In Progress',
-    completionPercent: 55,
-    wiredVendors: ['Cisco', 'Aruba'],
-    wirelessVendors: ['Cisco', 'Aruba'],
-    deviceTypes: ['Windows', 'Apple', 'Linux', 'IoT'],
-    radsec: 'LRAD',
-    plannedStart: '2025-08-03',
-    plannedEnd: '2025-08-20',
-    notes: 'Specialized lab equipment needs custom authentication. Research environment requires flexible access policies.'
-  }
-]
-
 export default function SiteManagement({ onSiteSelect }: SiteManagementProps) {
-  const [sites, setSites] = useState<Site[]>(sampleSites)
+  const [sites, setSites] = useState<Site[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [regionFilter, setRegionFilter] = useState('all')
   const [priorityFilter, setPriorityFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
   const [selectedSite, setSelectedSite] = useState<Site | null>(null)
   const [showAddModal, setShowAddModal] = useState(false)
+
+  // Load sites from localStorage on component mount
+  useEffect(() => {
+    const savedSites = localStorage.getItem('portnox-sites')
+    if (savedSites) {
+      setSites(JSON.parse(savedSites))
+    }
+  }, [])
+
+  // Save sites to localStorage whenever sites change
+  useEffect(() => {
+    localStorage.setItem('portnox-sites', JSON.stringify(sites))
+  }, [sites])
 
   const filteredSites = sites.filter(site => {
     const matchesSearch = site.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -293,94 +203,108 @@ export default function SiteManagement({ onSiteSelect }: SiteManagementProps) {
             </div>
           </div>
 
-          {/* Sites Table */}
-          <div className="border rounded-lg">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Site</TableHead>
-                  <TableHead>Region</TableHead>
-                  <TableHead>Priority</TableHead>
-                  <TableHead>Phase</TableHead>
-                  <TableHead>Users</TableHead>
-                  <TableHead>Project Manager</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Progress</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredSites.map((site) => (
-                  <TableRow key={site.id}>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{site.name}</div>
-                        <div className="text-sm text-muted-foreground">{site.id}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <MapPin className="h-4 w-4 text-muted-foreground" />
-                        <span>{site.region}</span>
-                      </div>
-                      <div className="text-sm text-muted-foreground">{site.country}</div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={getPriorityColor(site.priority)}>
-                        {site.priority}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>Phase {site.phase}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                        <span>{site.users.toLocaleString()}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>{site.projectManager}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        {getStatusIcon(site.status)}
-                        <span>{site.status}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-2">
-                        <Progress value={site.completionPercent} className="w-20" />
-                        <span className="text-sm text-muted-foreground">
-                          {site.completionPercent}%
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleViewSite(site)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="text-destructive"
-                          onClick={() => handleDeleteSite(site.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
+          {/* Sites Table or Empty State */}
+          {sites.length === 0 ? (
+            <div className="text-center py-12">
+              <Building className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No Sites Added Yet</h3>
+              <p className="text-muted-foreground mb-4">
+                Start by adding your first site to begin tracking your NAC deployment
+              </p>
+              <Button onClick={() => setShowAddModal(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Your First Site
+              </Button>
+            </div>
+          ) : (
+            <div className="border rounded-lg">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Site</TableHead>
+                    <TableHead>Region</TableHead>
+                    <TableHead>Priority</TableHead>
+                    <TableHead>Phase</TableHead>
+                    <TableHead>Users</TableHead>
+                    <TableHead>Project Manager</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Progress</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {filteredSites.map((site) => (
+                    <TableRow key={site.id}>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{site.name}</div>
+                          <div className="text-sm text-muted-foreground">{site.id}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <MapPin className="h-4 w-4 text-muted-foreground" />
+                          <span>{site.region}</span>
+                        </div>
+                        <div className="text-sm text-muted-foreground">{site.country}</div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={getPriorityColor(site.priority)}>
+                          {site.priority}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>Phase {site.phase}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <Users className="h-4 w-4 text-muted-foreground" />
+                          <span>{site.users.toLocaleString()}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>{site.projectManager}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          {getStatusIcon(site.status)}
+                          <span>{site.status}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-2">
+                          <Progress value={site.completionPercent} className="w-20" />
+                          <span className="text-sm text-muted-foreground">
+                            {site.completionPercent}%
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleViewSite(site)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-destructive"
+                            onClick={() => handleDeleteSite(site.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
 
-          {filteredSites.length === 0 && (
+          {filteredSites.length === 0 && sites.length > 0 && (
             <div className="text-center py-8 text-muted-foreground">
               No sites found matching your criteria.
             </div>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -22,27 +22,35 @@ interface UserManagementModalProps {
 }
 
 export default function UserManagementModal({ open, onOpenChange }: UserManagementModalProps) {
-  const [projectManagers, setProjectManagers] = useState<User[]>([
-    { id: '1', name: 'Alex Rivera', email: 'alex.rivera@abm.com', role: 'Senior Project Manager' },
-    { id: '2', name: 'Marcus Chen', email: 'marcus.chen@abm.com', role: 'Project Manager' },
-    { id: '3', name: 'Sofia Linden', email: 'sofia.linden@abm.com', role: 'Project Manager' },
-    { id: '4', name: 'Michael Zhang', email: 'michael.zhang@abm.com', role: 'Project Manager' }
-  ])
-
-  const [technicalOwners, setTechnicalOwners] = useState<User[]>([
-    { id: '1', name: 'John Smith', email: 'john.smith@abm.com', role: 'Network Administrator' },
-    { id: '2', name: 'Mark Wilson', email: 'mark.wilson@abm.com', role: 'Security Engineer' },
-    { id: '3', name: 'Emily Jones', email: 'emily.jones@abm.com', role: 'Network Engineer' },
-    { id: '4', name: 'Paul Davis', email: 'paul.davis@abm.com', role: 'IT Manager' },
-    { id: '5', name: 'Sarah Thompson', email: 'sarah.thompson@abm.com', role: 'Network Administrator' },
-    { id: '6', name: 'Carlos Mendez', email: 'carlos.mendez@abm.com', role: 'Network Engineer' }
-  ])
-
+  const [projectManagers, setProjectManagers] = useState<User[]>([])
+  const [technicalOwners, setTechnicalOwners] = useState<User[]>([])
   const [newPMName, setNewPMName] = useState('')
   const [newPMEmail, setNewPMEmail] = useState('')
   const [newTOName, setNewTOName] = useState('')
   const [newTOEmail, setNewTOEmail] = useState('')
   const [newTORole, setNewTORole] = useState('')
+
+  // Load users from localStorage on component mount
+  useEffect(() => {
+    const savedPMs = localStorage.getItem('portnox-project-managers')
+    const savedTOs = localStorage.getItem('portnox-technical-owners')
+    
+    if (savedPMs) {
+      setProjectManagers(JSON.parse(savedPMs))
+    }
+    if (savedTOs) {
+      setTechnicalOwners(JSON.parse(savedTOs))
+    }
+  }, [])
+
+  // Save users to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('portnox-project-managers', JSON.stringify(projectManagers))
+  }, [projectManagers])
+
+  useEffect(() => {
+    localStorage.setItem('portnox-technical-owners', JSON.stringify(technicalOwners))
+  }, [technicalOwners])
 
   const addProjectManager = () => {
     if (newPMName && newPMEmail) {
@@ -104,35 +112,42 @@ export default function UserManagementModal({ open, onOpenChange }: UserManageme
             <CardContent>
               <div className="space-y-4">
                 {/* Existing Project Managers */}
-                <div className="space-y-3">
-                  {projectManagers.map((pm) => (
-                    <div key={pm.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-semibold">
-                          {getUserInitials(pm.name)}
+                {projectManagers.length > 0 ? (
+                  <div className="space-y-3">
+                    {projectManagers.map((pm) => (
+                      <div key={pm.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-semibold">
+                            {getUserInitials(pm.name)}
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900 dark:text-gray-100">{pm.name}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
+                              <Mail className="h-3 w-3 mr-1" />
+                              {pm.email}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-medium text-gray-900 dark:text-gray-100">{pm.name}</p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
-                            <Mail className="h-3 w-3 mr-1" />
-                            {pm.email}
-                          </p>
+                        <div className="flex items-center space-x-2">
+                          <Badge variant="outline">{pm.role}</Badge>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeProjectManager(pm.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Badge variant="outline">{pm.role}</Badge>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => removeProjectManager(pm.id)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <User className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <p>No project managers added yet</p>
+                  </div>
+                )}
 
                 {/* Add New Project Manager */}
                 <div className="border-t pt-4">
@@ -169,35 +184,42 @@ export default function UserManagementModal({ open, onOpenChange }: UserManageme
             <CardContent>
               <div className="space-y-4">
                 {/* Existing Technical Owners */}
-                <div className="space-y-3">
-                  {technicalOwners.map((to) => (
-                    <div key={to.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-green-600 text-white rounded-full flex items-center justify-center font-semibold">
-                          {getUserInitials(to.name)}
+                {technicalOwners.length > 0 ? (
+                  <div className="space-y-3">
+                    {technicalOwners.map((to) => (
+                      <div key={to.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-green-600 text-white rounded-full flex items-center justify-center font-semibold">
+                            {getUserInitials(to.name)}
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900 dark:text-gray-100">{to.name}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
+                              <Mail className="h-3 w-3 mr-1" />
+                              {to.email}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-medium text-gray-900 dark:text-gray-100">{to.name}</p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
-                            <Mail className="h-3 w-3 mr-1" />
-                            {to.email}
-                          </p>
+                        <div className="flex items-center space-x-2">
+                          <Badge variant="outline">{to.role}</Badge>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeTechnicalOwner(to.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Badge variant="outline">{to.role}</Badge>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => removeTechnicalOwner(to.id)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <User className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <p>No technical owners added yet</p>
+                  </div>
+                )}
 
                 {/* Add New Technical Owner */}
                 <div className="border-t pt-4">

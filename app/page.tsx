@@ -17,18 +17,28 @@ export default function ABMDesigner() {
   const [selectedSiteId, setSelectedSiteId] = useState<string | null>(null)
   const [showUserModal, setShowUserModal] = useState(false)
   const [showThemeCustomizer, setShowThemeCustomizer] = useState(false)
-  const [customerLogo, setCustomerLogo] = useState('https://ahorrainvierte.com/wp-content/uploads/abm-industries-inc.png')
+  const [customerLogo, setCustomerLogo] = useState('https://servicecenter.uk.abm.com/Portal/assets/images/logo-light.png')
 
   const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file && file.type.match('image.*')) {
       const reader = new FileReader()
       reader.onload = (e) => {
-        setCustomerLogo(e.target?.result as string)
+        const newLogo = e.target?.result as string
+        setCustomerLogo(newLogo)
+        localStorage.setItem('customerLogo', newLogo)
       }
       reader.readAsDataURL(file)
     }
   }
+
+  // Load saved logo on component mount
+  useEffect(() => {
+    const savedLogo = localStorage.getItem('customerLogo')
+    if (savedLogo) {
+      setCustomerLogo(savedLogo)
+    }
+  }, [])
 
   return (
     <div className="min-h-screen bg-gray-50">
