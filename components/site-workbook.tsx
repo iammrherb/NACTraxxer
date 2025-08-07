@@ -1,219 +1,156 @@
 'use client'
 
-import { useState } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Progress } from '@/components/ui/progress'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Book, FileText, Network, Users, Settings, CheckCircle, Clock, AlertTriangle, Download, Edit, Save } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Book, MapPin, Users, Calendar, Settings, Network, CheckCircle, AlertTriangle, Clock, FileText, Download } from 'lucide-react'
 
 interface SiteWorkbookProps {
   siteId: string | null
 }
 
-interface WorkbookData {
-  id: string
-  name: string
-  location: string
-  status: string
-  progress: number
-  overview: {
-    description: string
-    siteType: string
-    expectedDevices: number
-    expectedUsers: number
-    projectManager: string
-    technicalOwner: string
-    startDate: string
-    targetDate: string
-  }
-  networkInfo: {
-    existingInfrastructure: string[]
-    ipRanges: string[]
-    vlanConfiguration: string[]
-    wirelessSSIDs: string[]
-  }
-  checklist: {
-    category: string
-    items: {
-      id: string
-      task: string
-      completed: boolean
-      assignee: string
-      dueDate: string
-      notes?: string
-    }[]
-  }[]
-  configurations: {
-    switchConfig: string
-    wirelessConfig: string
-    radiusConfig: string
-    policyConfig: string
-  }
-}
-
 export default function SiteWorkbook({ siteId }: SiteWorkbookProps) {
-  const [activeTab, setActiveTab] = useState('overview')
-  const [editMode, setEditMode] = useState(false)
+  // Sample site data - in a real app this would be fetched based on siteId
+  const siteData = siteId ? {
+    id: 'ABM-HQ001',
+    name: 'ABM Global Headquarters',
+    region: 'North America',
+    country: 'USA',
+    priority: 'High',
+    phase: '1',
+    users: 2500,
+    projectManager: 'Alex Rivera',
+    technicalOwners: ['John Smith', 'Mark Wilson'],
+    status: 'In Progress',
+    completionPercent: 35,
+    notes: 'Executive network needs priority handling. Board room has custom AV equipment.',
+    wiredVendors: ['Cisco', 'Juniper'],
+    wirelessVendors: ['Cisco'],
+    deviceTypes: ['Windows', 'Apple', 'Mobile', 'IoT'],
+    radsec: 'Native',
+    plannedStart: '2025-08-01',
+    plannedEnd: '2025-08-15'
+  } : null
 
-  // Mock data - in real app, this would be fetched based on siteId
-  const workbookData: WorkbookData = {
-    id: siteId || '1',
-    name: 'Corporate Headquarters',
-    location: 'New York, NY',
-    status: 'in-progress',
-    progress: 75,
-    overview: {
-      description: 'Primary corporate headquarters with executive offices, IT department, and main data center.',
-      siteType: 'Corporate Office',
-      expectedDevices: 450,
-      expectedUsers: 200,
-      projectManager: 'John Smith',
-      technicalOwner: 'Sarah Johnson',
-      startDate: '2024-01-01',
-      targetDate: '2024-01-15'
-    },
-    networkInfo: {
-      existingInfrastructure: ['Cisco Catalyst 9300 Switches', 'Cisco 9800 Wireless Controller', 'Fortinet FortiGate Firewall'],
-      ipRanges: ['10.1.0.0/16', '192.168.100.0/24'],
-      vlanConfiguration: ['VLAN 10 - Corporate Users', 'VLAN 20 - Guest Network', 'VLAN 30 - IoT Devices', 'VLAN 40 - Servers'],
-      wirelessSSIDs: ['CorpWiFi-Secure', 'CorpWiFi-Guest', 'CorpWiFi-IoT']
-    },
-    checklist: [
-      {
-        category: 'Pre-Deployment',
-        items: [
-          { id: '1', task: 'Site survey and assessment', completed: true, assignee: 'Sarah Johnson', dueDate: '2024-01-03' },
-          { id: '2', task: 'Network infrastructure review', completed: true, assignee: 'Mike Davis', dueDate: '2024-01-05' },
-          { id: '3', task: 'Security policy definition', completed: true, assignee: 'John Smith', dueDate: '2024-01-07' },
-          { id: '4', task: 'User communication plan', completed: false, assignee: 'Lisa Chen', dueDate: '2024-01-10' }
-        ]
-      },
-      {
-        category: 'Hardware & Configuration',
-        items: [
-          { id: '5', task: 'RADIUS proxy installation', completed: true, assignee: 'Sarah Johnson', dueDate: '2024-01-08' },
-          { id: '6', task: 'Switch configuration update', completed: true, assignee: 'Mike Davis', dueDate: '2024-01-10' },
-          { id: '7', task: 'Wireless controller configuration', completed: false, assignee: 'Sarah Johnson', dueDate: '2024-01-12' },
-          { id: '8', task: 'Certificate deployment', completed: false, assignee: 'David Brown', dueDate: '2024-01-14' }
-        ]
-      },
-      {
-        category: 'Testing & Validation',
-        items: [
-          { id: '9', task: 'Authentication testing', completed: false, assignee: 'Sarah Johnson', dueDate: '2024-01-15' },
-          { id: '10', task: 'Policy enforcement testing', completed: false, assignee: 'Mike Davis', dueDate: '2024-01-16' },
-          { id: '11', task: 'User acceptance testing', completed: false, assignee: 'Lisa Chen', dueDate: '2024-01-18' },
-          { id: '12', task: 'Performance validation', completed: false, assignee: 'David Brown', dueDate: '2024-01-20' }
-        ]
-      }
-    ],
-    configurations: {
-      switchConfig: `! Cisco Switch Configuration for NAC
-aaa new-model
-aaa authentication dot1x default group radius
-aaa authorization network default group radius
-aaa accounting dot1x default start-stop group radius
-
-radius server portnox-primary
- address ipv4 10.1.1.100 auth-port 1812 acct-port 1813
- key PortnoxSecretKey123
- 
-dot1x system-auth-control
-dot1x critical eapol
-
-interface range GigabitEthernet1/0/1-48
- switchport mode access
- authentication port-control auto
- authentication periodic
- authentication timer restart 30
- dot1x pae authenticator
- dot1x timeout quiet-period 10
- spanning-tree portfast`,
-      wirelessConfig: `# Wireless Controller Configuration
-wlan create 1 CorpWiFi-Secure CorpWiFi-Secure
-wlan security wpa akm 802.1x 1
-wlan security 802.1x authentication-server radius 10.1.1.100 1812 1813 PortnoxSecretKey123 1
-wlan enable 1
-
-wlan create 2 CorpWiFi-Guest CorpWiFi-Guest  
-wlan security web-auth 2
-wlan enable 2`,
-      radiusConfig: `# RADIUS Proxy Configuration
-server {
-    listen {
-        type = auth
-        ipaddr = *
-        port = 1812
-    }
-    
-    client portnox-cloud {
-        ipaddr = 0.0.0.0/0
-        secret = PortnoxSecretKey123
-    }
-    
-    home_server portnox-cloud {
-        type = auth+acct
-        ipaddr = radius.portnox.com
-        port = 1812
-        secret = CloudSecretKey456
-        proto = radsec
-    }
-}`,
-      policyConfig: `# Access Control Policies
-Policy: Corporate Users
-- Device Type: Managed Windows/Mac
-- Authentication: EAP-TLS Certificate
-- VLAN Assignment: VLAN 10
-- Bandwidth: Unlimited
-- Access Hours: 24/7
-
-Policy: BYOD Devices  
-- Device Type: Personal Mobile
-- Authentication: PEAP-MSCHAPv2
-- VLAN Assignment: VLAN 20
-- Bandwidth: 50 Mbps
-- Access Hours: Business Hours Only
-
-Policy: IoT Devices
-- Device Type: IoT/Sensors
-- Authentication: MAC Authentication
-- VLAN Assignment: VLAN 30
-- Bandwidth: 10 Mbps
-- Access Hours: 24/7`
-    }
-  }
-
-  const handleChecklistUpdate = (itemId: string, completed: boolean) => {
-    // Update checklist item completion status
-    console.log(`Updating item ${itemId} to ${completed}`)
-  }
-
-  const handleExportWorkbook = () => {
-    console.log('Exporting site workbook...')
-  }
-
-  const getCompletionRate = () => {
-    const totalItems = workbookData.checklist.reduce((total, category) => total + category.items.length, 0)
-    const completedItems = workbookData.checklist.reduce((total, category) => 
-      total + category.items.filter(item => item.completed).length, 0)
-    return Math.round((completedItems / totalItems) * 100)
-  }
-
-  if (!siteId) {
+  if (!siteId || !siteData) {
     return (
       <Card>
-        <CardContent className="flex flex-col items-center justify-center py-12">
-          <Book className="h-12 w-12 text-gray-400 mb-4" />
-          <h3 className="text-lg font-semibold mb-2">No Site Selected</h3>
-          <p className="text-gray-600 text-center">
-            Select a site from the Master Site List to view its detailed workbook
-          </p>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Book className="h-6 w-6 text-blue-600" />
+            <span>Site Workbook</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-12">
+            <Book className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+              No Site Selected
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400">
+              Please select a site from the Master List to view its detailed workbook.
+            </p>
+          </div>
         </CardContent>
       </Card>
     )
+  }
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'High': return 'bg-red-100 text-red-800 border-red-200'
+      case 'Medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200'
+      case 'Low': return 'bg-green-100 text-green-800 border-green-200'
+      default: return 'bg-gray-100 text-gray-800 border-gray-200'
+    }
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Complete': return 'text-green-600'
+      case 'In Progress': return 'text-blue-600'
+      case 'Planned': return 'text-gray-600'
+      case 'Delayed': return 'text-red-600'
+      default: return 'text-gray-600'
+    }
+  }
+
+  const exportWorkbook = (format: 'pdf' | 'excel') => {
+    const workbookData = {
+      siteInfo: siteData,
+      networkDetails: {
+        totalSwitches: 32,
+        totalAPs: 45,
+        switchModels: 'Cisco Catalyst 9300',
+        apModels: 'Cisco 9130AXI'
+      },
+      exportDate: new Date().toISOString(),
+      exportFormat: format
+    }
+
+    if (format === 'pdf') {
+      // Create PDF content
+      const pdfContent = `
+Site Workbook: ${siteData?.name}
+Generated: ${new Date().toLocaleDateString()}
+
+Site Information:
+- Site ID: ${siteData?.id}
+- Region: ${siteData?.region}
+- Users: ${siteData?.users}
+- Status: ${siteData?.status}
+
+Network Infrastructure:
+- Total Switches: 32
+- Total Access Points: 45
+- Switch Models: Cisco Catalyst 9300
+- AP Models: Cisco 9130AXI
+
+Project Team:
+- Project Manager: ${siteData?.projectManager}
+- Technical Owners: ${siteData?.technicalOwners.join(', ')}
+      `
+      
+      const blob = new Blob([pdfContent], { type: 'text/plain' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `${siteData?.id}-workbook-${Date.now()}.txt`
+      link.click()
+      URL.revokeObjectURL(url)
+    } else {
+      // Create Excel-compatible CSV
+      const csvContent = [
+        ['Site Workbook Export'],
+        ['Generated', new Date().toLocaleDateString()],
+        [''],
+        ['Site Information'],
+        ['Site ID', siteData?.id],
+        ['Site Name', siteData?.name],
+        ['Region', siteData?.region],
+        ['Country', siteData?.country],
+        ['Users', siteData?.users],
+        ['Status', siteData?.status],
+        [''],
+        ['Project Team'],
+        ['Project Manager', siteData?.projectManager],
+        ['Technical Owners', siteData?.technicalOwners.join(', ')],
+        [''],
+        ['Network Infrastructure'],
+        ['Total Switches', '32'],
+        ['Total Access Points', '45'],
+        ['Switch Models', 'Cisco Catalyst 9300'],
+        ['AP Models', 'Cisco 9130AXI']
+      ].map(row => row.join(',')).join('\n')
+
+      const blob = new Blob([csvContent], { type: 'text/csv' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `${siteData?.id}-workbook-${Date.now()}.csv`
+      link.click()
+      URL.revokeObjectURL(url)
+    }
   }
 
   return (
@@ -221,263 +158,263 @@ Policy: IoT Devices
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center space-x-2">
-                <Book className="h-5 w-5" />
-                <span>{workbookData.name} - Site Workbook</span>
-              </CardTitle>
-              <CardDescription>
-                Comprehensive deployment documentation and progress tracking
-              </CardDescription>
-            </div>
+            <CardTitle className="flex items-center space-x-2">
+              <Book className="h-6 w-6 text-blue-600" />
+              <span>Site Workbook: {siteData.name}</span>
+            </CardTitle>
             <div className="flex space-x-2">
-              <Button variant="outline" onClick={() => setEditMode(!editMode)}>
-                {editMode ? <Save className="h-4 w-4 mr-2" /> : <Edit className="h-4 w-4 mr-2" />}
-                {editMode ? 'Save Changes' : 'Edit Mode'}
-              </Button>
-              <Button onClick={handleExportWorkbook}>
-                <Download className="h-4 w-4 mr-2" />
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => exportWorkbook('pdf')}
+              >
+                <FileText className="h-4 w-4 mr-2" />
                 Export PDF
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => exportWorkbook('excel')}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export Excel
               </Button>
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-4">
-              <Badge variant="secondary">{workbookData.status.replace('-', ' ').toUpperCase()}</Badge>
-              <span className="text-sm text-gray-600">{workbookData.location}</span>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Basic Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold flex items-center space-x-2">
+                <MapPin className="h-5 w-5 text-blue-600" />
+                <span>Site Information</span>
+              </h3>
+              
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Site ID:</span>
+                  <span className="font-mono">{siteData.id}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Region:</span>
+                  <span>{siteData.region}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Country:</span>
+                  <span>{siteData.country}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Priority:</span>
+                  <Badge className={getPriorityColor(siteData.priority)}>
+                    {siteData.priority}
+                  </Badge>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Phase:</span>
+                  <span>Phase {siteData.phase}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Users:</span>
+                  <span>{siteData.users.toLocaleString()}</span>
+                </div>
+              </div>
             </div>
-            <div className="text-right">
-              <div className="text-2xl font-bold">{getCompletionRate()}%</div>
-              <div className="text-sm text-gray-600">Complete</div>
+
+            {/* Project Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold flex items-center space-x-2">
+                <Users className="h-5 w-5 text-blue-600" />
+                <span>Project Team</span>
+              </h3>
+              
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Project Manager:</span>
+                  <span>{siteData.projectManager}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Technical Owners:</span>
+                  <div className="text-right">
+                    {siteData.technicalOwners.map((owner, index) => (
+                      <div key={index}>{owner}</div>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Status:</span>
+                  <span className={`font-medium ${getStatusColor(siteData.status)}`}>
+                    {siteData.status}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Completion:</span>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-20 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <div 
+                        className="bg-blue-600 h-2 rounded-full"
+                        style={{ width: `${siteData.completionPercent}%` }}
+                      />
+                    </div>
+                    <span className="text-sm font-medium">{siteData.completionPercent}%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Timeline */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold flex items-center space-x-2">
+                <Calendar className="h-5 w-5 text-blue-600" />
+                <span>Project Timeline</span>
+              </h3>
+              
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Planned Start:</span>
+                  <span>{new Date(siteData.plannedStart).toLocaleDateString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Planned End:</span>
+                  <span>{new Date(siteData.plannedEnd).toLocaleDateString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Duration:</span>
+                  <span>
+                    {Math.ceil((new Date(siteData.plannedEnd).getTime() - new Date(siteData.plannedStart).getTime()) / (1000 * 60 * 60 * 24))} days
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Technical Configuration */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold flex items-center space-x-2">
+                <Settings className="h-5 w-5 text-blue-600" />
+                <span>Technical Configuration</span>
+              </h3>
+              
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Implementation:</span>
+                  <Badge variant="outline">{siteData.radsec}</Badge>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Wired Vendors:</span>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {siteData.wiredVendors.map((vendor, index) => (
+                      <Badge key={index} variant="outline" className="text-xs">
+                        {vendor}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Wireless Vendors:</span>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {siteData.wirelessVendors.map((vendor, index) => (
+                      <Badge key={index} variant="outline" className="text-xs">
+                        {vendor}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Device Types:</span>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {siteData.deviceTypes.map((type, index) => (
+                      <Badge key={index} variant="outline" className="text-xs">
+                        {type}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-          <Progress value={getCompletionRate()} className="mb-6" />
+
+          {/* Network Details Section */}
+          <div className="mt-6 pt-6 border-t">
+            <h3 className="text-lg font-semibold mb-4 flex items-center space-x-2">
+              <Network className="h-5 w-5 text-blue-600" />
+              <span>Network Infrastructure</span>
+            </h3>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Total Switches:</span>
+                  <span>32</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Total Access Points:</span>
+                  <span>45</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Switch Models:</span>
+                  <span>Cisco Catalyst 9300</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">AP Models:</span>
+                  <span>Cisco 9130AXI</span>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">VLANs:</span>
+                  <span>12 configured</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Subnets:</span>
+                  <span>10.10.0.0/16</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Existing AAA:</span>
+                  <span>ISE (to be replaced)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Deployment Checklist */}
+          <div className="mt-6 pt-6 border-t">
+            <h3 className="text-lg font-semibold mb-4 flex items-center space-x-2">
+              <CheckCircle className="h-5 w-5 text-blue-600" />
+              <span>Deployment Checklist</span>
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[
+                { task: 'Intune Integration', status: 'complete' },
+                { task: 'Certificate Authority Setup', status: 'complete' },
+                { task: 'RADIUS Configuration', status: 'in-progress' },
+                { task: 'Switch Configuration', status: 'pending' },
+                { task: 'Wireless Configuration', status: 'pending' },
+                { task: 'Policy Configuration', status: 'pending' },
+                { task: 'User Training', status: 'pending' },
+                { task: 'Go-Live Testing', status: 'pending' }
+              ].map((item, index) => (
+                <div key={index} className="flex items-center space-x-3 p-2 rounded-lg bg-gray-50">
+                  {item.status === 'complete' && <CheckCircle className="h-5 w-5 text-green-600" />}
+                  {item.status === 'in-progress' && <Clock className="h-5 w-5 text-yellow-600" />}
+                  {item.status === 'pending' && <AlertTriangle className="h-5 w-5 text-gray-400" />}
+                  <span className={`${item.status === 'complete' ? 'line-through text-gray-500' : ''}`}>
+                    {item.task}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Notes Section */}
+          <div className="mt-6 pt-6 border-t">
+            <h3 className="text-lg font-semibold mb-3">Project Notes</h3>
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+              <p className="text-gray-700 dark:text-gray-300">
+                {siteData.notes}
+              </p>
+            </div>
+          </div>
         </CardContent>
       </Card>
-
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="network">Network Info</TabsTrigger>
-          <TabsTrigger value="checklist">Deployment Checklist</TabsTrigger>
-          <TabsTrigger value="config">Configurations</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview">
-          <Card>
-            <CardHeader>
-              <CardTitle>Site Overview</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <h4 className="font-semibold mb-2">Description</h4>
-                <p className="text-gray-600">{workbookData.overview.description}</p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="font-semibold mb-2">Site Details</h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span>Site Type:</span>
-                        <span>{workbookData.overview.siteType}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Expected Devices:</span>
-                        <span>{workbookData.overview.expectedDevices}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Expected Users:</span>
-                        <span>{workbookData.overview.expectedUsers}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="font-semibold mb-2">Project Team</h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span>Project Manager:</span>
-                        <span>{workbookData.overview.projectManager}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Technical Owner:</span>
-                        <span>{workbookData.overview.technicalOwner}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 className="font-semibold mb-2">Timeline</h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span>Start Date:</span>
-                        <span>{new Date(workbookData.overview.startDate).toLocaleDateString()}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Target Date:</span>
-                        <span>{new Date(workbookData.overview.targetDate).toLocaleDateString()}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="network">
-          <Card>
-            <CardHeader>
-              <CardTitle>Network Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <h4 className="font-semibold mb-3">Existing Infrastructure</h4>
-                <div className="space-y-2">
-                  {workbookData.networkInfo.existingInfrastructure.map((item, index) => (
-                    <div key={index} className="flex items-center space-x-2">
-                      <Network className="h-4 w-4 text-gray-400" />
-                      <span className="text-sm">{item}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-semibold mb-3">IP Ranges</h4>
-                  <div className="space-y-2">
-                    {workbookData.networkInfo.ipRanges.map((range, index) => (
-                      <Badge key={index} variant="outline">{range}</Badge>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold mb-3">Wireless SSIDs</h4>
-                  <div className="space-y-2">
-                    {workbookData.networkInfo.wirelessSSIDs.map((ssid, index) => (
-                      <Badge key={index} variant="outline">{ssid}</Badge>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="font-semibold mb-3">VLAN Configuration</h4>
-                <div className="space-y-2">
-                  {workbookData.networkInfo.vlanConfiguration.map((vlan, index) => (
-                    <div key={index} className="flex items-center space-x-2">
-                      <Settings className="h-4 w-4 text-gray-400" />
-                      <span className="text-sm">{vlan}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="checklist">
-          <div className="space-y-6">
-            {workbookData.checklist.map((category, categoryIndex) => (
-              <Card key={categoryIndex}>
-                <CardHeader>
-                  <CardTitle className="text-lg">{category.category}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {category.items.map((item) => (
-                      <div key={item.id} className="flex items-start space-x-3 p-3 border rounded-lg">
-                        <Checkbox
-                          checked={item.completed}
-                          onCheckedChange={(checked) => handleChecklistUpdate(item.id, checked as boolean)}
-                          disabled={!editMode}
-                        />
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between">
-                            <h4 className={`font-medium ${item.completed ? 'line-through text-gray-500' : ''}`}>
-                              {item.task}
-                            </h4>
-                            <div className="flex items-center space-x-2">
-                              {item.completed ? (
-                                <CheckCircle className="h-4 w-4 text-green-600" />
-                              ) : (
-                                <Clock className="h-4 w-4 text-yellow-600" />
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-4 mt-2 text-sm text-gray-600">
-                            <span>Assignee: {item.assignee}</span>
-                            <span>Due: {new Date(item.dueDate).toLocaleDateString()}</span>
-                          </div>
-                          {item.notes && (
-                            <p className="text-sm text-gray-600 mt-2">{item.notes}</p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="config">
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Switch Configuration</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <pre className="bg-gray-50 p-4 rounded-lg text-sm overflow-x-auto">
-                  <code>{workbookData.configurations.switchConfig}</code>
-                </pre>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Wireless Configuration</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <pre className="bg-gray-50 p-4 rounded-lg text-sm overflow-x-auto">
-                  <code>{workbookData.configurations.wirelessConfig}</code>
-                </pre>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>RADIUS Proxy Configuration</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <pre className="bg-gray-50 p-4 rounded-lg text-sm overflow-x-auto">
-                  <code>{workbookData.configurations.radiusConfig}</code>
-                </pre>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Access Control Policies</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <pre className="bg-gray-50 p-4 rounded-lg text-sm overflow-x-auto">
-                  <code>{workbookData.configurations.policyConfig}</code>
-                </pre>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-      </Tabs>
     </div>
   )
 }

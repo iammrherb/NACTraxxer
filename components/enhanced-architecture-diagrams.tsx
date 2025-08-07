@@ -1,631 +1,455 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { useState } from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Network, Shield, Key, Settings, Cloud, Smartphone, Play, Server, Database, Lock, Wifi, Router, Monitor, Globe, Zap, CheckCircle, AlertTriangle, Clock, Eye } from 'lucide-react'
-
-interface DiagramNode {
-  id: string
-  x: number
-  y: number
-  width: number
-  height: number
-  label: string
-  type: string
-  color: string
-  details: string
-  ports?: string[]
-  protocols?: string[]
-}
-
-interface DiagramConnection {
-  from: string
-  to: string
-  label?: string
-  type: 'standard' | 'secure' | 'data-flow'
-  protocol?: string
-  port?: string
-}
+import { Slider } from '@/components/ui/slider'
+import { Switch } from '@/components/ui/switch'
+import { Label } from '@/components/ui/label'
+import { Cloud, Shield, Server, Smartphone, Laptop, Wifi, Network, Key, Lock, Play, Pause, RotateCcw, Info, Zap, Clock, CheckCircle } from 'lucide-react'
 
 export default function EnhancedArchitectureDiagrams() {
-  const [selectedView, setSelectedView] = useState('zero-trust-overview')
   const [selectedNode, setSelectedNode] = useState<string | null>(null)
+  const [animationSpeed, setAnimationSpeed] = useState([2])
   const [showAnimations, setShowAnimations] = useState(true)
-  const [animationSpeed, setAnimationSpeed] = useState(1)
-  const svgRef = useRef<SVGSVGElement>(null)
-  const tooltipRef = useRef<HTMLDivElement>(null)
+  const [activeView, setActiveView] = useState('overview')
 
-  const architectureViews = {
-    'zero-trust-overview': {
-      name: 'Zero Trust NAC Overview',
-      description: 'Complete end-to-end Zero Trust Network Access Control architecture',
-      icon: <Shield className="h-4 w-4" />,
-      nodes: [
-        {
-          id: 'portnox-cloud',
-          x: 100, y: 100, width: 200, height: 80,
-          label: 'Portnox Cloud NAC',
-          type: 'cloud',
-          color: '#e3f2fd',
-          details: 'Cloud-native NAC engine with Private PKI, Policy Management, and Authentication Services. Handles 10M+ authentications/day with 99.9% uptime.',
-          ports: ['443 (HTTPS)', '1812/1813 (RADIUS)', '2083 (RADSec)'],
-          protocols: ['HTTPS', 'RADIUS', 'RADSec', 'LDAP', 'SAML']
-        },
-        {
-          id: 'azure-ad',
-          x: 100, y: 250, width: 200, height: 60,
-          label: 'Azure AD/Entra ID',
-          type: 'identity',
-          color: '#fff3e0',
-          details: 'Microsoft cloud identity provider with 50,000+ users. Provides SAML/LDAP authentication and group membership.',
-          protocols: ['SAML 2.0', 'LDAP', 'OAuth 2.0', 'OpenID Connect']
-        },
-        {
-          id: 'intune',
-          x: 100, y: 350, width: 200, height: 60,
-          label: 'Microsoft Intune',
-          type: 'mdm',
-          color: '#e8f5e9',
-          details: 'Mobile Device Management for certificate deployment via SCEP. Manages 25,000+ devices across Windows, iOS, and Android.',
-          protocols: ['SCEP', 'HTTPS', 'Push Notifications']
-        },
-        {
-          id: 'radsec-proxy-1',
-          x: 450, y: 150, width: 180, height: 60,
-          label: 'RADSec Proxy (Primary)',
-          type: 'proxy',
-          color: '#fff3e0',
-          details: 'AWS-hosted RADSec proxy with 7-day cache. Handles 100K+ auth/day with <50ms latency. Located in us-east-1a.',
-          ports: ['2083 (RADSec)', '1812/1813 (RADIUS)'],
-          protocols: ['RADSec/TLS', 'RADIUS']
-        },
-        {
-          id: 'radsec-proxy-2',
-          x: 450, y: 250, width: 180, height: 60,
-          label: 'RADSec Proxy (Standby)',
-          type: 'proxy',
-          color: '#fff3e0',
-          details: 'Standby RADSec proxy for high availability. Auto-failover in <30 seconds. Located in us-east-1b.',
-          ports: ['2083 (RADSec)', '1812/1813 (RADIUS)'],
-          protocols: ['RADSec/TLS', 'RADIUS']
-        },
-        {
-          id: 'abm-hq',
-          x: 750, y: 100, width: 150, height: 60,
-          label: 'ABM HQ',
-          type: 'site',
-          color: '#e8f5e9',
-          details: 'Global headquarters with 2,500 users. Cisco Meraki full-stack deployment with 802.1X on all ports.',
-          protocols: ['802.1X', 'RADIUS', 'DHCP']
-        },
-        {
-          id: 'data-center',
-          x: 750, y: 200, width: 150, height: 60,
-          label: 'Data Center',
-          type: 'site',
-          color: '#e8f5e9',
-          details: 'Primary data center with 150 users. Critical infrastructure with 24/7 monitoring and redundant connections.',
-          protocols: ['802.1X', 'RADIUS', 'SNMP']
-        },
-        {
-          id: 'branch-office',
-          x: 750, y: 300, width: 150, height: 60,
-          label: 'Branch Office',
-          type: 'site',
-          color: '#e8f5e9',
-          details: 'Remote branch office with 75 users. Meraki wireless deployment with guest portal.',
-          protocols: ['802.1X', 'Captive Portal', 'RADIUS']
-        },
-        {
-          id: 'splunk',
-          x: 100, y: 450, width: 200, height: 60,
-          label: 'Splunk SIEM',
-          type: 'monitoring',
-          color: '#f3e5f5',
-          details: 'Security Information and Event Management. Ingests 1TB+ logs/day from all authentication events.',
-          ports: ['514 (Syslog)', '8089 (API)'],
-          protocols: ['Syslog', 'HTTPS API', 'TCP/UDP']
-        }
-      ],
-      connections: [
-        { from: 'portnox-cloud', to: 'radsec-proxy-1', type: 'secure', protocol: 'RADSec/TLS', port: '2083', label: 'Encrypted RADIUS' },
-        { from: 'portnox-cloud', to: 'radsec-proxy-2', type: 'secure', protocol: 'RADSec/TLS', port: '2083', label: 'Backup Connection' },
-        { from: 'radsec-proxy-1', to: 'abm-hq', type: 'standard', protocol: 'RADIUS', port: '1812', label: 'Auth Requests' },
-        { from: 'radsec-proxy-1', to: 'data-center', type: 'standard', protocol: 'RADIUS', port: '1812', label: 'Auth Requests' },
-        { from: 'radsec-proxy-2', to: 'branch-office', type: 'standard', protocol: 'RADIUS', port: '1812', label: 'Auth Requests' },
-        { from: 'azure-ad', to: 'portnox-cloud', type: 'secure', protocol: 'SAML/LDAP', port: '443', label: 'Identity Lookup' },
-        { from: 'intune', to: 'portnox-cloud', type: 'secure', protocol: 'SCEP', port: '443', label: 'Certificate Enrollment' },
-        { from: 'portnox-cloud', to: 'splunk', type: 'data-flow', protocol: 'Syslog', port: '514', label: 'Auth Logs' }
-      ]
+  const nodeDetails = {
+    'portnox-cloud': {
+      title: 'Portnox Cloud',
+      description: 'Cloud-native NAC platform providing RADIUS authentication and policy enforcement',
+      specs: {
+        'Deployment': 'AWS US-East-1',
+        'Availability': '99.9% SLA',
+        'Capacity': '50,000 concurrent users',
+        'Protocols': 'RADSec, RADIUS, LDAP, SAML'
+      },
+      ports: ['443 (HTTPS)', '2083 (RADSec)', '636 (LDAPS)'],
+      performance: {
+        'Latency': '< 50ms',
+        'Throughput': '10,000 auth/sec',
+        'Uptime': '99.95%'
+      }
     },
-    'auth-flow': {
-      name: '802.1X Authentication Flow',
-      description: 'Step-by-step EAP-TLS certificate-based authentication process',
-      icon: <Key className="h-4 w-4" />,
-      nodes: [
-        {
-          id: 'end-device',
-          x: 50, y: 200, width: 120, height: 60,
-          label: 'End Device',
-          type: 'device',
-          color: '#e8f5e9',
-          details: 'Corporate laptop with installed certificate. Supports EAP-TLS authentication with automatic reconnection.',
-          protocols: ['EAP-TLS', '802.1X', 'DHCP']
-        },
-        {
-          id: 'meraki-switch',
-          x: 250, y: 200, width: 150, height: 60,
-          label: 'Meraki Switch',
-          type: 'network',
-          color: '#e8f5e9',
-          details: 'Cisco Meraki MS series switch with 802.1X port authentication. Configured for dynamic VLAN assignment.',
-          ports: ['1812/1813 (RADIUS)'],
-          protocols: ['802.1X', 'RADIUS', 'SNMP']
-        },
-        {
-          id: 'radsec-proxy',
-          x: 500, y: 200, width: 180, height: 60,
-          label: 'RADSec Proxy',
-          type: 'proxy',
-          color: '#fff3e0',
-          details: 'Local RADSec proxy with intelligent caching. Reduces authentication latency to <20ms.',
-          ports: ['2083 (RADSec)', '1812/1813 (RADIUS)'],
-          protocols: ['RADSec/TLS', 'RADIUS']
-        },
-        {
-          id: 'portnox-cloud-auth',
-          x: 800, y: 200, width: 200, height: 80,
-          label: 'Portnox Cloud',
-          type: 'cloud',
-          color: '#e3f2fd',
-          details: 'Cloud NAC engine performs certificate validation, policy lookup, and VLAN assignment decision.',
-          protocols: ['EAP-TLS', 'OCSP', 'LDAP', 'Policy Engine']
-        },
-        {
-          id: 'azure-ad-auth',
-          x: 800, y: 350, width: 200, height: 60,
-          label: 'Azure AD',
-          type: 'identity',
-          color: '#fff3e0',
-          details: 'Identity provider lookup for user attributes and group membership. Response time <100ms.',
-          protocols: ['LDAP', 'SAML', 'Graph API']
-        }
-      ],
-      connections: [
-        { from: 'end-device', to: 'meraki-switch', type: 'standard', protocol: '802.1X', label: '1. EAP Start' },
-        { from: 'meraki-switch', to: 'radsec-proxy', type: 'standard', protocol: 'RADIUS', label: '2. Access-Request' },
-        { from: 'radsec-proxy', to: 'portnox-cloud-auth', type: 'secure', protocol: 'RADSec', label: '3. Encrypted Forward' },
-        { from: 'portnox-cloud-auth', to: 'azure-ad-auth', type: 'secure', protocol: 'LDAP', label: '4. Identity Lookup' },
-        { from: 'azure-ad-auth', to: 'portnox-cloud-auth', type: 'data-flow', protocol: 'Response', label: '5. User Attributes' },
-        { from: 'portnox-cloud-auth', to: 'radsec-proxy', type: 'data-flow', protocol: 'Access-Accept', label: '6. Auth Decision' },
-        { from: 'radsec-proxy', to: 'meraki-switch', type: 'data-flow', protocol: 'RADIUS', label: '7. VLAN Assignment' },
-        { from: 'meraki-switch', to: 'end-device', type: 'data-flow', protocol: 'EAP-Success', label: '8. Network Access' }
-      ]
+    'radsec-proxy': {
+      title: 'RADSec Proxy',
+      description: 'Secure RADIUS over TLS proxy for encrypted authentication traffic',
+      specs: {
+        'Protocol': 'RADSec (RFC 6614)',
+        'Encryption': 'TLS 1.3',
+        'Port': '2083',
+        'Redundancy': 'Active/Standby'
+      },
+      ports: ['2083 (RADSec)', '1812/1813 (RADIUS)'],
+      performance: {
+        'Latency': '< 5ms',
+        'Throughput': '5,000 auth/sec',
+        'Availability': '99.99%'
+      }
     },
-    'pki-infrastructure': {
-      name: 'PKI Infrastructure',
-      description: 'Portnox Private PKI with certificate lifecycle management',
-      icon: <Lock className="h-4 w-4" />,
-      nodes: [
-        {
-          id: 'portnox-pki-ca',
-          x: 400, y: 50, width: 200, height: 80,
-          label: 'Portnox PKI CA',
-          type: 'pki',
-          color: '#e3f2fd',
-          details: 'Private Certificate Authority with HSM-backed root key. Issues 10,000+ certificates with 2-year validity.',
-          protocols: ['X.509', 'PKCS#10', 'CMP']
-        },
-        {
-          id: 'scep-server',
-          x: 200, y: 200, width: 150, height: 60,
-          label: 'SCEP Server',
-          type: 'cert',
-          color: '#e3f2fd',
-          details: 'Simple Certificate Enrollment Protocol server for automated certificate issuance via MDM.',
-          ports: ['443 (HTTPS)'],
-          protocols: ['SCEP', 'HTTPS']
-        },
-        {
-          id: 'ocsp-responder',
-          x: 450, y: 200, width: 150, height: 60,
-          label: 'OCSP Responder',
-          type: 'cert',
-          color: '#e3f2fd',
-          details: 'Online Certificate Status Protocol for real-time certificate validation. 99.9% availability.',
-          ports: ['80 (HTTP)', '443 (HTTPS)'],
-          protocols: ['OCSP', 'HTTP/HTTPS']
-        },
-        {
-          id: 'crl-cdp',
-          x: 700, y: 200, width: 150, height: 60,
-          label: 'CRL/CDP',
-          type: 'cert',
-          color: '#e3f2fd',
-          details: 'Certificate Revocation List and Distribution Point. Updated every 24 hours with revoked certificates.',
-          protocols: ['HTTP', 'LDAP']
-        },
-        {
-          id: 'intune-mdm',
-          x: 200, y: 350, width: 150, height: 60,
-          label: 'Intune MDM',
-          type: 'mdm',
-          color: '#fff3e0',
-          details: 'Microsoft Intune for certificate deployment to managed devices. Supports Windows, iOS, Android.',
-          protocols: ['SCEP', 'HTTPS', 'Push Notifications']
-        },
-        {
-          id: 'end-device-pki',
-          x: 450, y: 350, width: 150, height: 60,
-          label: 'End Device',
-          type: 'device',
-          color: '#e8f5e9',
-          details: 'Corporate device with installed certificate in local certificate store. Auto-renewal enabled.',
-          protocols: ['EAP-TLS', 'SCEP']
-        },
-        {
-          id: 'nas-switch',
-          x: 700, y: 350, width: 150, height: 60,
-          label: 'NAS/Switch',
-          type: 'network',
-          color: '#e8f5e9',
-          details: 'Network Access Server performing 802.1X authentication with certificate validation.',
-          protocols: ['802.1X', 'RADIUS', 'EAP-TLS']
-        }
-      ],
-      connections: [
-        { from: 'portnox-pki-ca', to: 'scep-server', type: 'secure', protocol: 'Certificate Issuance', label: 'Issue Cert' },
-        { from: 'portnox-pki-ca', to: 'ocsp-responder', type: 'secure', protocol: 'Status Updates', label: 'Cert Status' },
-        { from: 'portnox-pki-ca', to: 'crl-cdp', type: 'secure', protocol: 'CRL Updates', label: 'Revocation List' },
-        { from: 'scep-server', to: 'intune-mdm', type: 'secure', protocol: 'SCEP', label: 'Enrollment' },
-        { from: 'intune-mdm', to: 'end-device-pki', type: 'secure', protocol: 'Certificate Deploy', label: 'Install Cert' },
-        { from: 'end-device-pki', to: 'nas-switch', type: 'secure', protocol: 'EAP-TLS', label: 'Auth with Cert' },
-        { from: 'nas-switch', to: 'ocsp-responder', type: 'standard', protocol: 'OCSP', label: 'Validate Cert' }
-      ]
+    'intune': {
+      title: 'Microsoft Intune',
+      description: 'Mobile Device Management and certificate distribution platform',
+      specs: {
+        'Integration': 'SCEP, Graph API',
+        'Certificates': 'EAP-TLS, Device Auth',
+        'Platforms': 'Windows, iOS, Android, macOS',
+        'Enrollment': 'Automatic via Azure AD'
+      },
+      ports: ['443 (HTTPS)', '80 (SCEP)'],
+      performance: {
+        'Cert Issuance': '< 30 seconds',
+        'Sync Frequency': '8 hours',
+        'Success Rate': '99.5%'
+      }
     }
   }
 
-  const currentView = architectureViews[selectedView as keyof typeof architectureViews]
-
-  const handleNodeClick = (nodeId: string, event: React.MouseEvent) => {
-    setSelectedNode(nodeId)
-    const node = currentView.nodes.find(n => n.id === nodeId)
-    if (node && tooltipRef.current) {
-      tooltipRef.current.style.left = `${event.pageX + 10}px`
-      tooltipRef.current.style.top = `${event.pageY + 10}px`
-      tooltipRef.current.classList.add('active')
-      
-      setTimeout(() => {
-        if (tooltipRef.current) {
-          tooltipRef.current.classList.remove('active')
-        }
-      }, 5000)
-    }
+  const handleNodeClick = (nodeId: string) => {
+    setSelectedNode(selectedNode === nodeId ? null : nodeId)
   }
 
-  const createSVGNode = (node: DiagramNode) => {
-    const isSelected = selectedNode === node.id
-    return (
-      <g 
-        key={node.id} 
-        className="diagram-node" 
-        onClick={(e) => handleNodeClick(node.id, e as any)}
-        style={{ cursor: 'pointer' }}
-      >
-        <rect
-          x={node.x}
-          y={node.y}
-          width={node.width}
-          height={node.height}
-          rx={8}
-          fill={node.color}
-          stroke={isSelected ? 'hsl(var(--primary))' : 'hsl(var(--border))'}
-          strokeWidth={isSelected ? 3 : 2}
-          className="transition-all duration-300"
-        />
-        <text
-          x={node.x + node.width / 2}
-          y={node.y + node.height / 2}
-          textAnchor="middle"
-          dominantBaseline="middle"
-          className="diagram-label"
-          fontSize="14"
-          fontWeight="600"
-        >
-          {node.label}
-        </text>
-        {node.type === 'cloud' && (
-          <Cloud 
-            className="absolute" 
-            style={{ 
-              left: node.x + 10, 
-              top: node.y + 10,
-              width: 20,
-              height: 20,
-              fill: 'hsl(var(--primary))'
-            }} 
-          />
-        )}
-      </g>
-    )
-  }
-
-  const createSVGConnection = (connection: DiagramConnection, index: number) => {
-    const fromNode = currentView.nodes.find(n => n.id === connection.from)
-    const toNode = currentView.nodes.find(n => n.id === connection.to)
-    
-    if (!fromNode || !toNode) return null
-
-    const x1 = fromNode.x + fromNode.width
-    const y1 = fromNode.y + fromNode.height / 2
-    const x2 = toNode.x
-    const y2 = toNode.y + toNode.height / 2
-
-    const strokeColor = connection.type === 'secure' ? 'hsl(var(--chart-2))' : 
-                       connection.type === 'data-flow' ? 'hsl(var(--chart-1))' : 
-                       'hsl(var(--primary))'
-    
-    const strokeWidth = connection.type === 'secure' ? 3 : 2
-    const strokeDasharray = connection.type === 'secure' ? '5,5' : 'none'
-
-    return (
-      <g key={`connection-${index}`}>
+  const OverviewDiagram = () => (
+    <div className="relative w-full h-[600px] bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg overflow-hidden">
+      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1200 600">
+        {/* Background Grid */}
         <defs>
-          <marker
-            id={`arrowhead-${index}`}
-            markerWidth="10"
-            markerHeight="7"
-            refX="9"
-            refY="3.5"
-            orient="auto"
-          >
-            <polygon
-              points="0 0, 10 3.5, 0 7"
-              fill={strokeColor}
-            />
+          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#e5e7eb" strokeWidth="1" opacity="0.3"/>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#grid)" />
+        
+        {/* Cloud Zone */}
+        <rect x="50" y="50" width="300" height="150" rx="10" fill="#dbeafe" stroke="#3b82f6" strokeWidth="2" strokeDasharray="5,5" opacity="0.3"/>
+        <text x="200" y="40" textAnchor="middle" className="text-sm font-semibold fill-blue-700">Portnox Cloud</text>
+        
+        {/* Site Zone */}
+        <rect x="500" y="200" width="650" height="350" rx="10" fill="#f0fdf4" stroke="#22c55e" strokeWidth="2" strokeDasharray="5,5" opacity="0.3"/>
+        <text x="825" y="190" textAnchor="middle" className="text-sm font-semibold fill-green-700">Customer Site</text>
+        
+        {/* Connection Lines */}
+        <line x1="350" y1="125" x2="500" y2="300" stroke="#3b82f6" strokeWidth="3" className={showAnimations ? 'draw-animation' : ''} markerEnd="url(#arrowhead)"/>
+        <line x1="200" y1="200" x2="200" y2="280" stroke="#8b5cf6" strokeWidth="3" className={showAnimations ? 'draw-animation' : ''} markerEnd="url(#arrowhead)"/>
+        
+        {/* Arrow Markers */}
+        <defs>
+          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#3b82f6" />
           </marker>
         </defs>
-        <line
-          x1={x1}
-          y1={y1}
-          x2={x2}
-          y2={y2}
-          stroke={strokeColor}
-          strokeWidth={strokeWidth}
-          strokeDasharray={strokeDasharray}
-          className={showAnimations ? 'diagram-connection' : ''}
-          style={{
-            animationDelay: `${index * 0.2}s`,
-            animationDuration: `${2 / animationSpeed}s`
-          }}
-          markerEnd={`url(#arrowhead-${index})`}
-        />
-        {connection.label && (
-          <text
-            x={(x1 + x2) / 2}
-            y={(y1 + y2) / 2 - 10}
-            textAnchor="middle"
-            className="text-xs fill-muted-foreground"
-            fontSize="12"
-          >
-            {connection.label}
-          </text>
-        )}
-        {connection.protocol && (
-          <text
-            x={(x1 + x2) / 2}
-            y={(y1 + y2) / 2 + 5}
-            textAnchor="middle"
-            className="text-xs fill-muted-foreground"
-            fontSize="10"
-          >
-            {connection.protocol} {connection.port && `(${connection.port})`}
-          </text>
-        )}
-      </g>
-    )
-  }
-
-  const selectedNodeDetails = selectedNode ? 
-    currentView.nodes.find(n => n.id === selectedNode) : null
-
-  return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Network className="h-5 w-5" />
-            <span>Enhanced Architecture Diagrams</span>
-          </CardTitle>
-          <CardDescription>
-            Interactive technical architecture diagrams with detailed component information and data flows
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs value={selectedView} onValueChange={setSelectedView} className="space-y-4">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="zero-trust-overview" className="flex items-center space-x-2">
-                <Shield className="h-4 w-4" />
-                <span>Zero Trust Overview</span>
-              </TabsTrigger>
-              <TabsTrigger value="auth-flow" className="flex items-center space-x-2">
-                <Key className="h-4 w-4" />
-                <span>Authentication Flow</span>
-              </TabsTrigger>
-              <TabsTrigger value="pki-infrastructure" className="flex items-center space-x-2">
-                <Lock className="h-4 w-4" />
-                <span>PKI Infrastructure</span>
-              </TabsTrigger>
-            </TabsList>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <Button
-                  variant={showAnimations ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setShowAnimations(!showAnimations)}
-                >
-                  <Play className="h-4 w-4 mr-2" />
-                  {showAnimations ? 'Animations On' : 'Animations Off'}
-                </Button>
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm">Speed:</span>
-                  <input
-                    type="range"
-                    min="0.5"
-                    max="3"
-                    step="0.5"
-                    value={animationSpeed}
-                    onChange={(e) => setAnimationSpeed(Number(e.target.value))}
-                    className="w-20"
-                  />
-                  <span className="text-sm">{animationSpeed}x</span>
-                </div>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Badge variant="outline">
-                  {currentView.nodes.length} Components
-                </Badge>
-                <Badge variant="outline">
-                  {currentView.connections.length} Connections
-                </Badge>
+        
+        {/* Portnox Cloud */}
+        <g onClick={() => handleNodeClick('portnox-cloud')} className="cursor-pointer">
+          <rect x="150" y="80" width="100" height="80" rx="8" fill="white" stroke="#3b82f6" strokeWidth="2" className="hover:stroke-blue-600 transition-colors"/>
+          <Cloud className="w-8 h-8" x="175" y="100" fill="#3b82f6"/>
+          <text x="200" y="140" textAnchor="middle" className="text-xs font-medium">Portnox Cloud</text>
+          <text x="200" y="155" textAnchor="middle" className="text-xs text-gray-600">RADIUS/RADSec</text>
+        </g>
+        
+        {/* RADSec Proxy */}
+        <g onClick={() => handleNodeClick('radsec-proxy')} className="cursor-pointer">
+          <rect x="520" y="250" width="100" height="80" rx="8" fill="white" stroke="#8b5cf6" strokeWidth="2" className="hover:stroke-purple-600 transition-colors"/>
+          <Shield className="w-8 h-8" x="545" y="270" fill="#8b5cf6"/>
+          <text x="570" y="310" textAnchor="middle" className="text-xs font-medium">RADSec Proxy</text>
+          <text x="570" y="325" textAnchor="middle" className="text-xs text-gray-600">Port 2083</text>
+        </g>
+        
+        {/* Network Switch */}
+        <g className="cursor-pointer">
+          <rect x="700" y="250" width="100" height="80" rx="8" fill="white" stroke="#059669" strokeWidth="2" className="hover:stroke-green-600 transition-colors"/>
+          <Network className="w-8 h-8" x="725" y="270" fill="#059669"/>
+          <text x="750" y="310" textAnchor="middle" className="text-xs font-medium">Core Switch</text>
+          <text x="750" y="325" textAnchor="middle" className="text-xs text-gray-600">802.1X</text>
+        </g>
+        
+        {/* Wireless Controller */}
+        <g className="cursor-pointer">
+          <rect x="880" y="250" width="100" height="80" rx="8" fill="white" stroke="#dc2626" strokeWidth="2" className="hover:stroke-red-600 transition-colors"/>
+          <Wifi className="w-8 h-8" x="905" y="270" fill="#dc2626"/>
+          <text x="930" y="310" textAnchor="middle" className="text-xs font-medium">Wireless</text>
+          <text x="930" y="325" textAnchor="middle" className="text-xs text-gray-600">Controller</text>
+        </g>
+        
+        {/* Intune */}
+        <g onClick={() => handleNodeClick('intune')} className="cursor-pointer">
+          <rect x="150" y="300" width="100" height="80" rx="8" fill="white" stroke="#f59e0b" strokeWidth="2" className="hover:stroke-amber-600 transition-colors"/>
+          <Smartphone className="w-8 h-8" x="175" y="320" fill="#f59e0b"/>
+          <text x="200" y="360" textAnchor="middle" className="text-xs font-medium">Microsoft</text>
+          <text x="200" y="375" textAnchor="middle" className="text-xs font-medium">Intune</text>
+        </g>
+        
+        {/* End Devices */}
+        <g className="cursor-pointer">
+          <rect x="700" y="450" width="80" height="60" rx="6" fill="white" stroke="#6b7280" strokeWidth="2"/>
+          <Laptop className="w-6 h-6" x="720" y="470" fill="#6b7280"/>
+          <text x="740" y="500" textAnchor="middle" className="text-xs">Laptops</text>
+        </g>
+        
+        <g className="cursor-pointer">
+          <rect x="800" y="450" width="80" height="60" rx="6" fill="white" stroke="#6b7280" strokeWidth="2"/>
+          <Smartphone className="w-6 h-6" x="820" y="470" fill="#6b7280"/>
+          <text x="840" y="500" textAnchor="middle" className="text-xs">Mobile</text>
+        </g>
+        
+        <g className="cursor-pointer">
+          <rect x="900" y="450" width="80" height="60" rx="6" fill="white" stroke="#6b7280" strokeWidth="2"/>
+          <Server className="w-6 h-6" x="920" y="470" fill="#6b7280"/>
+          <text x="940" y="500" textAnchor="middle" className="text-xs">IoT</text>
+        </g>
+        
+        {/* Performance Metrics */}
+        <g className="performance-overlay">
+          <rect x="50" y="450" width="200" height="120" rx="8" fill="white" stroke="#e5e7eb" strokeWidth="1" opacity="0.95"/>
+          <text x="60" y="470" className="text-sm font-semibold">Performance Metrics</text>
+          <text x="60" y="490" className="text-xs">Authentication: &lt; 2s</text>
+          <text x="60" y="505" className="text-xs">Throughput: 5,000/sec</text>
+          <text x="60" y="520" className="text-xs">Availability: 99.9%</text>
+          <text x="60" y="535" className="text-xs">Active Users: 2,847</text>
+          <text x="60" y="550" className="text-xs">Success Rate: 99.2%</text>
+        </g>
+      </svg>
+      
+      {/* Node Details Panel */}
+      {selectedNode && nodeDetails[selectedNode as keyof typeof nodeDetails] && (
+        <div className="absolute top-4 right-4 w-80 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-10">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-lg font-semibold text-gray-900">
+              {nodeDetails[selectedNode as keyof typeof nodeDetails].title}
+            </h3>
+            <Button variant="ghost" size="sm" onClick={() => setSelectedNode(null)}>×</Button>
+          </div>
+          
+          <p className="text-sm text-gray-600 mb-4">
+            {nodeDetails[selectedNode as keyof typeof nodeDetails].description}
+          </p>
+          
+          <div className="space-y-3">
+            <div>
+              <h4 className="text-sm font-medium text-gray-900 mb-2">Specifications</h4>
+              <div className="space-y-1">
+                {Object.entries(nodeDetails[selectedNode as keyof typeof nodeDetails].specs).map(([key, value]) => (
+                  <div key={key} className="flex justify-between text-xs">
+                    <span className="text-gray-600">{key}:</span>
+                    <span className="font-medium">{value}</span>
+                  </div>
+                ))}
               </div>
             </div>
-
-            <TabsContent value={selectedView} className="space-y-4">
-              <div className="architecture-container">
-                <div className="mb-4">
-                  <h3 className="text-lg font-semibold flex items-center space-x-2">
-                    {currentView.icon}
-                    <span>{currentView.name}</span>
-                  </h3>
-                  <p className="text-muted-foreground">{currentView.description}</p>
-                </div>
-
-                <div className="relative">
-                  <svg
-                    ref={svgRef}
-                    viewBox="0 0 1200 600"
-                    className="w-full h-auto border border-border rounded-lg bg-background"
-                    style={{ minHeight: '400px' }}
-                  >
-                    {/* Render connections first (behind nodes) */}
-                    {currentView.connections.map((connection, index) => 
-                      createSVGConnection(connection, index)
-                    )}
-                    
-                    {/* Render nodes */}
-                    {currentView.nodes.map(node => createSVGNode(node))}
-                  </svg>
-
-                  {/* Tooltip */}
-                  <div
-                    ref={tooltipRef}
-                    className="diagram-tooltip"
-                  >
-                    {selectedNodeDetails && (
-                      <div>
-                        <div className="font-semibold text-base mb-2">
-                          {selectedNodeDetails.label}
-                        </div>
-                        <div className="text-sm mb-3">
-                          {selectedNodeDetails.details}
-                        </div>
-                        {selectedNodeDetails.protocols && (
-                          <div className="mb-2">
-                            <div className="font-medium text-xs mb-1">Protocols:</div>
-                            <div className="flex flex-wrap gap-1">
-                              {selectedNodeDetails.protocols.map((protocol, idx) => (
-                                <Badge key={idx} variant="secondary" className="text-xs">
-                                  {protocol}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        {selectedNodeDetails.ports && (
-                          <div>
-                            <div className="font-medium text-xs mb-1">Ports:</div>
-                            <div className="flex flex-wrap gap-1">
-                              {selectedNodeDetails.ports.map((port, idx) => (
-                                <Badge key={idx} variant="outline" className="text-xs">
-                                  {port}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Legend */}
-                <div className="mt-6 p-4 bg-muted/50 rounded-lg">
-                  <h4 className="font-medium mb-3">Connection Types</h4>
-                  <div className="flex flex-wrap gap-6">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-6 h-0.5 bg-primary"></div>
-                      <span className="text-sm">Standard Connection</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-6 h-0.5 bg-chart-2" style={{ borderTop: '2px dashed' }}></div>
-                      <span className="text-sm">Secure/Encrypted</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-6 h-0.5 bg-chart-1"></div>
-                      <span className="text-sm">Data Flow</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
-
-      {/* Technical Details Card */}
-      {selectedNodeDetails && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Component Details: {selectedNodeDetails.label}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h4 className="font-medium mb-2">Description</h4>
-                <p className="text-sm text-muted-foreground">
-                  {selectedNodeDetails.details}
-                </p>
-              </div>
-              <div>
-                <h4 className="font-medium mb-2">Technical Specifications</h4>
-                <div className="space-y-2">
-                  {selectedNodeDetails.protocols && (
-                    <div>
-                      <span className="text-sm font-medium">Protocols: </span>
-                      <span className="text-sm text-muted-foreground">
-                        {selectedNodeDetails.protocols.join(', ')}
-                      </span>
-                    </div>
-                  )}
-                  {selectedNodeDetails.ports && (
-                    <div>
-                      <span className="text-sm font-medium">Ports: </span>
-                      <span className="text-sm text-muted-foreground">
-                        {selectedNodeDetails.ports.join(', ')}
-                      </span>
-                    </div>
-                  )}
-                </div>
+            
+            <div>
+              <h4 className="text-sm font-medium text-gray-900 mb-2">Ports & Protocols</h4>
+              <div className="flex flex-wrap gap-1">
+                {nodeDetails[selectedNode as keyof typeof nodeDetails].ports.map((port, index) => (
+                  <Badge key={index} variant="outline" className="text-xs">{port}</Badge>
+                ))}
               </div>
             </div>
-          </CardContent>
-        </Card>
+            
+            <div>
+              <h4 className="text-sm font-medium text-gray-900 mb-2">Performance</h4>
+              <div className="grid grid-cols-2 gap-2">
+                {Object.entries(nodeDetails[selectedNode as keyof typeof nodeDetails].performance).map(([key, value]) => (
+                  <div key={key} className="performance-metric">
+                    <div className="metric-label">{key}</div>
+                    <div className="metric-value text-sm">{value}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
+  )
+
+  const AuthFlowDiagram = () => (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { step: 1, title: 'Device Connection', icon: <Laptop className="w-6 h-6" />, description: 'Device connects to network port or wireless SSID', timing: '0ms' },
+          { step: 2, title: 'EAP Request', icon: <Network className="w-6 h-6" />, description: 'Switch/AP sends EAP-Request Identity', timing: '10ms' },
+          { step: 3, title: 'Certificate Auth', icon: <Key className="w-6 h-6" />, description: 'Device presents EAP-TLS certificate', timing: '50ms' },
+          { step: 4, title: 'Policy Decision', icon: <Shield className="w-6 h-6" />, description: 'Portnox evaluates policy and grants access', timing: '100ms' }
+        ].map((step, index) => (
+          <div key={index} className="flow-step">
+            <div className="flex items-center mb-3">
+              <div className="flow-icon w-12 h-12 text-lg">
+                {step.icon}
+              </div>
+              <div className="ml-3">
+                <div className="flow-title text-base">Step {step.step}</div>
+                <div className="text-xs text-gray-500">{step.timing}</div>
+              </div>
+            </div>
+            <h3 className="font-semibold text-gray-900 mb-2">{step.title}</h3>
+            <p className="flow-description">{step.description}</p>
+          </div>
+        ))}
+      </div>
+      
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <h3 className="text-lg font-semibold text-blue-900 mb-2 flex items-center">
+          <Clock className="w-5 h-5 mr-2" />
+          Authentication Timeline
+        </h3>
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span>Total Authentication Time:</span>
+            <span className="font-semibold text-blue-700">&lt; 2 seconds</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Certificate Validation:</span>
+            <span className="font-semibold">50ms</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Policy Lookup:</span>
+            <span className="font-semibold">30ms</span>
+          </div>
+          <div className="flex justify-between">
+            <span>VLAN Assignment:</span>
+            <span className="font-semibold">20ms</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+
+  const PKIDiagram = () => (
+    <div className="space-y-6">
+      <div className="relative w-full h-[400px] bg-gradient-to-br from-green-50 to-emerald-100 rounded-lg overflow-hidden">
+        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1000 400">
+          {/* PKI Components */}
+          <g className="cursor-pointer">
+            <rect x="50" y="50" width="120" height="80" rx="8" fill="white" stroke="#059669" strokeWidth="2"/>
+            <Key className="w-8 h-8" x="85" y="70" fill="#059669"/>
+            <text x="110" y="105" textAnchor="middle" className="text-xs font-medium">Root CA</text>
+            <text x="110" y="120" textAnchor="middle" className="text-xs text-gray-600">Internal PKI</text>
+          </g>
+          
+          <g className="cursor-pointer">
+            <rect x="250" y="50" width="120" height="80" rx="8" fill="white" stroke="#dc2626" strokeWidth="2"/>
+            <Server className="w-8 h-8" x="285" y="70" fill="#dc2626"/>
+            <text x="310" y="105" textAnchor="middle" className="text-xs font-medium">SCEP Server</text>
+            <text x="310" y="120" textAnchor="middle" className="text-xs text-gray-600">Port 80/443</text>
+          </g>
+          
+          <g className="cursor-pointer">
+            <rect x="450" y="50" width="120" height="80" rx="8" fill="white" stroke="#7c3aed" strokeWidth="2"/>
+            <CheckCircle className="w-8 h-8" x="485" y="70" fill="#7c3aed"/>
+            <text x="510" y="105" textAnchor="middle" className="text-xs font-medium">OCSP</text>
+            <text x="510" y="120" textAnchor="middle" className="text-xs text-gray-600">Validation</text>
+          </g>
+          
+          <g className="cursor-pointer">
+            <rect x="650" y="50" width="120" height="80" rx="8" fill="white" stroke="#f59e0b" strokeWidth="2"/>
+            <Lock className="w-8 h-8" x="685" y="70" fill="#f59e0b"/>
+            <text x="710" y="105" textAnchor="middle" className="text-xs font-medium">CRL</text>
+            <text x="710" y="120" textAnchor="middle" className="text-xs text-gray-600">Revocation</text>
+          </g>
+          
+          {/* Intune Integration */}
+          <g className="cursor-pointer">
+            <rect x="250" y="250" width="120" height="80" rx="8" fill="white" stroke="#0078d4" strokeWidth="2"/>
+            <Smartphone className="w-8 h-8" x="285" y="270" fill="#0078d4"/>
+            <text x="310" y="305" textAnchor="middle" className="text-xs font-medium">Intune</text>
+            <text x="310" y="320" textAnchor="middle" className="text-xs text-gray-600">MDM/SCEP</text>
+          </g>
+          
+          {/* Connection Lines */}
+          <line x1="170" y1="90" x2="250" y2="90" stroke="#059669" strokeWidth="2" markerEnd="url(#arrowhead)"/>
+          <line x1="370" y1="90" x2="450" y2="90" stroke="#dc2626" strokeWidth="2" markerEnd="url(#arrowhead)"/>
+          <line x1="570" y1="90" x2="650" y2="90" stroke="#7c3aed" strokeWidth="2" markerEnd="url(#arrowhead)"/>
+          <line x1="310" y1="130" x2="310" y2="250" stroke="#0078d4" strokeWidth="2" markerEnd="url(#arrowhead)"/>
+        </svg>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <h3 className="font-semibold text-gray-900 mb-2 flex items-center">
+            <Key className="w-5 h-5 mr-2 text-green-600" />
+            Certificate Lifecycle
+          </h3>
+          <ul className="text-sm space-y-1 text-gray-600">
+            <li>• Automatic enrollment via Intune</li>
+            <li>• 2-year certificate validity</li>
+            <li>• Auto-renewal at 75% lifetime</li>
+            <li>• EAP-TLS authentication</li>
+          </ul>
+        </div>
+        
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <h3 className="font-semibold text-gray-900 mb-2 flex items-center">
+            <CheckCircle className="w-5 h-5 mr-2 text-purple-600" />
+            Validation Process
+          </h3>
+          <ul className="text-sm space-y-1 text-gray-600">
+            <li>• Real-time OCSP checking</li>
+            <li>• CRL fallback mechanism</li>
+            <li>• Certificate chain validation</li>
+            <li>• Revocation status verification</li>
+          </ul>
+        </div>
+        
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <h3 className="font-semibold text-gray-900 mb-2 flex items-center">
+            <Zap className="w-5 h-5 mr-2 text-yellow-600" />
+            Performance Metrics
+          </h3>
+          <ul className="text-sm space-y-1 text-gray-600">
+            <li>• OCSP response: &lt; 100ms</li>
+            <li>• Certificate issuance: &lt; 30s</li>
+            <li>• Validation success: 99.8%</li>
+            <li>• Auto-enrollment: 99.5%</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  )
+
+  return (
+    <Card className="w-full">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center space-x-2">
+            <Network className="h-6 w-6 text-blue-600" />
+            <span>Enhanced Architecture Diagrams</span>
+          </CardTitle>
+          
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <Label htmlFor="animations" className="text-sm">Animations</Label>
+              <Switch
+                id="animations"
+                checked={showAnimations}
+                onCheckedChange={setShowAnimations}
+              />
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Label className="text-sm">Speed</Label>
+              <Slider
+                value={animationSpeed}
+                onValueChange={setAnimationSpeed}
+                max={5}
+                min={0.5}
+                step={0.5}
+                className="w-20"
+              />
+            </div>
+          </div>
+        </div>
+      </CardHeader>
+      
+      <CardContent>
+        <Tabs value={activeView} onValueChange={setActiveView} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="overview" className="flex items-center space-x-2">
+              <Cloud className="h-4 w-4" />
+              <span>Zero Trust NAC Overview</span>
+            </TabsTrigger>
+            <TabsTrigger value="auth-flow" className="flex items-center space-x-2">
+              <Shield className="h-4 w-4" />
+              <span>802.1X Authentication Flow</span>
+            </TabsTrigger>
+            <TabsTrigger value="pki" className="flex items-center space-x-2">
+              <Key className="h-4 w-4" />
+              <span>PKI Infrastructure</span>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Complete Architecture Overview</h3>
+                <div className="flex space-x-2">
+                  <Button variant="outline" size="sm">
+                    <Info className="h-4 w-4 mr-2" />
+                    Legend
+                  </Button>
+                </div>
+              </div>
+              <OverviewDiagram />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="auth-flow">
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">802.1X Authentication Process</h3>
+              <AuthFlowDiagram />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="pki">
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">PKI & Certificate Management</h3>
+              <PKIDiagram />
+            </div>
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
   )
 }

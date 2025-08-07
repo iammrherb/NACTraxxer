@@ -1,28 +1,29 @@
 'use client'
 
 import { useState } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Search, Filter, FileText, Edit, Trash2, Eye, MapPin, Building, Users, Network, CheckCircle, Clock, AlertTriangle, XCircle } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Plus, Search, Download, Edit, Eye, Trash2 } from 'lucide-react'
 
 interface Site {
   id: string
   name: string
-  location: string
-  type: string
-  status: 'planning' | 'in-progress' | 'completed' | 'on-hold'
-  devices: number
+  region: string
+  country: string
+  priority: 'High' | 'Medium' | 'Low'
+  phase: string
   users: number
-  progress: number
   projectManager: string
-  technicalOwner: string
-  deploymentDate: string
-  priority: 'high' | 'medium' | 'low'
+  technicalOwners: string[]
+  status: 'Planned' | 'In Progress' | 'Complete' | 'Delayed'
+  completionPercent: number
+  notes: string
 }
 
 interface SiteManagementProps {
@@ -30,637 +31,416 @@ interface SiteManagementProps {
 }
 
 export default function SiteManagement({ onSiteSelect }: SiteManagementProps) {
+  const [searchTerm, setSearchTerm] = useState('')
+  const [regionFilter, setRegionFilter] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
+  const [priorityFilter, setPriorityFilter] = useState('')
+  const [editingSite, setEditingSite] = useState<Site | null>(null)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editFormData, setEditFormData] = useState<Partial<Site>>({})
+
+  // Sample data - in a real app this would come from an API
   const [sites, setSites] = useState<Site[]>([
     {
-      id: '1',
-      name: 'Corporate Headquarters',
-      location: 'New York, NY',
-      type: 'Corporate Office',
-      status: 'completed',
-      devices: 450,
-      users: 200,
-      progress: 100,
-      projectManager: 'John Smith',
-      technicalOwner: 'Sarah Johnson',
-      deploymentDate: '2024-01-15',
-      priority: 'high'
+      id: 'ABM-HQ001',
+      name: 'ABM Global Headquarters',
+      region: 'North America',
+      country: 'USA',
+      priority: 'High',
+      phase: '1',
+      users: 2500,
+      projectManager: 'Alex Rivera',
+      technicalOwners: ['John Smith', 'Mark Wilson'],
+      status: 'In Progress',
+      completionPercent: 35,
+      notes: 'Executive network needs priority handling.'
     },
     {
-      id: '2',
-      name: 'West Coast Branch',
-      location: 'San Francisco, CA',
-      type: 'Branch Office',
-      status: 'in-progress',
-      devices: 180,
-      users: 85,
-      progress: 65,
-      projectManager: 'Mike Davis',
-      technicalOwner: 'Lisa Chen',
-      deploymentDate: '2024-02-28',
-      priority: 'high'
-    },
-    {
-      id: '3',
-      name: 'Manufacturing Plant A',
-      location: 'Detroit, MI',
-      type: 'Manufacturing',
-      status: 'planning',
-      devices: 320,
+      id: 'ABM-DC002',
+      name: 'Primary Data Center',
+      region: 'North America',
+      country: 'USA',
+      priority: 'High',
+      phase: '1',
       users: 150,
-      progress: 25,
-      projectManager: 'Robert Wilson',
-      technicalOwner: 'David Brown',
-      deploymentDate: '2024-03-15',
-      priority: 'medium'
+      projectManager: 'Marcus Chen',
+      technicalOwners: ['Emily Jones', 'Paul Davis'],
+      status: 'In Progress',
+      completionPercent: 65,
+      notes: '24/7 operation requires careful change windows.'
     },
     {
-      id: '4',
-      name: 'Distribution Center',
-      location: 'Chicago, IL',
-      type: 'Warehouse',
-      status: 'on-hold',
-      devices: 95,
-      users: 45,
-      progress: 10,
-      projectManager: 'Jennifer Lee',
-      technicalOwner: 'Mark Taylor',
-      deploymentDate: '2024-04-01',
-      priority: 'low'
+      id: 'ABM-EUR003',
+      name: 'European HQ',
+      region: 'EMEA',
+      country: 'Germany',
+      priority: 'Medium',
+      phase: '2',
+      users: 1200,
+      projectManager: 'Sofia Linden',
+      technicalOwners: ['Sarah Thompson'],
+      status: 'Planned',
+      completionPercent: 0,
+      notes: 'GDPR compliance required.'
     }
   ])
 
-  const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
-  const [showAddSite, setShowAddSite] = useState(false)
-  const [editingSite, setEditingSite] = useState<Site | null>(null)
-
   const filteredSites = sites.filter(site => {
     const matchesSearch = site.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         site.location.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = statusFilter === 'all' || site.status === statusFilter
-    return matchesSearch && matchesStatus
+                         site.id.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesRegion = !regionFilter || site.region === regionFilter
+    const matchesStatus = !statusFilter || site.status === statusFilter
+    const matchesPriority = !priorityFilter || site.priority === priorityFilter
+    
+    return matchesSearch && matchesRegion && matchesStatus && matchesPriority
   })
 
-  const getStatusIcon = (status: string) => {
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'High': return 'bg-red-100 text-red-800 border-red-200'
+      case 'Medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200'
+      case 'Low': return 'bg-green-100 text-green-800 border-green-200'
+      default: return 'bg-gray-100 text-gray-800 border-gray-200'
+    }
+  }
+
+  const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed':
-        return <CheckCircle className="h-4 w-4 text-green-600" />
-      case 'in-progress':
-        return <Clock className="h-4 w-4 text-blue-600" />
-      case 'planning':
-        return <AlertTriangle className="h-4 w-4 text-yellow-600" />
-      case 'on-hold':
-        return <XCircle className="h-4 w-4 text-red-600" />
-      default:
-        return null
+      case 'Complete': return 'text-green-600'
+      case 'In Progress': return 'text-blue-600'
+      case 'Planned': return 'text-gray-600'
+      case 'Delayed': return 'text-red-600'
+      default: return 'text-gray-600'
     }
   }
 
-  const getStatusBadge = (status: string) => {
-    const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-      completed: 'default',
-      'in-progress': 'secondary',
-      planning: 'outline',
-      'on-hold': 'destructive'
-    }
-    return (
-      <Badge variant={variants[status] || 'outline'} className="flex items-center space-x-1">
-        {getStatusIcon(status)}
-        <span className="capitalize">{status.replace('-', ' ')}</span>
-      </Badge>
-    )
-  }
-
-  const getPriorityBadge = (priority: string) => {
-    const colors: Record<string, string> = {
-      high: 'bg-red-100 text-red-800',
-      medium: 'bg-yellow-100 text-yellow-800',
-      low: 'bg-green-100 text-green-800'
-    }
-    return (
-      <Badge className={colors[priority] || 'bg-gray-100 text-gray-800'}>
-        {priority.toUpperCase()}
-      </Badge>
-    )
-  }
-
-  const handleAddSite = (newSite: Omit<Site, 'id'>) => {
-    const site: Site = {
-      ...newSite,
-      id: (sites.length + 1).toString()
-    }
-    setSites([...sites, site])
-    setShowAddSite(false)
-  }
-
-  const handleEditSite = (updatedSite: Site) => {
-    setSites(sites.map(site => site.id === updatedSite.id ? updatedSite : site))
-    setEditingSite(null)
-  }
-
-  const handleDeleteSite = (siteId: string) => {
-    setSites(sites.filter(site => site.id !== siteId))
-  }
-
-  const handleExportSites = () => {
+  const exportCSV = () => {
+    const headers = ['Site ID', 'Site Name', 'Region', 'Country', 'Priority', 'Phase', 'Users', 'Status', 'Completion %']
     const csvContent = [
-      ['Name', 'Location', 'Type', 'Status', 'Devices', 'Users', 'Progress', 'Project Manager', 'Technical Owner', 'Deployment Date', 'Priority'],
-      ...sites.map(site => [
-        site.name,
-        site.location,
-        site.type,
+      headers.join(','),
+      ...filteredSites.map(site => [
+        site.id,
+        `"${site.name}"`,
+        site.region,
+        site.country,
+        site.priority,
+        site.phase,
+        site.users,
         site.status,
-        site.devices.toString(),
-        site.users.toString(),
-        `${site.progress}%`,
-        site.projectManager,
-        site.technicalOwner,
-        site.deploymentDate,
-        site.priority
-      ])
-    ].map(row => row.join(',')).join('\n')
+        site.completionPercent
+      ].join(','))
+    ].join('\n')
 
     const blob = new Blob([csvContent], { type: 'text/csv' })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'sites-export.csv'
-    a.click()
-    window.URL.revokeObjectURL(url)
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `portnox-sites-${Date.now()}.csv`
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const handleEditSite = (siteId: string) => {
+    const site = sites.find(s => s.id === siteId)
+    if (site) {
+      setEditingSite(site)
+      setEditFormData(site)
+      setShowEditModal(true)
+    }
+  }
+
+  const handleSaveSite = () => {
+    if (editingSite && editFormData) {
+      setSites(prevSites => 
+        prevSites.map(site => 
+          site.id === editingSite.id 
+            ? { ...site, ...editFormData }
+            : site
+        )
+      )
+      setShowEditModal(false)
+      setEditingSite(null)
+      setEditFormData({})
+    }
+  }
+
+  const handleFormChange = (field: keyof Site, value: any) => {
+    setEditFormData(prev => ({ ...prev, [field]: value }))
   }
 
   return (
-    <div className="space-y-6">
+    <>
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center space-x-2">
-                <Building className="h-5 w-5" />
-                <span>Master Site List</span>
-              </CardTitle>
-              <CardDescription>
-                Manage all deployment sites and track rollout progress across your organization
-              </CardDescription>
-            </div>
+          <CardTitle className="flex items-center justify-between">
+            <span>Master Site List</span>
             <div className="flex space-x-2">
-              <Button onClick={handleExportSites} variant="outline">
-                <FileText className="h-4 w-4 mr-2" />
+              <Button onClick={exportCSV} variant="outline" size="sm">
+                <Download className="h-4 w-4 mr-2" />
                 Export CSV
               </Button>
-              <Dialog open={showAddSite} onOpenChange={setShowAddSite}>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Site
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl">
-                  <DialogHeader>
-                    <DialogTitle>Add New Site</DialogTitle>
-                    <DialogDescription>
-                      Enter the details for the new deployment site
-                    </DialogDescription>
-                  </DialogHeader>
-                  <AddSiteForm onSubmit={handleAddSite} onCancel={() => setShowAddSite(false)} />
-                </DialogContent>
-              </Dialog>
+              <Button size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Site
+              </Button>
             </div>
-          </div>
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          {/* Search and Filter Controls */}
-          <div className="flex space-x-4 mb-6">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search sites by name or location..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+          {/* Filters */}
+          <div className="flex flex-wrap gap-4 mb-6">
+            <div className="flex-1 min-w-[200px]">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search sites..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-48">
-                <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Filter by status" />
+            
+            <Select value={regionFilter} onValueChange={setRegionFilter}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="All Regions" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="planning">Planning</SelectItem>
-                <SelectItem value="in-progress">In Progress</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="on-hold">On Hold</SelectItem>
+                <SelectItem value="">All Regions</SelectItem>
+                <SelectItem value="North America">North America</SelectItem>
+                <SelectItem value="EMEA">EMEA</SelectItem>
+                <SelectItem value="APAC">APAC</SelectItem>
+                <SelectItem value="LATAM">LATAM</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="All Statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">All Statuses</SelectItem>
+                <SelectItem value="Planned">Planned</SelectItem>
+                <SelectItem value="In Progress">In Progress</SelectItem>
+                <SelectItem value="Complete">Complete</SelectItem>
+                <SelectItem value="Delayed">Delayed</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="All Priorities" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">All Priorities</SelectItem>
+                <SelectItem value="High">High</SelectItem>
+                <SelectItem value="Medium">Medium</SelectItem>
+                <SelectItem value="Low">Low</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           {/* Sites Table */}
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Site Name</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Priority</TableHead>
-                  <TableHead>Devices</TableHead>
-                  <TableHead>Users</TableHead>
-                  <TableHead>Progress</TableHead>
-                  <TableHead>Deployment Date</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left p-3 font-semibold">Site ID</th>
+                  <th className="text-left p-3 font-semibold">Site Name</th>
+                  <th className="text-left p-3 font-semibold">Region</th>
+                  <th className="text-left p-3 font-semibold">Priority</th>
+                  <th className="text-left p-3 font-semibold">Phase</th>
+                  <th className="text-left p-3 font-semibold">Users</th>
+                  <th className="text-left p-3 font-semibold">Status</th>
+                  <th className="text-left p-3 font-semibold">Progress</th>
+                  <th className="text-left p-3 font-semibold">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
                 {filteredSites.map((site) => (
-                  <TableRow key={site.id}>
-                    <TableCell className="font-medium">
+                  <tr key={site.id} className="border-b hover:bg-gray-50 dark:hover:bg-gray-800">
+                    <td className="p-3 font-mono text-sm">{site.id}</td>
+                    <td className="p-3 font-medium">{site.name}</td>
+                    <td className="p-3">{site.region}</td>
+                    <td className="p-3">
+                      <Badge className={getPriorityColor(site.priority)}>
+                        {site.priority}
+                      </Badge>
+                    </td>
+                    <td className="p-3">Phase {site.phase}</td>
+                    <td className="p-3">{site.users.toLocaleString()}</td>
+                    <td className="p-3">
+                      <span className={`font-medium ${getStatusColor(site.status)}`}>
+                        {site.status}
+                      </span>
+                    </td>
+                    <td className="p-3">
                       <div className="flex items-center space-x-2">
-                        <MapPin className="h-4 w-4 text-gray-400" />
-                        <span>{site.name}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>{site.location}</TableCell>
-                    <TableCell>{site.type}</TableCell>
-                    <TableCell>{getStatusBadge(site.status)}</TableCell>
-                    <TableCell>{getPriorityBadge(site.priority)}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-1">
-                        <Network className="h-4 w-4 text-gray-400" />
-                        <span>{site.devices}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-1">
-                        <Users className="h-4 w-4 text-gray-400" />
-                        <span>{site.users}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-16 bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-blue-600 h-2 rounded-full"
-                            style={{ width: `${site.progress}%` }}
-                          ></div>
+                        <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                          <div 
+                            className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${site.completionPercent}%` }}
+                          />
                         </div>
-                        <span className="text-sm">{site.progress}%</span>
+                        <span className="text-sm font-medium min-w-[40px]">
+                          {site.completionPercent}%
+                        </span>
                       </div>
-                    </TableCell>
-                    <TableCell>{site.deploymentDate}</TableCell>
-                    <TableCell>
+                    </td>
+                    <td className="p-3">
                       <div className="flex space-x-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
+                        <Button 
+                          size="sm" 
+                          variant="outline"
                           onClick={() => onSiteSelect(site.id)}
+                          title="View Workbook"
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setEditingSite(site)}
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleEditSite(site.id)}
+                          title="Edit Site"
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteSite(site.id)}
-                        >
+                        <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700" title="Delete Site">
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
-                    </TableCell>
-                  </TableRow>
+                    </td>
+                  </tr>
                 ))}
-              </TableBody>
-            </Table>
+              </tbody>
+            </table>
           </div>
 
           {filteredSites.length === 0 && (
-            <div className="text-center py-8">
-              <Building className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No sites found</h3>
-              <p className="text-gray-600">
-                {searchTerm || statusFilter !== 'all' 
-                  ? 'Try adjusting your search or filter criteria'
-                  : 'Get started by adding your first deployment site'
-                }
-              </p>
+            <div className="text-center py-8 text-gray-500">
+              No sites found matching your criteria.
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Edit Site Dialog */}
-      {editingSite && (
-        <Dialog open={!!editingSite} onOpenChange={() => setEditingSite(null)}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Edit Site</DialogTitle>
-              <DialogDescription>
-                Update the site information and deployment details
-              </DialogDescription>
-            </DialogHeader>
-            <EditSiteForm 
-              site={editingSite} 
-              onSubmit={handleEditSite} 
-              onCancel={() => setEditingSite(null)} 
-            />
-          </DialogContent>
-        </Dialog>
-      )}
-    </div>
-  )
-}
+      {/* Edit Site Modal */}
+      <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Edit className="h-5 w-5" />
+              <span>Edit Site: {editingSite?.name}</span>
+            </DialogTitle>
+          </DialogHeader>
+          
+          {editingSite && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="site-name">Site Name</Label>
+                  <Input
+                    id="site-name"
+                    value={editFormData.name || ''}
+                    onChange={(e) => handleFormChange('name', e.target.value)}
+                    placeholder="Enter site name"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="priority">Priority</Label>
+                  <Select 
+                    value={editFormData.priority || ''} 
+                    onValueChange={(value) => handleFormChange('priority', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select priority" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="High">High</SelectItem>
+                      <SelectItem value="Medium">Medium</SelectItem>
+                      <SelectItem value="Low">Low</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="project-manager">Project Manager</Label>
+                  <Input
+                    id="project-manager"
+                    value={editFormData.projectManager || ''}
+                    onChange={(e) => handleFormChange('projectManager', e.target.value)}
+                    placeholder="Enter project manager name"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="users">Number of Users</Label>
+                  <Input
+                    id="users"
+                    type="number"
+                    value={editFormData.users || ''}
+                    onChange={(e) => handleFormChange('users', parseInt(e.target.value) || 0)}
+                    placeholder="Enter number of users"
+                  />
+                </div>
+              </div>
 
-// Add Site Form Component
-function AddSiteForm({ onSubmit, onCancel }: { onSubmit: (site: Omit<Site, 'id'>) => void, onCancel: () => void }) {
-  const [formData, setFormData] = useState({
-    name: '',
-    location: '',
-    type: '',
-    status: 'planning' as const,
-    devices: 0,
-    users: 0,
-    progress: 0,
-    projectManager: '',
-    technicalOwner: '',
-    deploymentDate: '',
-    priority: 'medium' as const
-  })
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    onSubmit(formData)
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Site Name</label>
-          <Input
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            required
-          />
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Location</label>
-          <Input
-            value={formData.location}
-            onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-            required
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Site Type</label>
-          <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select site type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Corporate Office">Corporate Office</SelectItem>
-              <SelectItem value="Branch Office">Branch Office</SelectItem>
-              <SelectItem value="Manufacturing">Manufacturing</SelectItem>
-              <SelectItem value="Warehouse">Warehouse</SelectItem>
-              <SelectItem value="Retail">Retail</SelectItem>
-              <SelectItem value="Data Center">Data Center</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Priority</label>
-          <Select value={formData.priority} onValueChange={(value: 'high' | 'medium' | 'low') => setFormData({ ...formData, priority: value })}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="high">High</SelectItem>
-              <SelectItem value="medium">Medium</SelectItem>
-              <SelectItem value="low">Low</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Expected Devices</label>
-          <Input
-            type="number"
-            value={formData.devices}
-            onChange={(e) => setFormData({ ...formData, devices: parseInt(e.target.value) || 0 })}
-            required
-          />
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Expected Users</label>
-          <Input
-            type="number"
-            value={formData.users}
-            onChange={(e) => setFormData({ ...formData, users: parseInt(e.target.value) || 0 })}
-            required
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Project Manager</label>
-          <Input
-            value={formData.projectManager}
-            onChange={(e) => setFormData({ ...formData, projectManager: e.target.value })}
-            required
-          />
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Technical Owner</label>
-          <Input
-            value={formData.technicalOwner}
-            onChange={(e) => setFormData({ ...formData, technicalOwner: e.target.value })}
-            required
-          />
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Target Deployment Date</label>
-        <Input
-          type="date"
-          value={formData.deploymentDate}
-          onChange={(e) => setFormData({ ...formData, deploymentDate: e.target.value })}
-          required
-        />
-      </div>
-
-      <div className="flex justify-end space-x-2 pt-4">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit">
-          Add Site
-        </Button>
-      </div>
-    </form>
-  )
-}
-
-// Edit Site Form Component
-function EditSiteForm({ site, onSubmit, onCancel }: { site: Site, onSubmit: (site: Site) => void, onCancel: () => void }) {
-  const [formData, setFormData] = useState(site)
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    onSubmit(formData)
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Site Name</label>
-          <Input
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            required
-          />
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Location</label>
-          <Input
-            value={formData.location}
-            onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-            required
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Site Type</label>
-          <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select site type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Corporate Office">Corporate Office</SelectItem>
-              <SelectItem value="Branch Office">Branch Office</SelectItem>
-              <SelectItem value="Manufacturing">Manufacturing</SelectItem>
-              <SelectItem value="Warehouse">Warehouse</SelectItem>
-              <SelectItem value="Retail">Retail</SelectItem>
-              <SelectItem value="Data Center">Data Center</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Status</label>
-          <Select value={formData.status} onValueChange={(value: 'planning' | 'in-progress' | 'completed' | 'on-hold') => setFormData({ ...formData, status: value })}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="planning">Planning</SelectItem>
-              <SelectItem value="in-progress">In Progress</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-              <SelectItem value="on-hold">On Hold</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Priority</label>
-          <Select value={formData.priority} onValueChange={(value: 'high' | 'medium' | 'low') => setFormData({ ...formData, priority: value })}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="high">High</SelectItem>
-              <SelectItem value="medium">Medium</SelectItem>
-              <SelectItem value="low">Low</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Progress (%)</label>
-          <Input
-            type="number"
-            min="0"
-            max="100"
-            value={formData.progress}
-            onChange={(e) => setFormData({ ...formData, progress: parseInt(e.target.value) || 0 })}
-            required
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Devices</label>
-          <Input
-            type="number"
-            value={formData.devices}
-            onChange={(e) => setFormData({ ...formData, devices: parseInt(e.target.value) || 0 })}
-            required
-          />
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Users</label>
-          <Input
-            type="number"
-            value={formData.users}
-            onChange={(e) => setFormData({ ...formData, users: parseInt(e.target.value) || 0 })}
-            required
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Project Manager</label>
-          <Input
-            value={formData.projectManager}
-            onChange={(e) => setFormData({ ...formData, projectManager: e.target.value })}
-            required
-          />
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Technical Owner</label>
-          <Input
-            value={formData.technicalOwner}
-            onChange={(e) => setFormData({ ...formData, technicalOwner: e.target.value })}
-            required
-          />
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Deployment Date</label>
-        <Input
-          type="date"
-          value={formData.deploymentDate}
-          onChange={(e) => setFormData({ ...formData, deploymentDate: e.target.value })}
-          required
-        />
-      </div>
-
-      <div className="flex justify-end space-x-2 pt-4">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit">
-          Update Site
-        </Button>
-      </div>
-    </form>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="status">Status</Label>
+                  <Select 
+                    value={editFormData.status || ''} 
+                    onValueChange={(value) => handleFormChange('status', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Planned">Planned</SelectItem>
+                      <SelectItem value="In Progress">In Progress</SelectItem>
+                      <SelectItem value="Complete">Complete</SelectItem>
+                      <SelectItem value="Delayed">Delayed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="completion">Completion %</Label>
+                  <Input
+                    id="completion"
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={editFormData.completionPercent || ''}
+                    onChange={(e) => handleFormChange('completionPercent', parseInt(e.target.value) || 0)}
+                    placeholder="Enter completion percentage"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="notes">Notes</Label>
+                <Textarea
+                  id="notes"
+                  value={editFormData.notes || ''}
+                  onChange={(e) => handleFormChange('notes', e.target.value)}
+                  rows={3}
+                  placeholder="Enter project notes"
+                />
+              </div>
+              
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button variant="outline" onClick={() => setShowEditModal(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleSaveSite}>
+                  Save Changes
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }
