@@ -166,6 +166,36 @@ export default function ArchitectureLegend({ currentView }: ArchitectureLegendPr
           { name: 'RouterOS Policies', color: '#d4edda', icon: <Lock className="w-4 h-4" />, description: 'Granular permission control framework' },
           { name: 'Winbox Access', color: '#cce5ff', icon: <Settings className="w-4 h-4" />, description: 'GUI access with TACACS+ auth' }
         ]
+      case 'mist-tacacs':
+        return [
+          { name: 'Portnox TACACS+ Server', color: '#e3f2fd', icon: <Server className="w-4 h-4" />, description: 'Enterprise TACACS+ server with Mist AI integration' },
+          { name: 'Mist Access Points', color: '#00d4aa', icon: <Network className="w-4 h-4" />, description: 'AI-driven access points with cloud management' },
+          { name: 'Mist EX Switches', color: '#00d4aa', icon: <Network className="w-4 h-4" />, description: 'AI-driven switches with automated operations' },
+          { name: 'Mist Cloud', color: '#00d4aa', icon: <Cloud className="w-4 h-4" />, description: 'AI-driven cloud platform with machine learning' },
+          { name: 'Mist AI Insights', color: '#00d4aa', icon: <Database className="w-4 h-4" />, description: 'AI-powered network insights and analytics' },
+          { name: 'Location Services', color: '#cce5ff', icon: <Zap className="w-4 h-4" />, description: 'Real-time location services with asset tracking' },
+          { name: 'Service Level Expectations', color: '#f8d7da', icon: <Shield className="w-4 h-4" />, description: 'Proactive issue detection and resolution' }
+        ]
+      case 'meraki-tacacs':
+        return [
+          { name: 'Portnox TACACS+ Server', color: '#e3f2fd', icon: <Server className="w-4 h-4" />, description: 'Centralized TACACS+ with Meraki cloud integration' },
+          { name: 'Meraki Access Points', color: '#00bceb', icon: <Network className="w-4 h-4" />, description: 'Cloud-managed wireless access points' },
+          { name: 'Meraki Switches', color: '#00bceb', icon: <Network className="w-4 h-4" />, description: 'Cloud-managed switches with TACACS+ support' },
+          { name: 'Meraki MX Security', color: '#00bceb', icon: <Shield className="w-4 h-4" />, description: 'Security appliances with SD-WAN integration' },
+          { name: 'Meraki Dashboard', color: '#00bceb', icon: <Settings className="w-4 h-4" />, description: 'Centralized cloud dashboard with SSO' },
+          { name: 'Client Tracking', color: '#fff3cd', icon: <Users className="w-4 h-4" />, description: 'Real-time client tracking and analytics' },
+          { name: 'Meraki API', color: '#f8d7da', icon: <Database className="w-4 h-4" />, description: 'RESTful API for automation and integration' }
+        ]
+      case 'cambium-tacacs':
+        return [
+          { name: 'Portnox TACACS+ Server', color: '#e3f2fd', icon: <Server className="w-4 h-4" />, description: 'Enterprise TACACS+ with Cambium integration' },
+          { name: 'Cambium Access Points', color: '#ff6b35', icon: <Network className="w-4 h-4" />, description: 'Enterprise wireless APs with TACACS+ support' },
+          { name: 'Cambium Switches', color: '#ff6b35', icon: <Network className="w-4 h-4" />, description: 'Managed switches with PoE+ support' },
+          { name: 'Cambium PTP Backhaul', color: '#ff6b35', icon: <Network className="w-4 h-4" />, description: 'Point-to-point wireless backhaul links' },
+          { name: 'cnMaestro', color: '#ff6b35', icon: <Cloud className="w-4 h-4" />, description: 'Cloud management platform' },
+          { name: 'Spectrum Analysis', color: '#cce5ff', icon: <Zap className="w-4 h-4" />, description: 'Real-time spectrum analysis and optimization' },
+          { name: 'Link Planning', color: '#fff3cd', icon: <Settings className="w-4 h-4" />, description: 'Advanced link planning and modeling tools' }
+        ]
       default:
         return []
     }
@@ -326,6 +356,24 @@ export default function ArchitectureLegend({ currentView }: ArchitectureLegendPr
                 <span className="text-green-600 font-bold text-sm">J</span>
               </div>
               <p className="text-xs font-medium">Juniper</p>
+            </div>
+            <div className="text-center p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+              <div className="w-8 h-8 mx-auto mb-2 bg-teal-100 rounded-full flex items-center justify-center">
+                <span className="text-teal-600 font-bold text-sm">MI</span>
+              </div>
+              <p className="text-xs font-medium">Mist</p>
+            </div>
+            <div className="text-center p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+              <div className="w-8 h-8 mx-auto mb-2 bg-blue-100 rounded-full flex items-center justify-center">
+                <span className="text-blue-600 font-bold text-sm">MR</span>
+              </div>
+              <p className="text-xs font-medium">Meraki</p>
+            </div>
+            <div className="text-center p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+              <div className="w-8 h-8 mx-auto mb-2 bg-orange-100 rounded-full flex items-center justify-center">
+                <span className="text-orange-600 font-bold text-sm">CB</span>
+              </div>
+              <p className="text-xs font-medium">Cambium</p>
             </div>
           </div>
         </CardContent>

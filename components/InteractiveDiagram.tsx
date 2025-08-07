@@ -2445,351 +2445,580 @@ const generateMikrotikTACACSConnections = (): DiagramConnection[] => {
   ]
 }
 
-// Update the getDiagramData function to include all new vendors
-const getDiagramData = (diagramType: string) => {
-  switch (diagramType) {
-    case 'corporate-wifi':
-      return getCorporateWifiData()
-    case 'corporate-wired':
-      return getCorporateWiredData()
-    case 'guest-access':
-      return getGuestAccessData()
-    case 'radsec-proxy':
-      return getRadsecProxyData()
-    case 'fortigate-tacacs':
-      return { nodes: generateFortigateTACACSNodes(), connections: generateFortigateTACACSConnections() }
-    case 'palo-alto-tacacs':
-      return { nodes: generatePaloTACACSNodes(), connections: generatePaloTACACSConnections() }
-    case 'cisco-tacacs':
-      return { nodes: generateCiscoTACACSNodes(), connections: generateCiscoTACACSConnections() }
-    case 'aruba-tacacs':
-      return { nodes: generateArubaTACACSNodes(), connections: generateArubaTACACSConnections() }
-    case 'juniper-tacacs':
-      return { nodes: generateJuniperTACACSNodes(), connections: generateJuniperTACACSConnections() }
-      case 'hpe-tacacs':
-        return { nodes: generateHPETACACSNodes(), connections: generateHPETACACSConnections() }
-      case 'extreme-tacacs':
-        return { nodes: generateExtremeTACACSNodes(), connections: generateExtremeTACACSConnections() }
-      case 'ruckus-tacacs':
-        return { nodes: generateRuckusTACACSNodes(), connections: generateRuckusTACACSConnections() }
-      case 'ubiquiti-tacacs':
-        return { nodes: generateUbiquitiTACACSNodes(), connections: generateUbiquitiTACACSConnections() }
-      case 'mikrotik-tacacs':
-        return { nodes: generateMikrotikTACACSNodes(), connections: generateMikrotikTACACSConnections() }
-    case 'palo-alto-userid':
-      return getPaloAltoUserIdData()
-    case 'fortigate-fsso':
-      return getFortigateFssoData()
-    default:
-      return getCorporateWifiData()
-  }
+// Add Mist TACACS+ diagram
+const generateMistTACACSNodes = (): DiagramNode[] => {
+  return [
+    {
+      id: 'portnox-tacacs-mist',
+      x: 450, y: 50, width: 300, height: 100,
+      label: 'Portnox TACACS+ Server',
+      type: 'tacacs',
+      color: '#e3f2fd',
+      description: 'Enterprise TACACS+ server with Mist AI integration and cloud-native management'
+    },
+    {
+      id: 'mist-access-points',
+      x: 100, y: 250, width: 200, height: 120,
+      label: 'Mist Access Points',
+      type: 'mist-ap',
+      color: '#00d4aa',
+      description: 'Mist AI-driven access points with cloud management and TACACS+ authentication',
+      vendor: 'mist'
+    },
+    {
+      id: 'mist-switches',
+      x: 350, y: 250, width: 200, height: 120,
+      label: 'Mist EX Switches',
+      type: 'mist-switch',
+      color: '#00d4aa',
+      description: 'Mist-managed EX switches with AI-driven operations and TACACS+ support',
+      vendor: 'mist'
+    },
+    {
+      id: 'mist-cloud',
+      x: 600, y: 250, width: 200, height: 120,
+      label: 'Mist Cloud',
+      type: 'mist-cloud',
+      color: '#00d4aa',
+      description: 'Mist AI-driven cloud platform with machine learning and automation',
+      vendor: 'mist'
+    },
+    {
+      id: 'mist-insights',
+      x: 850, y: 250, width: 200, height: 120,
+      label: 'Mist AI Insights',
+      type: 'mist-insights',
+      color: '#00d4aa',
+      description: 'AI-powered network insights with predictive analytics and troubleshooting',
+      vendor: 'mist'
+    },
+    {
+      id: 'entra-id-mist',
+      x: 150, y: 450, width: 200, height: 100,
+      label: 'Microsoft Entra ID',
+      type: 'entra',
+      color: '#e1f5fe',
+      description: 'Cloud identity with SAML integration for Mist cloud management'
+    },
+    {
+      id: 'ad-server-mist',
+      x: 400, y: 450, width: 200, height: 100,
+      label: 'Active Directory',
+      type: 'ad',
+      color: '#e1f5fe',
+      description: 'Active Directory with Mist network administrator groups'
+    },
+    {
+      id: 'mist-org-roles',
+      x: 650, y: 450, width: 200, height: 100,
+      label: 'Mist Org Roles',
+      type: 'roles',
+      color: '#fff3cd',
+      description: 'Mist organization roles: admin, write, read, helpdesk with site-level permissions'
+    },
+    {
+      id: 'ai-operations',
+      x: 900, y: 450, width: 200, height: 100,
+      label: 'AI Operations',
+      type: 'ai-ops',
+      color: '#d4edda',
+      description: 'AI-driven network operations with self-healing and optimization'
+    },
+    {
+      id: 'location-services',
+      x: 275, y: 600, width: 200, height: 80,
+      label: 'Location Services',
+      type: 'location',
+      color: '#cce5ff',
+      description: 'Real-time location services with asset tracking and wayfinding'
+    },
+    {
+      id: 'user-engagement',
+      x: 525, y: 600, width: 200, height: 80,
+      label: 'User Engagement',
+      type: 'engagement',
+      color: '#fff3cd',
+      description: 'User engagement analytics with proximity and dwell time insights'
+    },
+    {
+      id: 'mist-sle',
+      x: 775, y: 600, width: 200, height: 80,
+      label: 'Mist SLE',
+      type: 'sle',
+      color: '#f8d7da',
+      description: 'Service Level Expectations with proactive issue detection and resolution'
+    }
+  ]
 }
 
-  const getCloudColor = (provider: string): string => {
-    switch (provider) {
-      case 'aws': return '#fff3e0'
-      case 'azure': return '#e1f5fe'
-      case 'gcp': return '#e8f5e9'
-      case 'onprem': return '#ffeaa7'
-      default: return '#f5f5f5'
-    }
-  }
-
-  const getConnectivityLabel = (type: string): string => {
-    switch (type) {
-      case 'sdwan': return 'SD-WAN Network'
-      case 'expressroute': return 'Express Route'
-      case 'mpls': return 'MPLS Network'
-      case 'vpn': return 'Site-to-Site VPN'
-      case 'directconnect': return 'Direct Connect'
-      default: return 'Network Connection'
-    }
-  }
-
-  const getConnectivityType = (type: string): 'standard' | 'secure' | 'dashed' => {
-    switch (type) {
-      case 'sdwan': return 'dashed'
-      case 'expressroute': return 'secure'
-      case 'mpls': return 'dashed'
-      case 'vpn': return 'secure'
-      case 'directconnect': return 'standard'
-      default: return 'standard'
-    }
-  }
-
-  const getVendorLogo = (vendor: string): string => {
-    switch (vendor) {
-      case 'fortinet': return 'FG'
-      case 'paloalto': return 'PA'
-      case 'cisco': return 'C'
-      case 'aruba': return 'A'
-      case 'juniper': return 'J'
-      case 'hpe': return 'HP'
-      case 'h3c': return 'H3'
-      case 'extreme': return 'EX'
-      case 'ruckus': return 'RK'
-      case 'ubiquiti': return 'UB'
-      case 'mikrotik': return 'MT'
-      default: return '?'
-    }
-  }
-
-  const handleNodeClick = (nodeId: string) => {
-    if (isDrawingConnection) {
-      if (connectionStart && connectionStart !== nodeId) {
-        // Create new connection
-        const newConnection: DiagramConnection = {
-          id: `custom-${Date.now()}`,
-          from: connectionStart,
-          to: nodeId,
-          type: 'standard',
-          label: 'Custom'
-        }
-        setConnections(prev => [...prev, newConnection])
-        setIsDrawingConnection(false)
-        setConnectionStart(null)
-      }
-    } else {
-      setSelectedNode(nodeId)
-    }
-  }
-
-  const startConnection = (nodeId: string) => {
-    setIsDrawingConnection(true)
-    setConnectionStart(nodeId)
-  }
-
-  const renderNode = (node: DiagramNode) => {
-    const isSelected = selectedNode === node.id
-    const isConnectionStart = connectionStart === node.id
-
-    return (
-      <TooltipProvider key={node.id}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <g
-              className="cursor-pointer transition-all duration-200 hover:opacity-80"
-              onClick={() => handleNodeClick(node.id)}
-              onDoubleClick={() => startConnection(node.id)}
-            >
-              <rect
-                x={node.x}
-                y={node.y}
-                width={node.width}
-                height={node.height}
-                rx={8}
-                fill={node.color}
-                stroke={isSelected ? '#00c8d7' : isConnectionStart ? '#10b981' : '#6b7280'}
-                strokeWidth={isSelected || isConnectionStart ? 3 : 2}
-                className="transition-all duration-200"
-              />
-            
-              {/* Vendor logo/icon */}
-              {node.vendor && (
-                <g>
-                  <circle
-                    cx={node.x + 20}
-                    cy={node.y + 20}
-                    r={12}
-                    fill="white"
-                    stroke="#6b7280"
-                    strokeWidth={1}
-                  />
-                  <text
-                    x={node.x + 20}
-                    y={node.y + 25}
-                    textAnchor="middle"
-                    fontSize="12"
-                    className="pointer-events-none"
-                  >
-                    {getVendorLogo(node.vendor)}
-                  </text>
-                </g>
-              )}
-            
-              <text
-                x={node.x + node.width / 2}
-                y={node.y + node.height / 2}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                className="fill-gray-800 dark:fill-gray-200 font-semibold text-sm pointer-events-none"
-                style={{ fontSize: '14px', fontWeight: '600' }}
-              >
-                {node.label}
-              </text>
-            
-              {/* Connection points with Portnox colors */}
-              <circle
-                cx={node.x + node.width / 2}
-                cy={node.y}
-                r={6}
-                fill="#00c8d7"
-                stroke="white"
-                strokeWidth={2}
-                className="opacity-0 hover:opacity-100 transition-opacity"
-              />
-              <circle
-                cx={node.x + node.width}
-                cy={node.y + node.height / 2}
-                r={6}
-                fill="#00c8d7"
-                stroke="white"
-                strokeWidth={2}
-                className="opacity-0 hover:opacity-100 transition-opacity"
-              />
-              <circle
-                cx={node.x + node.width / 2}
-                cy={node.y + node.height}
-                r={6}
-                fill="#00c8d7"
-                stroke="white"
-                strokeWidth={2}
-                className="opacity-0 hover:opacity-100 transition-opacity"
-              />
-              <circle
-                cx={node.x}
-                cy={node.y + node.height / 2}
-                r={6}
-                fill="#00c8d7"
-                stroke="white"
-                strokeWidth={2}
-                className="opacity-0 hover:opacity-100 transition-opacity"
-              />
-            </g>
-          </TooltipTrigger>
-          <TooltipContent>
-            <div className="max-w-xs">
-              <p className="font-semibold">{node.label}</p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">{node.description}</p>
-              {node.vendor && (
-                <p className="text-xs text-[#00c8d7] mt-1 font-medium">Vendor: {node.vendor}</p>
-              )}
-            </div>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    )
-  }
-
-  const renderConnection = (connection: DiagramConnection) => {
-    const fromNode = nodes.find(n => n.id === connection.from)
-    const toNode = nodes.find(n => n.id === connection.to)
-    
-    if (!fromNode || !toNode) return null
-
-    const x1 = fromNode.x + fromNode.width / 2
-    const y1 = fromNode.y + fromNode.height / 2
-    const x2 = toNode.x + toNode.width / 2
-    const y2 = toNode.y + toNode.height / 2
-
-    let strokeDasharray = 'none'
-    let strokeWidth = 2
-    let stroke = connection.color || '#6b7280'
-
-    switch (connection.type) {
-      case 'secure':
-        stroke = '#10b981'
-        strokeWidth = 3
-        break
-      case 'dashed':
-        strokeDasharray = '10,5'
-        break
-    }
-
-    return (
-      <g key={connection.id}>
-        <line
-          x1={x1}
-          y1={y1}
-          x2={x2}
-          y2={y2}
-          stroke={stroke}
-          strokeWidth={strokeWidth}
-          strokeDasharray={strokeDasharray}
-          className="transition-all duration-200"
-          style={{
-            strokeDasharray: animationSpeed > 0 ? '1000' : strokeDasharray,
-            strokeDashoffset: animationSpeed > 0 ? '1000' : '0',
-            animation: animationSpeed > 0 ? `drawLine ${2 / animationSpeed}s ease-out forwards` : 'none'
-          }}
-        />
-        
-        {/* Arrow marker */}
-        <defs>
-          <marker
-            id={`arrow-${connection.id}`}
-            markerWidth="10"
-            markerHeight="10"
-            refX="5"
-            refY="5"
-            orient="auto"
-          >
-            <path
-              d="M 0 0 L 10 5 L 0 10 z"
-              fill={stroke}
-            />
-          </marker>
-        </defs>
-        
-        <line
-          x1={x1}
-          y1={y1}
-          x2={x2}
-          y2={y2}
-          stroke="transparent"
-          strokeWidth={strokeWidth}
-          markerEnd={`url(#arrow-${connection.id})`}
-        />
-        
-        {/* Connection label */}
-        {connection.label && (
-          <text
-            x={(x1 + x2) / 2}
-            y={(y1 + y2) / 2 - 10}
-            textAnchor="middle"
-            className="fill-gray-600 dark:fill-gray-400 text-xs font-medium"
-          >
-            {connection.label}
-          </text>
-        )}
-      </g>
-    )
-  }
-
-  return (
-    <div className="w-full h-[700px] overflow-auto architecture-diagram">
-      <svg
-        ref={svgRef}
-        width="1200"
-        height="800"
-        viewBox="0 0 1200 800"
-        className="w-full h-full bg-white"
-        style={{ backgroundColor: 'white' }}
-      >
-        <style>
-          {`
-            @keyframes drawLine {
-              to {
-                stroke-dashoffset: 0;
-              }
-            }
-          `}
-        </style>
-        
-        {/* Render connections first (behind nodes) */}
-        {connections.map(renderConnection)}
-        
-        {/* Render nodes */}
-        {nodes.map(renderNode)}
-      </svg>
-      
-      {/* Instructions */}
-      <div className="mt-4 p-4 bg-[#00c8d7]/10 dark:bg-[#00c8d7]/20 rounded-lg border border-[#00c8d7]/20">
-        <p className="text-sm text-[#00c8d7] dark:text-[#00c8d7]">
-          <strong>Instructions:</strong> Click nodes to select them. Double-click a node to start drawing a custom connection. 
-          Hover over nodes to see connection points and detailed descriptions.
-        </p>
-      </div>
-    </div>
-  )
+const generateMistTACACSConnections = (): DiagramConnection[] => {
+  return [
+    { id: 'tacacs-mist-to-ap', from: 'portnox-tacacs-mist', to: 'mist-access-points', type: 'secure', label: 'TACACS+ Auth' },
+    { id: 'tacacs-mist-to-switch', from: 'portnox-tacacs-mist', to: 'mist-switches', type: 'secure', label: 'Switch Auth' },
+    { id: 'tacacs-mist-to-cloud', from: 'portnox-tacacs-mist', to: 'mist-cloud', type: 'secure', label: 'Cloud Auth' },
+    { id: 'tacacs-mist-to-insights', from: 'portnox-tacacs-mist', to: 'mist-insights', type: 'secure', label: 'AI Auth' },
+    { id: 'tacacs-mist-to-entra', from: 'portnox-tacacs-mist', to: 'entra-id-mist', type: 'standard', label: 'SSO Integration' },
+    { id: 'tacacs-mist-to-ad', from: 'portnox-tacacs-mist', to: 'ad-server-mist', type: 'standard', label: 'User Lookup' },
+    { id: 'entra-to-roles-mist', from: 'entra-id-mist', to: 'mist-org-roles', type: 'standard', label: 'Role Assignment' },
+    { id: 'ad-to-roles-mist', from: 'ad-server-mist', to: 'mist-org-roles', type: 'standard', label: 'Group Mapping' },
+    { id: 'roles-to-ai-ops', from: 'mist-org-roles', to: 'ai-operations', type: 'standard', label: 'AI Access Control' },
+    { id: 'ap-to-location', from: 'mist-access-points', to: 'location-services', type: 'standard', label: 'Location Data' },
+    { id: 'switch-to-engagement', from: 'mist-switches', to: 'user-engagement', type: 'standard', label: 'User Analytics' },
+    { id: 'cloud-to-sle', from: 'mist-cloud', to: 'mist-sle', type: 'standard', label: 'SLE Monitoring' },
+    { id: 'insights-to-sle', from: 'mist-insights', to: 'mist-sle', type: 'standard', label: 'AI Insights' }
+  ]
 }
+
+// Add Meraki TACACS+ diagram
+const generateMerakiTACACSNodes = (): DiagramNode[] => {
+  return [
+    {
+      id: 'portnox-tacacs-meraki',
+      x: 450, y: 50, width: 300, height: 100,
+      label: 'Portnox TACACS+ Server',
+      type: 'tacacs',
+      color: '#e3f2fd',
+      description: 'Centralized TACACS+ server with Cisco Meraki cloud integration and dashboard SSO'
+    },
+    {
+      id: 'meraki-access-points',
+      x: 100, y: 250, width: 200, height: 120,
+      label: 'Meraki Access Points',
+      type: 'meraki-ap',
+      color: '#00bceb',
+      description: 'Cisco Meraki wireless access points with cloud management and TACACS+ support',
+      vendor: 'meraki'
+    },
+    {
+      id: 'meraki-switches',
+      x: 350, y: 250, width: 200, height: 120,
+      label: 'Meraki Switches',
+      type: 'meraki-switch',
+      color: '#00bceb',
+      description: 'Cisco Meraki cloud-managed switches with TACACS+ authentication',
+      vendor: 'meraki'
+    },
+    {
+      id: 'meraki-security-appliances',
+      x: 600, y: 250, width: 200, height: 120,
+      label: 'Meraki MX Security',
+      type: 'meraki-mx',
+      color: '#00bceb',
+      description: 'Cisco Meraki MX security appliances with SD-WAN and TACACS+ integration',
+      vendor: 'meraki'
+    },
+    {
+      id: 'meraki-dashboard',
+      x: 850, y: 250, width: 200, height: 120,
+      label: 'Meraki Dashboard',
+      type: 'meraki-dashboard',
+      color: '#00bceb',
+      description: 'Cisco Meraki cloud dashboard with centralized management and TACACS+ SSO',
+      vendor: 'meraki'
+    },
+    {
+      id: 'entra-id-meraki',
+      x: 150, y: 450, width: 200, height: 100,
+      label: 'Microsoft Entra ID',
+      type: 'entra',
+      color: '#e1f5fe',
+      description: 'Cloud identity with SAML integration for Meraki dashboard access'
+    },
+    {
+      id: 'ad-server-meraki',
+      x: 400, y: 450, width: 200, height: 100,
+      label: 'Active Directory',
+      type: 'ad',
+      color: '#e1f5fe',
+      description: 'Active Directory with Meraki administrator groups and organizational units'
+    },
+    {
+      id: 'meraki-admin-roles',
+      x: 650, y: 450, width: 200, height: 100,
+      label: 'Meraki Admin Roles',
+      type: 'roles',
+      color: '#fff3cd',
+      description: 'Meraki administrative roles: full, read-only, enterprise with network-level permissions'
+    },
+    {
+      id: 'cloud-monitoring',
+      x: 900, y: 450, width: 200, height: 100,
+      label: 'Cloud Monitoring',
+      type: 'monitoring',
+      color: '#d4edda',
+      description: 'Comprehensive cloud-based monitoring with real-time alerts and reporting'
+    },
+    {
+      id: 'network-topology',
+      x: 275, y: 600, width: 200, height: 80,
+      label: 'Network Topology',
+      type: 'topology',
+      color: '#cce5ff',
+      description: 'Dynamic network topology visualization with auto-discovery and mapping'
+    },
+    {
+      id: 'client-tracking',
+      x: 525, y: 600, width: 200, height: 80,
+      label: 'Client Tracking',
+      type: 'tracking',
+      color: '#fff3cd',
+      description: 'Real-time client tracking with location analytics and behavior insights'
+    },
+    {
+      id: 'meraki-api',
+      x: 775, y: 600, width: 200, height: 80,
+      label: 'Meraki API',
+      type: 'api',
+      color: '#f8d7da',
+      description: 'RESTful API for automation, integration, and custom application development'
+    }
+  ]
+}
+
+const generateMerakiTACACSConnections = (): DiagramConnection[] => {
+  return [
+    { id: 'tacacs-meraki-to-ap', from: 'portnox-tacacs-meraki', to: 'meraki-access-points', type: 'secure', label: 'TACACS+ Auth' },
+    { id: 'tacacs-meraki-to-switch', from: 'portnox-tacacs-meraki', to: 'meraki-switches', type: 'secure', label: 'Switch Auth' },
+    { id: 'tacacs-meraki-to-mx', from: 'portnox-tacacs-meraki', to: 'meraki-security-appliances', type: 'secure', label: 'MX Auth' },
+    { id: 'tacacs-meraki-to-dashboard', from: 'portnox-tacacs-meraki', to: 'meraki-dashboard', type: 'secure', label: 'Dashboard SSO' },
+    { id: 'tacacs-meraki-to-entra', from: 'portnox-tacacs-meraki', to: 'entra-id-meraki', type: 'standard', label: 'SAML Integration' },
+    { id: 'tacacs-meraki-to-ad', from: 'portnox-tacacs-meraki', to: 'ad-server-meraki', type: 'standard', label: 'User Authentication' },
+    { id: 'entra-to-roles-meraki', from: 'entra-id-meraki', to: 'meraki-admin-roles', type: 'standard', label: 'Role Assignment' },
+    { id: 'ad-to-roles-meraki', from: 'ad-server-meraki', to: 'meraki-admin-roles', type: 'standard', label: 'Group Mapping' },
+    { id: 'roles-to-monitoring', from: 'meraki-admin-roles', to: 'cloud-monitoring', type: 'standard', label: 'Monitoring Access' },
+    { id: 'ap-to-topology', from: 'meraki-access-points', to: 'network-topology', type: 'standard', label: 'Topology Data' },
+    { id: 'switch-to-tracking', from: 'meraki-switches', to: 'client-tracking', type: 'standard', label: 'Client Data' },
+    { id: 'dashboard-to-api', from: 'meraki-dashboard', to: 'meraki-api', type: 'standard', label: 'API Access' },
+    { id: 'mx-to-api', from: 'meraki-security-appliances', to: 'meraki-api', type: 'standard', label: 'SD-WAN API' }
+  ]
+}
+
+// Add Cambium TACACS+ diagram
+const generateCambiumTACACSNodes = (): DiagramNode[] => {
+  return [
+    {
+      id: 'portnox-tacacs-cambium',
+      x: 450, y: 50, width: 300, height: 100,
+      label: 'Portnox TACACS+ Server',
+      type: 'tacacs',
+      color: '#e3f2fd',
+      description: 'Enterprise TACACS+ server with Cambium Networks integration and cnMaestro support'
+    },
+    {
+      id: 'cambium-access-points',
+      x: 100, y: 250, width: 200, height: 120,
+      label: 'Cambium Access Points',
+      type: 'cambium-ap',
+      color: '#ff6b35',
+      description: 'Cambium wireless access points with enterprise-grade security and TACACS+ support',
+      vendor: 'cambium'
+    },
+    {
+      id: 'cambium-switches',
+      x: 350, y: 250, width: 200, height: 120,
+      label: 'Cambium Switches',
+      type: 'cambium-switch',
+      color: '#ff6b35',
+      description: 'Cambium managed switches with PoE+ and TACACS+ authentication',
+      vendor: 'cambium'
+    },
+    {
+      id: 'cambium-ptp-backhaul',
+      x: 600, y: 250, width: 200, height: 120,
+      label: 'Cambium PTP Backhaul',
+      type: 'cambium-ptp',
+      color: '#ff6b35',
+      description: 'Cambium point-to-point wireless backhaul with high-capacity links',
+      vendor: 'cambium'
+    },
+    {
+      id: 'cnmaestro',
+      x: 850, y: 250, width: 200, height: 120,
+      label: 'cnMaestro',
+      type: 'cnmaestro',
+      color: '#ff6b35',
+      description: 'Cambium cnMaestro cloud management platform with TACACS+ integration'
+    },
+    {
+      id: 'entra-id-cambium',
+      x: 150, y: 450, width: 200, height: 100,
+      label: 'Microsoft Entra ID',
+      type: 'entra',
+      color: '#e1f5fe',
+      description: 'Cloud identity with RADIUS integration for Cambium device management'
+    },
+    {
+      id: 'ad-server-cambium',
+      x: 400, y: 450, width: 200, height: 100,
+      label: 'Active Directory',
+      type: 'ad',
+      color: '#e1f5fe',
+      description: 'Active Directory with Cambium network administrator groups'
+    },
+    {
+      id: 'cambium-user-roles',
+      x: 650, y: 450, width: 200, height: 100,
+      label: 'Cambium User Roles',
+      type: 'roles',
+      color: '#fff3cd',
+      description: 'Cambium user roles: admin, installer, monitor with device-level permissions'
+    },
+    {
+      id: 'wireless-optimization',
+      x: 900, y: 450, width: 200, height: 100,
+      label: 'Wireless Optimization',
+      type: 'optimization',
+      color: '#d4edda',
+      description: 'Advanced wireless optimization with interference mitigation and capacity planning'
+    },
+    {
+      id: 'spectrum-analysis',
+      x: 275, y: 600, width: 200, height: 80,
+      label: 'Spectrum Analysis',
+      type: 'spectrum',
+      color: '#cce5ff',
+      description: 'Real-time spectrum analysis with interference detection and channel optimization'
+    },
+    {
+      id: 'link-planning',
+      x: 525, y: 600, width: 200, height: 80,
+      label: 'Link Planning',
+      type: 'planning',
+      color: '#fff3cd',
+      description: 'Advanced link planning tools with path analysis and capacity modeling'
+    },
+    {
+      id: 'cambium-analytics',
+      x: 775, y: 600, width: 200, height: 80,
+      label: 'Cambium Analytics',
+      type: 'analytics',
+      color: '#f8d7da',
+      description: 'Comprehensive network analytics with performance monitoring and reporting'
+    }
+  ]
+}
+
+const generateCambiumTACACSConnections = (): DiagramConnection[] => {
+  return [
+    { id: 'tacacs-cambium-to-ap', from: 'portnox-tacacs-cambium', to: 'cambium-access-points', type: 'secure', label: 'TACACS+ Auth' },
+    { id: 'tacacs-cambium-to-switch', from: 'portnox-tacacs-cambium', to: 'cambium-switches', type: 'secure', label: 'Switch Auth' },
+    { id: 'tacacs-cambium-to-ptp', from: 'portnox-tacacs-cambium', to: 'cambium-ptp-backhaul', type: 'secure', label: 'Backhaul Auth' },
+    { id: 'tacacs-cambium-to-cnmaestro', from: 'portnox-tacacs-cambium', to: 'cnmaestro', type: 'secure', label: 'Cloud Management' },
+    { id: 'tacacs-cambium-to-entra', from: 'portnox-tacacs-cambium', to: 'entra-id-cambium', type: 'standard', label: 'Cloud Identity' },
+    { id: 'tacacs-cambium-to-ad', from: 'portnox-tacacs-cambium', to: 'ad-server-cambium', type: 'standard', label: 'User Lookup' },
+    { id: 'entra-to-roles-cambium', from: 'entra-id-cambium', to: 'cambium-user-roles', type: 'standard', label: 'Role Assignment' },
+    { id: 'ad-to-roles-cambium', from: 'ad-server-cambium', to: 'cambium-user-roles', type: 'standard', label: 'Group Mapping' },
+    { id: 'roles-to-optimization', from: 'cambium-user-roles', to: 'wireless-optimization', type: 'standard', label: 'Optimization Access' },
+    { id: 'ap-to-spectrum', from: 'cambium-access-points', to: 'spectrum-analysis', type: 'standard', label: 'Spectrum Data' },
+    { id: 'ptp-to-planning', from: 'cambium-ptp-backhaul', to: 'link-planning', type: 'standard', label: 'Link Data' },
+    { id: 'cnmaestro-to-analytics', from: 'cnmaestro', to: 'cambium-analytics', type: 'standard', label: 'Network Analytics' },
+    { id: 'switch-to-analytics', from: 'cambium-switches', to: 'cambium-analytics', type: 'standard', label: 'Switch Analytics' }
+  ]
+}
+
+// Add Mist TACACS+ diagram
+const generateMistTACACSNodes = (): DiagramNode[] => {
+  return [
+    {
+      id: 'portnox-tacacs-mist',
+      x: 450, y: 50, width: 300, height: 100,
+      label: 'Portnox TACACS+ Server',
+      type: 'tacacs',
+      color: '#e3f2fd',
+      description: 'Enterprise TACACS+ server with Mist AI integration and cloud-native management'
+    },
+    {
+      id: 'mist-access-points',
+      x: 100, y: 250, width: 200, height: 120,
+      label: 'Mist Access Points',
+      type: 'mist-ap',
+      color: '#00d4aa',
+      description: 'Mist AI-driven access points with cloud management and TACACS+ authentication',
+      vendor: 'mist'
+    },
+    {
+      id: 'mist-switches',
+      x: 350, y: 250, width: 200, height: 120,
+      label: 'Mist EX Switches',
+      type: 'mist-switch',
+      color: '#00d4aa',
+      description: 'Mist-managed EX switches with AI-driven operations and TACACS+ support',
+      vendor: 'mist'
+    },
+    {
+      id: 'mist-cloud',
+      x: 600, y: 250, width: 200, height: 120,
+      label: 'Mist Cloud',
+      type: 'mist-cloud',
+      color: '#00d4aa',
+      description: 'Mist AI-driven cloud platform with machine learning and automation',
+      vendor: 'mist'
+    },
+    {
+      id: 'mist-insights',
+      x: 850, y: 250, width: 200, height: 120,
+      label: 'Mist AI Insights',
+      type: 'mist-insights',
+      color: '#00d4aa',
+      description: 'AI-powered network insights with predictive analytics and troubleshooting',
+      vendor: 'mist'
+    },
+    {
+      id: 'entra-id-mist',
+      x: 150, y: 450, width: 200, height: 100,
+      label: 'Microsoft Entra ID',
+      type: 'entra',
+      color: '#e1f5fe',
+      description: 'Cloud identity with SAML integration for Mist cloud management'
+    },
+    {
+      id: 'ad-server-mist',
+      x: 400, y: 450, width: 200, height: 100,
+      label: 'Active Directory',
+      type: 'ad',
+      color: '#e1f5fe',
+      description: 'Active Directory with Mist network administrator groups'
+    },
+    {
+      id: 'mist-org-roles',
+      x: 650, y: 450, width: 200, height: 100,
+      label: 'Mist Org Roles',
+      type: 'roles',
+      color: '#fff3cd',
+      description: 'Mist organization roles: admin, write, read, helpdesk with site-level permissions'
+    },
+    {
+      id: 'ai-operations',
+      x: 900, y: 450, width: 200, height: 100,
+      label: 'AI Operations',
+      type: 'ai-ops',
+      color: '#d4edda',
+      description: 'AI-driven network operations with self-healing and optimization'
+    },
+    {
+      id: 'location-services',
+      x: 275, y: 600, width: 200, height: 80,
+      label: 'Location Services',
+      type: 'location',
+      color: '#cce5ff',
+      description: 'Real-time location services with asset tracking and wayfinding'
+    },
+    {
+      id: 'user-engagement',
+      x: 525, y: 600, width: 200, height: 80,
+      label: 'User Engagement',
+      type: 'engagement',
+      color: '#fff3cd',
+      description: 'User engagement analytics with proximity and dwell time insights'
+    },
+    {
+      id: 'mist-sle',
+      x: 775, y: 600, width: 200, height: 80,
+      label: 'Mist SLE',
+      type: 'sle',
+      color: '#f8d7da',
+      description: 'Service Level Expectations with proactive issue detection and resolution'
+    }
+  ]
+}
+
+const generateMistTACACSConnections = (): DiagramConnection[] => {
+  return [
+    { id: 'tacacs-mist-to-ap', from: 'portnox-tacacs-mist', to: 'mist-access-points', type: 'secure', label: 'TACACS+ Auth' },
+    { id: 'tacacs-mist-to-switch', from: 'portnox-tacacs-mist', to: 'mist-switches', type: 'secure', label: 'Switch Auth' },
+    { id: 'tacacs-mist-to-cloud', from: 'portnox-tacacs-mist', to: 'mist-cloud', type: 'secure', label: 'Cloud Auth' },
+    { id: 'tacacs-mist-to-insights', from: 'portnox-tacacs-mist', to: 'mist-insights', type: 'secure', label: 'AI Auth' },
+    { id: 'tacacs-mist-to-entra', from: 'portnox-tacacs-mist', to: 'entra-id-mist', type: 'standard', label: 'SSO Integration' },
+    { id: 'tacacs-mist-to-ad', from: 'portnox-tacacs-mist', to: 'ad-server-mist', type: 'standard', label: 'User Lookup' },
+    { id: 'entra-to-roles-mist', from: 'entra-id-mist', to: 'mist-org-roles', type: 'standard', label: 'Role Assignment' },
+    { id: 'ad-to-roles-mist', from: 'ad-server-mist', to: 'mist-org-roles', type: 'standard', label: 'Group Mapping' },
+    { id: 'roles-to-ai-ops', from: 'mist-org-roles', to: 'ai-operations', type: 'standard', label: 'AI Access Control' },
+    { id: 'ap-to-location', from: 'mist-access-points', to: 'location-services', type: 'standard', label: 'Location Data' },
+    { id: 'switch-to-engagement', from: 'mist-switches', to: 'user-engagement', type: 'standard', label: 'User Analytics' },
+    { id: 'cloud-to-sle', from: 'mist-cloud', to: 'mist-sle', type: 'standard', label: 'SLE Monitoring' },
+    { id: 'insights-to-sle', from: 'mist-insights', to: 'mist-sle', type: 'standard', label: 'AI Insights' }
+  ]
+}
+
+// Add Meraki TACACS+ diagram
+const generateMerakiTACACSNodes = (): DiagramNode[] => {
+  return [
+    {
+      id: 'portnox-tacacs-meraki',
+      x: 450, y: 50, width: 300, height: 100,
+      label: 'Portnox TACACS+ Server',
+      type: 'tacacs',
+      color: '#e3f2fd',
+      description: 'Centralized TACACS+ server with Cisco Meraki cloud integration and dashboard SSO'
+    },
+    {
+      id: 'meraki-access-points',
+      x: 100, y: 250, width: 200, height: 120,
+      label: 'Meraki Access Points',
+      type: 'meraki-ap',
+      color: '#00bceb',
+      description: 'Cisco Meraki wireless access points with cloud management and TACACS+ support',
+      vendor: 'meraki'
+    },
+    {
+      id: 'meraki-switches',
+      x: 350, y: 250, width: 200, height: 120,
+      label: 'Meraki Switches',
+      type: 'meraki-switch',
+      color: '#00bceb',
+      description: 'Cisco Meraki cloud-managed switches with TACACS+ authentication',
+      vendor: 'meraki'
+    },
+    {
+      id: 'meraki-security-appliances',
+      x: 600, y: 250, width: 200, height: 120,
+      label: 'Meraki MX Security',
+      type: 'meraki-mx',
+      color: '#00bceb',
+      description: 'Cisco Meraki MX security appliances with SD-WAN and TACACS+ integration',
+      vendor: 'meraki'
+    },
+    {
+      id: 'meraki-dashboard',
+      x: 850, y: 250, width: 200, height: 120,
+      label: 'Meraki Dashboard',
+      type: 'meraki-dashboard',
+      color: '#00bceb',
+      description: 'Cisco Meraki cloud dashboard with centralized management and TACACS+ SSO',
+      vendor: 'meraki'
+    },
+    {
+      id: 'entra-id-meraki',
+      x: 150, y: 450, width: 200, height: 100,
+      label: 'Microsoft Entra ID',
+      type: 'entra',
+      color: '#e1f5fe',
+      description: 'Cloud identity with SAML integration for Meraki dashboard access'
+    },
+    {
+      id: 'ad-server-meraki',
+      x: 400, y: 450, width: 200, height: 100,
+      label: 'Active Directory',
+      type: 'ad',
+      color: '#e1f5fe',
+      description: 'Active Directory with Meraki administrator groups and organizational units'
+    },
+    {
+      id: 'meraki-admin-roles',
+      x: 650, y: 450, width: 200, height: 100,
+      label: 'Meraki Admin Roles',
+      type: 'roles',
+      color: '#fff3cd',
+      description: 'Meraki administrative roles: full, read-only, enterprise with network-level permissions'
+    },
+    {
+      id: 'cloud-monitoring',
+      x: 900, y: 450, width: 200, height: 100,
+      label: 'Cloud Monitoring',
+      type: 'monitoring',
+      color: '#d4edda',
+      description: 'Comprehensive cloud-based monitoring with real-time alerts and reporting'
+    },
+    {
+      id: 'network-topology',
+      x: 275, y: 600, width: 200, height: 80,
