@@ -13,7 +13,7 @@ import UserManagementModal from '@/components/user-management-modal'
 import ThemeCustomizer from '@/components/theme-customizer'
 import EnhancedArchitectureDiagrams from '@/components/enhanced-architecture-diagrams'
 
-export default function ABMDesigner() {
+export default function Home() {
   const [activeTab, setActiveTab] = useState('architecture')
   const [selectedSiteId, setSelectedSiteId] = useState<string | null>(null)
   const [showUserModal, setShowUserModal] = useState(false)
@@ -41,7 +41,7 @@ export default function ABMDesigner() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="bg-gradient-to-r from-blue-600 to-blue-800 text-white shadow-lg">
         <div className="container mx-auto px-4 py-4">

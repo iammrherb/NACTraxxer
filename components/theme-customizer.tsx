@@ -3,325 +3,555 @@
 import { useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
-import { Palette, Upload, RotateCcw } from 'lucide-react'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Separator } from '@/components/ui/separator'
+import { Palette, Upload, Download, RotateCcw, Eye, Settings, Moon, Sun } from 'lucide-react'
 
 interface ThemeCustomizerProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  isOpen: boolean
+  onClose: () => void
 }
 
-export default function ThemeCustomizer({ open, onOpenChange }: ThemeCustomizerProps) {
-  const [primaryColor, setPrimaryColor] = useState('#3b82f6')
-  const [secondaryColor, setSecondaryColor] = useState('#64748b')
-  const [accentColor, setAccentColor] = useState('#8b5cf6')
-  const [fontSize, setFontSize] = useState([16])
-  const [borderRadius, setBorderRadius] = useState([8])
-  const [darkMode, setDarkMode] = useState(false)
-  const [compactMode, setCompactMode] = useState(false)
+interface ThemeSettings {
+  primaryColor: string
+  secondaryColor: string
+  accentColor: string
+  fontSize: number
+  borderRadius: number
+  darkMode: boolean
+  compactMode: boolean
+  customLogo?: string
+}
+
+export default function ThemeCustomizer({ isOpen, onClose }: ThemeCustomizerProps) {
+  const [activeTab, setActiveTab] = useState('colors')
+  const [themeSettings, setThemeSettings] = useState<ThemeSettings>({
+    primaryColor: '#3b82f6',
+    secondaryColor: '#64748b',
+    accentColor: '#10b981',
+    fontSize: 14,
+    borderRadius: 8,
+    darkMode: false,
+    compactMode: false
+  })
 
   const colorPresets = [
-    { name: 'Default Blue', primary: '#3b82f6', secondary: '#64748b', accent: '#8b5cf6' },
-    { name: 'Portnox Green', primary: '#059669', secondary: '#6b7280', accent: '#0891b2' },
-    { name: 'Corporate Purple', primary: '#7c3aed', secondary: '#64748b', accent: '#dc2626' },
-    { name: 'Professional Gray', primary: '#374151', secondary: '#6b7280', accent: '#f59e0b' }
+    {
+      name: 'Portnox Blue',
+      primary: '#0066cc',
+      secondary: '#64748b',
+      accent: '#10b981'
+    },
+    {
+      name: 'Corporate Gray',
+      primary: '#374151',
+      secondary: '#6b7280',
+      accent: '#3b82f6'
+    },
+    {
+      name: 'Healthcare Green',
+      primary: '#059669',
+      secondary: '#64748b',
+      accent: '#3b82f6'
+    },
+    {
+      name: 'Financial Blue',
+      primary: '#1e40af',
+      secondary: '#64748b',
+      accent: '#f59e0b'
+    },
+    {
+      name: 'Tech Purple',
+      primary: '#7c3aed',
+      secondary: '#64748b',
+      accent: '#06b6d4'
+    },
+    {
+      name: 'Modern Orange',
+      primary: '#ea580c',
+      secondary: '#64748b',
+      accent: '#10b981'
+    }
   ]
 
+  const handleColorChange = (colorType: 'primaryColor' | 'secondaryColor' | 'accentColor', value: string) => {
+    setThemeSettings(prev => ({
+      ...prev,
+      [colorType]: value
+    }))
+  }
+
+  const handleSliderChange = (setting: 'fontSize' | 'borderRadius', value: number[]) => {
+    setThemeSettings(prev => ({
+      ...prev,
+      [setting]: value[0]
+    }))
+  }
+
+  const handleSwitchChange = (setting: 'darkMode' | 'compactMode', value: boolean) => {
+    setThemeSettings(prev => ({
+      ...prev,
+      [setting]: value
+    }))
+  }
+
   const applyPreset = (preset: typeof colorPresets[0]) => {
-    setPrimaryColor(preset.primary)
-    setSecondaryColor(preset.secondary)
-    setAccentColor(preset.accent)
+    setThemeSettings(prev => ({
+      ...prev,
+      primaryColor: preset.primary,
+      secondaryColor: preset.secondary,
+      accentColor: preset.accent
+    }))
   }
 
   const resetToDefaults = () => {
-    setPrimaryColor('#3b82f6')
-    setSecondaryColor('#64748b')
-    setAccentColor('#8b5cf6')
-    setFontSize([16])
-    setBorderRadius([8])
-    setDarkMode(false)
-    setCompactMode(false)
+    setThemeSettings({
+      primaryColor: '#3b82f6',
+      secondaryColor: '#64748b',
+      accentColor: '#10b981',
+      fontSize: 14,
+      borderRadius: 8,
+      darkMode: false,
+      compactMode: false
+    })
   }
 
   const exportTheme = () => {
-    const theme = {
-      primaryColor,
-      secondaryColor,
-      accentColor,
-      fontSize: fontSize[0],
-      borderRadius: borderRadius[0],
-      darkMode,
-      compactMode,
-      exportDate: new Date().toISOString()
-    }
-    
-    const blob = new Blob([JSON.stringify(theme, null, 2)], { type: 'application/json' })
+    const themeData = JSON.stringify(themeSettings, null, 2)
+    const blob = new Blob([themeData], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `portnox-theme-${Date.now()}.json`
-    link.click()
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'custom-theme.json'
+    a.click()
     URL.revokeObjectURL(url)
   }
 
+  const importTheme = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        try {
+          const importedTheme = JSON.parse(e.target?.result as string)
+          setThemeSettings(importedTheme)
+        } catch (error) {
+          alert('Error importing theme file')
+        }
+      }
+      reader.readAsText(file)
+    }
+  }
+
+  const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        setThemeSettings(prev => ({
+          ...prev,
+          customLogo: e.target?.result as string
+        }))
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
-            <Palette className="h-6 w-6 text-blue-600" />
+            <Palette className="h-5 w-5" />
             <span>Theme Customizer</span>
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Color Customization */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Colors</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="primary-color">Primary Color</Label>
-                    <div className="flex items-center space-x-2 mt-1">
-                      <Input
-                        id="primary-color"
-                        type="color"
-                        value={primaryColor}
-                        onChange={(e) => setPrimaryColor(e.target.value)}
-                        className="w-12 h-10 p-1 border rounded"
-                      />
-                      <Input
-                        value={primaryColor}
-                        onChange={(e) => setPrimaryColor(e.target.value)}
-                        className="flex-1"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="secondary-color">Secondary Color</Label>
-                    <div className="flex items-center space-x-2 mt-1">
-                      <Input
-                        id="secondary-color"
-                        type="color"
-                        value={secondaryColor}
-                        onChange={(e) => setSecondaryColor(e.target.value)}
-                        className="w-12 h-10 p-1 border rounded"
-                      />
-                      <Input
-                        value={secondaryColor}
-                        onChange={(e) => setSecondaryColor(e.target.value)}
-                        className="flex-1"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="accent-color">Accent Color</Label>
-                    <div className="flex items-center space-x-2 mt-1">
-                      <Input
-                        id="accent-color"
-                        type="color"
-                        value={accentColor}
-                        onChange={(e) => setAccentColor(e.target.value)}
-                        className="w-12 h-10 p-1 border rounded"
-                      />
-                      <Input
-                        value={accentColor}
-                        onChange={(e) => setAccentColor(e.target.value)}
-                        className="flex-1"
-                      />
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Color Presets */}
-                <div>
-                  <Label className="text-sm font-medium">Color Presets</Label>
-                  <div className="grid grid-cols-2 gap-2 mt-2">
-                    {colorPresets.map((preset, index) => (
-                      <Button
-                        key={index}
-                        variant="outline"
-                        size="sm"
-                        onClick={() => applyPreset(preset)}
-                        className="justify-start"
-                      >
-                        <div className="flex items-center space-x-2">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Controls */}
+          <div className="lg:col-span-2">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="colors">Colors</TabsTrigger>
+                <TabsTrigger value="typography">Typography</TabsTrigger>
+                <TabsTrigger value="layout">Layout</TabsTrigger>
+                <TabsTrigger value="branding">Branding</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="colors" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Color Presets</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 gap-3">
+                      {colorPresets.map((preset, index) => (
+                        <Button
+                          key={index}
+                          variant="outline"
+                          className="h-auto p-3 flex items-center justify-between"
+                          onClick={() => applyPreset(preset)}
+                        >
+                          <span className="font-medium">{preset.name}</span>
                           <div className="flex space-x-1">
                             <div 
-                              className="w-3 h-3 rounded-full" 
+                              className="w-4 h-4 rounded-full border border-gray-300"
                               style={{ backgroundColor: preset.primary }}
                             />
                             <div 
-                              className="w-3 h-3 rounded-full" 
+                              className="w-4 h-4 rounded-full border border-gray-300"
                               style={{ backgroundColor: preset.secondary }}
                             />
                             <div 
-                              className="w-3 h-3 rounded-full" 
+                              className="w-4 h-4 rounded-full border border-gray-300"
                               style={{ backgroundColor: preset.accent }}
                             />
                           </div>
-                          <span className="text-xs">{preset.name}</span>
-                        </div>
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                        </Button>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
 
-          {/* Typography & Layout */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Typography & Layout</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <div>
-                  <Label className="text-sm font-medium">Font Size</Label>
-                  <div className="flex items-center space-x-4 mt-2">
-                    <span className="text-sm text-gray-600">12px</span>
-                    <Slider
-                      value={fontSize}
-                      onValueChange={setFontSize}
-                      max={20}
-                      min={12}
-                      step={1}
-                      className="flex-1"
-                    />
-                    <span className="text-sm text-gray-600">20px</span>
-                    <span className="text-sm font-medium min-w-[40px]">{fontSize[0]}px</span>
-                  </div>
-                </div>
-                
-                <div>
-                  <Label className="text-sm font-medium">Border Radius</Label>
-                  <div className="flex items-center space-x-4 mt-2">
-                    <span className="text-sm text-gray-600">0px</span>
-                    <Slider
-                      value={borderRadius}
-                      onValueChange={setBorderRadius}
-                      max={16}
-                      min={0}
-                      step={2}
-                      className="flex-1"
-                    />
-                    <span className="text-sm text-gray-600">16px</span>
-                    <span className="text-sm font-medium min-w-[40px]">{borderRadius[0]}px</span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Custom Colors</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Primary Color</Label>
+                      <div className="flex items-center space-x-3">
+                        <Input
+                          type="color"
+                          value={themeSettings.primaryColor}
+                          onChange={(e) => handleColorChange('primaryColor', e.target.value)}
+                          className="w-16 h-10 p-1 border rounded"
+                        />
+                        <Input
+                          value={themeSettings.primaryColor}
+                          onChange={(e) => handleColorChange('primaryColor', e.target.value)}
+                          placeholder="#3b82f6"
+                          className="flex-1"
+                        />
+                      </div>
+                    </div>
 
-          {/* Display Options */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Display Options</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="dark-mode" className="text-sm font-medium">Dark Mode</Label>
-                    <p className="text-xs text-gray-600">Enable dark theme for better visibility in low light</p>
-                  </div>
-                  <Switch
-                    id="dark-mode"
-                    checked={darkMode}
-                    onCheckedChange={setDarkMode}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="compact-mode" className="text-sm font-medium">Compact Mode</Label>
-                    <p className="text-xs text-gray-600">Reduce spacing and padding for more content</p>
-                  </div>
-                  <Switch
-                    id="compact-mode"
-                    checked={compactMode}
-                    onCheckedChange={setCompactMode}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                    <div className="space-y-2">
+                      <Label>Secondary Color</Label>
+                      <div className="flex items-center space-x-3">
+                        <Input
+                          type="color"
+                          value={themeSettings.secondaryColor}
+                          onChange={(e) => handleColorChange('secondaryColor', e.target.value)}
+                          className="w-16 h-10 p-1 border rounded"
+                        />
+                        <Input
+                          value={themeSettings.secondaryColor}
+                          onChange={(e) => handleColorChange('secondaryColor', e.target.value)}
+                          placeholder="#64748b"
+                          className="flex-1"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Accent Color</Label>
+                      <div className="flex items-center space-x-3">
+                        <Input
+                          type="color"
+                          value={themeSettings.accentColor}
+                          onChange={(e) => handleColorChange('accentColor', e.target.value)}
+                          className="w-16 h-10 p-1 border rounded"
+                        />
+                        <Input
+                          value={themeSettings.accentColor}
+                          onChange={(e) => handleColorChange('accentColor', e.target.value)}
+                          placeholder="#10b981"
+                          className="flex-1"
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="typography" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Typography Settings</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="space-y-3">
+                      <Label>Font Size: {themeSettings.fontSize}px</Label>
+                      <Slider
+                        value={[themeSettings.fontSize]}
+                        onValueChange={(value) => handleSliderChange('fontSize', value)}
+                        min={12}
+                        max={18}
+                        step={1}
+                        className="w-full"
+                      />
+                      <div className="flex justify-between text-sm text-muted-foreground">
+                        <span>Small (12px)</span>
+                        <span>Large (18px)</span>
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    <div className="space-y-3">
+                      <Label>Border Radius: {themeSettings.borderRadius}px</Label>
+                      <Slider
+                        value={[themeSettings.borderRadius]}
+                        onValueChange={(value) => handleSliderChange('borderRadius', value)}
+                        min={0}
+                        max={16}
+                        step={2}
+                        className="w-full"
+                      />
+                      <div className="flex justify-between text-sm text-muted-foreground">
+                        <span>Sharp (0px)</span>
+                        <span>Rounded (16px)</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="layout" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Layout Options</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <Label>Dark Mode</Label>
+                        <p className="text-sm text-muted-foreground">Enable dark theme</p>
+                      </div>
+                      <Switch
+                        checked={themeSettings.darkMode}
+                        onCheckedChange={(value) => handleSwitchChange('darkMode', value)}
+                      />
+                    </div>
+
+                    <Separator />
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <Label>Compact Mode</Label>
+                        <p className="text-sm text-muted-foreground">Reduce spacing and padding</p>
+                      </div>
+                      <Switch
+                        checked={themeSettings.compactMode}
+                        onCheckedChange={(value) => handleSwitchChange('compactMode', value)}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="branding" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Custom Branding</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Company Logo</Label>
+                      <div className="flex items-center space-x-4">
+                        <Button
+                          variant="outline"
+                          onClick={() => document.getElementById('logo-upload')?.click()}
+                        >
+                          <Upload className="h-4 w-4 mr-2" />
+                          Upload Logo
+                        </Button>
+                        <input
+                          id="logo-upload"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleLogoUpload}
+                          className="hidden"
+                        />
+                        {themeSettings.customLogo && (
+                          <div className="flex items-center space-x-2">
+                            <img
+                              src={themeSettings.customLogo || "/placeholder.svg"}
+                              alt="Custom logo"
+                              className="h-8 w-8 object-contain"
+                            />
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setThemeSettings(prev => ({ ...prev, customLogo: undefined }))}
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Upload a custom logo to replace the default branding. Recommended size: 200x50px
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </div>
 
           {/* Preview */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Preview</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div 
-                className="p-4 border rounded-lg"
-                style={{
-                  backgroundColor: darkMode ? '#1f2937' : '#ffffff',
-                  color: darkMode ? '#f9fafb' : '#111827',
-                  fontSize: `${fontSize[0]}px`,
-                  borderRadius: `${borderRadius[0]}px`
-                }}
-              >
-                <div className="space-y-3">
-                  <h3 
-                    className="font-semibold"
-                    style={{ color: primaryColor }}
-                  >
-                    Sample Architecture Component
-                  </h3>
-                  <p className="text-sm" style={{ color: secondaryColor }}>
-                    This is how your customized theme will look in the application.
-                  </p>
-                  <div className="flex space-x-2">
-                    <div 
-                      className="px-3 py-1 rounded text-white text-sm"
-                      style={{ 
-                        backgroundColor: primaryColor,
-                        borderRadius: `${borderRadius[0]}px`
+          <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Eye className="h-4 w-4" />
+                  <span>Live Preview</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div 
+                  className="p-4 border rounded-lg space-y-4"
+                  style={{
+                    fontSize: `${themeSettings.fontSize}px`,
+                    borderRadius: `${themeSettings.borderRadius}px`,
+                    backgroundColor: themeSettings.darkMode ? '#1f2937' : '#ffffff',
+                    color: themeSettings.darkMode ? '#f9fafb' : '#111827'
+                  }}
+                >
+                  {/* Header Preview */}
+                  <div className="flex items-center justify-between pb-2 border-b">
+                    <div className="flex items-center space-x-2">
+                      {themeSettings.customLogo ? (
+                        <img
+                          src={themeSettings.customLogo || "/placeholder.svg"}
+                          alt="Logo"
+                          className="h-6 w-auto"
+                        />
+                      ) : (
+                        <div 
+                          className="w-6 h-6 rounded"
+                          style={{ backgroundColor: themeSettings.primaryColor }}
+                        />
+                      )}
+                      <span className="font-semibold">NAC Designer</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      {themeSettings.darkMode ? (
+                        <Sun className="h-4 w-4" />
+                      ) : (
+                        <Moon className="h-4 w-4" />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Button Preview */}
+                  <div className="space-y-2">
+                    <button
+                      className="px-3 py-2 text-white font-medium rounded transition-colors"
+                      style={{
+                        backgroundColor: themeSettings.primaryColor,
+                        borderRadius: `${themeSettings.borderRadius}px`
                       }}
                     >
                       Primary Button
-                    </div>
-                    <div 
-                      className="px-3 py-1 rounded text-white text-sm"
-                      style={{ 
-                        backgroundColor: accentColor,
-                        borderRadius: `${borderRadius[0]}px`
+                    </button>
+                    <button
+                      className="px-3 py-2 border font-medium rounded transition-colors"
+                      style={{
+                        borderColor: themeSettings.secondaryColor,
+                        color: themeSettings.secondaryColor,
+                        borderRadius: `${themeSettings.borderRadius}px`
                       }}
                     >
-                      Accent Button
+                      Secondary Button
+                    </button>
+                  </div>
+
+                  {/* Card Preview */}
+                  <div 
+                    className="p-3 border rounded"
+                    style={{
+                      borderRadius: `${themeSettings.borderRadius}px`,
+                      borderColor: themeSettings.secondaryColor + '40'
+                    }}
+                  >
+                    <h4 className="font-semibold mb-2">Sample Card</h4>
+                    <p className="text-sm opacity-75">
+                      This is how your content will look with the current theme settings.
+                    </p>
+                    <div 
+                      className="mt-2 px-2 py-1 rounded text-xs inline-block"
+                      style={{
+                        backgroundColor: themeSettings.accentColor + '20',
+                        color: themeSettings.accentColor,
+                        borderRadius: `${themeSettings.borderRadius / 2}px`
+                      }}
+                    >
+                      Accent Badge
                     </div>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              </CardContent>
+            </Card>
 
-        <div className="flex justify-between pt-4 border-t">
-          <div className="flex space-x-2">
-            <Button variant="outline" onClick={resetToDefaults}>
-              <RotateCcw className="h-4 w-4 mr-2" />
-              Reset
-            </Button>
-            <Button variant="outline" onClick={exportTheme}>
-              <Upload className="h-4 w-4 mr-2" />
-              Export Theme
-            </Button>
+            {/* Actions */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Actions</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={exportTheme}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Export Theme
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => document.getElementById('theme-import')?.click()}
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Import Theme
+                </Button>
+                <input
+                  id="theme-import"
+                  type="file"
+                  accept=".json"
+                  onChange={importTheme}
+                  className="hidden"
+                />
+                
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={resetToDefaults}
+                >
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                  Reset to Defaults
+                </Button>
+                
+                <Separator />
+                
+                <Button
+                  className="w-full"
+                  style={{ backgroundColor: themeSettings.primaryColor }}
+                >
+                  Apply Theme
+                </Button>
+              </CardContent>
+            </Card>
           </div>
-          <Button onClick={() => onOpenChange(false)}>
-            Apply Changes
-          </Button>
         </div>
       </DialogContent>
     </Dialog>
