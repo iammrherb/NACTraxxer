@@ -98,6 +98,22 @@ export default function InteractiveDiagram({
         return getDiagramData('aruba-tacacs')
       case 'juniper-tacacs':
         return getDiagramData('juniper-tacacs')
+      case 'mist-tacacs':
+        return getDiagramData('mist-tacacs')
+      case 'meraki-tacacs':
+        return getDiagramData('meraki-tacacs')
+      case 'cambium-tacacs':
+        return getDiagramData('cambium-tacacs')
+      case 'hpe-tacacs':
+        return getDiagramData('hpe-tacacs')
+      case 'extreme-tacacs':
+        return getDiagramData('extreme-tacacs')
+      case 'ruckus-tacacs':
+        return getDiagramData('ruckus-tacacs')
+      case 'ubiquiti-tacacs':
+        return getDiagramData('ubiquiti-tacacs')
+      case 'mikrotik-tacacs':
+        return getDiagramData('mikrotik-tacacs')
     }
 
     setNodes(newNodes)
@@ -2082,7 +2098,7 @@ const generateRuckusTACACSNodes = (): DiagramNode[] => {
       label: 'Portnox TACACS+ Server',
       type: 'tacacs',
       color: '#e3f2fd',
-      description: 'Enterprise TACACS+ server with Ruckus/CommScope device support and SmartZone integration'
+      description: 'Centralized TACACS+ server with Ruckus/CommScope device support and SmartZone integration'
     },
     {
       id: 'ruckus-icx-switch',
@@ -2330,7 +2346,7 @@ const generateMikrotikTACACSNodes = (): DiagramNode[] => {
       label: 'Portnox TACACS+ Server',
       type: 'tacacs',
       color: '#e3f2fd',
-      description: 'Enterprise TACACS+ server with MikroTik RouterOS support and Winbox integration'
+      description: 'Centralized TACACS+ server with MikroTik RouterOS support and Winbox integration'
     },
     {
       id: 'mikrotik-router',
@@ -3005,20 +3021,4 @@ const generateMerakiTACACSNodes = (): DiagramNode[] => {
     },
     {
       id: 'meraki-admin-roles',
-      x: 650, y: 450, width: 200, height: 100,
-      label: 'Meraki Admin Roles',
-      type: 'roles',
-      color: '#fff3cd',
-      description: 'Meraki administrative roles: full, read-only, enterprise with network-level permissions'
-    },
-    {
-      id: 'cloud-monitoring',
-      x: 900, y: 450, width: 200, height: 100,
-      label: 'Cloud Monitoring',
-      type: 'monitoring',
-      color: '#d4edda',
-      description: 'Comprehensive cloud-based monitoring with real-time alerts and reporting'
-    },
-    {
-      id: 'network-topology',
-      x: 275, y: 600, width: 200, height: 80,
+      x: 650, y: 450, width: 200, height:
