@@ -12,6 +12,7 @@ interface InteractiveDiagramProps {
   networkVendor: string
   connectivityType: string
   animationSpeed: number
+  showDataFlow?: boolean
 }
 
 interface DiagramNode {
@@ -38,15 +39,16 @@ interface DiagramConnection {
   animated: boolean
 }
 
-export default function InteractiveDiagram({ 
-  view, 
-  cloudProvider, 
-  networkVendor, 
-  connectivityType, 
-  animationSpeed 
+export default function InteractiveDiagram({
+  view,
+  cloudProvider,
+  networkVendor,
+  connectivityType,
+  animationSpeed,
+  showDataFlow = false
 }: InteractiveDiagramProps) {
   const svgRef = useRef<SVGSVGElement>(null)
-  const [isAnimating, setIsAnimating] = useState(true)
+  const [isAnimating, setIsAnimating] = useState(false)
   const [zoom, setZoom] = useState(1)
   const [selectedNode, setSelectedNode] = useState<string | null>(null)
   const [hoveredNode, setHoveredNode] = useState<string | null>(null)
@@ -966,6 +968,182 @@ export default function InteractiveDiagram({
 
   const { nodes, connections } = getDiagramData()
 
+  // Add these methods after the existing helper functions
+
+  const exportSVG = () => {
+    if (svgRef.current) {
+      // Clone the SVG to avoid modifying the original
+      const svgClone = svgRef.current.cloneNode(true) as SVGSVGElement
+      
+      // Set proper dimensions and namespace
+      svgClone.setAttribute('width', '1400')
+      svgClone.setAttribute('height', '1000')
+      svgClone.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
+      
+      // Add white background
+      const background = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
+      background.setAttribute('x', '0')
+      background.setAttribute('y', '0')
+      background.setAttribute('width', '1400')
+      background.setAttribute('height', '1000')
+      background.setAttribute('fill', 'white')
+      svgClone.insertBefore(background, svgClone.firstChild)
+      
+      // Add header with title and branding
+      const headerGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g')
+      headerGroup.setAttribute('id', 'export-header')
+      
+      // Header background
+      const headerBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
+      headerBg.setAttribute('x', '0')
+      headerBg.setAttribute('y', '0')
+      headerBg.setAttribute('width', '1400')
+      headerBg.setAttribute('height', '80')
+      headerBg.setAttribute('fill', '#00c8d7')
+      headerGroup.appendChild(headerBg)
+      
+      // Title
+      const titleText = document.createElementNS('http://www.w3.org/2000/svg', 'text')
+      titleText.setAttribute('x', '700')
+      titleText.setAttribute('y', '30')
+      titleText.setAttribute('text-anchor', 'middle')
+      titleText.setAttribute('fill', 'white')
+      titleText.setAttribute('font-size', '18')
+      titleText.setAttribute('font-weight', 'bold')
+      titleText.textContent = `Portnox NAC Architecture - ${view.charAt(0).toUpperCase() + view.slice(1)}`
+      headerGroup.appendChild(titleText)
+      
+      // Date
+      const dateText = document.createElementNS('http://www.w3.org/2000/svg', 'text')
+      dateText.setAttribute('x', '700')
+      dateText.setAttribute('y', '50')
+      dateText.setAttribute('text-anchor', 'middle')
+      dateText.setAttribute('fill', 'white')
+      dateText.setAttribute('font-size', '12')
+      dateText.textContent = `Generated on ${new Date().toLocaleDateString()}`
+      headerGroup.appendChild(dateText)
+      
+      svgClone.insertBefore(headerGroup, background.nextSibling)
+      
+      // Adjust existing content position
+      const existingContent = Array.from(svgClone.children).find(child => 
+        child.tagName !== 'rect' && child.getAttribute('id') !== 'export-header' && child.tagName !== 'defs' && child.tagName !== 'style'
+      )
+      if (existingContent) {
+        existingContent.setAttribute('transform', 'translate(0, 80) scale(0.9)')
+      }
+      
+      // Export the SVG
+      const svgData = new XMLSerializer().serializeToString(svgClone)
+      const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' })
+      const svgUrl = URL.createObjectURL(svgBlob)
+      
+      const downloadLink = document.createElement('a')
+      downloadLink.href = svgUrl
+      downloadLink.download = `portnox-architecture-${view}-${Date.now()}.svg`
+      document.body.appendChild(downloadLink)
+      downloadLink.click()
+      document.body.removeChild(downloadLink)
+      URL.revokeObjectURL(svgUrl)
+    }
+  }
+
+  const exportPNG = () => {
+    if (svgRef.current) {
+      // Create enhanced SVG for PNG export
+      const svgClone = svgRef.current.cloneNode(true) as SVGSVGElement
+      svgClone.setAttribute('width', '1400')
+      svgClone.setAttribute('height', '1000')
+      svgClone.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
+      
+      // Add white background
+      const background = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
+      background.setAttribute('x', '0')
+      background.setAttribute('y', '0')
+      background.setAttribute('width', '1400')
+      background.setAttribute('height', '1000')
+      background.setAttribute('fill', 'white')
+      svgClone.insertBefore(background, svgClone.firstChild)
+      
+      // Add header
+      const headerGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g')
+      const headerBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
+      headerBg.setAttribute('x', '0')
+      headerBg.setAttribute('y', '0')
+      headerBg.setAttribute('width', '1400')
+      headerBg.setAttribute('height', '80')
+      headerBg.setAttribute('fill', '#00c8d7')
+      headerGroup.appendChild(headerBg)
+      
+      const titleText = document.createElementNS('http://www.w3.org/2000/svg', 'text')
+      titleText.setAttribute('x', '700')
+      titleText.setAttribute('y', '30')
+      titleText.setAttribute('text-anchor', 'middle')
+      titleText.setAttribute('fill', 'white')
+      titleText.setAttribute('font-size', '18')
+      titleText.setAttribute('font-weight', 'bold')
+      titleText.textContent = `Portnox NAC Architecture - ${view.charAt(0).toUpperCase() + view.slice(1)}`
+      headerGroup.appendChild(titleText)
+      
+      const dateText = document.createElementNS('http://www.w3.org/2000/svg', 'text')
+      dateText.setAttribute('x', '700')
+      dateText.setAttribute('y', '50')
+      dateText.setAttribute('text-anchor', 'middle')
+      dateText.setAttribute('fill', 'white')
+      dateText.setAttribute('font-size', '12')
+      dateText.textContent = `Generated on ${new Date().toLocaleDateString()}`
+      headerGroup.appendChild(dateText)
+      
+      svgClone.insertBefore(headerGroup, background.nextSibling)
+      
+      // Adjust content position
+      const existingContent = Array.from(svgClone.children).find(child => 
+        child.tagName !== 'rect' && child.getAttribute('id') !== 'export-header' && child.tagName !== 'defs' && child.tagName !== 'style'
+      )
+      if (existingContent) {
+        existingContent.setAttribute('transform', 'translate(0, 80) scale(0.9)')
+      }
+      
+      // Convert to PNG
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+      const img = new Image()
+      
+      canvas.width = 1400
+      canvas.height = 1000
+      
+      const svgData = new XMLSerializer().serializeToString(svgClone)
+      const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' })
+      const url = URL.createObjectURL(svgBlob)
+      
+      img.onload = () => {
+        ctx!.drawImage(img, 0, 0, 1400, 1000)
+        
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const pngUrl = URL.createObjectURL(blob)
+            const downloadLink = document.createElement('a')
+            downloadLink.href = pngUrl
+            downloadLink.download = `portnox-architecture-${view}-${Date.now()}.png`
+            document.body.appendChild(downloadLink)
+            downloadLink.click()
+            document.body.removeChild(downloadLink)
+            URL.revokeObjectURL(pngUrl)
+          }
+        }, 'image/png')
+        
+        URL.revokeObjectURL(url)
+      }
+      
+      img.onerror = () => {
+        console.error('Failed to load SVG for PNG conversion')
+        alert('Failed to export PNG. Please try again.')
+      }
+      
+      img.src = url
+    }
+  }
+
   // Animation control
   useEffect(() => {
     if (!svgRef.current) return
@@ -1076,6 +1254,24 @@ export default function InteractiveDiagram({
           className="bg-white/90 backdrop-blur-sm"
         >
           <ZoomOut className="w-4 h-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={exportPNG}
+          className="bg-white/90 backdrop-blur-sm"
+          title="Export as PNG"
+        >
+          PNG
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={exportSVG}
+          className="bg-white/90 backdrop-blur-sm"
+          title="Export as SVG"
+        >
+          SVG
         </Button>
       </div>
 
