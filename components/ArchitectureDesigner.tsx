@@ -10,9 +10,15 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import InteractiveDiagram from './InteractiveDiagram'
 import ArchitectureLegend from './ArchitectureLegend'
-import { Cloud, Network, Shield, Settings, Zap, Globe, Lock, Users, Database, Server, Download } from 'lucide-react'
+import PolicyEditor from './PolicyEditor'
+import OnboardingScenarios from './OnboardingScenarios'
+import { Cloud, Network, Shield, Settings, Zap, Globe, Lock, Users, Database, Server, Download, FileText, Workflow } from 'lucide-react'
 
-export default function ArchitectureDesigner() {
+interface ArchitectureDesignerProps {
+  customerLogo: string
+}
+
+export default function ArchitectureDesigner({ customerLogo }: ArchitectureDesignerProps) {
   const [selectedView, setSelectedView] = useState('complete')
   const [cloudProvider, setCloudProvider] = useState('aws')
   const [networkVendor, setNetworkVendor] = useState('cisco')
@@ -116,10 +122,13 @@ export default function ArchitectureDesigner() {
 
   const currentView = architectureViews.find(view => view.id === selectedView)
 
-  // Export Functions
+  // Enhanced Export Functions with proper logo embedding
   const exportDiagram = async (format: 'svg' | 'png' | 'pdf') => {
     const diagramElement = document.querySelector('.architecture-diagram svg')
-    if (!diagramElement) return
+    if (!diagramElement) {
+      console.error('Diagram element not found')
+      return
+    }
 
     try {
       if (format === 'svg') {
@@ -136,7 +145,7 @@ export default function ArchitectureDesigner() {
 
   const exportAsSVG = async (svgElement: SVGElement) => {
     const svgData = new XMLSerializer().serializeToString(svgElement)
-    const svgWithHeader = addExportHeader(svgData, 'svg')
+    const svgWithHeader = await addSVGHeader(svgData)
     const blob = new Blob([svgWithHeader], { type: 'image/svg+xml' })
     downloadFile(blob, `portnox-architecture-${selectedView}-${Date.now()}.svg`)
   }
@@ -144,31 +153,39 @@ export default function ArchitectureDesigner() {
   const exportAsPNG = async (svgElement: SVGElement) => {
     const canvas = document.createElement('canvas')
     const ctx = canvas.getContext('2d')
-    const img = new Image()
-    
-    canvas.width = 1400
-    canvas.height = 1000
+    if (!ctx) return
+
+    canvas.width = 1600
+    canvas.height = 1200
     
     // Add white background
-    ctx!.fillStyle = 'white'
-    ctx!.fillRect(0, 0, canvas.width, canvas.height)
+    ctx.fillStyle = 'white'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
     
     // Add header with logos
-    await addPNGHeader(ctx!, canvas.width)
+    await addPNGHeader(ctx, canvas.width)
     
     const svgData = new XMLSerializer().serializeToString(svgElement)
     const svgBlob = new Blob([svgData], { type: 'image/svg+xml' })
     const url = URL.createObjectURL(svgBlob)
     
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    
     img.onload = () => {
-      ctx!.drawImage(img, 50, 150, canvas.width - 100, canvas.height - 200)
+      ctx.drawImage(img, 50, 180, canvas.width - 100, canvas.height - 250)
       
       canvas.toBlob((blob) => {
         if (blob) {
           downloadFile(blob, `portnox-architecture-${selectedView}-${Date.now()}.png`)
         }
-      }, 'image/png')
+      }, 'image/png', 1.0)
       
+      URL.revokeObjectURL(url)
+    }
+    
+    img.onerror = (error) => {
+      console.error('Failed to load SVG for PNG export:', error)
       URL.revokeObjectURL(url)
     }
     
@@ -176,69 +193,128 @@ export default function ArchitectureDesigner() {
   }
 
   const exportAsPDF = async (svgElement: SVGElement) => {
-    // This would require a PDF library like jsPDF
-    // For now, we'll export as PNG and let user convert if needed
+    // For now, export as high-quality PNG
+    // In a real implementation, you would use a library like jsPDF
     await exportAsPNG(svgElement)
   }
 
-  const addExportHeader = (svgData: string, format: string) => {
-    const headerHeight = 100
+  const addSVGHeader = async (svgData: string): Promise<string> => {
+    const headerHeight = 120
+    
+    // Load logos as base64
+    const portnoxLogoBase64 = await imageToBase64('https://www.portnox.com/wp-content/uploads/2021/03/Portnotx_Logo_Color-768x193.png')
+    const customerLogoBase64 = await imageToBase64(customerLogo)
+    
     const header = `
       <g id="export-header">
-        <rect x="0" y="0" width="1200" height="${headerHeight}" fill="#00c8d7"/>
-        <image x="20" y="20" width="120" height="30" href="https://www.portnox.com/wp-content/uploads/2021/03/Portnotx_Logo_Color-768x193.png"/>
-        <image x="1050" y="15" width="130" height="40" href="https://companieslogo.com/img/orig/ABM_BIG-47f1fb05.png?t=1720244490&download=true"/>
-        <text x="600" y="35" textAnchor="middle" fill="white" fontSize="18" fontWeight="bold">
+        <rect x="0" y="0" width="100%" height="${headerHeight}" fill="url(#headerGradient)"/>
+        <defs>
+          <linearGradient id="headerGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" style="stop-color:#00c8d7;stop-opacity:1" />
+            <stop offset="50%" style="stop-color:#0099cc;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#007acc;stop-opacity:1" />
+          </linearGradient>
+        </defs>
+        <image x="30" y="25" width="150" height="38" href="${portnoxLogoBase64}"/>
+        <image x="1350" y="20" width="180" height="48" href="${customerLogoBase64}"/>
+        <text x="50%" y="45" textAnchor="middle" fill="white" fontSize="24" fontWeight="bold" fontFamily="Arial, sans-serif">
           Portnox NAC Architecture - ${currentView?.label}
         </text>
-        <text x="600" y="55" textAnchor="middle" fill="white" fontSize="12">
-          Generated on ${new Date().toLocaleDateString()}
+        <text x="50%" y="70" textAnchor="middle" fill="white" fontSize="14" fontFamily="Arial, sans-serif">
+          Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}
+        </text>
+        <text x="50%" y="90" textAnchor="middle" fill="white" fontSize="12" fontFamily="Arial, sans-serif">
+          Cloud Provider: ${cloudProviders.find(p => p.id === cloudProvider)?.label} | Network Vendor: ${networkVendors.find(v => v.id === networkVendor)?.label}
         </text>
       </g>
     `
     
-    return svgData.replace('<svg', `<svg`).replace('>', `>${header}`)
+    // Insert header after opening svg tag and adjust viewBox
+    const svgWithHeader = svgData.replace(
+      /<svg([^>]*)>/,
+      `<svg$1 viewBox="0 0 1600 ${1200 + headerHeight}">${header}<g transform="translate(0, ${headerHeight})">`
+    ).replace('</svg>', '</g></svg>')
+    
+    return svgWithHeader
   }
 
-  const addPNGHeader = async (ctx: CanvasRenderingContext2D, width: number) => {
-    // Header background
-    ctx.fillStyle = '#00c8d7'
-    ctx.fillRect(0, 0, width, 100)
+  const addPNGHeader = async (ctx: CanvasRenderingContext2D, width: number): Promise<void> => {
+    const headerHeight = 150
     
-    // Load and draw Portnox logo
-    const portnoxLogo = new Image()
-    portnoxLogo.crossOrigin = 'anonymous'
-    portnoxLogo.src = 'https://www.portnox.com/wp-content/uploads/2021/03/Portnotx_Logo_Color-768x193.png'
+    // Create gradient background
+    const gradient = ctx.createLinearGradient(0, 0, width, 0)
+    gradient.addColorStop(0, '#00c8d7')
+    gradient.addColorStop(0.5, '#0099cc')
+    gradient.addColorStop(1, '#007acc')
     
-    // Load and draw ABM logo
-    const abmLogo = new Image()
-    abmLogo.crossOrigin = 'anonymous'
-    abmLogo.src = 'https://companieslogo.com/img/orig/ABM_BIG-47f1fb05.png?t=1720244490&download=true'
+    ctx.fillStyle = gradient
+    ctx.fillRect(0, 0, width, headerHeight)
     
-    return new Promise((resolve) => {
-      let loadedCount = 0
-      const onLoad = () => {
-        loadedCount++
-        if (loadedCount === 2) {
-          ctx.drawImage(portnoxLogo, 20, 20, 120, 30)
-          ctx.drawImage(abmLogo, width - 150, 15, 130, 40)
-          
-          // Add text
-          ctx.fillStyle = 'white'
-          ctx.font = 'bold 18px Arial'
-          ctx.textAlign = 'center'
-          ctx.fillText(`Portnox NAC Architecture - ${currentView?.label}`, width / 2, 35)
-          
-          ctx.font = '12px Arial'
-          ctx.fillText(`Generated on ${new Date().toLocaleDateString()}`, width / 2, 55)
-          
-          resolve(undefined)
-        }
-      }
+    try {
+      // Load and draw Portnox logo
+      const portnoxLogo = await loadImage('https://www.portnox.com/wp-content/uploads/2021/03/Portnotx_Logo_Color-768x193.png')
+      ctx.drawImage(portnoxLogo, 30, 25, 150, 38)
       
-      portnoxLogo.onload = onLoad
-      abmLogo.onload = onLoad
+      // Load and draw customer logo
+      const customerLogoImg = await loadImage(customerLogo)
+      ctx.drawImage(customerLogoImg, width - 210, 20, 180, 48)
+      
+      // Add text
+      ctx.fillStyle = 'white'
+      ctx.font = 'bold 28px Arial, sans-serif'
+      ctx.textAlign = 'center'
+      ctx.fillText(`Portnox NAC Architecture - ${currentView?.label}`, width / 2, 55)
+      
+      ctx.font = '16px Arial, sans-serif'
+      ctx.fillText(`Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`, width / 2, 85)
+      
+      ctx.font = '14px Arial, sans-serif'
+      ctx.fillText(
+        `Cloud Provider: ${cloudProviders.find(p => p.id === cloudProvider)?.label} | Network Vendor: ${networkVendors.find(v => v.id === networkVendor)?.label}`,
+        width / 2, 110
+      )
+      
+      // Add border
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)'
+      ctx.lineWidth = 2
+      ctx.strokeRect(0, 0, width, headerHeight)
+      
+    } catch (error) {
+      console.error('Failed to load logos for PNG header:', error)
+      // Fallback text-only header
+      ctx.fillStyle = 'white'
+      ctx.font = 'bold 28px Arial, sans-serif'
+      ctx.textAlign = 'center'
+      ctx.fillText(`Portnox NAC Architecture - ${currentView?.label}`, width / 2, 75)
+    }
+  }
+
+  const loadImage = (src: string): Promise<HTMLImageElement> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image()
+      img.crossOrigin = 'anonymous'
+      img.onload = () => resolve(img)
+      img.onerror = reject
+      img.src = src
     })
+  }
+
+  const imageToBase64 = async (src: string): Promise<string> => {
+    try {
+      const img = await loadImage(src)
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+      if (!ctx) throw new Error('Canvas context not available')
+      
+      canvas.width = img.width
+      canvas.height = img.height
+      ctx.drawImage(img, 0, 0)
+      
+      return canvas.toDataURL('image/png')
+    } catch (error) {
+      console.error('Failed to convert image to base64:', error)
+      return ''
+    }
   }
 
   const downloadFile = (blob: Blob, filename: string) => {
@@ -246,27 +322,36 @@ export default function ArchitectureDesigner() {
     const link = document.createElement('a')
     link.href = url
     link.download = filename
+    link.style.display = 'none'
+    document.body.appendChild(link)
     link.click()
+    document.body.removeChild(link)
     URL.revokeObjectURL(url)
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Globe className="h-6 w-6 text-blue-600" />
-            <span>Zero Trust NAC Architecture Designer</span>
+    <div className="space-y-8">
+      {/* Enhanced Header */}
+      <Card className="shadow-xl border-0 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center space-x-3 text-2xl">
+            <div className="p-2 bg-[#00c8d7] rounded-lg">
+              <Globe className="h-8 w-8 text-white" />
+            </div>
+            <span className="bg-gradient-to-r from-[#00c8d7] to-[#007acc] bg-clip-text text-transparent">
+              Zero Trust NAC Architecture Designer
+            </span>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Architecture View Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="view-select">Architecture View</Label>
+            <div className="space-y-3">
+              <Label htmlFor="view-select" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                Architecture View
+              </Label>
               <Select value={selectedView} onValueChange={setSelectedView}>
-                <SelectTrigger id="view-select">
+                <SelectTrigger id="view-select" className="border-2 border-gray-200 focus:border-[#00c8d7]">
                   <SelectValue placeholder="Select view" />
                 </SelectTrigger>
                 <SelectContent>
@@ -283,10 +368,12 @@ export default function ArchitectureDesigner() {
             </div>
 
             {/* Cloud Provider Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="cloud-select">Cloud Provider</Label>
+            <div className="space-y-3">
+              <Label htmlFor="cloud-select" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                Cloud Provider
+              </Label>
               <Select value={cloudProvider} onValueChange={setCloudProvider}>
-                <SelectTrigger id="cloud-select">
+                <SelectTrigger id="cloud-select" className="border-2 border-gray-200 focus:border-[#00c8d7]">
                   <SelectValue placeholder="Select provider" />
                 </SelectTrigger>
                 <SelectContent>
@@ -306,10 +393,12 @@ export default function ArchitectureDesigner() {
             </div>
 
             {/* Network Vendor Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="vendor-select">Network Vendor</Label>
+            <div className="space-y-3">
+              <Label htmlFor="vendor-select" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                Network Vendor
+              </Label>
               <Select value={networkVendor} onValueChange={setNetworkVendor}>
-                <SelectTrigger id="vendor-select">
+                <SelectTrigger id="vendor-select" className="border-2 border-gray-200 focus:border-[#00c8d7]">
                   <SelectValue placeholder="Select vendor" />
                 </SelectTrigger>
                 <SelectContent>
@@ -323,10 +412,12 @@ export default function ArchitectureDesigner() {
             </div>
 
             {/* Connectivity Type Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="connectivity-select">Connectivity</Label>
+            <div className="space-y-3">
+              <Label htmlFor="connectivity-select" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                Connectivity
+              </Label>
               <Select value={connectivityType} onValueChange={setConnectivityType}>
-                <SelectTrigger id="connectivity-select">
+                <SelectTrigger id="connectivity-select" className="border-2 border-gray-200 focus:border-[#00c8d7]">
                   <SelectValue placeholder="Select connectivity" />
                 </SelectTrigger>
                 <SelectContent>
@@ -341,8 +432,10 @@ export default function ArchitectureDesigner() {
           </div>
 
           {/* Animation Speed Control */}
-          <div className="mt-4 space-y-2">
-            <Label>Animation Speed: {animationSpeed[0]}x</Label>
+          <div className="mt-6 space-y-3">
+            <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Animation Speed: {animationSpeed[0]}x
+            </Label>
             <Slider
               value={animationSpeed}
               onValueChange={setAnimationSpeed}
@@ -355,14 +448,16 @@ export default function ArchitectureDesigner() {
 
           {/* Current View Info */}
           {currentView && (
-            <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-              <div className="flex items-center space-x-2 mb-2">
-                {currentView.icon}
-                <h3 className="font-semibold text-blue-900 dark:text-blue-100">
+            <div className="mt-6 p-6 bg-gradient-to-r from-[#00c8d7]/10 to-[#007acc]/10 dark:from-[#00c8d7]/20 dark:to-[#007acc]/20 rounded-xl border border-[#00c8d7]/20">
+              <div className="flex items-center space-x-3 mb-3">
+                <div className="p-2 bg-[#00c8d7] rounded-lg">
+                  {currentView.icon}
+                </div>
+                <h3 className="font-bold text-lg text-[#00c8d7]">
                   {currentView.label}
                 </h3>
               </div>
-              <p className="text-sm text-blue-800 dark:text-blue-200">
+              <p className="text-gray-700 dark:text-gray-300">
                 {currentView.description}
               </p>
             </div>
@@ -370,30 +465,58 @@ export default function ArchitectureDesigner() {
         </CardContent>
       </Card>
 
-      {/* Main Content */}
-      <Tabs defaultValue="diagram" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="diagram">Interactive Diagram</TabsTrigger>
-          <TabsTrigger value="legend">Components Legend</TabsTrigger>
+      {/* Main Content Tabs */}
+      <Tabs defaultValue="diagram" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4 bg-white dark:bg-gray-800 shadow-lg rounded-xl p-2">
+          <TabsTrigger 
+            value="diagram" 
+            className="data-[state=active]:bg-[#00c8d7] data-[state=active]:text-white transition-all duration-300"
+          >
+            <Network className="w-4 h-4 mr-2" />
+            Interactive Diagram
+          </TabsTrigger>
+          <TabsTrigger 
+            value="legend" 
+            className="data-[state=active]:bg-[#00c8d7] data-[state=active]:text-white transition-all duration-300"
+          >
+            <FileText className="w-4 h-4 mr-2" />
+            Components Legend
+          </TabsTrigger>
+          <TabsTrigger 
+            value="policies" 
+            className="data-[state=active]:bg-[#00c8d7] data-[state=active]:text-white transition-all duration-300"
+          >
+            <Shield className="w-4 h-4 mr-2" />
+            Policy Editor
+          </TabsTrigger>
+          <TabsTrigger 
+            value="onboarding" 
+            className="data-[state=active]:bg-[#00c8d7] data-[state=active]:text-white transition-all duration-300"
+          >
+            <Workflow className="w-4 h-4 mr-2" />
+            Onboarding Scenarios
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="diagram" className="space-y-4">
-          <Card>
+        <TabsContent value="diagram" className="space-y-6">
+          <Card className="shadow-xl">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center space-x-2">
-                  {currentView?.icon}
+                <CardTitle className="flex items-center space-x-3">
+                  <div className="p-2 bg-[#00c8d7] rounded-lg">
+                    {currentView?.icon}
+                  </div>
                   <span>{currentView?.label}</span>
                 </CardTitle>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-4">
                   <div className="flex space-x-2">
-                    <Badge variant="outline">
+                    <Badge variant="outline" className="border-[#00c8d7] text-[#00c8d7]">
                       {cloudProviders.find(p => p.id === cloudProvider)?.label}
                     </Badge>
-                    <Badge variant="outline">
+                    <Badge variant="outline" className="border-[#00c8d7] text-[#00c8d7]">
                       {networkVendors.find(v => v.id === networkVendor)?.label}
                     </Badge>
-                    <Badge variant="outline">
+                    <Badge variant="outline" className="border-[#00c8d7] text-[#00c8d7]">
                       {connectivityOptions.find(c => c.id === connectivityType)?.label}
                     </Badge>
                   </div>
@@ -402,28 +525,28 @@ export default function ArchitectureDesigner() {
                       variant="outline"
                       size="sm"
                       onClick={() => exportDiagram('svg')}
-                      className="flex items-center space-x-1"
+                      className="border-[#00c8d7] text-[#00c8d7] hover:bg-[#00c8d7] hover:text-white transition-all duration-300"
                     >
-                      <Download className="w-4 h-4" />
-                      <span>SVG</span>
+                      <Download className="w-4 h-4 mr-1" />
+                      SVG
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => exportDiagram('png')}
-                      className="flex items-center space-x-1"
+                      className="border-[#00c8d7] text-[#00c8d7] hover:bg-[#00c8d7] hover:text-white transition-all duration-300"
                     >
-                      <Download className="w-4 h-4" />
-                      <span>PNG</span>
+                      <Download className="w-4 h-4 mr-1" />
+                      PNG
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => exportDiagram('pdf')}
-                      className="flex items-center space-x-1"
+                      className="border-[#00c8d7] text-[#00c8d7] hover:bg-[#00c8d7] hover:text-white transition-all duration-300"
                     >
-                      <Download className="w-4 h-4" />
-                      <span>PDF</span>
+                      <Download className="w-4 h-4 mr-1" />
+                      PDF
                     </Button>
                   </div>
                 </div>
@@ -441,8 +564,16 @@ export default function ArchitectureDesigner() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="legend" className="space-y-4">
+        <TabsContent value="legend" className="space-y-6">
           <ArchitectureLegend currentView={selectedView} />
+        </TabsContent>
+
+        <TabsContent value="policies" className="space-y-6">
+          <PolicyEditor />
+        </TabsContent>
+
+        <TabsContent value="onboarding" className="space-y-6">
+          <OnboardingScenarios />
         </TabsContent>
       </Tabs>
     </div>
