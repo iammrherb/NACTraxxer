@@ -1,1368 +1,1374 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { useEffect, useRef, useState } from 'react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { Cloud, Server, Wifi, Shield, Database, Globe, Lock, Zap, Activity, Target, CheckCircle, Clock, AlertTriangle, XCircle, BadgeIcon as Certificate, Key, Fingerprint, ComputerIcon as Desktop, Laptop, Smartphone, Tablet, Cpu, Network, Router, HardDrive } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent } from '@/components/ui/card'
 
 interface InteractiveDiagramProps {
   view: string
-  vendor: string
-  connectivity: string
-  identity: string
-  deployment: string
+  cloudProvider: string
+  networkVendor: string
+  connectivityType: string
+  animationSpeed: number
+  showDataFlow: boolean
 }
 
-export default function InteractiveDiagram({
-  view,
-  vendor,
-  connectivity,
-  identity,
-  deployment
+interface DiagramNode {
+  id: string
+  x: number
+  y: number
+  width: number
+  height: number
+  label: string
+  type: string
+  color: string
+  description: string
+  icon?: string
+  status?: 'active' | 'standby' | 'offline'
+}
+
+interface DiagramConnection {
+  id: string
+  from: string
+  to: string
+  type: 'standard' | 'secure' | 'dashed'
+  label?: string
+  color?: string
+  protocol?: string
+  bandwidth?: string
+}
+
+export default function InteractiveDiagram({ 
+  view, 
+  cloudProvider, 
+  networkVendor, 
+  connectivityType, 
+  animationSpeed,
+  showDataFlow
 }: InteractiveDiagramProps) {
   const svgRef = useRef<SVGSVGElement>(null)
+  const [nodes, setNodes] = useState<DiagramNode[]>([])
+  const [connections, setConnections] = useState<DiagramConnection[]>([])
   const [selectedNode, setSelectedNode] = useState<string | null>(null)
-  const [animationSpeed, setAnimationSpeed] = useState(1)
-  const [showDataFlow, setShowDataFlow] = useState(false)
+  const [hoveredNode, setHoveredNode] = useState<string | null>(null)
 
   useEffect(() => {
-    if (svgRef.current) {
-      drawDiagram()
-    }
-  }, [view, vendor, connectivity, identity, deployment, animationSpeed])
+    generateDiagram()
+  }, [view, cloudProvider, networkVendor, connectivityType])
 
-  const drawDiagram = () => {
-    const svg = svgRef.current
-    if (!svg) return
-
-    // Clear existing content
-    svg.innerHTML = ''
-
-    // Add definitions for gradients, patterns, and markers
-    addDefinitions(svg)
+  const generateDiagram = () => {
+    let newNodes: DiagramNode[] = []
+    let newConnections: DiagramConnection[] = []
 
     switch (view) {
-      case 'zero-trust-nac':
-        drawZeroTrustDiagram(svg)
+      case 'complete':
+        newNodes = generateCompleteArchitecture()
+        newConnections = generateCompleteConnections()
         break
-      case '802.1x-auth':
-        drawAuthFlowDiagram(svg)
+      case 'auth-flow':
+        newNodes = generateAuthFlowNodes()
+        newConnections = generateAuthFlowConnections()
         break
-      case 'pki-infrastructure':
-        drawPKIDiagram(svg)
+      case 'pki':
+        newNodes = generatePKINodes()
+        newConnections = generatePKIConnections()
         break
-      case 'policy-framework':
-        drawPolicyFrameworkDiagram(svg)
+      case 'radsec-proxy':
+        newNodes = generateRADSecProxyNodes()
+        newConnections = generateRADSecProxyConnections()
         break
-      case 'multi-cloud':
-        drawMultiCloudDiagram(svg)
+      case 'policies':
+        newNodes = generatePolicyNodes()
+        newConnections = generatePolicyConnections()
         break
-      case 'intune-integration':
-        drawIntuneIntegrationDiagram(svg)
+      case 'connectivity':
+        newNodes = generateConnectivityNodes()
+        newConnections = generateConnectivityConnections()
         break
-      case 'device-onboarding':
-        drawDeviceOnboardingDiagram(svg)
+      case 'intune':
+        newNodes = generateIntuneNodes()
+        newConnections = generateIntuneConnections()
+        break
+      case 'onboarding':
+        newNodes = generateOnboardingNodes()
+        newConnections = generateOnboardingConnections()
+        break
+    }
+
+    setNodes(newNodes)
+    setConnections(newConnections)
+  }
+
+  const generateCompleteArchitecture = (): DiagramNode[] => {
+    const cloudColor = getCloudColor(cloudProvider)
+    const vendorLabel = networkVendor.charAt(0).toUpperCase() + networkVendor.slice(1)
+    
+    return [
+      {
+        id: 'portnox-cloud',
+        x: 450, y: 50, width: 300, height: 120,
+        label: 'Portnox Cloud NAC',
+        type: 'cloud',
+        color: '#e3f2fd',
+        icon: '☁️',
+        description: 'Cloud-based NAC engine with Private PKI, policy management, and RADIUS authentication services'
+      },
+      {
+        id: 'cloud-proxy-primary',
+        x: 100, y: 250, width: 180, height: 100,
+        label: `${cloudProvider.toUpperCase()} RADSec Proxy (Primary)`,
+        type: cloudProvider,
+        color: cloudColor,
+        icon: '🔄',
+        status: 'active',
+        description: `Primary ${cloudProvider.toUpperCase()} RADSec proxy with 7-day cache`
+      },
+      {
+        id: 'cloud-proxy-standby',
+        x: 320, y: 250, width: 180, height: 100,
+        label: `${cloudProvider.toUpperCase()} RADSec Proxy (Standby)`,
+        type: cloudProvider,
+        color: cloudColor,
+        icon: '🔄',
+        status: 'standby',
+        description: `Standby ${cloudProvider.toUpperCase()} RADSec proxy for high availability`
+      },
+      {
+        id: 'connectivity',
+        x: 100, y: 400, width: 400, height: 60,
+        label: getConnectivityLabel(connectivityType),
+        type: 'connectivity',
+        color: '#f3e5f5',
+        icon: '🌐',
+        description: `${getConnectivityLabel(connectivityType)} network connectivity with redundancy`
+      },
+      {
+        id: 'site-infrastructure',
+        x: 100, y: 520, width: 400, height: 120,
+        label: `ABM Site - ${vendorLabel} Stack`,
+        type: 'site',
+        color: '#e8f5e9',
+        icon: '🏢',
+        description: `Physical location with ${vendorLabel} network infrastructure and 802.1X authentication`
+      },
+      {
+        id: 'intune',
+        x: 800, y: 250, width: 300, height: 150,
+        label: 'Microsoft Intune MDM',
+        type: 'intune',
+        color: '#e1f5fe',
+        icon: '📱',
+        description: 'Mobile Device Management for certificate deployment and device configuration'
+      },
+      {
+        id: 'endpoints',
+        x: 800, y: 450, width: 300, height: 200,
+        label: 'Managed Endpoints',
+        type: 'device',
+        color: '#f5f5f5',
+        icon: '💻',
+        description: 'Corporate devices with certificates deployed via Intune for 802.1X authentication'
+      }
+    ]
+  }
+
+  const generateCompleteConnections = (): DiagramConnection[] => {
+    return [
+      { 
+        id: 'cloud-to-primary', 
+        from: 'portnox-cloud', 
+        to: 'cloud-proxy-primary', 
+        type: 'secure', 
+        label: 'RADSec/TLS 1.3',
+        protocol: 'RADSec',
+        bandwidth: '1 Gbps'
+      },
+      { 
+        id: 'cloud-to-standby', 
+        from: 'portnox-cloud', 
+        to: 'cloud-proxy-standby', 
+        type: 'secure', 
+        label: 'RADSec/TLS 1.3',
+        protocol: 'RADSec',
+        bandwidth: '1 Gbps'
+      },
+      { 
+        id: 'primary-to-connectivity', 
+        from: 'cloud-proxy-primary', 
+        to: 'connectivity', 
+        type: 'standard',
+        protocol: 'RADIUS',
+        bandwidth: '100 Mbps'
+      },
+      { 
+        id: 'standby-to-connectivity', 
+        from: 'cloud-proxy-standby', 
+        to: 'connectivity', 
+        type: 'dashed',
+        protocol: 'RADIUS',
+        bandwidth: '100 Mbps'
+      },
+      { 
+        id: 'connectivity-to-site', 
+        from: 'connectivity', 
+        to: 'site-infrastructure', 
+        type: getConnectivityType(connectivityType),
+        protocol: getConnectivityProtocol(connectivityType),
+        bandwidth: getConnectivityBandwidth(connectivityType)
+      },
+      { 
+        id: 'site-to-endpoints', 
+        from: 'site-infrastructure', 
+        to: 'endpoints', 
+        type: 'standard', 
+        label: '802.1X EAP-TLS',
+        protocol: '802.1X',
+        bandwidth: '1 Gbps'
+      },
+      { 
+        id: 'intune-to-endpoints', 
+        from: 'intune', 
+        to: 'endpoints', 
+        type: 'secure', 
+        label: 'Certificate Push',
+        protocol: 'HTTPS',
+        bandwidth: '10 Mbps'
+      },
+      { 
+        id: 'cloud-to-intune', 
+        from: 'portnox-cloud', 
+        to: 'intune', 
+        type: 'dashed', 
+        label: 'SCEP',
+        protocol: 'SCEP',
+        bandwidth: '1 Mbps'
+      }
+    ]
+  }
+
+  const generateRADSecProxyNodes = (): DiagramNode[] => {
+    const cloudColor = getCloudColor(cloudProvider)
+    
+    return [
+      {
+        id: 'portnox-cloud',
+        x: 50, y: 300, width: 200, height: 100,
+        label: 'Portnox Cloud',
+        type: 'cloud',
+        color: '#e3f2fd',
+        icon: '☁️',
+        description: 'Cloud NAC service with global reach'
+      },
+      {
+        id: 'load-balancer',
+        x: 350, y: 50, width: 200, height: 80,
+        label: `${cloudProvider.toUpperCase()} Load Balancer`,
+        type: 'load-balancer',
+        color: cloudColor,
+        icon: '⚖️',
+        description: 'Application Load Balancer with health checks'
+      },
+      {
+        id: 'proxy-container-1',
+        x: 300, y: 200, width: 150, height: 100,
+        label: 'RADSec Proxy Container 1',
+        type: 'container',
+        color: '#e8f5e9',
+        icon: '📦',
+        status: 'active',
+        description: 'Docker container running RADSec proxy with 7-day cache'
+      },
+      {
+        id: 'proxy-container-2',
+        x: 500, y: 200, width: 150, height: 100,
+        label: 'RADSec Proxy Container 2',
+        type: 'container',
+        color: '#e8f5e9',
+        icon: '📦',
+        status: 'active',
+        description: 'Docker container running RADSec proxy with 7-day cache'
+      },
+      {
+        id: 'cache-storage',
+        x: 700, y: 200, width: 150, height: 100,
+        label: 'Redis Cache Cluster',
+        type: 'storage',
+        color: '#fff3e0',
+        icon: '💾',
+        description: 'Shared cache for authentication decisions'
+      },
+      {
+        id: 'monitoring',
+        x: 700, y: 350, width: 150, height: 80,
+        label: 'Monitoring & Logs',
+        type: 'monitoring',
+        color: '#f3e5f5',
+        icon: '📊',
+        description: 'CloudWatch/Prometheus monitoring with alerting'
+      },
+      {
+        id: 'site-nas',
+        x: 350, y: 450, width: 200, height: 100,
+        label: `${networkVendor.toUpperCase()} NAS`,
+        type: 'network',
+        color: '#e8f5e9',
+        icon: '🔧',
+        description: 'Network Access Server with RADIUS client'
+      }
+    ]
+  }
+
+  const generateRADSecProxyConnections = (): DiagramConnection[] => {
+    return [
+      {
+        id: 'cloud-to-lb',
+        from: 'portnox-cloud',
+        to: 'load-balancer',
+        type: 'secure',
+        label: 'RADSec/TLS 1.3',
+        protocol: 'RADSec',
+        bandwidth: '10 Gbps'
+      },
+      {
+        id: 'lb-to-proxy1',
+        from: 'load-balancer',
+        to: 'proxy-container-1',
+        type: 'standard',
+        protocol: 'HTTP',
+        bandwidth: '1 Gbps'
+      },
+      {
+        id: 'lb-to-proxy2',
+        from: 'load-balancer',
+        to: 'proxy-container-2',
+        type: 'standard',
+        protocol: 'HTTP',
+        bandwidth: '1 Gbps'
+      },
+      {
+        id: 'proxy1-to-cache',
+        from: 'proxy-container-1',
+        to: 'cache-storage',
+        type: 'dashed',
+        label: 'Cache Sync',
+        protocol: 'Redis',
+        bandwidth: '100 Mbps'
+      },
+      {
+        id: 'proxy2-to-cache',
+        from: 'proxy-container-2',
+        to: 'cache-storage',
+        type: 'dashed',
+        label: 'Cache Sync',
+        protocol: 'Redis',
+        bandwidth: '100 Mbps'
+      },
+      {
+        id: 'proxy1-to-monitoring',
+        from: 'proxy-container-1',
+        to: 'monitoring',
+        type: 'dashed',
+        protocol: 'HTTPS',
+        bandwidth: '10 Mbps'
+      },
+      {
+        id: 'proxy2-to-monitoring',
+        from: 'proxy-container-2',
+        to: 'monitoring',
+        type: 'dashed',
+        protocol: 'HTTPS',
+        bandwidth: '10 Mbps'
+      },
+      {
+        id: 'nas-to-proxy1',
+        from: 'site-nas',
+        to: 'proxy-container-1',
+        type: 'standard',
+        label: 'RADIUS',
+        protocol: 'RADIUS',
+        bandwidth: '100 Mbps'
+      },
+      {
+        id: 'nas-to-proxy2',
+        from: 'site-nas',
+        to: 'proxy-container-2',
+        type: 'dashed',
+        label: 'Failover',
+        protocol: 'RADIUS',
+        bandwidth: '100 Mbps'
+      }
+    ]
+  }
+
+  // Additional generator functions for other views...
+  const generateAuthFlowNodes = (): DiagramNode[] => {
+    return [
+      {
+        id: 'device',
+        x: 50, y: 300, width: 120, height: 80,
+        label: 'End Device',
+        type: 'device',
+        color: '#e8f5e9',
+        icon: '💻',
+        description: 'User device with certificate attempting network access'
+      },
+      {
+        id: 'nas',
+        x: 250, y: 300, width: 150, height: 80,
+        label: `${networkVendor.toUpperCase()} NAS`,
+        type: 'network',
+        color: '#e8f5e9',
+        icon: '🔧',
+        description: 'Network Access Server handling 802.1X authentication'
+      },
+      {
+        id: 'proxy',
+        x: 500, y: 300, width: 180, height: 80,
+        label: `RADSec Proxy`,
+        type: cloudProvider,
+        color: getCloudColor(cloudProvider),
+        icon: '🔄',
+        description: 'RADIUS over TLS proxy with 7-day cache'
+      },
+      {
+        id: 'portnox',
+        x: 800, y: 300, width: 200, height: 100,
+        label: 'Portnox Cloud',
+        type: 'cloud',
+        color: '#e3f2fd',
+        icon: '☁️',
+        description: 'Cloud NAC service for authentication decisions'
+      },
+      {
+        id: 'identity',
+        x: 800, y: 450, width: 200, height: 80,
+        label: 'Azure AD/Entra ID',
+        type: 'identity',
+        color: '#e3f2fd',
+        icon: '🔐',
+        description: 'Identity provider for user authentication'
+      }
+    ]
+  }
+
+  const generateAuthFlowConnections = (): DiagramConnection[] => {
+    return [
+      { id: 'device-to-nas', from: 'device', to: 'nas', type: 'standard', label: '1. EAP Start' },
+      { id: 'nas-to-proxy', from: 'nas', to: 'proxy', type: 'standard', label: '2. RADIUS Request' },
+      { id: 'proxy-to-portnox', from: 'proxy', to: 'portnox', type: 'secure', label: '3. RADSec Forward' },
+      { id: 'portnox-to-identity', from: 'portnox', to: 'identity', type: 'standard', label: '4. Identity Lookup' },
+      { id: 'identity-to-portnox', from: 'identity', to: 'portnox', type: 'standard', label: '5. User Info' },
+      { id: 'portnox-to-proxy-return', from: 'portnox', to: 'proxy', type: 'secure', label: '6. Auth Decision' },
+      { id: 'proxy-to-nas-return', from: 'proxy', to: 'nas', type: 'standard', label: '7. RADIUS Response' },
+      { id: 'nas-to-device-return', from: 'nas', to: 'device', type: 'standard', label: '8. Network Access' }
+    ]
+  }
+
+  // Helper functions
+  const getCloudColor = (provider: string): string => {
+    switch (provider) {
+      case 'aws': return '#fff3e0'
+      case 'azure': return '#e1f5fe'
+      case 'gcp': return '#e8f5e9'
+      case 'onprem': return '#ffeaa7'
+      default: return '#f5f5f5'
+    }
+  }
+
+  const getConnectivityLabel = (type: string): string => {
+    switch (type) {
+      case 'sdwan': return 'SD-WAN Network'
+      case 'expressroute': return 'Azure ExpressRoute'
+      case 'directconnect': return 'AWS Direct Connect'
+      case 'mpls': return 'MPLS Network'
+      case 'vpn': return 'Site-to-Site VPN'
+      case 'internet': return 'Internet Connection'
+      default: return 'Network Connection'
+    }
+  }
+
+  const getConnectivityType = (type: string): 'standard' | 'secure' | 'dashed' => {
+    switch (type) {
+      case 'sdwan': return 'dashed'
+      case 'expressroute': return 'secure'
+      case 'directconnect': return 'secure'
+      case 'mpls': return 'dashed'
+      case 'vpn': return 'secure'
+      default: return 'standard'
+    }
+  }
+
+  const getConnectivityProtocol = (type: string): string => {
+    switch (type) {
+      case 'sdwan': return 'SD-WAN'
+      case 'expressroute': return 'ExpressRoute'
+      case 'directconnect': return 'Direct Connect'
+      case 'mpls': return 'MPLS'
+      case 'vpn': return 'IPSec'
+      default: return 'IP'
+    }
+  }
+
+  const getConnectivityBandwidth = (type: string): string => {
+    switch (type) {
+      case 'sdwan': return '100 Mbps'
+      case 'expressroute': return '1 Gbps'
+      case 'directconnect': return '1 Gbps'
+      case 'mpls': return '100 Mbps'
+      case 'vpn': return '50 Mbps'
+      default: return '10 Mbps'
+    }
+  }
+
+  // Placeholder functions for other node generators
+  const generatePKINodes = (): DiagramNode[] => {
+  return [
+    {
+      id: 'portnox-ca',
+      x: 450, y: 50, width: 300, height: 100,
+      label: 'Portnox Private CA',
+      type: 'pki',
+      color: '#e3f2fd',
+      icon: '🔐',
+      description: 'Private Certificate Authority for issuing X.509 certificates with automated lifecycle management'
+    },
+    {
+      id: 'scep-server',
+      x: 200, y: 200, width: 200, height: 80,
+      label: 'SCEP Server',
+      type: 'cert',
+      color: '#e8f5e9',
+      icon: '📜',
+      description: 'Simple Certificate Enrollment Protocol server for automated certificate provisioning'
+    },
+    {
+      id: 'ocsp-responder',
+      x: 500, y: 200, width: 200, height: 80,
+      label: 'OCSP Responder',
+      type: 'cert',
+      color: '#e8f5e9',
+      icon: '✅',
+      description: 'Online Certificate Status Protocol for real-time certificate validation'
+    },
+    {
+      id: 'crl-distribution',
+      x: 800, y: 200, width: 200, height: 80,
+      label: 'CRL Distribution Point',
+      type: 'cert',
+      color: '#e8f5e9',
+      icon: '📋',
+      description: 'Certificate Revocation List distribution for offline validation'
+    },
+    {
+      id: 'intune-connector',
+      x: 100, y: 350, width: 180, height: 80,
+      label: 'Intune SCEP Connector',
+      type: 'mdm',
+      color: '#fff3e0',
+      icon: '🔗',
+      description: 'Microsoft Intune connector for SCEP certificate enrollment'
+    },
+    {
+      id: 'cert-templates',
+      x: 350, y: 350, width: 180, height: 80,
+      label: 'Certificate Templates',
+      type: 'template',
+      color: '#f3e5f5',
+      icon: '📄',
+      description: 'Predefined certificate templates for different device types'
+    },
+    {
+      id: 'key-escrow',
+      x: 600, y: 350, width: 180, height: 80,
+      label: 'Key Escrow Service',
+      type: 'security',
+      color: '#fff3e0',
+      icon: '🔑',
+      description: 'Secure key recovery and escrow for compliance requirements'
+    },
+    {
+      id: 'end-devices',
+      x: 850, y: 350, width: 180, height: 80,
+      label: 'End Devices',
+      type: 'device',
+      color: '#e8f5e9',
+      icon: '💻',
+      description: 'Corporate devices receiving certificates for 802.1X authentication'
+    }
+  ]
+}
+
+const generatePKIConnections = (): DiagramConnection[] => {
+  return [
+    { id: 'ca-to-scep', from: 'portnox-ca', to: 'scep-server', type: 'secure', label: 'Certificate Issuance' },
+    { id: 'ca-to-ocsp', from: 'portnox-ca', to: 'ocsp-responder', type: 'secure', label: 'Status Updates' },
+    { id: 'ca-to-crl', from: 'portnox-ca', to: 'crl-distribution', type: 'standard', label: 'CRL Publishing' },
+    { id: 'ca-to-templates', from: 'portnox-ca', to: 'cert-templates', type: 'dashed', label: 'Template Management' },
+    { id: 'ca-to-escrow', from: 'portnox-ca', to: 'key-escrow', type: 'secure', label: 'Key Backup' },
+    { id: 'scep-to-intune', from: 'scep-server', to: 'intune-connector', type: 'standard', label: 'SCEP Enrollment' },
+    { id: 'intune-to-devices', from: 'intune-connector', to: 'end-devices', type: 'standard', label: 'Certificate Deploy' },
+    { id: 'templates-to-devices', from: 'cert-templates', to: 'end-devices', type: 'dashed', label: 'Profile Push' }
+  ]
+}
+
+// Policy Framework nodes and connections
+const generatePolicyNodes = (): DiagramNode[] => {
+  return [
+    {
+      id: 'policy-engine',
+      x: 400, y: 50, width: 400, height: 100,
+      label: 'Portnox Policy Engine',
+      type: 'policy',
+      color: '#e3f2fd',
+      icon: '⚙️',
+      description: 'Centralized policy management and enforcement engine with real-time decision making'
+    },
+    {
+      id: 'user-policies',
+      x: 50, y: 200, width: 200, height: 120,
+      label: 'User-Based Policies',
+      type: 'policy',
+      color: '#d4edda',
+      icon: '👤',
+      description: 'Identity-based access control policies with role-based permissions'
+    },
+    {
+      id: 'device-policies',
+      x: 300, y: 200, width: 200, height: 120,
+      label: 'Device Compliance',
+      type: 'policy',
+      color: '#cce5ff',
+      icon: '📱',
+      description: 'Device health and compliance policies including OS version, encryption status'
+    },
+    {
+      id: 'network-policies',
+      x: 550, y: 200, width: 200, height: 120,
+      label: 'Network Segmentation',
+      type: 'policy',
+      color: '#fff3cd',
+      icon: '🌐',
+      description: 'VLAN assignment and network access policies based on user/device context'
+    },
+    {
+      id: 'time-policies',
+      x: 800, y: 200, width: 200, height: 120,
+      label: 'Time-Based Access',
+      type: 'policy',
+      color: '#f8d7da',
+      icon: '⏰',
+      description: 'Temporal access controls with business hours and maintenance windows'
+    },
+    {
+      id: 'location-policies',
+      x: 50, y: 370, width: 200, height: 120,
+      label: 'Location-Based',
+      type: 'policy',
+      color: '#e2e3e5',
+      icon: '📍',
+      description: 'Geographic and network location-based access policies'
+    },
+    {
+      id: 'risk-policies',
+      x: 300, y: 370, width: 200, height: 120,
+      label: 'Risk Assessment',
+      type: 'policy',
+      color: '#ffeaa7',
+      icon: '⚠️',
+      description: 'Dynamic risk-based policies with threat intelligence integration'
+    },
+    {
+      id: 'guest-policies',
+      x: 550, y: 370, width: 200, height: 120,
+      label: 'Guest Access',
+      type: 'policy',
+      color: '#dda0dd',
+      icon: '🎫',
+      description: 'Sponsored guest access with time-limited credentials and restricted access'
+    },
+    {
+      id: 'iot-policies',
+      x: 800, y: 370, width: 200, height: 120,
+      label: 'IoT Device Policies',
+      type: 'policy',
+      color: '#98fb98',
+      icon: '🔌',
+      description: 'IoT device policies with MAC Authentication Bypass and device profiling'
+    }
+  ]
+}
+
+const generatePolicyConnections = (): DiagramConnection[] => {
+  return [
+    { id: 'engine-to-user', from: 'policy-engine', to: 'user-policies', type: 'standard', label: 'Identity Lookup' },
+    { id: 'engine-to-device', from: 'policy-engine', to: 'device-policies', type: 'standard', label: 'Compliance Check' },
+    { id: 'engine-to-network', from: 'policy-engine', to: 'network-policies', type: 'standard', label: 'VLAN Assignment' },
+    { id: 'engine-to-time', from: 'policy-engine', to: 'time-policies', type: 'standard', label: 'Time Validation' },
+    { id: 'engine-to-location', from: 'policy-engine', to: 'location-policies', type: 'dashed', label: 'Location Check' },
+    { id: 'engine-to-risk', from: 'policy-engine', to: 'risk-policies', type: 'secure', label: 'Risk Analysis' },
+    { id: 'engine-to-guest', from: 'policy-engine', to: 'guest-policies', type: 'dashed', label: 'Guest Validation' },
+    { id: 'engine-to-iot', from: 'policy-engine', to: 'iot-policies', type: 'standard', label: 'Device Profiling' }
+  ]
+}
+
+// Connectivity Options nodes and connections
+const generateConnectivityNodes = (): DiagramNode[] => {
+  return [
+    {
+      id: 'portnox-global',
+      x: 500, y: 300, width: 300, height: 100,
+      label: 'Portnox Global Cloud',
+      type: 'cloud',
+      color: '#e3f2fd',
+      icon: '🌍',
+      description: 'Global cloud infrastructure with regional presence and edge locations'
+    },
+    {
+      id: 'aws-regions',
+      x: 50, y: 50, width: 200, height: 100,
+      label: 'AWS Multi-Region',
+      type: 'aws',
+      color: '#fff3e0',
+      icon: '☁️',
+      description: 'AWS infrastructure across multiple regions with auto-failover'
+    },
+    {
+      id: 'azure-regions',
+      x: 300, y: 50, width: 200, height: 100,
+      label: 'Azure Global',
+      type: 'azure',
+      color: '#e1f5fe',
+      icon: '🔷',
+      description: 'Azure infrastructure with ExpressRoute connectivity'
+    },
+    {
+      id: 'gcp-regions',
+      x: 550, y: 50, width: 200, height: 100,
+      label: 'Google Cloud',
+      type: 'gcp',
+      color: '#e8f5e9',
+      icon: '🌐',
+      description: 'Google Cloud Platform with dedicated interconnect'
+    },
+    {
+      id: 'edge-locations',
+      x: 800, y: 50, width: 200, height: 100,
+      label: 'Edge Locations',
+      type: 'edge',
+      color: '#f0f8ff',
+      icon: '📡',
+      description: 'Edge computing locations for reduced latency'
+    },
+    {
+      id: 'sdwan-fabric',
+      x: 50, y: 500, width: 200, height: 80,
+      label: 'SD-WAN Fabric',
+      type: 'sdwan',
+      color: '#ffe4e1',
+      icon: '🕸️',
+      description: 'Software-defined WAN with dynamic path selection'
+    },
+    {
+      id: 'mpls-backbone',
+      x: 300, y: 500, width: 200, height: 80,
+      label: 'MPLS Backbone',
+      type: 'mpls',
+      color: '#f5deb3',
+      icon: '🛤️',
+      description: 'Traditional MPLS network with QoS guarantees'
+    },
+    {
+      id: 'internet-breakout',
+      x: 550, y: 500, width: 200, height: 80,
+      label: 'Internet Breakout',
+      type: 'internet',
+      color: '#e6e6fa',
+      icon: '🌐',
+      description: 'Direct internet connectivity with security controls'
+    },
+    {
+      id: 'private-circuits',
+      x: 800, y: 500, width: 200, height: 80,
+      label: 'Private Circuits',
+      type: 'private',
+      color: '#f0fff0',
+      icon: '🔒',
+      description: 'Dedicated private circuits for sensitive traffic'
+    }
+  ]
+}
+
+const generateConnectivityConnections = (): DiagramConnection[] => {
+  return [
+    { id: 'aws-to-global', from: 'aws-regions', to: 'portnox-global', type: 'secure', label: 'RADSec/TLS' },
+    { id: 'azure-to-global', from: 'azure-regions', to: 'portnox-global', type: 'secure', label: 'RADSec/TLS' },
+    { id: 'gcp-to-global', from: 'gcp-regions', to: 'portnox-global', type: 'secure', label: 'RADSec/TLS' },
+    { id: 'edge-to-global', from: 'edge-locations', to: 'portnox-global', type: 'secure', label: 'Edge Sync' },
+    { id: 'global-to-sdwan', from: 'portnox-global', to: 'sdwan-fabric', type: 'dashed', label: 'Dynamic Routing' },
+    { id: 'global-to-mpls', from: 'portnox-global', to: 'mpls-backbone', type: 'standard', label: 'QoS Traffic' },
+    { id: 'global-to-internet', from: 'portnox-global', to: 'internet-breakout', type: 'standard', label: 'Public Access' },
+    { id: 'global-to-private', from: 'portnox-global', to: 'private-circuits', type: 'secure', label: 'Dedicated Links' }
+  ]
+}
+
+// Intune Integration nodes and connections
+const generateIntuneNodes = (): DiagramNode[] => {
+  return [
+    {
+      id: 'intune-portal',
+      x: 450, y: 50, width: 300, height: 100,
+      label: 'Microsoft Intune Portal',
+      type: 'intune',
+      color: '#e1f5fe',
+      icon: '🏢',
+      description: 'Centralized device management portal with policy configuration'
+    },
+    {
+      id: 'portnox-scep',
+      x: 450, y: 200, width: 300, height: 80,
+      label: 'Portnox SCEP Connector',
+      type: 'pki',
+      color: '#e3f2fd',
+      icon: '🔗',
+      description: 'SCEP connector integrating Portnox PKI with Intune certificate profiles'
+    },
+    {
+      id: 'windows-devices',
+      x: 50, y: 350, width: 180, height: 100,
+      label: 'Windows Devices',
+      type: 'device',
+      color: '#e8f5e9',
+      icon: '🖥️',
+      description: 'Corporate Windows devices with Intune management agent'
+    },
+    {
+      id: 'ios-devices',
+      x: 280, y: 350, width: 180, height: 100,
+      label: 'iOS Devices',
+      type: 'device',
+      color: '#e8f5e9',
+      icon: '📱',
+      description: 'Corporate and BYOD iOS devices with MDM enrollment'
+    },
+    {
+      id: 'android-devices',
+      x: 510, y: 350, width: 180, height: 100,
+      label: 'Android Devices',
+      type: 'device',
+      color: '#e8f5e9',
+      icon: '📱',
+      description: 'Android devices with work profile management'
+    },
+    {
+      id: 'macos-devices',
+      x: 740, y: 350, width: 180, height: 100,
+      label: 'macOS Devices',
+      type: 'device',
+      color: '#e8f5e9',
+      icon: '💻',
+      description: 'Corporate Mac devices with automated enrollment'
+    },
+    {
+      id: 'compliance-policies',
+      x: 50, y: 500, width: 200, height: 80,
+      label: 'Compliance Policies',
+      type: 'policy',
+      color: '#fff3cd',
+      icon: '✅',
+      description: 'Device compliance requirements and health attestation'
+    },
+    {
+      id: 'app-protection',
+      x: 300, y: 500, width: 200, height: 80,
+      label: 'App Protection',
+      type: 'security',
+      color: '#f8d7da',
+      icon: '🛡️',
+      description: 'Application-level security policies and data protection'
+    },
+    {
+      id: 'conditional-access',
+      x: 550, y: 500, width: 200, height: 80,
+      label: 'Conditional Access',
+      type: 'security',
+      color: '#d4edda',
+      icon: '🚪',
+      description: 'Azure AD conditional access policies integration'
+    },
+    {
+      id: 'wifi-profiles',
+      x: 800, y: 500, width: 200, height: 80,
+      label: 'WiFi Profiles',
+      type: 'network',
+      color: '#e2e3e5',
+      icon: '📶',
+      description: '802.1X WiFi profiles with certificate-based authentication'
+    }
+  ]
+}
+
+const generateIntuneConnections = (): DiagramConnection[] => {
+  return [
+    { id: 'portal-to-scep', from: 'intune-portal', to: 'portnox-scep', type: 'secure', label: 'SCEP Configuration' },
+    { id: 'scep-to-windows', from: 'portnox-scep', to: 'windows-devices', type: 'standard', label: 'Certificate Deploy' },
+    { id: 'scep-to-ios', from: 'portnox-scep', to: 'ios-devices', type: 'standard', label: 'Certificate Deploy' },
+    { id: 'scep-to-android', from: 'portnox-scep', to: 'android-devices', type: 'standard', label: 'Certificate Deploy' },
+    { id: 'scep-to-macos', from: 'portnox-scep', to: 'macos-devices', type: 'standard', label: 'Certificate Deploy' },
+    { id: 'portal-to-compliance', from: 'intune-portal', to: 'compliance-policies', type: 'dashed', label: 'Policy Push' },
+    { id: 'portal-to-app', from: 'intune-portal', to: 'app-protection', type: 'dashed', label: 'App Policies' },
+    { id: 'portal-to-conditional', from: 'intune-portal', to: 'conditional-access', type: 'secure', label: 'Access Control' },
+    { id: 'portal-to-wifi', from: 'intune-portal', to: 'wifi-profiles', type: 'standard', label: 'Network Profiles' }
+  ]
+}
+
+// Device Onboarding nodes and connections
+const generateOnboardingNodes = (): DiagramNode[] => {
+  return [
+    {
+      id: 'onboarding-portal',
+      x: 400, y: 50, width: 400, height: 100,
+      label: 'Device Onboarding Portal',
+      type: 'portal',
+      color: '#e3f2fd',
+      icon: '🌐',
+      description: 'Self-service device registration portal with multi-factor authentication'
+    },
+    {
+      id: 'corporate-enrollment',
+      x: 50, y: 200, width: 200, height: 150,
+      label: 'Corporate Device Enrollment',
+      type: 'flow',
+      color: '#d4edda',
+      icon: '🏢',
+      description: 'Automated enrollment for corporate-owned devices via Intune/JAMF'
+    },
+    {
+      id: 'byod-enrollment',
+      x: 300, y: 200, width: 200, height: 150,
+      label: 'BYOD Self-Service',
+      type: 'flow',
+      color: '#cce5ff',
+      icon: '📱',
+      description: 'Bring Your Own Device enrollment with user consent and privacy controls'
+    },
+    {
+      id: 'guest-access',
+      x: 550, y: 200, width: 200, height: 150,
+      label: 'Guest Access Portal',
+      type: 'flow',
+      color: '#fff3cd',
+      icon: '🎫',
+      description: 'Sponsored guest access with time-limited credentials and sponsor approval'
+    },
+    {
+      id: 'iot-onboarding',
+      x: 800, y: 200, width: 200, height: 150,
+      label: 'IoT Device Onboarding',
+      type: 'flow',
+      color: '#f8d7da',
+      icon: '🔌',
+      description: 'IoT device registration with MAC Authentication Bypass and device profiling'
+    },
+    {
+      id: 'certificate-issuance',
+      x: 200, y: 400, width: 200, height: 80,
+      label: 'Certificate Issuance',
+      type: 'cert',
+      color: '#e8f5e9',
+      icon: '📜',
+      description: 'Automated certificate generation and deployment to enrolled devices'
+    },
+    {
+      id: 'device-profiling',
+      x: 450, y: 400, width: 200, height: 80,
+      label: 'Device Profiling',
+      type: 'analysis',
+      color: '#f3e5f5',
+      icon: '🔍',
+      description: 'Automated device fingerprinting and classification'
+    },
+    {
+      id: 'policy-assignment',
+      x: 700, y: 400, width: 200, height: 80,
+      label: 'Policy Assignment',
+      type: 'policy',
+      color: '#fff3e0',
+      icon: '📋',
+      description: 'Dynamic policy assignment based on device type and user context'
+    },
+    {
+      id: 'network-access',
+      x: 200, y: 520, width: 200, height: 80,
+      label: 'Network Access Grant',
+      type: 'network',
+      color: '#e2e3e5',
+      icon: '🌐',
+      description: 'VLAN assignment and network access provisioning'
+    },
+    {
+      id: 'monitoring-alerts',
+      x: 450, y: 520, width: 200, height: 80,
+      label: 'Monitoring & Alerts',
+      type: 'monitoring',
+      color: '#ffeaa7',
+      icon: '📊',
+      description: 'Real-time monitoring of onboarding process with alerting'
+    },
+    {
+      id: 'compliance-check',
+      x: 700, y: 520, width: 200, height: 80,
+      label: 'Compliance Validation',
+      type: 'security',
+      color: '#dda0dd',
+      icon: '✅',
+      description: 'Continuous compliance monitoring and remediation'
+    }
+  ]
+}
+
+const generateOnboardingConnections = (): DiagramConnection[] => {
+  return [
+    { id: 'portal-to-corporate', from: 'onboarding-portal', to: 'corporate-enrollment', type: 'standard', label: 'MDM Enrollment' },
+    { id: 'portal-to-byod', from: 'onboarding-portal', to: 'byod-enrollment', type: 'standard', label: 'Self-Service' },
+    { id: 'portal-to-guest', from: 'onboarding-portal', to: 'guest-access', type: 'dashed', label: 'Sponsor Approval' },
+    { id: 'portal-to-iot', from: 'onboarding-portal', to: 'iot-onboarding', type: 'standard', label: 'Device Registration' },
+    { id: 'corporate-to-cert', from: 'corporate-enrollment', to: 'certificate-issuance', type: 'secure', label: 'Auto-Provision' },
+    { id: 'byod-to-cert', from: 'byod-enrollment', to: 'certificate-issuance', type: 'secure', label: 'User Consent' },
+    { id: 'iot-to-profiling', from: 'iot-onboarding', to: 'device-profiling', type: 'standard', label: 'Fingerprinting' },
+    { id: 'profiling-to-policy', from: 'device-profiling', to: 'policy-assignment', type: 'dashed', label: 'Classification' },
+    { id: 'cert-to-network', from: 'certificate-issuance', to: 'network-access', type: 'standard', label: 'Access Grant' },
+    { id: 'policy-to-network', from: 'policy-assignment', to: 'network-access', type: 'standard', label: 'VLAN Assignment' },
+    { id: 'network-to-monitoring', from: 'network-access', to: 'monitoring-alerts', type: 'dashed', label: 'Status Updates' },
+    { id: 'monitoring-to-compliance', from: 'monitoring-alerts', to: 'compliance-check', type: 'standard', label: 'Health Check' }
+  ]
+}
+
+  const handleNodeClick = (nodeId: string) => {
+    setSelectedNode(selectedNode === nodeId ? null : nodeId)
+  }
+
+  const renderNode = (node: DiagramNode) => {
+    const isSelected = selectedNode === node.id
+    const isHovered = hoveredNode === node.id
+
+    return (
+      <TooltipProvider key={node.id}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <g
+              className="cursor-pointer transition-all duration-200 hover:opacity-90"
+              onClick={() => handleNodeClick(node.id)}
+              onMouseEnter={() => setHoveredNode(node.id)}
+              onMouseLeave={() => setHoveredNode(null)}
+            >
+              {/* Node background with gradient */}
+              <defs>
+                <linearGradient id={`gradient-${node.id}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor={node.color} stopOpacity="1" />
+                  <stop offset="100%" stopColor={node.color} stopOpacity="0.7" />
+                </linearGradient>
+                <filter id={`shadow-${node.id}`}>
+                  <feDropShadow dx="2" dy="2" stdDeviation="3" floodOpacity="0.3"/>
+                </filter>
+              </defs>
+              
+              <rect
+                x={node.x}
+                y={node.y}
+                width={node.width}
+                height={node.height}
+                rx={12}
+                fill={`url(#gradient-${node.id})`}
+                stroke={isSelected ? '#3b82f6' : isHovered ? '#6b7280' : '#d1d5db'}
+                strokeWidth={isSelected ? 3 : 2}
+                filter={`url(#shadow-${node.id})`}
+                className="transition-all duration-200"
+              />
+              
+              {/* Status indicator */}
+              {node.status && (
+                <circle
+                  cx={node.x + node.width - 15}
+                  cy={node.y + 15}
+                  r={6}
+                  fill={
+                    node.status === 'active' ? '#10b981' :
+                    node.status === 'standby' ? '#f59e0b' : '#ef4444'
+                  }
+                  stroke="white"
+                  strokeWidth={2}
+                />
+              )}
+              
+              {/* Node icon */}
+              <text
+                x={node.x + 15}
+                y={node.y + 25}
+                fontSize="20"
+                className="pointer-events-none"
+              >
+                {node.icon}
+              </text>
+              
+              {/* Node label with better positioning */}
+              <text
+                x={node.x + node.width / 2}
+                y={node.y + node.height / 2 + 5}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                className="fill-gray-800 font-semibold text-sm pointer-events-none"
+                style={{ textShadow: '1px 1px 2px rgba(255,255,255,0.8)' }}
+              >
+                {node.label}
+              </text>
+
+              {/* Connection points for selected nodes */}
+              {isSelected && (
+                <>
+                  <circle cx={node.x + node.width / 2} cy={node.y} r="8" fill="#3b82f6" stroke="white" strokeWidth="3" />
+                  <circle cx={node.x + node.width} cy={node.y + node.height / 2} r="8" fill="#3b82f6" stroke="white" strokeWidth="3" />
+                  <circle cx={node.x + node.width / 2} cy={node.y + node.height} r="8" fill="#3b82f6" stroke="white" strokeWidth="3" />
+                  <circle cx={node.x} cy={node.y + node.height / 2} r="8" fill="#3b82f6" stroke="white" strokeWidth="3" />
+                </>
+              )}
+            </g>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-xs">
+            <div>
+              <p className="font-semibold flex items-center gap-2">
+                <span>{node.icon}</span>
+                {node.label}
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">{node.description}</p>
+              {node.status && (
+                <Badge variant="outline" className="mt-2">
+                  Status: {node.status}
+                </Badge>
+              )}
+            </div>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    )
+  }
+
+  const renderConnection = (connection: DiagramConnection) => {
+    const fromNode = nodes.find(n => n.id === connection.from)
+    const toNode = nodes.find(n => n.id === connection.to)
+    
+    if (!fromNode || !toNode) return null
+
+    const x1 = fromNode.x + fromNode.width / 2
+    const y1 = fromNode.y + fromNode.height / 2
+    const x2 = toNode.x + toNode.width / 2
+    const y2 = toNode.y + toNode.height / 2
+
+    let strokeDasharray = 'none'
+    let strokeWidth = 3
+    let stroke = connection.color || '#6b7280'
+
+    switch (connection.type) {
+      case 'secure':
+        stroke = '#10b981'
+        strokeWidth = 4
+        break
+      case 'dashed':
+        strokeDasharray = '10,5'
+        stroke = '#f59e0b'
         break
       default:
-        drawDefaultDiagram(svg)
-        break
+        stroke = '#3b82f6'
     }
 
-    if (showDataFlow) {
-      animateDataFlow(svg)
-    }
-  }
+    const midX = (x1 + x2) / 2
+    const midY = (y1 + y2) / 2
 
-  const addDefinitions = (svg: SVGSVGElement) => {
-    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs')
-    
-    // Gradients
-    const cloudGradient = createGradient('cloudGradient', '#e3f2fd', '#bbdefb')
-    const awsGradient = createGradient('awsGradient', '#fff3e0', '#ffcc02')
-    const siteGradient = createGradient('siteGradient', '#e8f5e9', '#c8e6c9')
-    const secureGradient = createGradient('secureGradient', '#f3e5f5', '#e1bee7')
-    
-    // Arrow markers
-    const arrowMarker = createArrowMarker('arrowhead', '#666')
-    const secureArrowMarker = createArrowMarker('secureArrow', '#4caf50')
-    const dataFlowMarker = createArrowMarker('dataFlow', '#2196f3')
-    
-    // Patterns
-    const diagonalPattern = createDiagonalPattern('diagonalStripes')
-    
-    defs.appendChild(cloudGradient)
-    defs.appendChild(awsGradient)
-    defs.appendChild(siteGradient)
-    defs.appendChild(secureGradient)
-    defs.appendChild(arrowMarker)
-    defs.appendChild(secureArrowMarker)
-    defs.appendChild(dataFlowMarker)
-    defs.appendChild(diagonalPattern)
-    
-    svg.appendChild(defs)
-  }
-
-  const createGradient = (id: string, color1: string, color2: string) => {
-    const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient')
-    gradient.setAttribute('id', id)
-    gradient.setAttribute('x1', '0%')
-    gradient.setAttribute('y1', '0%')
-    gradient.setAttribute('x2', '100%')
-    gradient.setAttribute('y2', '100%')
-    
-    const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop')
-    stop1.setAttribute('offset', '0%')
-    stop1.setAttribute('stop-color', color1)
-    
-    const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop')
-    stop2.setAttribute('offset', '100%')
-    stop2.setAttribute('stop-color', color2)
-    
-    gradient.appendChild(stop1)
-    gradient.appendChild(stop2)
-    
-    return gradient
-  }
-
-  const createArrowMarker = (id: string, color: string) => {
-    const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker')
-    marker.setAttribute('id', id)
-    marker.setAttribute('markerWidth', '10')
-    marker.setAttribute('markerHeight', '7')
-    marker.setAttribute('refX', '9')
-    marker.setAttribute('refY', '3.5')
-    marker.setAttribute('orient', 'auto')
-    marker.setAttribute('markerUnits', 'strokeWidth')
-
-    const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon')
-    polygon.setAttribute('points', '0 0, 10 3.5, 0 7')
-    polygon.setAttribute('fill', color)
-
-    marker.appendChild(polygon)
-    return marker
-  }
-
-  const createDiagonalPattern = (id: string) => {
-    const pattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern')
-    pattern.setAttribute('id', id)
-    pattern.setAttribute('patternUnits', 'userSpaceOnUse')
-    pattern.setAttribute('width', '8')
-    pattern.setAttribute('height', '8')
-    
-    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path')
-    path.setAttribute('d', 'M0,8 L8,0')
-    path.setAttribute('stroke', '#ccc')
-    path.setAttribute('stroke-width', '1')
-    
-    pattern.appendChild(path)
-    return pattern
-  }
-
-  const drawZeroTrustDiagram = (svg: SVGSVGElement) => {
-    // Internet Cloud
-    createCloudNode(svg, 50, 50, 150, 80, 'Internet', 'internet', '#f5f5f5')
-    
-    // Portnox Cloud
-    createCloudNode(svg, 300, 50, 200, 100, 'Portnox Cloud NAC', 'portnox-cloud', 'url(#cloudGradient)')
-    
-    // AWS Infrastructure
-    createRectNode(svg, 600, 30, 180, 60, 'AWS RADSec Proxy 1', 'aws-proxy-1', 'url(#awsGradient)')
-    createRectNode(svg, 600, 110, 180, 60, 'AWS RADSec Proxy 2', 'aws-proxy-2', 'url(#awsGradient)')
-    
-    // Identity Providers
-    createRectNode(svg, 300, 200, 200, 80, getIdentityProviderName(), 'identity-provider', 'url(#secureGradient)')
-    
-    // ABM Sites
-    createSiteNode(svg, 900, 50, 150, 60, 'ABM HQ', 'site-hq', 'url(#siteGradient)')
-    createSiteNode(svg, 900, 130, 150, 60, 'Data Center', 'site-dc', 'url(#siteGradient)')
-    createSiteNode(svg, 900, 210, 150, 60, 'Branch Office', 'site-branch', 'url(#siteGradient)')
-    
-    // Network Equipment at sites
-    createRectNode(svg, 1100, 50, 120, 40, getVendorEquipment(), 'network-equipment-1', '#fff')
-    createRectNode(svg, 1100, 130, 120, 40, getVendorEquipment(), 'network-equipment-2', '#fff')
-    createRectNode(svg, 1100, 210, 120, 40, getVendorEquipment(), 'network-equipment-3', '#fff')
-    
-    // End Devices
-    createDeviceNode(svg, 1280, 50, 40, 40, 'Laptop', 'device-1')
-    createDeviceNode(svg, 1280, 90, 40, 40, 'Phone', 'device-2')
-    createDeviceNode(svg, 1280, 130, 40, 40, 'Tablet', 'device-3')
-    createDeviceNode(svg, 1280, 170, 40, 40, 'IoT', 'device-4')
-    createDeviceNode(svg, 1280, 210, 40, 40, 'Server', 'device-5')
-    
-    // Monitoring & Analytics
-    createRectNode(svg, 300, 320, 200, 60, 'Splunk SIEM', 'splunk', '#9c27b0')
-    
-    // Connections
-    createSecureConnection(svg, 200, 90, 300, 100, 'HTTPS/TLS')
-    createSecureConnection(svg, 500, 100, 600, 60, 'RADSec/TLS')
-    createSecureConnection(svg, 500, 100, 600, 140, 'RADSec/TLS')
-    createConnection(svg, 780, 80, 900, 80, 'RADIUS')
-    createConnection(svg, 780, 140, 900, 160, 'RADIUS')
-    createConnection(svg, 780, 140, 900, 240, 'RADIUS')
-    
-    // Site to equipment connections
-    createConnection(svg, 1050, 70, 1100, 70, '802.1X')
-    createConnection(svg, 1050, 150, 1100, 150, '802.1X')
-    createConnection(svg, 1050, 230, 1100, 230, '802.1X')
-    
-    // Equipment to devices
-    createConnection(svg, 1220, 70, 1280, 70, 'Auth')
-    createConnection(svg, 1220, 70, 1280, 110, 'Auth')
-    createConnection(svg, 1220, 150, 1280, 150, 'Auth')
-    createConnection(svg, 1220, 150, 1280, 190, 'Auth')
-    createConnection(svg, 1220, 230, 1280, 230, 'Auth')
-    
-    // Identity integration
-    createSecureConnection(svg, 400, 200, 400, 150, 'LDAP/SAML')
-    
-    // Monitoring connection
-    createConnection(svg, 400, 280, 400, 320, 'Syslog')
-    
-    // Add technical details
-    addTechnicalLabels(svg)
-  }
-
-  const drawAuthFlowDiagram = (svg: SVGSVGElement) => {
-    const steps = [
-      { x: 100, y: 150, label: '1. Device Connect', detail: 'EAP-Start' },
-      { x: 300, y: 150, label: '2. Identity Request', detail: 'EAP-Request/Identity' },
-      { x: 500, y: 150, label: '3. Certificate Auth', detail: 'EAP-TLS Handshake' },
-      { x: 700, y: 150, label: '4. Policy Decision', detail: 'RADIUS Access-Accept' },
-      { x: 900, y: 150, label: '5. VLAN Assignment', detail: 'Dynamic VLAN' },
-      { x: 1100, y: 150, label: '6. Network Access', detail: 'Authorized Traffic' }
-    ]
-
-    // Draw flow steps
-    steps.forEach((step, index) => {
-      createFlowStep(svg, step.x, step.y, 80, step.label, step.detail, index)
-      if (index < steps.length - 1) {
-        createAnimatedConnection(svg, step.x + 80, step.y, steps[index + 1].x - 80, steps[index + 1].y, `flow-${index}`)
-      }
-    })
-
-    // Add detailed protocol information
-    createProtocolDetails(svg, 100, 250, [
-      'EAP-TLS Certificate Exchange',
-      'RADIUS Attribute Exchange',
-      'Dynamic VLAN Assignment',
-      'Session Monitoring',
-      'Policy Enforcement'
-    ])
-
-    // Add timing information
-    createTimingDiagram(svg, 100, 350)
-  }
-
-  const drawPKIDiagram = (svg: SVGSVGElement) => {
-    // PKI Hierarchy
-    createPKINode(svg, 500, 50, 200, 80, 'Portnox Root CA', 'root-ca', '#e3f2fd')
-    createPKINode(svg, 300, 180, 180, 60, 'Issuing CA', 'issuing-ca', '#e8f5e9')
-    createPKINode(svg, 700, 180, 180, 60, 'SCEP Server', 'scep-server', '#fff3e0')
-    
-    // Certificate Services
-    createPKINode(svg, 200, 300, 150, 60, 'OCSP Responder', 'ocsp', '#f3e5f5')
-    createPKINode(svg, 400, 300, 150, 60, 'CRL Distribution', 'crl', '#f3e5f5')
-    createPKINode(svg, 600, 300, 150, 60, 'Certificate Store', 'cert-store', '#f3e5f5')
-    createPKINode(svg, 800, 300, 150, 60, 'Key Management', 'key-mgmt', '#f3e5f5')
-    
-    // Client Integration
-    createPKINode(svg, 100, 450, 150, 60, 'Intune MDM', 'intune', '#fff3e0')
-    createPKINode(svg, 300, 450, 150, 60, 'SCEP Client', 'scep-client', '#e8f5e9')
-    createPKINode(svg, 500, 450, 150, 60, 'End Device', 'end-device', '#e8f5e9')
-    createPKINode(svg, 700, 450, 150, 60, 'Certificate Validation', 'cert-validation', '#f3e5f5')
-    
-    // Connections showing certificate flow
-    createSecureConnection(svg, 500, 130, 380, 180, 'Certificate Issuance')
-    createSecureConnection(svg, 600, 130, 700, 180, 'SCEP Protocol')
-    
-    // Certificate lifecycle connections
-    createConnection(svg, 380, 240, 275, 300, 'OCSP Check')
-    createConnection(svg, 475, 240, 475, 300, 'CRL Update')
-    createConnection(svg, 700, 240, 675, 300, 'Certificate Storage')
-    createConnection(svg, 790, 240, 825, 300, 'Key Escrow')
-    
-    // Client connections
-    createConnection(svg, 175, 450, 300, 480, 'MDM Deployment')
-    createConnection(svg, 450, 480, 500, 480, 'Certificate Install')
-    createConnection(svg, 650, 480, 700, 480, 'Validation Request')
-    
-    // Add certificate lifecycle timeline
-    createCertificateLifecycle(svg, 100, 550)
-  }
-
-  const drawPolicyFrameworkDiagram = (svg: SVGSVGElement) => {
-    // Policy Engine Core
-    createPolicyNode(svg, 500, 100, 200, 80, 'Policy Engine', 'policy-engine', '#e3f2fd')
-    
-    // Policy Components
-    createPolicyNode(svg, 200, 50, 150, 60, 'Device Policies', 'device-policies', '#e8f5e9')
-    createPolicyNode(svg, 200, 130, 150, 60, 'User Policies', 'user-policies', '#e8f5e9')
-    createPolicyNode(svg, 200, 210, 150, 60, 'Network Policies', 'network-policies', '#e8f5e9')
-    
-    // Enforcement Points
-    createPolicyNode(svg, 800, 50, 150, 60, 'VLAN Assignment', 'vlan-assignment', '#fff3e0')
-    createPolicyNode(svg, 800, 130, 150, 60, 'ACL Application', 'acl-application', '#fff3e0')
-    createPolicyNode(svg, 800, 210, 150, 60, 'QoS Policies', 'qos-policies', '#fff3e0')
-    
-    // Data Sources
-    createPolicyNode(svg, 100, 300, 120, 50, 'Device DB', 'device-db', '#f3e5f5')
-    createPolicyNode(svg, 250, 300, 120, 50, 'User Directory', 'user-directory', '#f3e5f5')
-    createPolicyNode(svg, 400, 300, 120, 50, 'Compliance', 'compliance', '#f3e5f5')
-    createPolicyNode(svg, 550, 300, 120, 50, 'Threat Intel', 'threat-intel', '#f3e5f5')
-    
-    // Policy Decision Flow
-    createConnection(svg, 350, 80, 500, 120, 'Policy Input')
-    createConnection(svg, 350, 160, 500, 140, 'Policy Input')
-    createConnection(svg, 350, 240, 500, 160, 'Policy Input')
-    
-    createConnection(svg, 700, 120, 800, 80, 'Enforcement')
-    createConnection(svg, 700, 140, 800, 160, 'Enforcement')
-    createConnection(svg, 700, 160, 800, 240, 'Enforcement')
-    
-    // Data source connections
-    createConnection(svg, 160, 300, 500, 180, 'Device Context')
-    createConnection(svg, 310, 300, 520, 180, 'User Context')
-    createConnection(svg, 460, 300, 540, 180, 'Compliance Status')
-    createConnection(svg, 610, 300, 560, 180, 'Risk Score')
-    
-    // Add policy examples
-    createPolicyExamples(svg, 100, 400)
-  }
-
-  const drawMultiCloudDiagram = (svg: SVGSVGElement) => {
-    // Cloud Providers
-    createCloudNode(svg, 100, 100, 180, 80, 'AWS', 'aws-cloud', '#ff9900')
-    createCloudNode(svg, 350, 100, 180, 80, 'Azure', 'azure-cloud', '#0078d4')
-    createCloudNode(svg, 600, 100, 180, 80, 'GCP', 'gcp-cloud', '#4285f4')
-    
-    // Portnox Cloud (Central)
-    createCloudNode(svg, 350, 250, 200, 100, 'Portnox Cloud', 'portnox-central', '#00c8d7')
-    
-    // Regional Deployments
-    createRectNode(svg, 50, 200, 120, 50, 'US-East RADSec', 'us-east', '#fff3e0')
-    createRectNode(svg, 300, 50, 120, 40, 'EU-West RADSec', 'eu-west', '#fff3e0')
-    createRectNode(svg, 650, 50, 120, 40, 'APAC RADSec', 'apac', '#fff3e0')
-    
-    // Site Connections
-    createSiteNode(svg, 50, 350, 100, 50, 'US Sites', 'us-sites', '#e8f5e9')
-    createSiteNode(svg, 200, 350, 100, 50, 'EU Sites', 'eu-sites', '#e8f5e9')
-    createSiteNode(svg, 350, 400, 100, 50, 'APAC Sites', 'apac-sites', '#e8f5e9')
-    createSiteNode(svg, 500, 350, 100, 50, 'LATAM Sites', 'latam-sites', '#e8f5e9')
-    
-    // Cloud interconnections
-    createSecureConnection(svg, 280, 140, 350, 250, 'Cloud Interconnect')
-    createSecureConnection(svg, 450, 140, 450, 250, 'ExpressRoute')
-    createSecureConnection(svg, 600, 140, 550, 250, 'Cloud VPN')
-    
-    // Regional connections
-    createConnection(svg, 110, 200, 190, 180, 'Regional Traffic')
-    createConnection(svg, 360, 90, 400, 250, 'Regional Traffic')
-    createConnection(svg, 710, 90, 500, 250, 'Regional Traffic')
-    
-    // Site connections
-    createConnection(svg, 100, 350, 110, 250, 'Site Traffic')
-    createConnection(svg, 250, 350, 360, 90, 'Site Traffic')
-    createConnection(svg, 400, 400, 710, 90, 'Site Traffic')
-    createConnection(svg, 550, 350, 450, 350, 'Site Traffic')
-    
-    // Add latency and performance metrics
-    createPerformanceMetrics(svg, 850, 100)
-  }
-
-  const drawIntuneIntegrationDiagram = (svg: SVGSVGElement) => {
-    // Microsoft Cloud Services
-    createCloudNode(svg, 100, 50, 180, 80, 'Azure AD/Entra', 'azure-ad', '#0078d4')
-    createCloudNode(svg, 350, 50, 180, 80, 'Intune MDM', 'intune-mdm', '#0078d4')
-    createCloudNode(svg, 600, 50, 180, 80, 'Endpoint Manager', 'endpoint-mgr', '#0078d4')
-    
-    // Portnox Integration
-    createCloudNode(svg, 350, 200, 200, 80, 'Portnox Cloud', 'portnox-intune', '#00c8d7')
-    
-    // Certificate Services
-    createRectNode(svg, 100, 300, 150, 60, 'SCEP Connector', 'scep-connector', '#fff3e0')
-    createRectNode(svg, 300, 300, 150, 60, 'Certificate Profiles', 'cert-profiles', '#fff3e0')
-    createRectNode(svg, 500, 300, 150, 60, 'Compliance Policies', 'compliance-policies', '#fff3e0')
-    
-    // Device Types
-    createDeviceNode(svg, 100, 450, 60, 60, 'Windows', 'windows-device')
-    createDeviceNode(svg, 200, 450, 60, 60, 'macOS', 'macos-device')
-    createDeviceNode(svg, 300, 450, 60, 60, 'iOS', 'ios-device')
-    createDeviceNode(svg, 400, 450, 60, 60, 'Android', 'android-device')
-    createDeviceNode(svg, 500, 450, 60, 60, 'Linux', 'linux-device')
-    
-    // Integration flows
-    createSecureConnection(svg, 280, 130, 350, 200, 'Identity Sync')
-    createSecureConnection(svg, 530, 130, 450, 200, 'Device Management')
-    createSecureConnection(svg, 780, 130, 550, 200, 'Compliance Check')
-    
-    // Certificate deployment flows
-    createConnection(svg, 175, 300, 130, 450, 'Certificate Deploy')
-    createConnection(svg, 375, 300, 230, 450, 'Certificate Deploy')
-    createConnection(svg, 375, 300, 330, 450, 'Certificate Deploy')
-    createConnection(svg, 575, 300, 430, 450, 'Certificate Deploy')
-    createConnection(svg, 575, 300, 530, 450, 'Certificate Deploy')
-    
-    // Portnox to certificate services
-    createConnection(svg, 350, 280, 175, 300, 'SCEP Integration')
-    createConnection(svg, 450, 280, 375, 300, 'Profile Management')
-    createConnection(svg, 550, 280, 575, 300, 'Policy Enforcement')
-    
-    // Add enrollment workflow
-    createEnrollmentWorkflow(svg, 700, 300)
-  }
-
-  const drawDeviceOnboardingDiagram = (svg: SVGSVGElement) => {
-    // Onboarding stages
-    const stages = [
-      { x: 100, y: 100, label: 'Device Discovery', detail: 'Network Detection' },
-      { x: 300, y: 100, label: 'Identity Verification', detail: 'User Authentication' },
-      { x: 500, y: 100, label: 'Certificate Enrollment', detail: 'SCEP/EST' },
-      { x: 700, y: 100, label: 'Policy Application', detail: 'VLAN Assignment' },
-      { x: 900, y: 100, label: 'Network Access', detail: 'Authorized Connection' }
-    ]
-
-    // Draw onboarding flow
-    stages.forEach((stage, index) => {
-      createOnboardingStage(svg, stage.x, stage.y, 150, stage.label, stage.detail, index)
-      if (index < stages.length - 1) {
-        createAnimatedConnection(svg, stage.x + 150, stage.y + 30, stages[index + 1].x, stage.y + 30, `onboard-${index}`)
-      }
-    })
-
-    // Device types and their onboarding paths
-    createDeviceOnboardingPaths(svg, 100, 250)
-    
-    // Troubleshooting decision tree
-    createTroubleshootingTree(svg, 100, 400)
-  }
-
-  const drawDefaultDiagram = (svg: SVGSVGElement) => {
-    // Default comprehensive architecture
-    createCloudNode(svg, 400, 100, 200, 80, 'Portnox NAC', 'default-portnox', '#e3f2fd')
-    createRectNode(svg, 200, 250, 150, 60, 'Network Infrastructure', 'default-network', '#e8f5e9')
-    createRectNode(svg, 450, 250, 150, 60, 'Identity Provider', 'default-identity', '#fff3e0')
-    createRectNode(svg, 700, 250, 150, 60, 'End Devices', 'default-devices', '#f3e5f5')
-    
-    // Basic connections
-    createConnection(svg, 350, 280, 400, 180, 'Authentication')
-    createConnection(svg, 600, 180, 525, 250, 'Policy')
-    createConnection(svg, 600, 280, 700, 280, 'Access')
-    
-    createText(svg, 500, 400, 'Select an architecture view to see detailed diagrams', 16, '#666', 'middle')
-  }
-
-  // Helper functions for creating SVG elements
-  const createCloudNode = (svg: SVGSVGElement, x: number, y: number, width: number, height: number, label: string, id: string, fill: string) => {
-    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g')
-    g.classList.add('diagram-node')
-    g.setAttribute('data-node-id', id)
-    g.style.cursor = 'pointer'
-    
-    // Cloud shape path
-    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path')
-    const cloudPath = `M${x + width * 0.2},${y + height * 0.6} 
-                      C${x + width * 0.1},${y + height * 0.4} ${x + width * 0.1},${y + height * 0.2} ${x + width * 0.3},${y + height * 0.2}
-                      C${x + width * 0.3},${y + height * 0.1} ${x + width * 0.5},${y + height * 0.1} ${x + width * 0.5},${y + height * 0.2}
-                      C${x + width * 0.7},${y + height * 0.1} ${x + width * 0.9},${y + height * 0.2} ${x + width * 0.8},${y + height * 0.4}
-                      C${x + width * 0.9},${y + height * 0.5} ${x + width * 0.8},${y + height * 0.7} ${x + width * 0.6},${y + height * 0.6}
-                      Z`
-    path.setAttribute('d', cloudPath)
-    path.setAttribute('fill', fill)
-    path.setAttribute('stroke', '#666')
-    path.setAttribute('stroke-width', '2')
-    path.setAttribute('filter', 'drop-shadow(2px 2px 4px rgba(0,0,0,0.1))')
-    
-    const text = createText(svg, x + width/2, y + height/2, label, 14, '#333', 'middle')
-    text.setAttribute('font-weight', 'bold')
-    
-    g.appendChild(path)
-    g.appendChild(text)
-    svg.appendChild(g)
-    
-    // Add click handler
-    g.addEventListener('click', () => handleNodeClick(id, label))
-    
-    return g
-  }
-
-  const createRectNode = (svg: SVGSVGElement, x: number, y: number, width: number, height: number, label: string, id: string, fill: string) => {
-    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g')
-    g.classList.add('diagram-node')
-    g.setAttribute('data-node-id', id)
-    g.style.cursor = 'pointer'
-    
-    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
-    rect.setAttribute('x', x.toString())
-    rect.setAttribute('y', y.toString())
-    rect.setAttribute('width', width.toString())
-    rect.setAttribute('height', height.toString())
-    rect.setAttribute('rx', '8')
-    rect.setAttribute('fill', fill)
-    rect.setAttribute('stroke', '#666')
-    rect.setAttribute('stroke-width', '2')
-    rect.setAttribute('filter', 'drop-shadow(2px 2px 4px rgba(0,0,0,0.1))')
-    
-    const text = createText(svg, x + width/2, y + height/2, label, 12, '#333', 'middle')
-    text.setAttribute('font-weight', 'bold')
-    
-    g.appendChild(rect)
-    g.appendChild(text)
-    svg.appendChild(g)
-    
-    g.addEventListener('click', () => handleNodeClick(id, label))
-    
-    return g
-  }
-
-  const createSiteNode = (svg: SVGSVGElement, x: number, y: number, width: number, height: number, label: string, id: string, fill: string) => {
-    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g')
-    g.classList.add('diagram-node')
-    g.setAttribute('data-node-id', id)
-    g.style.cursor = 'pointer'
-    
-    // Building shape
-    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
-    rect.setAttribute('x', x.toString())
-    rect.setAttribute('y', (y + 10).toString())
-    rect.setAttribute('width', width.toString())
-    rect.setAttribute('height', (height - 10).toString())
-    rect.setAttribute('rx', '4')
-    rect.setAttribute('fill', fill)
-    rect.setAttribute('stroke', '#666')
-    rect.setAttribute('stroke-width', '2')
-    
-    // Roof
-    const roof = document.createElementNS('http://www.w3.org/2000/svg', 'polygon')
-    roof.setAttribute('points', `${x},${y + 10} ${x + width/2},${y} ${x + width},${y + 10}`)
-    roof.setAttribute('fill', '#8bc34a')
-    roof.setAttribute('stroke', '#666')
-    roof.setAttribute('stroke-width', '2')
-    
-    const text = createText(svg, x + width/2, y + height/2 + 5, label, 12, '#333', 'middle')
-    text.setAttribute('font-weight', 'bold')
-    
-    g.appendChild(rect)
-    g.appendChild(roof)
-    g.appendChild(text)
-    svg.appendChild(g)
-    
-    g.addEventListener('click', () => handleNodeClick(id, label))
-    
-    return g
-  }
-
-  const createDeviceNode = (svg: SVGSVGElement, x: number, y: number, width: number, height: number, label: string, id: string) => {
-    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g')
-    g.classList.add('diagram-node')
-    g.setAttribute('data-node-id', id)
-    g.style.cursor = 'pointer'
-    
-    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle')
-    circle.setAttribute('cx', (x + width/2).toString())
-    circle.setAttribute('cy', (y + height/2).toString())
-    circle.setAttribute('r', (Math.min(width, height)/2 - 2).toString())
-    circle.setAttribute('fill', '#fff')
-    circle.setAttribute('stroke', '#666')
-    circle.setAttribute('stroke-width', '2')
-    
-    const text = createText(svg, x + width/2, y + height/2, label, 10, '#333', 'middle')
-    text.setAttribute('font-weight', 'bold')
-    
-    g.appendChild(circle)
-    g.appendChild(text)
-    svg.appendChild(g)
-    
-    g.addEventListener('click', () => handleNodeClick(id, label))
-    
-    return g
-  }
-
-  const createConnection = (svg: SVGSVGElement, x1: number, y1: number, x2: number, y2: number, label?: string) => {
-    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line')
-    line.setAttribute('x1', x1.toString())
-    line.setAttribute('y1', y1.toString())
-    line.setAttribute('x2', x2.toString())
-    line.setAttribute('y2', y2.toString())
-    line.setAttribute('stroke', '#666')
-    line.setAttribute('stroke-width', '2')
-    line.setAttribute('marker-end', 'url(#arrowhead)')
-    line.classList.add('diagram-connection')
-    
-    svg.appendChild(line)
-    
-    if (label) {
-      const text = createText(svg, (x1 + x2) / 2, (y1 + y2) / 2 - 10, label, 10, '#666', 'middle')
-      text.setAttribute('font-weight', 'bold')
-      svg.appendChild(text)
-    }
-    
-    return line
-  }
-
-  const createSecureConnection = (svg: SVGSVGElement, x1: number, y1: number, x2: number, y2: number, label?: string) => {
-    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line')
-    line.setAttribute('x1', x1.toString())
-    line.setAttribute('y1', y1.toString())
-    line.setAttribute('x2', x2.toString())
-    line.setAttribute('y2', y2.toString())
-    line.setAttribute('stroke', '#4caf50')
-    line.setAttribute('stroke-width', '3')
-    line.setAttribute('stroke-dasharray', '5,5')
-    line.setAttribute('marker-end', 'url(#secureArrow)')
-    line.classList.add('diagram-secure-connection')
-    
-    svg.appendChild(line)
-    
-    if (label) {
-      const text = createText(svg, (x1 + x2) / 2, (y1 + y2) / 2 - 10, label, 10, '#4caf50', 'middle')
-      text.setAttribute('font-weight', 'bold')
-      svg.appendChild(text)
-    }
-    
-    return line
-  }
-
-  const createAnimatedConnection = (svg: SVGSVGElement, x1: number, y1: number, x2: number, y2: number, id: string) => {
-    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line')
-    line.setAttribute('x1', x1.toString())
-    line.setAttribute('y1', y1.toString())
-    line.setAttribute('x2', x2.toString())
-    line.setAttribute('y2', y2.toString())
-    line.setAttribute('stroke', '#2196f3')
-    line.setAttribute('stroke-width', '3')
-    line.setAttribute('marker-end', 'url(#dataFlow)')
-    line.setAttribute('id', id)
-    
-    // Add animation
-    const length = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2))
-    line.setAttribute('stroke-dasharray', `${length}`)
-    line.setAttribute('stroke-dashoffset', `${length}`)
-    
-    const animate = document.createElementNS('http://www.w3.org/2000/svg', 'animate')
-    animate.setAttribute('attributeName', 'stroke-dashoffset')
-    animate.setAttribute('values', `${length};0`)
-    animate.setAttribute('dur', `${2 / animationSpeed}s`)
-    animate.setAttribute('repeatCount', 'indefinite')
-    
-    line.appendChild(animate)
-    svg.appendChild(line)
-    
-    return line
-  }
-
-  const createText = (svg: SVGSVGElement, x: number, y: number, text: string, fontSize: number, fill: string, textAnchor: string) => {
-    const textElement = document.createElementNS('http://www.w3.org/2000/svg', 'text')
-    textElement.setAttribute('x', x.toString())
-    textElement.setAttribute('y', y.toString())
-    textElement.setAttribute('text-anchor', textAnchor)
-    textElement.setAttribute('dominant-baseline', 'middle')
-    textElement.setAttribute('font-size', fontSize.toString())
-    textElement.setAttribute('font-family', 'Inter, system-ui, sans-serif')
-    textElement.setAttribute('fill', fill)
-    textElement.textContent = text
-    return textElement
-  }
-
-  // Additional helper functions for specific diagram elements
-  const createFlowStep = (svg: SVGSVGElement, x: number, y: number, width: number, label: string, detail: string, index: number) => {
-    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g')
-    g.classList.add('flow-step')
-    
-    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
-    rect.setAttribute('x', x.toString())
-    rect.setAttribute('y', y.toString())
-    rect.setAttribute('width', width.toString())
-    rect.setAttribute('height', '80')
-    rect.setAttribute('rx', '8')
-    rect.setAttribute('fill', `hsl(${index * 60}, 70%, 90%)`)
-    rect.setAttribute('stroke', `hsl(${index * 60}, 70%, 60%)`)
-    rect.setAttribute('stroke-width', '2')
-    
-    const labelText = createText(svg, x + width/2, y + 25, label, 12, '#333', 'middle')
-    labelText.setAttribute('font-weight', 'bold')
-    
-    const detailText = createText(svg, x + width/2, y + 50, detail, 10, '#666', 'middle')
-    
-    g.appendChild(rect)
-    g.appendChild(labelText)
-    g.appendChild(detailText)
-    svg.appendChild(g)
-    
-    return g
-  }
-
-  const createPKINode = (svg: SVGSVGElement, x: number, y: number, width: number, height: number, label: string, id: string, fill: string) => {
-    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g')
-    g.classList.add('diagram-node', 'pki-node')
-    g.setAttribute('data-node-id', id)
-    g.style.cursor = 'pointer'
-    
-    // Hexagon shape for PKI nodes
-    const points = []
-    const centerX = x + width/2
-    const centerY = y + height/2
-    const radius = Math.min(width, height) / 2 - 5
-    
-    for (let i = 0; i < 6; i++) {
-      const angle = (i * Math.PI) / 3
-      const px = centerX + radius * Math.cos(angle)
-      const py = centerY + radius * Math.sin(angle)
-      points.push(`${px},${py}`)
-    }
-    
-    const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon')
-    polygon.setAttribute('points', points.join(' '))
-    polygon.setAttribute('fill', fill)
-    polygon.setAttribute('stroke', '#666')
-    polygon.setAttribute('stroke-width', '2')
-    
-    const text = createText(svg, centerX, centerY, label, 11, '#333', 'middle')
-    text.setAttribute('font-weight', 'bold')
-    
-    g.appendChild(polygon)
-    g.appendChild(text)
-    svg.appendChild(g)
-    
-    g.addEventListener('click', () => handleNodeClick(id, label))
-    
-    return g
-  }
-
-  const createPolicyNode = (svg: SVGSVGElement, x: number, y: number, width: number, height: number, label: string, id: string, fill: string) => {
-    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g')
-    g.classList.add('diagram-node', 'policy-node')
-    g.setAttribute('data-node-id', id)
-    g.style.cursor = 'pointer'
-    
-    // Diamond shape for policy nodes
-    const points = [
-      `${x + width/2},${y}`,
-      `${x + width},${y + height/2}`,
-      `${x + width/2},${y + height}`,
-      `${x},${y + height/2}`
-    ]
-    
-    const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon')
-    polygon.setAttribute('points', points.join(' '))
-    polygon.setAttribute('fill', fill)
-    polygon.setAttribute('stroke', '#666')
-    polygon.setAttribute('stroke-width', '2')
-    
-    const text = createText(svg, x + width/2, y + height/2, label, 11, '#333', 'middle')
-    text.setAttribute('font-weight', 'bold')
-    
-    g.appendChild(polygon)
-    g.appendChild(text)
-    svg.appendChild(g)
-    
-    g.addEventListener('click', () => handleNodeClick(id, label))
-    
-    return g
-  }
-
-  const createOnboardingStage = (svg: SVGSVGElement, x: number, y: number, width: number, label: string, detail: string, index: number) => {
-    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g')
-    g.classList.add('onboarding-stage')
-    
-    // Rounded rectangle with gradient
-    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
-    rect.setAttribute('x', x.toString())
-    rect.setAttribute('y', y.toString())
-    rect.setAttribute('width', width.toString())
-    rect.setAttribute('height', '60')
-    rect.setAttribute('rx', '12')
-    rect.setAttribute('fill', `url(#stage-gradient-${index})`)
-    rect.setAttribute('stroke', '#666')
-    rect.setAttribute('stroke-width', '2')
-    
-    // Stage number circle
-    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle')
-    circle.setAttribute('cx', (x + 20).toString())
-    circle.setAttribute('cy', (y + 30).toString())
-    circle.setAttribute('r', '15')
-    circle.setAttribute('fill', '#2196f3')
-    circle.setAttribute('stroke', '#fff')
-    circle.setAttribute('stroke-width', '2')
-    
-    const numberText = createText(svg, x + 20, y + 30, (index + 1).toString(), 12, '#fff', 'middle')
-    numberText.setAttribute('font-weight', 'bold')
-    
-    const labelText = createText(svg, x + 50, y + 20, label, 12, '#333', 'start')
-    labelText.setAttribute('font-weight', 'bold')
-    
-    const detailText = createText(svg, x + 50, y + 40, detail, 10, '#666', 'start')
-    
-    g.appendChild(rect)
-    g.appendChild(circle)
-    g.appendChild(numberText)
-    g.appendChild(labelText)
-    g.appendChild(detailText)
-    svg.appendChild(g)
-    
-    return g
-  }
-
-  // Additional helper functions for complex diagram elements
-  const addTechnicalLabels = (svg: SVGSVGElement) => {
-    // Add port numbers and protocol information
-    const labels = [
-      { x: 150, y: 40, text: 'Port 443 (HTTPS)', color: '#666' },
-      { x: 550, y: 40, text: 'Port 2083 (RADSec)', color: '#4caf50' },
-      { x: 850, y: 40, text: 'Port 1812/1813 (RADIUS)', color: '#666' },
-      { x: 1150, y: 40, text: 'Port 802.1X', color: '#666' },
-      { x: 400, y: 380, text: 'Port 514 (Syslog)', color: '#9c27b0' }
-    ]
-    
-    labels.forEach(label => {
-      const text = createText(svg, label.x, label.y, label.text, 10, label.color, 'middle')
-      text.setAttribute('font-weight', 'bold')
-      svg.appendChild(text)
-    })
-  }
-
-  const createProtocolDetails = (svg: SVGSVGElement, x: number, y: number, protocols: string[]) => {
-    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g')
-    g.classList.add('protocol-details')
-    
-    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
-    rect.setAttribute('x', x.toString())
-    rect.setAttribute('y', y.toString())
-    rect.setAttribute('width', '300')
-    rect.setAttribute('height', (protocols.length * 25 + 20).toString())
-    rect.setAttribute('rx', '8')
-    rect.setAttribute('fill', '#f8f9fa')
-    rect.setAttribute('stroke', '#dee2e6')
-    rect.setAttribute('stroke-width', '1')
-    
-    const title = createText(svg, x + 10, y + 15, 'Protocol Details:', 12, '#333', 'start')
-    title.setAttribute('font-weight', 'bold')
-    
-    protocols.forEach((protocol, index) => {
-      const text = createText(svg, x + 10, y + 35 + (index * 20), `• ${protocol}`, 11, '#666', 'start')
-      g.appendChild(text)
-    })
-    
-    g.appendChild(rect)
-    g.appendChild(title)
-    svg.appendChild(g)
-    
-    return g
-  }
-
-  const createTimingDiagram = (svg: SVGSVGElement, x: number, y: number) => {
-    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g')
-    g.classList.add('timing-diagram')
-    
-    // Timeline
-    const timeline = document.createElementNS('http://www.w3.org/2000/svg', 'line')
-    timeline.setAttribute('x1', x.toString())
-    timeline.setAttribute('y1', y.toString())
-    timeline.setAttribute('x2', (x + 400).toString())
-    timeline.setAttribute('y2', y.toString())
-    timeline.setAttribute('stroke', '#333')
-    timeline.setAttribute('stroke-width', '2')
-    
-    // Time markers
-    const timeMarkers = ['0ms', '50ms', '100ms', '200ms', '500ms']
-    timeMarkers.forEach((time, index) => {
-      const markerX = x + (index * 80)
-      const marker = document.createElementNS('http://www.w3.org/2000/svg', 'line')
-      marker.setAttribute('x1', markerX.toString())
-      marker.setAttribute('y1', (y - 5).toString())
-      marker.setAttribute('x2', markerX.toString())
-      marker.setAttribute('y2', (y + 5).toString())
-      marker.setAttribute('stroke', '#333')
-      marker.setAttribute('stroke-width', '1')
-      
-      const text = createText(svg, markerX, y + 20, time, 10, '#666', 'middle')
-      
-      g.appendChild(marker)
-      g.appendChild(text)
-    })
-    
-    g.appendChild(timeline)
-    svg.appendChild(g)
-    
-    return g
-  }
-
-  const createCertificateLifecycle = (svg: SVGSVGElement, x: number, y: number) => {
-    const stages = [
-      { label: 'Request', color: '#ff9800', duration: '1-2 days' },
-      { label: 'Issue', color: '#4caf50', duration: '< 1 hour' },
-      { label: 'Deploy', color: '#2196f3', duration: '< 30 min' },
-      { label: 'Validate', color: '#9c27b0', duration: 'Real-time' },
-      { label: 'Renew', color: '#f44336', duration: '30 days before expiry' }
-    ]
-    
-    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g')
-    g.classList.add('certificate-lifecycle')
-    
-    stages.forEach((stage, index) => {
-      const stageX = x + (index * 120)
-      
-      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle')
-      circle.setAttribute('cx', stageX.toString())
-      circle.setAttribute('cy', y.toString())
-      circle.setAttribute('r', '20')
-      circle.setAttribute('fill', stage.color)
-      circle.setAttribute('stroke', '#fff')
-      circle.setAttribute('stroke-width', '3')
-      
-      const labelText = createText(svg, stageX, y - 35, stage.label, 12, '#333', 'middle')
-      labelText.setAttribute('font-weight', 'bold')
-      
-      const durationText = createText(svg, stageX, y + 35, stage.duration, 10, '#666', 'middle')
-      
-      if (index < stages.length - 1) {
-        const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'line')
-        arrow.setAttribute('x1', (stageX + 25).toString())
-        arrow.setAttribute('y1', y.toString())
-        arrow.setAttribute('x2', (stageX + 95).toString())
-        arrow.setAttribute('y2', y.toString())
-        arrow.setAttribute('stroke', '#666')
-        arrow.setAttribute('stroke-width', '2')
-        arrow.setAttribute('marker-end', 'url(#arrowhead)')
+    return (
+      <g key={connection.id}>
+        {/* Connection line with animation */}
+        <line
+          x1={x1}
+          y1={y1}
+          x2={x2}
+          y2={y2}
+          stroke={stroke}
+          strokeWidth={strokeWidth}
+          strokeDasharray={strokeDasharray}
+          className="transition-all duration-200"
+          style={{
+            strokeDasharray: showDataFlow ? '1000' : strokeDasharray,
+            strokeDashoffset: showDataFlow ? '1000' : '0',
+            animation: showDataFlow ? `drawLine ${2 / animationSpeed}s ease-out forwards` : 'none'
+          }}
+        />
         
-        g.appendChild(arrow)
-      }
-      
-      g.appendChild(circle)
-      g.appendChild(labelText)
-      g.appendChild(durationText)
-    })
-    
-    svg.appendChild(g)
-    return g
-  }
-
-  const createPolicyExamples = (svg: SVGSVGElement, x: number, y: number) => {
-    const examples = [
-      'Corporate Devices → VLAN 100 (Full Access)',
-      'BYOD Devices → VLAN 200 (Limited Access)',
-      'Guest Devices → VLAN 300 (Internet Only)',
-      'IoT Devices → VLAN 400 (Segmented)',
-      'Non-Compliant → Quarantine VLAN'
-    ]
-    
-    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g')
-    g.classList.add('policy-examples')
-    
-    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
-    rect.setAttribute('x', x.toString())
-    rect.setAttribute('y', y.toString())
-    rect.setAttribute('width', '400')
-    rect.setAttribute('height', (examples.length * 25 + 30).toString())
-    rect.setAttribute('rx', '8')
-    rect.setAttribute('fill', '#f8f9fa')
-    rect.setAttribute('stroke', '#dee2e6')
-    rect.setAttribute('stroke-width', '1')
-    
-    const title = createText(svg, x + 10, y + 20, 'Policy Examples:', 14, '#333', 'start')
-    title.setAttribute('font-weight', 'bold')
-    
-    examples.forEach((example, index) => {
-      const text = createText(svg, x + 10, y + 45 + (index * 22), example, 12, '#666', 'start')
-      g.appendChild(text)
-    })
-    
-    g.appendChild(rect)
-    g.appendChild(title)
-    svg.appendChild(g)
-    
-    return g
-  }
-
-  const createPerformanceMetrics = (svg: SVGSVGElement, x: number, y: number) => {
-    const metrics = [
-      { label: 'US-East Latency', value: '< 50ms', color: '#4caf50' },
-      { label: 'EU-West Latency', value: '< 80ms', color: '#4caf50' },
-      { label: 'APAC Latency', value: '< 120ms', color: '#ff9800' },
-      { label: 'Availability', value: '99.9%', color: '#4caf50' },
-      { label: 'Throughput', value: '10K auth/sec', color: '#2196f3' }
-    ]
-    
-    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g')
-    g.classList.add('performance-metrics')
-    
-    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
-    rect.setAttribute('x', x.toString())
-    rect.setAttribute('y', y.toString())
-    rect.setAttribute('width', '200')
-    rect.setAttribute('height', (metrics.length * 30 + 30).toString())
-    rect.setAttribute('rx', '8')
-    rect.setAttribute('fill', '#f8f9fa')
-    rect.setAttribute('stroke', '#dee2e6')
-    rect.setAttribute('stroke-width', '1')
-    
-    const title = createText(svg, x + 10, y + 20, 'Performance:', 14, '#333', 'start')
-    title.setAttribute('font-weight', 'bold')
-    
-    metrics.forEach((metric, index) => {
-      const labelText = createText(svg, x + 10, y + 45 + (index * 25), metric.label, 11, '#666', 'start')
-      const valueText = createText(svg, x + 180, y + 45 + (index * 25), metric.value, 11, metric.color, 'end')
-      valueText.setAttribute('font-weight', 'bold')
-      
-      g.appendChild(labelText)
-      g.appendChild(valueText)
-    })
-    
-    g.appendChild(rect)
-    g.appendChild(title)
-    svg.appendChild(g)
-    
-    return g
-  }
-
-  const createEnrollmentWorkflow = (svg: SVGSVGElement, x: number, y: number) => {
-    const steps = [
-      'User Login',
-      'Device Check',
-      'Certificate Request',
-      'SCEP Enrollment',
-      'Certificate Install',
-      'Network Access'
-    ]
-    
-    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g')
-    g.classList.add('enrollment-workflow')
-    
-    steps.forEach((step, index) => {
-      const stepY = y + (index * 40)
-      
-      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle')
-      circle.setAttribute('cx', x.toString())
-      circle.setAttribute('cy', stepY.toString())
-      circle.setAttribute('r', '15')
-      circle.setAttribute('fill', '#2196f3')
-      circle.setAttribute('stroke', '#fff')
-      circle.setAttribute('stroke-width', '2')
-      
-      const numberText = createText(svg, x, stepY, (index + 1).toString(), 12, '#fff', 'middle')
-      numberText.setAttribute('font-weight', 'bold')
-      
-      const stepText = createText(svg, x + 25, stepY, step, 12, '#333', 'start')
-      stepText.setAttribute('font-weight', 'bold')
-      
-      if (index < steps.length - 1) {
-        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line')
-        line.setAttribute('x1', x.toString())
-        line.setAttribute('y1', (stepY + 15).toString())
-        line.setAttribute('x2', x.toString())
-        line.setAttribute('y2', (stepY + 25).toString())
-        line.setAttribute('stroke', '#2196f3')
-        line.setAttribute('stroke-width', '2')
+        {/* Arrow marker */}
+        <defs>
+          <marker
+            id={`arrow-${connection.id}`}
+            markerWidth="12"
+            markerHeight="12"
+            refX="6"
+            refY="6"
+            orient="auto"
+            markerUnits="strokeWidth"
+          >
+            <path
+              d="M 0 0 L 12 6 L 0 12 z"
+              fill={stroke}
+            />
+          </marker>
+        </defs>
         
-        g.appendChild(line)
-      }
-      
-      g.appendChild(circle)
-      g.appendChild(numberText)
-      g.appendChild(stepText)
-    })
-    
-    svg.appendChild(g)
-    return g
-  }
+        <line
+          x1={x1}
+          y1={y1}
+          x2={x2}
+          y2={y2}
+          stroke="transparent"
+          strokeWidth={strokeWidth}
+          markerEnd={`url(#arrow-${connection.id})`}
+        />
+        
+        {/* Connection label with better visibility */}
+        {connection.label && (
+          <g>
+            <rect
+              x={midX - 40}
+              y={midY - 15}
+              width={80}
+              height={20}
+              rx={10}
+              fill="white"
+              stroke={stroke}
+              strokeWidth={1}
+              opacity={0.9}
+            />
+            <text
+              x={midX}
+              y={midY}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              className="fill-gray-700 text-xs font-medium"
+            >
+              {connection.label}
+            </text>
+          </g>
+        )}
 
-  const createDeviceOnboardingPaths = (svg: SVGSVGElement, x: number, y: number) => {
-    const deviceTypes = [
-      { name: 'Windows', method: 'Group Policy + SCEP', color: '#0078d4' },
-      { name: 'macOS', method: 'Configuration Profile', color: '#000' },
-      { name: 'iOS/iPadOS', method: 'MDM Profile', color: '#007aff' },
-      { name: 'Android', method: 'Work Profile', color: '#3ddc84' },
-      { name: 'Linux', method: 'Manual Certificate', color: '#fcc624' }
-    ]
-    
-    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g')
-    g.classList.add('device-onboarding-paths')
-    
-    deviceTypes.forEach((device, index) => {
-      const deviceY = y + (index * 30)
-      
-      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
-      rect.setAttribute('x', x.toString())
-      rect.setAttribute('y', (deviceY - 10).toString())
-      rect.setAttribute('width', '300')
-      rect.setAttribute('height', '25')
-      rect.setAttribute('rx', '4')
-      rect.setAttribute('fill', device.color)
-      rect.setAttribute('opacity', '0.1')
-      rect.setAttribute('stroke', device.color)
-      rect.setAttribute('stroke-width', '1')
-      
-      const nameText = createText(svg, x + 10, deviceY, device.name, 12, device.color, 'start')
-      nameText.setAttribute('font-weight', 'bold')
-      
-      const methodText = createText(svg, x + 100, deviceY, device.method, 11, '#666', 'start')
-      
-      g.appendChild(rect)
-      g.appendChild(nameText)
-      g.appendChild(methodText)
-    })
-    
-    svg.appendChild(g)
-    return g
+        {/* Protocol and bandwidth info on hover */}
+        {(connection.protocol || connection.bandwidth) && (
+          <g className="opacity-0 hover:opacity-100 transition-opacity">
+            <rect
+              x={midX - 50}
+              y={midY + 20}
+              width={100}
+              height={30}
+              rx={5}
+              fill="rgba(0,0,0,0.8)"
+            />
+            <text
+              x={midX}
+              y={midY + 30}
+              textAnchor="middle"
+              className="fill-white text-xs"
+            >
+              {connection.protocol}
+            </text>
+            <text
+              x={midX}
+              y={midY + 42}
+              textAnchor="middle"
+              className="fill-white text-xs"
+            >
+              {connection.bandwidth}
+            </text>
+          </g>
+        )}
+      </g>
+    )
   }
-
-  const createTroubleshootingTree = (svg: SVGSVGElement, x: number, y: number) => {
-    const issues = [
-      { problem: 'Authentication Failed', solution: 'Check certificate validity', color: '#f44336' },
-      { problem: 'Certificate Not Found', solution: 'Re-enroll via SCEP', color: '#ff9800' },
-      { problem: 'Policy Not Applied', solution: 'Verify RADIUS attributes', color: '#2196f3' },
-      { problem: 'Network Access Denied', solution: 'Check VLAN configuration', color: '#9c27b0' }
-    ]
-    
-    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g')
-    g.classList.add('troubleshooting-tree')
-    
-    const title = createText(svg, x, y - 20, 'Common Issues & Solutions:', 14, '#333', 'start')
-    title.setAttribute('font-weight', 'bold')
-    
-    issues.forEach((issue, index) => {
-      const issueY = y + (index * 35)
-      
-      const problemText = createText(svg, x, issueY, `⚠️ ${issue.problem}`, 12, issue.color, 'start')
-      problemText.setAttribute('font-weight', 'bold')
-      
-      const solutionText = createText(svg, x + 20, issueY + 15, `→ ${issue.solution}`, 11, '#666', 'start')
-      
-      g.appendChild(problemText)
-      g.appendChild(solutionText)
-    })
-    
-    g.appendChild(title)
-    svg.appendChild(g)
-    return g
-  }
-
-  // Utility functions
-  const getIdentityProviderName = () => {
-    switch (identity) {
-      case 'azure-ad': return 'Azure AD/Entra ID'
-      case 'active-directory': return 'Active Directory'
-      case 'okta': return 'Okta'
-      case 'ping': return 'Ping Identity'
-      default: return 'Identity Provider'
-    }
-  }
-
-  const getVendorEquipment = () => {
-    switch (vendor) {
-      case 'cisco': return 'Cisco Catalyst'
-      case 'juniper': return 'Juniper EX'
-      case 'aruba': return 'Aruba CX'
-      case 'extreme': return 'Extreme Switch'
-      case 'fortinet': return 'FortiSwitch'
-      case 'meraki': return 'Meraki MS'
-      case 'ubiquiti': return 'UniFi Switch'
-      case 'mikrotik': return 'MikroTik CRS'
-      default: return 'Network Switch'
-    }
-  }
-
-  const handleNodeClick = (nodeId: string, label: string) => {
-    setSelectedNode(nodeId)
-    
-    // Show detailed information about the clicked node
-    const nodeInfo = getNodeInfo(nodeId, label)
-    
-    // You could show a tooltip or modal here
-    console.log(`Clicked node: ${nodeId}`, nodeInfo)
-  }
-
-  const getNodeInfo = (nodeId: string, label: string) => {
-    // Return detailed information about the node
-    const nodeDetails: Record<string, any> = {
-      'portnox-cloud': {
-        description: 'Cloud-based NAC engine providing authentication, authorization, and policy enforcement',
-        features: ['Private PKI', 'Policy Management', 'Real-time Monitoring', 'API Integration'],
-        ports: ['443 (HTTPS)', '2083 (RADSec)'],
-        sla: '99.9% uptime'
-      },
-      'aws-proxy-1': {
-        description: 'Primary RADSec proxy for high availability RADIUS authentication',
-        features: ['7-day cache', 'Load balancing', 'TLS encryption', 'Failover support'],
-        ports: ['2083 (RADSec)', '1812/1813 (RADIUS)'],
-        location: 'us-east-1a'
-      },
-      'identity-provider': {
-        description: getIdentityProviderName() + ' integration for user authentication',
-        features: ['LDAP/SAML', 'Multi-factor auth', 'Group policies', 'Conditional access'],
-        protocols: ['LDAP', 'SAML 2.0', 'OAuth 2.0'],
-        sync: 'Real-time'
-      }
-    }
-    
-    return nodeDetails[nodeId] || { description: label, features: [], ports: [], protocols: [] }
-  }
-
-  const animateDataFlow = (svg: SVGSVGElement) => {
-    // Add animated data flow indicators
-    const connections = svg.querySelectorAll('.diagram-connection')
-    connections.forEach((connection, index) => {
-      setTimeout(() => {
-        connection.classList.add('animated')
-      }, index * 200)
-    })
-  }
-
-  const toggleDataFlow = () => {
-    setShowDataFlow(!showDataFlow)
-  }
-
-  const handleAnimationSpeedChange = (speed: number) => {
-    setAnimationSpeed(speed)
-  }
-
-  const currentView = architectureViews.find(v => v.id === view)
-  const selectedVendor = networkVendors.find(v => v.id === vendor)
-  const selectedConnectivity = connectivityOptions.find(c => c.id === connectivity)
-  const selectedIdentity = identityProviders.find(i => i.id === identity)
 
   return (
-    <div className="w-full space-y-4 font-inter">
-      {/* Diagram Controls */}
-      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-        <div className="flex items-center space-x-4">
-          <Button
-            variant={showDataFlow ? "default" : "outline"}
-            size="sm"
-            onClick={toggleDataFlow}
-            className="font-medium"
-          >
-            {showDataFlow ? 'Hide' : 'Show'} Data Flow
-          </Button>
-          
-          <div className="flex items-center space-x-2">
-            <span className="text-sm font-medium">Animation Speed:</span>
-            <div className="flex space-x-1">
-              {[0.5, 1, 2].map((speed) => (
-                <Button
-                  key={speed}
-                  variant={animationSpeed === speed ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handleAnimationSpeedChange(speed)}
-                  className="font-medium"
-                >
-                  {speed}x
-                </Button>
-              ))}
-            </div>
-          </div>
-        </div>
-        
-        {selectedNode && (
-          <Badge variant="secondary" className="font-medium">
-            Selected: {selectedNode}
-          </Badge>
-        )}
-      </div>
-
-      {/* SVG Diagram Container */}
-      <div className="w-full bg-white rounded-lg border-2 border-gray-200 p-6 shadow-sm">
+    <div className="w-full">
+      <div className="w-full h-[700px] overflow-auto border rounded-lg bg-gradient-to-br from-gray-50 to-white">
         <svg
           ref={svgRef}
-          width="100%"
-          height="600"
-          viewBox="0 0 1400 600"
-          className="w-full h-auto"
-          style={{ maxHeight: '600px', fontFamily: 'Inter, system-ui, sans-serif' }}
+          width="1200"
+          height="700"
+          viewBox="0 0 1200 700"
+          className="w-full h-full"
         >
-          {/* SVG content will be dynamically generated */}
+          <style>
+            {`
+              @keyframes drawLine {
+                to {
+                  stroke-dashoffset: 0;
+                }
+              }
+              .connection-flow {
+                animation: flow 2s linear infinite;
+              }
+              @keyframes flow {
+                0% { stroke-dashoffset: 20; }
+                100% { stroke-dashoffset: 0; }
+              }
+            `}
+          </style>
+          
+          {/* Background grid */}
+          <defs>
+            <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+              <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#f0f0f0" strokeWidth="1"/>
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#grid)" />
+          
+          {/* Render connections first (behind nodes) */}
+          {connections.map(renderConnection)}
+          
+          {/* Render nodes */}
+          {nodes.map(renderNode)}
         </svg>
       </div>
-
-      {/* Diagram Information */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg font-bold">Current Configuration</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="flex justify-between">
-              <span className="font-medium">Architecture:</span>
-              <Badge variant="outline" className="font-medium">{currentView?.name}</Badge>
-            </div>
-            <div className="flex justify-between">
-              <span className="font-medium">Vendor:</span>
-              <Badge variant="outline" className="font-medium">{networkVendors.find(v => v.id === selectedVendor)?.name}</Badge>
-            </div>
-            <div className="flex justify-between">
-              <span className="font-medium">Connectivity:</span>
-              <Badge variant="outline" className="font-medium">{connectivityOptions.find(c => c.id === selectedConnectivity)?.name}</Badge>
-            </div>
-            <div className="flex justify-between">
-              <span className="font-medium">Identity:</span>
-              <Badge variant="outline" className="font-medium">{identityProviders.find(i => i.id === selectedIdentity)?.name}</Badge>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg font-bold">Diagram Legend</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 bg-blue-100 border border-blue-500 rounded"></div>
-              <span className="text-sm font-medium">Cloud Services</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 bg-orange-100 border border-orange-500 rounded"></div>
-              <span className="text-sm font-medium">AWS Infrastructure</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 bg-green-100 border border-green-500 rounded"></div>
-              <span className="text-sm font-medium">ABM Sites</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-4 h-2 bg-gray-400"></div>
-              <span className="text-sm font-medium">Standard Connection</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-4 h-2 bg-green-500" style={{background: 'repeating-linear-gradient(90deg, #4caf50 0, #4caf50 4px, transparent 4px, transparent 8px)'}}></div>
-              <span className="text-sm font-medium">Secure/Encrypted</span>
+      
+      {/* Selected Node Details */}
+      {selectedNode && (
+        <Card className="mt-4">
+          <CardContent className="pt-6">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center space-x-3">
+                <span className="text-2xl">{nodes.find(n => n.id === selectedNode)?.icon}</span>
+                <div>
+                  <h3 className="font-semibold text-lg">{nodes.find(n => n.id === selectedNode)?.label}</h3>
+                  <p className="text-muted-foreground">{nodes.find(n => n.id === selectedNode)?.description}</p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="secondary">Type: {nodes.find(n => n.id === selectedNode)?.type}</Badge>
+                {nodes.find(n => n.id === selectedNode)?.status && (
+                  <Badge variant={
+                    nodes.find(n => n.id === selectedNode)?.status === 'active' ? 'default' :
+                    nodes.find(n => n.id === selectedNode)?.status === 'standby' ? 'secondary' : 'destructive'
+                  }>
+                    {nodes.find(n => n.id === selectedNode)?.status}
+                  </Badge>
+                )}
+                <Badge variant="outline">Interactive</Badge>
+              </div>
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Instructions */}
+      <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+        <p className="text-sm text-blue-800">
+          <strong>Instructions:</strong> Click on nodes to view detailed information. Hover over connections to see protocol and bandwidth details. 
+          Use the animation controls above to visualize data flow through the architecture.
+        </p>
       </div>
     </div>
   )
 }
-
-const architectureViews = [
-  { id: 'zero-trust-nac', name: 'Zero Trust NAC' },
-  { id: '802.1x-auth', name: '802.1X Authentication' },
-  { id: 'pki-infrastructure', name: 'PKI Infrastructure' },
-  { id: 'policy-framework', name: 'Policy Framework' },
-  { id: 'multi-cloud', name: 'Multi-Cloud' },
-  { id: 'intune-integration', name: 'Intune Integration' },
-  { id: 'device-onboarding', name: 'Device Onboarding' }
-]
-
-const networkVendors = [
-  { id: 'cisco', name: 'Cisco' },
-  { id: 'juniper', name: 'Juniper' },
-  { id: 'aruba', name: 'Aruba' },
-  { id: 'extreme', name: 'Extreme' },
-  { id: 'fortinet', name: 'Fortinet' },
-  { id: 'meraki', name: 'Meraki' },
-  { id: 'ubiquiti', name: 'Ubiquiti' },
-  { id: 'mikrotik', name: 'MikroTik' }
-]
-
-const connectivityOptions = [
-  { id: 'wired', name: 'Wired' },
-  { id: 'wireless', name: 'Wireless' },
-  { id: 'vpn', name: 'VPN' }
-]
-
-const identityProviders = [
-  { id: 'azure-ad', name: 'Azure AD' },
-  { id: 'active-directory', name: 'Active Directory' },
-  { id: 'okta', name: 'Okta' },
-  { id: 'ping', name: 'Ping Identity' }
-]
