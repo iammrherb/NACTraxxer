@@ -1,354 +1,309 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { BarChart3, Calendar, CheckCircle, Clock, AlertTriangle, Users, Building, Network, Download, Filter } from 'lucide-react'
+import { BarChart3, TrendingUp, Clock, CheckCircle, AlertTriangle, XCircle, Users, Building, Calendar, Target } from 'lucide-react'
 
-interface Site {
+interface ProgressStats {
+  totalSites: number
+  completedSites: number
+  inProgressSites: number
+  plannedSites: number
+  delayedSites: number
+  totalUsers: number
+  overallProgress: number
+}
+
+interface SiteProgress {
   id: string
   name: string
-  location: string
-  status: 'not-started' | 'planning' | 'in-progress' | 'testing' | 'completed' | 'delayed'
+  status: string
   progress: number
-  startDate: string
-  targetDate: string
-  actualDate?: string
-  team: string[]
-  issues: number
+  phase: string
+  users: number
 }
 
-const mockSites: Site[] = [
-  {
-    id: '1',
-    name: 'ABM Corporate HQ',
-    location: 'New York, NY',
-    status: 'completed',
-    progress: 100,
-    startDate: '2024-01-15',
-    targetDate: '2024-02-15',
-    actualDate: '2024-02-10',
-    team: ['John Smith', 'Sarah Johnson'],
-    issues: 0
-  },
-  {
-    id: '2',
-    name: 'ABM West Coast Office',
-    location: 'San Francisco, CA',
-    status: 'in-progress',
-    progress: 75,
-    startDate: '2024-02-01',
-    targetDate: '2024-03-01',
-    team: ['Mike Chen', 'Lisa Rodriguez'],
-    issues: 2
-  },
-  {
-    id: '3',
-    name: 'ABM Manufacturing Plant',
-    location: 'Detroit, MI',
-    status: 'testing',
-    progress: 90,
-    startDate: '2024-02-15',
-    targetDate: '2024-03-15',
-    team: ['David Wilson', 'Emma Davis'],
-    issues: 1
-  },
-  {
-    id: '4',
-    name: 'ABM Distribution Center',
-    location: 'Chicago, IL',
-    status: 'planning',
-    progress: 25,
-    startDate: '2024-03-01',
-    targetDate: '2024-04-01',
-    team: ['Alex Thompson'],
-    issues: 0
-  },
-  {
-    id: '5',
-    name: 'ABM Regional Office',
-    location: 'Atlanta, GA',
-    status: 'delayed',
-    progress: 40,
-    startDate: '2024-01-20',
-    targetDate: '2024-02-20',
-    team: ['Maria Garcia', 'Tom Anderson'],
-    issues: 5
-  }
+const sampleStats: ProgressStats = {
+  totalSites: 12,
+  completedSites: 3,
+  inProgressSites: 4,
+  plannedSites: 4,
+  delayedSites: 1,
+  totalUsers: 9550,
+  overallProgress: 35
+}
+
+const sampleSiteProgress: SiteProgress[] = [
+  { id: 'ABM-HQ001', name: 'ABM Global Headquarters', status: 'In Progress', progress: 35, phase: '1', users: 2500 },
+  { id: 'ABM-DC002', name: 'Primary Data Center', status: 'In Progress', progress: 65, phase: '1', users: 150 },
+  { id: 'ABM-EUR003', name: 'European HQ', status: 'Planned', progress: 0, phase: '2', users: 1200 },
+  { id: 'ABM-MFG006', name: 'Manufacturing Plant', status: 'Complete', progress: 100, phase: '1', users: 450 },
+  { id: 'ABM-EMEA010', name: 'London Office', status: 'Complete', progress: 100, phase: '1', users: 620 },
+  { id: 'ABM-DC012', name: 'Secondary Data Center', status: 'Complete', progress: 100, phase: '1', users: 120 }
 ]
 
-const getStatusColor = (status: Site['status']) => {
-  switch (status) {
-    case 'completed': return 'bg-green-500'
-    case 'in-progress': return 'bg-blue-500'
-    case 'testing': return 'bg-yellow-500'
-    case 'planning': return 'bg-purple-500'
-    case 'delayed': return 'bg-red-500'
-    default: return 'bg-gray-500'
-  }
-}
-
-const getStatusIcon = (status: Site['status']) => {
-  switch (status) {
-    case 'completed': return <CheckCircle className="h-4 w-4" />
-    case 'in-progress': return <Clock className="h-4 w-4" />
-    case 'testing': return <BarChart3 className="h-4 w-4" />
-    case 'planning': return <Calendar className="h-4 w-4" />
-    case 'delayed': return <AlertTriangle className="h-4 w-4" />
-    default: return <Clock className="h-4 w-4" />
-  }
-}
-
 export default function ProgressTracking() {
-  const [selectedStatus, setSelectedStatus] = useState<string>('all')
-  const [activeTab, setActiveTab] = useState('overview')
+  const [stats, setStats] = useState<ProgressStats>(sampleStats)
+  const [siteProgress, setSiteProgress] = useState<SiteProgress[]>(sampleSiteProgress)
+  const [animatedProgress, setAnimatedProgress] = useState(0)
 
-  const filteredSites = selectedStatus === 'all' 
-    ? mockSites 
-    : mockSites.filter(site => site.status === selectedStatus)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setAnimatedProgress(stats.overallProgress)
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [stats.overallProgress])
 
-  const overallProgress = Math.round(
-    mockSites.reduce((sum, site) => sum + site.progress, 0) / mockSites.length
-  )
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'Complete':
+        return <CheckCircle className="h-4 w-4 text-green-600" />
+      case 'In Progress':
+        return <Clock className="h-4 w-4 text-blue-600" />
+      case 'Delayed':
+        return <AlertTriangle className="h-4 w-4 text-red-600" />
+      case 'Planned':
+        return <XCircle className="h-4 w-4 text-gray-600" />
+      default:
+        return null
+    }
+  }
 
-  const statusCounts = {
-    completed: mockSites.filter(s => s.status === 'completed').length,
-    'in-progress': mockSites.filter(s => s.status === 'in-progress').length,
-    testing: mockSites.filter(s => s.status === 'testing').length,
-    planning: mockSites.filter(s => s.status === 'planning').length,
-    delayed: mockSites.filter(s => s.status === 'delayed').length,
-    'not-started': mockSites.filter(s => s.status === 'not-started').length
+  const getProgressColor = (status: string) => {
+    switch (status) {
+      case 'Complete':
+        return 'bg-green-500'
+      case 'In Progress':
+        return 'bg-blue-500'
+      case 'Delayed':
+        return 'bg-red-500'
+      case 'Planned':
+        return 'bg-gray-400'
+      default:
+        return 'bg-gray-400'
+    }
   }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Rollout Progress</h2>
-          <p className="text-gray-600">Track Zero Trust NAC deployment across all sites</p>
-        </div>
-        <div className="flex items-center space-x-3">
-          <Button variant="outline" size="sm">
-            <Download className="h-4 w-4 mr-2" />
-            Export Report
-          </Button>
-          <Button variant="outline" size="sm">
-            <Filter className="h-4 w-4 mr-2" />
-            Filter
-          </Button>
-        </div>
+      {/* Overview Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Sites</CardTitle>
+            <Building className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalSites}</div>
+            <p className="text-xs text-muted-foreground">
+              Across all regions
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Completed Sites</CardTitle>
+            <CheckCircle className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{stats.completedSites}</div>
+            <p className="text-xs text-muted-foreground">
+              {Math.round((stats.completedSites / stats.totalSites) * 100)}% of total
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">In Progress</CardTitle>
+            <Clock className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">{stats.inProgressSites}</div>
+            <p className="text-xs text-muted-foreground">
+              Active deployments
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalUsers.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">
+              Across all sites
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Overall Progress</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{overallProgress}%</div>
-            <Progress value={overallProgress} className="mt-2" />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Total Sites</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-900">{mockSites.length}</div>
-            <p className="text-sm text-gray-600 mt-1">Sites in deployment</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Completed</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{statusCounts.completed}</div>
-            <p className="text-sm text-gray-600 mt-1">Sites completed</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Issues</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {mockSites.reduce((sum, site) => sum + site.issues, 0)}
+      {/* Overall Progress */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <BarChart3 className="h-5 w-5" />
+            <span>Overall Project Progress</span>
+          </CardTitle>
+          <CardDescription>
+            Total completion across all deployment sites
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">Project Completion</span>
+              <span className="text-2xl font-bold">{animatedProgress}%</span>
             </div>
-            <p className="text-sm text-gray-600 mt-1">Active issues</p>
+            <Progress value={animatedProgress} className="h-3" />
+            <div className="grid grid-cols-4 gap-4 text-sm">
+              <div className="text-center">
+                <div className="text-lg font-semibold text-green-600">{stats.completedSites}</div>
+                <div className="text-muted-foreground">Complete</div>
+              </div>
+              <div className="text-center">
+                <div className="text-lg font-semibold text-blue-600">{stats.inProgressSites}</div>
+                <div className="text-muted-foreground">In Progress</div>
+              </div>
+              <div className="text-center">
+                <div className="text-lg font-semibold text-gray-600">{stats.plannedSites}</div>
+                <div className="text-muted-foreground">Planned</div>
+              </div>
+              <div className="text-center">
+                <div className="text-lg font-semibold text-red-600">{stats.delayedSites}</div>
+                <div className="text-muted-foreground">Delayed</div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Site Progress Details */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Target className="h-5 w-5" />
+            <span>Site Progress Details</span>
+          </CardTitle>
+          <CardDescription>
+            Individual site completion status and progress tracking
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {siteProgress.map((site) => (
+              <div key={site.id} className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    {getStatusIcon(site.status)}
+                    <div>
+                      <div className="font-medium">{site.name}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {site.id} • Phase {site.phase} • {site.users.toLocaleString()} users
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <Badge variant={site.status === 'Complete' ? 'default' : 'secondary'}>
+                      {site.status}
+                    </Badge>
+                    <span className="text-sm font-medium w-12 text-right">
+                      {site.progress}%
+                    </span>
+                  </div>
+                </div>
+                <Progress 
+                  value={site.progress} 
+                  className={`h-2 ${getProgressColor(site.status)}`}
+                />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Phase Breakdown */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Calendar className="h-5 w-5" />
+              <span>Phase Breakdown</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span>Phase 1 (Critical Sites)</span>
+                <div className="flex items-center space-x-2">
+                  <Progress value={75} className="w-20 h-2" />
+                  <span className="text-sm">6/8 sites</span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Phase 2 (Regional Offices)</span>
+                <div className="flex items-center space-x-2">
+                  <Progress value={25} className="w-20 h-2" />
+                  <span className="text-sm">1/4 sites</span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Phase 3 (Branch Offices)</span>
+                <div className="flex items-center space-x-2">
+                  <Progress value={0} className="w-20 h-2" />
+                  <span className="text-sm">0/3 sites</span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <TrendingUp className="h-5 w-5" />
+              <span>Key Metrics</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Average Site Completion</span>
+                <span className="font-semibold">42%</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Sites On Schedule</span>
+                <span className="font-semibold text-green-600">91%</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Users Deployed</span>
+                <span className="font-semibold">4,240</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Estimated Completion</span>
+                <span className="font-semibold">Q2 2025</span>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Main Content */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="timeline">Timeline</TabsTrigger>
-          <TabsTrigger value="details">Site Details</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="space-y-6">
-          {/* Status Distribution */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Status Distribution</CardTitle>
-              <CardDescription>Current status of all deployment sites</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                {Object.entries(statusCounts).map(([status, count]) => (
-                  <div key={status} className="text-center">
-                    <div className={`w-12 h-12 rounded-full ${getStatusColor(status as Site['status'])} mx-auto mb-2 flex items-center justify-center text-white`}>
-                      {getStatusIcon(status as Site['status'])}
-                    </div>
-                    <div className="text-lg font-semibold">{count}</div>
-                    <div className="text-sm text-gray-600 capitalize">{status.replace('-', ' ')}</div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Progress by Site */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Progress by Site</CardTitle>
-              <CardDescription>Individual site deployment progress</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {mockSites.map((site) => (
-                  <div key={site.id} className="flex items-center space-x-4 p-4 border rounded-lg">
-                    <div className={`w-3 h-3 rounded-full ${getStatusColor(site.status)}`} />
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium">{site.name}</h4>
-                        <Badge variant="outline" className="capitalize">
-                          {site.status.replace('-', ' ')}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
-                        <span>{site.location}</span>
-                        <span>{site.progress}%</span>
-                      </div>
-                      <Progress value={site.progress} className="h-2" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="timeline" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Deployment Timeline</CardTitle>
-              <CardDescription>Planned vs actual deployment dates</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                {mockSites.map((site, index) => (
-                  <div key={site.id} className="relative">
-                    {index !== mockSites.length - 1 && (
-                      <div className="absolute left-6 top-12 w-0.5 h-16 bg-gray-200" />
-                    )}
-                    <div className="flex items-start space-x-4">
-                      <div className={`w-12 h-12 rounded-full ${getStatusColor(site.status)} flex items-center justify-center text-white flex-shrink-0`}>
-                        {getStatusIcon(site.status)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-medium">{site.name}</h4>
-                          <Badge variant="outline" className="capitalize">
-                            {site.status.replace('-', ' ')}
-                          </Badge>
-                        </div>
-                        <div className="text-sm text-gray-600 space-y-1">
-                          <div>Started: {new Date(site.startDate).toLocaleDateString()}</div>
-                          <div>Target: {new Date(site.targetDate).toLocaleDateString()}</div>
-                          {site.actualDate && (
-                            <div>Completed: {new Date(site.actualDate).toLocaleDateString()}</div>
-                          )}
-                        </div>
-                        <div className="mt-2">
-                          <Progress value={site.progress} className="h-2" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="details" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Site Details</CardTitle>
-              <CardDescription>Detailed information for each deployment site</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                {mockSites.map((site) => (
-                  <div key={site.id} className="border rounded-lg p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <h3 className="text-lg font-semibold">{site.name}</h3>
-                        <p className="text-gray-600">{site.location}</p>
-                      </div>
-                      <Badge variant="outline" className="capitalize">
-                        {site.status.replace('-', ' ')}
-                      </Badge>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                      <div>
-                        <div className="text-sm font-medium text-gray-600">Progress</div>
-                        <div className="text-lg font-semibold">{site.progress}%</div>
-                        <Progress value={site.progress} className="mt-1 h-2" />
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium text-gray-600">Team Size</div>
-                        <div className="text-lg font-semibold flex items-center">
-                          <Users className="h-4 w-4 mr-1" />
-                          {site.team.length}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium text-gray-600">Issues</div>
-                        <div className="text-lg font-semibold flex items-center">
-                          <AlertTriangle className="h-4 w-4 mr-1" />
-                          {site.issues}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <div className="text-sm font-medium text-gray-600">Team Members</div>
-                      <div className="flex flex-wrap gap-2">
-                        {site.team.map((member, index) => (
-                          <Badge key={index} variant="secondary">{member}</Badge>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      {/* Rollout Progress */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Rollout Progress</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-12 text-muted-foreground">
+            Progress tracking functionality will be implemented here
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

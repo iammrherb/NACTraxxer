@@ -5,52 +5,11 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Shield, Cloud, Network, Server, Database, Lock, Users, Settings, Smartphone, Globe, Key, FileText, Zap, Eye, AlertTriangle } from 'lucide-react'
 
-interface ArchitectureConfig {
-  cloudProvider?: string
-  networkVendor?: string
-  authMethod?: string
-  connectivity?: string
-  mfaEnabled?: boolean
-  guestAccess?: boolean
-  byodSupport?: boolean
-  complianceMode?: string
-}
-
 interface ArchitectureLegendProps {
-  config?: ArchitectureConfig
+  currentView: string
 }
 
-export default function ArchitectureLegend({ config }: ArchitectureLegendProps) {
-  // Safely extract config values with defaults
-  const cloudProvider = config?.cloudProvider || 'azure'
-  const networkVendor = config?.networkVendor || 'cisco'
-  const authMethod = config?.authMethod || 'radius'
-  const connectivity = config?.connectivity || 'hybrid'
-  const mfaEnabled = config?.mfaEnabled || false
-  const guestAccess = config?.guestAccess || false
-  const byodSupport = config?.byodSupport || false
-
-  // Safe string formatting functions
-  const formatCloudProvider = (provider: string) => {
-    if (!provider || typeof provider !== 'string') return 'Azure'
-    return provider.charAt(0).toUpperCase() + provider.slice(1)
-  }
-
-  const formatNetworkVendor = (vendor: string) => {
-    if (!vendor || typeof vendor !== 'string') return 'Cisco'
-    return vendor.charAt(0).toUpperCase() + vendor.slice(1)
-  }
-
-  const formatAuthMethod = (method: string) => {
-    if (!method || typeof method !== 'string') return 'RADIUS'
-    return method.toUpperCase()
-  }
-
-  const formatConnectivity = (conn: string) => {
-    if (!conn || typeof conn !== 'string') return 'Hybrid'
-    return conn.charAt(0).toUpperCase() + conn.slice(1)
-  }
-
+export default function ArchitectureLegend({ currentView }: ArchitectureLegendProps) {
   const componentTypes = [
     {
       type: 'endpoint',
@@ -186,7 +145,7 @@ export default function ArchitectureLegend({ config }: ArchitectureLegendProps) 
       description: 'Security appliances and SASE'
     },
     {
-      vendor: 'palo-alto',
+      vendor: 'paloalto',
       label: 'Palo Alto Networks',
       color: '#FF6B35',
       logo: '🟠',
@@ -208,66 +167,109 @@ export default function ArchitectureLegend({ config }: ArchitectureLegendProps) 
     }
   ]
 
+  const getViewSpecificInfo = () => {
+    switch (currentView) {
+      case 'complete':
+        return {
+          title: 'Complete Architecture Components',
+          description: 'Full end-to-end Zero Trust NAC deployment showing all integrated components and data flows.',
+          keyComponents: ['Portnox Cloud', 'Network Infrastructure', 'Identity Providers', 'Policy Engine']
+        }
+      case 'auth-flow':
+        return {
+          title: 'Authentication Flow Components',
+          description: '802.1X authentication sequence showing the complete RADIUS authentication process.',
+          keyComponents: ['Supplicant', 'Authenticator', 'RADIUS Server', 'Identity Store']
+        }
+      case 'pki':
+        return {
+          title: 'PKI Infrastructure Components',
+          description: 'Certificate-based authentication infrastructure for secure device and user authentication.',
+          keyComponents: ['Root CA', 'Issuing CA', 'Certificate Store', 'CRL Distribution']
+        }
+      case 'policies':
+        return {
+          title: 'Policy Framework Components',
+          description: 'Dynamic policy engine with user, device, and network-based access controls.',
+          keyComponents: ['Policy Engine', 'User Policies', 'Device Policies', 'Network Policies']
+        }
+      case 'connectivity':
+        return {
+          title: 'Connectivity Options',
+          description: 'Multi-cloud and hybrid connectivity patterns for distributed NAC deployments.',
+          keyComponents: ['SD-WAN', 'Cloud Connectors', 'VPN Gateways', 'Direct Connect']
+        }
+      case 'intune':
+        return {
+          title: 'Microsoft Intune Integration',
+          description: 'Device compliance integration with Microsoft Intune for comprehensive device management.',
+          keyComponents: ['Intune MDM', 'Azure AD', 'Compliance Policies', 'Device Enrollment']
+        }
+      case 'onboarding':
+        return {
+          title: 'Device Onboarding Workflow',
+          description: 'Automated device enrollment and certificate provisioning for new devices.',
+          keyComponents: ['Captive Portal', 'Certificate Authority', 'MDM Enrollment', 'Policy Assignment']
+        }
+      case 'fortigate-tacacs':
+        return {
+          title: 'FortiGate TACACS+ Integration',
+          description: 'Device administration authentication for FortiGate firewalls using TACACS+.',
+          keyComponents: ['FortiGate Firewall', 'TACACS+ Server', 'Active Directory', 'Admin Authentication']
+        }
+      case 'palo-tacacs':
+        return {
+          title: 'Palo Alto TACACS+ Integration',
+          description: 'Centralized device administration for Palo Alto firewalls and Panorama management.',
+          keyComponents: ['Palo Alto Firewall', 'Panorama', 'TACACS+ Server', 'Admin Authentication']
+        }
+      case 'palo-userid':
+        return {
+          title: 'Palo Alto User-ID Integration',
+          description: 'User identity mapping for Palo Alto firewalls using syslog-based User-ID integration.',
+          keyComponents: ['User-ID Agent', 'Syslog Container', 'Palo Alto Firewall', 'User Mapping']
+        }
+      case 'fortigate-fsso':
+        return {
+          title: 'FortiGate FSSO Integration',
+          description: 'Fortinet Single Sign-On integration using syslog for user session tracking.',
+          keyComponents: ['FSSO Agent', 'Syslog Container', 'FortiGate Firewall', 'User Sessions']
+        }
+      default:
+        return {
+          title: 'Architecture Components',
+          description: 'Zero Trust NAC architecture components and connections.',
+          keyComponents: []
+        }
+    }
+  }
+
+  const viewInfo = getViewSpecificInfo()
+
   return (
     <div className="space-y-6">
-      {/* Current Configuration */}
+      {/* View Overview */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Eye className="h-5 w-5 text-blue-600" />
-            <span>Current Configuration</span>
+            <span>{viewInfo.title}</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <div className="text-sm text-gray-500">Cloud Provider</div>
-              <Badge variant="outline" className="mt-1">
-                {formatCloudProvider(cloudProvider)}
-              </Badge>
+          <p className="text-gray-600 mb-4">{viewInfo.description}</p>
+          {viewInfo.keyComponents.length > 0 && (
+            <div>
+              <h4 className="font-semibold mb-2">Key Components:</h4>
+              <div className="flex flex-wrap gap-2">
+                {viewInfo.keyComponents.map((component, index) => (
+                  <Badge key={index} variant="outline">
+                    {component}
+                  </Badge>
+                ))}
+              </div>
             </div>
-            <div className="text-center">
-              <div className="text-sm text-gray-500">Network Vendor</div>
-              <Badge variant="outline" className="mt-1">
-                {formatNetworkVendor(networkVendor)}
-              </Badge>
-            </div>
-            <div className="text-center">
-              <div className="text-sm text-gray-500">Authentication</div>
-              <Badge variant="outline" className="mt-1">
-                {formatAuthMethod(authMethod)}
-              </Badge>
-            </div>
-            <div className="text-center">
-              <div className="text-sm text-gray-500">Connectivity</div>
-              <Badge variant="outline" className="mt-1">
-                {formatConnectivity(connectivity)}
-              </Badge>
-            </div>
-          </div>
-          
-          <Separator className="my-4" />
-          
-          <div className="flex flex-wrap gap-2">
-            {mfaEnabled && (
-              <Badge variant="secondary">
-                <Shield className="h-3 w-3 mr-1" />
-                MFA Enabled
-              </Badge>
-            )}
-            {guestAccess && (
-              <Badge variant="secondary">
-                <Users className="h-3 w-3 mr-1" />
-                Guest Access
-              </Badge>
-            )}
-            {byodSupport && (
-              <Badge variant="secondary">
-                <Smartphone className="h-3 w-3 mr-1" />
-                BYOD Support
-              </Badge>
-            )}
-          </div>
+          )}
         </CardContent>
       </Card>
 
