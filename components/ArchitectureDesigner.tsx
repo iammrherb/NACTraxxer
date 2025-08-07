@@ -85,6 +85,36 @@ export default function ArchitectureDesigner() {
       label: 'FortiGate FSSO', 
       icon: <Users className="w-4 h-4" />,
       description: 'FortiGate FSSO integration with syslog'
+    },
+    { 
+      id: 'ubiquiti-wireless', 
+      label: 'Ubiquiti UniFi', 
+      icon: <Network className="w-4 h-4" />,
+      description: 'Ubiquiti UniFi wireless integration with NAC'
+    },
+    { 
+      id: 'mikrotik-wireless', 
+      label: 'MikroTik Wireless', 
+      icon: <Network className="w-4 h-4" />,
+      description: 'MikroTik RouterOS wireless integration'
+    },
+    { 
+      id: 'meraki-wireless', 
+      label: 'Cisco Meraki', 
+      icon: <Network className="w-4 h-4" />,
+      description: 'Cisco Meraki cloud-managed wireless'
+    },
+    { 
+      id: 'mist-wireless', 
+      label: 'Juniper Mist', 
+      icon: <Network className="w-4 h-4" />,
+      description: 'Juniper Mist AI-driven wireless platform'
+    },
+    { 
+      id: 'cambium-wireless', 
+      label: 'Cambium Networks', 
+      icon: <Network className="w-4 h-4" />,
+      description: 'Cambium Networks wireless solutions'
     }
   ]
 
@@ -102,7 +132,12 @@ export default function ArchitectureDesigner() {
     { id: 'extreme', label: 'Extreme Networks' },
     { id: 'ruckus', label: 'Ruckus (CommScope)' },
     { id: 'fortinet', label: 'Fortinet' },
-    { id: 'paloalto', label: 'Palo Alto Networks' }
+    { id: 'paloalto', label: 'Palo Alto Networks' },
+    { id: 'ubiquiti', label: 'Ubiquiti' },
+    { id: 'mikrotik', label: 'MikroTik' },
+    { id: 'meraki', label: 'Cisco Meraki' },
+    { id: 'mist', label: 'Juniper Mist' },
+    { id: 'cambium', label: 'Cambium Networks' }
   ]
 
   const connectivityOptions = [
@@ -111,7 +146,11 @@ export default function ArchitectureDesigner() {
     { id: 'directconnect', label: 'AWS Direct Connect' },
     { id: 'mpls', label: 'MPLS Network' },
     { id: 'vpn', label: 'Site-to-Site VPN' },
-    { id: 'internet', label: 'Internet Connection' }
+    { id: 'internet', label: 'Internet Connection' },
+    { id: 'velocloud', label: 'VMware VeloCloud' },
+    { id: 'silverpeak', label: 'Silver Peak' },
+    { id: 'viptela', label: 'Cisco Viptela' },
+    { id: 'fortinet-sdwan', label: 'Fortinet SD-WAN' }
   ]
 
   const currentView = architectureViews.find(view => view.id === selectedView)
