@@ -2,549 +2,589 @@
 
 import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { BarChart3, TrendingUp, Clock, CheckCircle, AlertCircle, XCircle, Calendar, Download, RefreshCw } from 'lucide-react'
+import { BarChart3, TrendingUp, Calendar, Users, MapPin, CheckCircle, Clock, AlertTriangle, Download, Filter } from 'lucide-react'
 
-interface DeploymentPhase {
-  id: string
-  name: string
-  description: string
-  status: 'completed' | 'in-progress' | 'pending' | 'blocked'
-  progress: number
-  startDate: string
-  endDate?: string
-  estimatedCompletion: string
-  sites: number
-  completedSites: number
-}
-
-interface Milestone {
-  id: string
-  title: string
-  description: string
-  dueDate: string
-  status: 'completed' | 'on-track' | 'at-risk' | 'overdue'
-  progress: number
-  dependencies: string[]
+interface ProgressData {
+  siteId: string
+  siteName: string
+  region: string
+  phase: string
+  status: 'Planned' | 'In Progress' | 'Complete' | 'Delayed'
+  overallProgress: number
+  milestones: {
+    id: string
+    name: string
+    progress: number
+    status: 'completed' | 'in-progress' | 'pending' | 'delayed'
+    dueDate: string
+    actualDate?: string
+  }[]
+  metrics: {
+    usersOnboarded: number
+    totalUsers: number
+    devicesAuthenticated: number
+    policiesDeployed: number
+    issuesResolved: number
+    totalIssues: number
+  }
 }
 
 export default function ProgressTracking() {
-  const [selectedTimeframe, setSelectedTimeframe] = useState('all')
   const [selectedRegion, setSelectedRegion] = useState('all')
+  const [selectedPhase, setSelectedPhase] = useState('all')
+  const [viewMode, setViewMode] = useState('overview')
 
-  const deploymentPhases: DeploymentPhase[] = [
+  const progressData: ProgressData[] = [
     {
-      id: '1',
-      name: 'Planning & Assessment',
-      description: 'Site surveys, network assessment, and deployment planning',
-      status: 'completed',
-      progress: 100,
-      startDate: '2024-01-01',
-      endDate: '2024-01-15',
-      estimatedCompletion: '2024-01-15',
-      sites: 5,
-      completedSites: 5
+      siteId: '1',
+      siteName: 'New York Headquarters',
+      region: 'North America',
+      phase: '1',
+      status: 'In Progress',
+      overallProgress: 75,
+      milestones: [
+        { id: '1', name: 'Infrastructure Assessment', progress: 100, status: 'completed', dueDate: '2024-01-20', actualDate: '2024-01-18' },
+        { id: '2', name: 'Portnox Cloud Setup', progress: 100, status: 'completed', dueDate: '2024-02-01', actualDate: '2024-01-30' },
+        { id: '3', name: 'Certificate Authority Setup', progress: 100, status: 'completed', dueDate: '2024-02-10', actualDate: '2024-02-08' },
+        { id: '4', name: 'Network Integration', progress: 85, status: 'in-progress', dueDate: '2024-02-25' },
+        { id: '5', name: 'Policy Configuration', progress: 60, status: 'in-progress', dueDate: '2024-03-10' },
+        { id: '6', name: 'User Onboarding', progress: 40, status: 'in-progress', dueDate: '2024-03-20' },
+        { id: '7', name: 'Go-Live', progress: 0, status: 'pending', dueDate: '2024-03-30' }
+      ],
+      metrics: {
+        usersOnboarded: 1875,
+        totalUsers: 2500,
+        devicesAuthenticated: 3200,
+        policiesDeployed: 12,
+        issuesResolved: 28,
+        totalIssues: 35
+      }
     },
     {
-      id: '2',
-      name: 'Infrastructure Preparation',
-      description: 'Network infrastructure updates and certificate deployment',
-      status: 'completed',
-      progress: 100,
-      startDate: '2024-01-16',
-      endDate: '2024-02-01',
-      estimatedCompletion: '2024-02-01',
-      sites: 5,
-      completedSites: 5
+      siteId: '2',
+      siteName: 'London Office',
+      region: 'EMEA',
+      phase: '1',
+      status: 'Complete',
+      overallProgress: 100,
+      milestones: [
+        { id: '1', name: 'Infrastructure Assessment', progress: 100, status: 'completed', dueDate: '2024-02-05', actualDate: '2024-02-03' },
+        { id: '2', name: 'Portnox Cloud Setup', progress: 100, status: 'completed', dueDate: '2024-02-15', actualDate: '2024-02-12' },
+        { id: '3', name: 'Certificate Authority Setup', progress: 100, status: 'completed', dueDate: '2024-02-25', actualDate: '2024-02-22' },
+        { id: '4', name: 'Network Integration', progress: 100, status: 'completed', dueDate: '2024-03-10', actualDate: '2024-03-08' },
+        { id: '5', name: 'Policy Configuration', progress: 100, status: 'completed', dueDate: '2024-03-25', actualDate: '2024-03-20' },
+        { id: '6', name: 'User Onboarding', progress: 100, status: 'completed', dueDate: '2024-04-05', actualDate: '2024-04-02' },
+        { id: '7', name: 'Go-Live', progress: 100, status: 'completed', dueDate: '2024-04-15', actualDate: '2024-04-12' }
+      ],
+      metrics: {
+        usersOnboarded: 800,
+        totalUsers: 800,
+        devicesAuthenticated: 1150,
+        policiesDeployed: 8,
+        issuesResolved: 15,
+        totalIssues: 15
+      }
     },
     {
-      id: '3',
-      name: 'Pilot Deployment',
-      description: 'Initial NAC deployment at pilot sites',
-      status: 'completed',
-      progress: 100,
-      startDate: '2024-02-01',
-      endDate: '2024-02-15',
-      estimatedCompletion: '2024-02-15',
-      sites: 2,
-      completedSites: 2
+      siteId: '4',
+      siteName: 'Chicago Manufacturing',
+      region: 'North America',
+      phase: '1',
+      status: 'In Progress',
+      overallProgress: 45,
+      milestones: [
+        { id: '1', name: 'Infrastructure Assessment', progress: 100, status: 'completed', dueDate: '2024-02-20', actualDate: '2024-02-18' },
+        { id: '2', name: 'Portnox Cloud Setup', progress: 100, status: 'completed', dueDate: '2024-03-01', actualDate: '2024-02-28' },
+        { id: '3', name: 'Certificate Authority Setup', progress: 80, status: 'in-progress', dueDate: '2024-03-15' },
+        { id: '4', name: 'Network Integration', progress: 30, status: 'in-progress', dueDate: '2024-04-01' },
+        { id: '5', name: 'Policy Configuration', progress: 0, status: 'pending', dueDate: '2024-04-20' },
+        { id: '6', name: 'User Onboarding', progress: 0, status: 'pending', dueDate: '2024-05-01' },
+        { id: '7', name: 'Go-Live', progress: 0, status: 'pending', dueDate: '2024-05-15' }
+      ],
+      metrics: {
+        usersOnboarded: 540,
+        totalUsers: 1200,
+        devicesAuthenticated: 890,
+        policiesDeployed: 6,
+        issuesResolved: 18,
+        totalIssues: 25
+      }
     },
     {
-      id: '4',
-      name: 'Phase 1 Rollout',
-      description: 'NAC deployment to primary sites',
-      status: 'in-progress',
-      progress: 75,
-      startDate: '2024-02-15',
-      estimatedCompletion: '2024-03-15',
-      sites: 3,
-      completedSites: 2
+      siteId: '5',
+      siteName: 'Sydney Office',
+      region: 'APAC',
+      phase: '2',
+      status: 'Delayed',
+      overallProgress: 25,
+      milestones: [
+        { id: '1', name: 'Infrastructure Assessment', progress: 100, status: 'completed', dueDate: '2024-03-05', actualDate: '2024-03-10' },
+        { id: '2', name: 'Portnox Cloud Setup', progress: 60, status: 'delayed', dueDate: '2024-03-20' },
+        { id: '3', name: 'Certificate Authority Setup', progress: 0, status: 'pending', dueDate: '2024-04-05' },
+        { id: '4', name: 'Network Integration', progress: 0, status: 'pending', dueDate: '2024-04-25' },
+        { id: '5', name: 'Policy Configuration', progress: 0, status: 'pending', dueDate: '2024-05-15' },
+        { id: '6', name: 'User Onboarding', progress: 0, status: 'pending', dueDate: '2024-06-01' },
+        { id: '7', name: 'Go-Live', progress: 0, status: 'pending', dueDate: '2024-06-30' }
+      ],
+      metrics: {
+        usersOnboarded: 80,
+        totalUsers: 320,
+        devicesAuthenticated: 120,
+        policiesDeployed: 2,
+        issuesResolved: 8,
+        totalIssues: 18
+      }
     },
     {
-      id: '5',
-      name: 'Phase 2 Rollout',
-      description: 'NAC deployment to remaining sites',
-      status: 'pending',
-      progress: 0,
-      startDate: '2024-03-15',
-      estimatedCompletion: '2024-04-30',
-      sites: 5,
-      completedSites: 0
-    },
-    {
-      id: '6',
-      name: 'Optimization & Training',
-      description: 'Performance optimization and user training',
-      status: 'pending',
-      progress: 0,
-      startDate: '2024-04-30',
-      estimatedCompletion: '2024-05-31',
-      sites: 5,
-      completedSites: 0
+      siteId: '6',
+      siteName: 'Frankfurt Data Center',
+      region: 'EMEA',
+      phase: '1',
+      status: 'In Progress',
+      overallProgress: 90,
+      milestones: [
+        { id: '1', name: 'Infrastructure Assessment', progress: 100, status: 'completed', dueDate: '2024-01-05', actualDate: '2024-01-03' },
+        { id: '2', name: 'Portnox Cloud Setup', progress: 100, status: 'completed', dueDate: '2024-01-15', actualDate: '2024-01-12' },
+        { id: '3', name: 'Certificate Authority Setup', progress: 100, status: 'completed', dueDate: '2024-01-25', actualDate: '2024-01-22' },
+        { id: '4', name: 'Network Integration', progress: 100, status: 'completed', dueDate: '2024-02-10', actualDate: '2024-02-08' },
+        { id: '5', name: 'Policy Configuration', progress: 100, status: 'completed', dueDate: '2024-02-25', actualDate: '2024-02-20' },
+        { id: '6', name: 'User Onboarding', progress: 95, status: 'in-progress', dueDate: '2024-03-10' },
+        { id: '7', name: 'Go-Live', progress: 0, status: 'pending', dueDate: '2024-03-15' }
+      ],
+      metrics: {
+        usersOnboarded: 143,
+        totalUsers: 150,
+        devicesAuthenticated: 180,
+        policiesDeployed: 10,
+        issuesResolved: 12,
+        totalIssues: 14
+      }
     }
   ]
 
-  const milestones: Milestone[] = [
-    {
-      id: '1',
-      title: 'Network Assessment Complete',
-      description: 'Complete network infrastructure assessment for all sites',
-      dueDate: '2024-01-15',
-      status: 'completed',
-      progress: 100,
-      dependencies: []
-    },
-    {
-      id: '2',
-      title: 'Certificate Infrastructure Deployed',
-      description: 'Deploy PKI infrastructure and device certificates',
-      dueDate: '2024-02-01',
-      status: 'completed',
-      progress: 100,
-      dependencies: ['1']
-    },
-    {
-      id: '3',
-      title: 'Pilot Sites Operational',
-      description: 'Pilot sites fully operational with NAC',
-      dueDate: '2024-02-15',
-      status: 'completed',
-      progress: 100,
-      dependencies: ['2']
-    },
-    {
-      id: '4',
-      title: 'Primary Sites Deployment',
-      description: 'Deploy NAC to all primary business locations',
-      dueDate: '2024-03-15',
-      status: 'on-track',
-      progress: 75,
-      dependencies: ['3']
-    },
-    {
-      id: '5',
-      title: 'Full Rollout Complete',
-      description: 'NAC deployed to all ABM locations',
-      dueDate: '2024-04-30',
-      status: 'on-track',
-      progress: 25,
-      dependencies: ['4']
-    },
-    {
-      id: '6',
-      title: 'Training & Documentation',
-      description: 'Complete user training and documentation',
-      dueDate: '2024-05-31',
-      status: 'on-track',
-      progress: 10,
-      dependencies: ['5']
-    }
-  ]
+  const filteredData = progressData.filter(site => {
+    const matchesRegion = selectedRegion === 'all' || site.region === selectedRegion
+    const matchesPhase = selectedPhase === 'all' || site.phase === selectedPhase
+    return matchesRegion && matchesPhase
+  })
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed': return 'bg-green-500'
-      case 'in-progress': return 'bg-blue-500'
-      case 'on-track': return 'bg-green-500'
-      case 'at-risk': return 'bg-yellow-500'
-      case 'overdue': return 'bg-red-500'
-      case 'blocked': return 'bg-red-500'
-      case 'pending': return 'bg-gray-500'
-      default: return 'bg-gray-500'
+      case 'Complete':
+        return 'bg-green-100 text-green-800 border-green-200'
+      case 'In Progress':
+        return 'bg-blue-100 text-blue-800 border-blue-200'
+      case 'Delayed':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200'
+      case 'Planned':
+        return 'bg-gray-100 text-gray-800 border-gray-200'
+      default:
+        return 'bg-red-100 text-red-800 border-red-200'
     }
   }
 
-  const getStatusIcon = (status: string) => {
+  const getMilestoneStatusColor = (status: string) => {
     switch (status) {
-      case 'completed': return <CheckCircle className="w-4 h-4" />
-      case 'in-progress': return <Clock className="w-4 h-4" />
-      case 'on-track': return <TrendingUp className="w-4 h-4" />
-      case 'at-risk': return <AlertCircle className="w-4 h-4" />
-      case 'overdue': return <XCircle className="w-4 h-4" />
-      case 'blocked': return <XCircle className="w-4 h-4" />
-      case 'pending': return <Clock className="w-4 h-4" />
-      default: return <Clock className="w-4 h-4" />
+      case 'completed':
+        return 'text-green-600'
+      case 'in-progress':
+        return 'text-blue-600'
+      case 'delayed':
+        return 'text-red-600'
+      default:
+        return 'text-gray-600'
     }
   }
 
-  const overallProgress = Math.round(
-    deploymentPhases.reduce((sum, phase) => sum + phase.progress, 0) / deploymentPhases.length
-  )
-
-  const completedPhases = deploymentPhases.filter(phase => phase.status === 'completed').length
-  const totalSites = deploymentPhases.reduce((sum, phase) => sum + phase.sites, 0)
-  const completedSites = deploymentPhases.reduce((sum, phase) => sum + phase.completedSites, 0)
-
-  const exportProgress = () => {
-    const exportData = {
-      summary: {
-        overallProgress,
-        completedPhases,
-        totalPhases: deploymentPhases.length,
-        completedSites,
-        totalSites,
-        exportedAt: new Date().toISOString()
-      },
-      phases: deploymentPhases,
-      milestones,
-      timeline: {
-        startDate: deploymentPhases[0].startDate,
-        estimatedCompletion: deploymentPhases[deploymentPhases.length - 1].estimatedCompletion
-      }
+  const getMilestoneIcon = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return <CheckCircle className="h-4 w-4 text-green-500" />
+      case 'in-progress':
+        return <Clock className="h-4 w-4 text-blue-500" />
+      case 'delayed':
+        return <AlertTriangle className="h-4 w-4 text-red-500" />
+      default:
+        return <div className="h-4 w-4 rounded-full border-2 border-gray-300" />
     }
+  }
 
+  const handleExportProgress = () => {
+    const exportData = {
+      progressData: filteredData,
+      exportDate: new Date().toISOString(),
+      filters: { region: selectedRegion, phase: selectedPhase },
+      version: '20.0'
+    }
+    
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { 
       type: 'application/json' 
     })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `abm-nac-progress-${Date.now()}.json`
+    link.download = `portnox-progress-${Date.now()}.json`
     link.click()
     URL.revokeObjectURL(url)
+    
+    showNotification('Progress data exported successfully!', 'success')
   }
+
+  const showNotification = (message: string, type: 'success' | 'error' | 'info') => {
+    const notification = document.createElement('div')
+    const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+    notification.className = `fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-all duration-300`
+    notification.textContent = message
+    document.body.appendChild(notification)
+    
+    setTimeout(() => {
+      notification.style.opacity = '0'
+      setTimeout(() => {
+        if (document.body.contains(notification)) {
+          document.body.removeChild(notification)
+        }
+      }, 300)
+    }, 3000)
+  }
+
+  // Calculate overall statistics
+  const totalSites = filteredData.length
+  const completedSites = filteredData.filter(s => s.status === 'Complete').length
+  const inProgressSites = filteredData.filter(s => s.status === 'In Progress').length
+  const delayedSites = filteredData.filter(s => s.status === 'Delayed').length
+  const averageProgress = filteredData.reduce((sum, site) => sum + site.overallProgress, 0) / totalSites || 0
+
+  const totalUsers = filteredData.reduce((sum, site) => sum + site.metrics.totalUsers, 0)
+  const onboardedUsers = filteredData.reduce((sum, site) => sum + site.metrics.usersOnboarded, 0)
+  const totalDevices = filteredData.reduce((sum, site) => sum + site.metrics.devicesAuthenticated, 0)
+  const totalIssues = filteredData.reduce((sum, site) => sum + site.metrics.totalIssues, 0)
+  const resolvedIssues = filteredData.reduce((sum, site) => sum + site.metrics.issuesResolved, 0)
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <Card className="shadow-xl border-0 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700">
+      {/* Header Controls */}
+      <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center space-x-3 text-2xl">
-              <div className="p-2 bg-[#00c8d7] rounded-lg">
-                <BarChart3 className="h-8 w-8 text-white" />
-              </div>
-              <span className="bg-gradient-to-r from-[#00c8d7] to-[#007acc] bg-clip-text text-transparent">
-                NAC Rollout Progress
-              </span>
-            </CardTitle>
-            <div className="flex space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={exportProgress}
-                className="border-[#00c8d7] text-[#00c8d7] hover:bg-[#00c8d7] hover:text-white"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Export Report
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="border-[#00c8d7] text-[#00c8d7] hover:bg-[#00c8d7] hover:text-white"
-              >
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Refresh Data
+            <div>
+              <CardTitle className="flex items-center space-x-2">
+                <BarChart3 className="h-5 w-5 text-[#00c8d7]" />
+                <span>Rollout Progress Tracking</span>
+              </CardTitle>
+              <p className="text-sm text-muted-foreground mt-1">
+                Monitor deployment progress across all sites
+              </p>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Select value={selectedRegion} onValueChange={setSelectedRegion}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Region" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Regions</SelectItem>
+                  <SelectItem value="North America">North America</SelectItem>
+                  <SelectItem value="EMEA">EMEA</SelectItem>
+                  <SelectItem value="APAC">APAC</SelectItem>
+                  <SelectItem value="LATAM">LATAM</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Select value={selectedPhase} onValueChange={setSelectedPhase}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="Phase" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Phases</SelectItem>
+                  <SelectItem value="1">Phase 1</SelectItem>
+                  <SelectItem value="2">Phase 2</SelectItem>
+                  <SelectItem value="3">Phase 3</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Button variant="outline" size="sm" onClick={handleExportProgress}>
+                <Download className="h-4 w-4 mr-2" />
+                Export
               </Button>
             </div>
           </div>
         </CardHeader>
       </Card>
 
-      {/* Overall Progress Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="border-l-4 border-l-[#00c8d7]">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
+      {/* Summary Statistics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <MapPin className="h-4 w-4 text-[#00c8d7]" />
               <div>
-                <p className="text-sm font-medium text-gray-600">Overall Progress</p>
-                <p className="text-3xl font-bold text-[#00c8d7]">{overallProgress}%</p>
-              </div>
-              <div className="p-3 bg-[#00c8d7]/10 rounded-full">
-                <TrendingUp className="w-6 h-6 text-[#00c8d7]" />
-              </div>
-            </div>
-            <div className="mt-4">
-              <Progress value={overallProgress} className="h-2" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-l-4 border-l-green-500">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Completed Phases</p>
-                <p className="text-3xl font-bold text-green-600">
-                  {completedPhases}/{deploymentPhases.length}
-                </p>
-              </div>
-              <div className="p-3 bg-green-100 rounded-full">
-                <CheckCircle className="w-6 h-6 text-green-600" />
+                <div className="text-2xl font-bold">{totalSites}</div>
+                <div className="text-sm text-muted-foreground">Active Sites</div>
               </div>
             </div>
           </CardContent>
         </Card>
-
-        <Card className="border-l-4 border-l-blue-500">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <TrendingUp className="h-4 w-4 text-green-500" />
               <div>
-                <p className="text-sm font-medium text-gray-600">Sites Deployed</p>
-                <p className="text-3xl font-bold text-blue-600">
-                  {completedSites}/{totalSites}
-                </p>
-              </div>
-              <div className="p-3 bg-blue-100 rounded-full">
-                <BarChart3 className="w-6 h-6 text-blue-600" />
+                <div className="text-2xl font-bold">{averageProgress.toFixed(0)}%</div>
+                <div className="text-sm text-muted-foreground">Avg Progress</div>
               </div>
             </div>
           </CardContent>
         </Card>
-
-        <Card className="border-l-4 border-l-purple-500">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <Users className="h-4 w-4 text-blue-500" />
               <div>
-                <p className="text-sm font-medium text-gray-600">Days Remaining</p>
-                <p className="text-3xl font-bold text-purple-600">
-                  {Math.ceil((new Date('2024-05-31').getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))}
-                </p>
+                <div className="text-2xl font-bold">{onboardedUsers.toLocaleString()}</div>
+                <div className="text-sm text-muted-foreground">Users Onboarded</div>
+                <div className="text-xs text-muted-foreground">
+                  of {totalUsers.toLocaleString()} total
+                </div>
               </div>
-              <div className="p-3 bg-purple-100 rounded-full">
-                <Calendar className="w-6 h-6 text-purple-600" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <CheckCircle className="h-4 w-4 text-green-500" />
+              <div>
+                <div className="text-2xl font-bold">{totalDevices.toLocaleString()}</div>
+                <div className="text-sm text-muted-foreground">Devices Auth'd</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <AlertTriangle className="h-4 w-4 text-yellow-500" />
+              <div>
+                <div className="text-2xl font-bold">{resolvedIssues}/{totalIssues}</div>
+                <div className="text-sm text-muted-foreground">Issues Resolved</div>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Main Content Tabs */}
-      <Tabs defaultValue="phases" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3 bg-white dark:bg-gray-800 shadow-lg rounded-xl p-2">
-          <TabsTrigger 
-            value="phases" 
-            className="data-[state=active]:bg-[#00c8d7] data-[state=active]:text-white transition-all duration-300"
-          >
-            Deployment Phases
-          </TabsTrigger>
-          <TabsTrigger 
-            value="milestones" 
-            className="data-[state=active]:bg-[#00c8d7] data-[state=active]:text-white transition-all duration-300"
-          >
-            Key Milestones
-          </TabsTrigger>
-          <TabsTrigger 
-            value="timeline" 
-            className="data-[state=active]:bg-[#00c8d7] data-[state=active]:text-white transition-all duration-300"
-          >
-            Project Timeline
-          </TabsTrigger>
+      {/* Main Content */}
+      <Tabs value={viewMode} onValueChange={setViewMode}>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="milestones">Milestones</TabsTrigger>
+          <TabsTrigger value="metrics">Metrics</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="phases" className="space-y-6">
-          <Card className="shadow-xl">
-            <CardHeader>
-              <CardTitle>Deployment Phases</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                {deploymentPhases.map((phase, index) => (
-                  <div key={phase.id} className="border rounded-lg p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center space-x-4">
-                        <div className="flex items-center justify-center w-10 h-10 rounded-full bg-[#00c8d7] text-white font-bold">
-                          {index + 1}
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-semibold">{phase.name}</h3>
-                          <p className="text-gray-600">{phase.description}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Badge variant="outline" className={`${getStatusColor(phase.status)} text-white`}>
-                          {getStatusIcon(phase.status)}
-                          <span className="ml-1 capitalize">{phase.status.replace('-', ' ')}</span>
-                        </Badge>
-                      </div>
+        <TabsContent value="overview" className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {filteredData.map((site) => (
+              <Card key={site.siteId}>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-lg">{site.siteName}</CardTitle>
+                      <p className="text-sm text-muted-foreground">{site.region} • Phase {site.phase}</p>
                     </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Progress</p>
-                        <div className="flex items-center space-x-2 mt-1">
-                          <Progress value={phase.progress} className="flex-1 h-2" />
-                          <span className="text-sm font-semibold">{phase.progress}%</span>
-                        </div>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Sites</p>
-                        <p className="text-lg font-semibold">
-                          {phase.completedSites}/{phase.sites} completed
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Timeline</p>
-                        <p className="text-sm">
-                          {new Date(phase.startDate).toLocaleDateString()} - {' '}
-                          {phase.endDate 
-                            ? new Date(phase.endDate).toLocaleDateString()
-                            : new Date(phase.estimatedCompletion).toLocaleDateString()
-                          }
-                        </p>
-                      </div>
-                    </div>
-
-                    {phase.status === 'in-progress' && (
-                      <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-                        <p className="text-sm text-blue-800 dark:text-blue-200">
-                          <strong>Current Activity:</strong> Deploying NAC infrastructure to {phase.sites - phase.completedSites} remaining sites. 
-                          Expected completion: {new Date(phase.estimatedCompletion).toLocaleDateString()}
-                        </p>
-                      </div>
-                    )}
+                    <Badge className={getStatusColor(site.status)}>
+                      {site.status}
+                    </Badge>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {/* Overall Progress */}
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium">Overall Progress</span>
+                        <span className="text-sm font-bold">{site.overallProgress}%</span>
+                      </div>
+                      <Progress value={site.overallProgress} className="h-2" />
+                    </div>
+
+                    {/* Key Metrics */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="text-center p-3 bg-gray-50 rounded-lg">
+                        <div className="text-lg font-bold text-[#00c8d7]">
+                          {site.metrics.usersOnboarded}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Users Onboarded
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          of {site.metrics.totalUsers}
+                        </div>
+                      </div>
+                      <div className="text-center p-3 bg-gray-50 rounded-lg">
+                        <div className="text-lg font-bold text-green-600">
+                          {site.metrics.devicesAuthenticated}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Devices Auth'd
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Recent Milestones */}
+                    <div>
+                      <div className="text-sm font-medium mb-2">Recent Milestones</div>
+                      <div className="space-y-2">
+                        {site.milestones.slice(-3).map((milestone) => (
+                          <div key={milestone.id} className="flex items-center space-x-2">
+                            {getMilestoneIcon(milestone.status)}
+                            <div className="flex-1">
+                              <div className="text-sm">{milestone.name}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {milestone.progress}% complete
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </TabsContent>
 
-        <TabsContent value="milestones" className="space-y-6">
-          <Card className="shadow-xl">
-            <CardHeader>
-              <CardTitle>Key Milestones</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {milestones.map((milestone) => (
-                  <div key={milestone.id} className="border rounded-lg p-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-3 mb-2">
-                          <h3 className="font-semibold">{milestone.title}</h3>
-                          <Badge variant="outline" className={`${getStatusColor(milestone.status)} text-white`}>
-                            {getStatusIcon(milestone.status)}
-                            <span className="ml-1 capitalize">{milestone.status.replace('-', ' ')}</span>
-                          </Badge>
-                        </div>
-                        <p className="text-gray-600 text-sm mb-2">{milestone.description}</p>
-                        <p className="text-sm text-gray-500">
-                          Due: {new Date(milestone.dueDate).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-bold text-[#00c8d7]">{milestone.progress}%</p>
-                        <Progress value={milestone.progress} className="w-24 h-2 mt-1" />
-                      </div>
-                    </div>
-
-                    {milestone.dependencies.length > 0 && (
-                      <div className="mt-3 pt-3 border-t">
-                        <p className="text-xs text-gray-500 mb-1">Dependencies:</p>
-                        <div className="flex flex-wrap gap-1">
-                          {milestone.dependencies.map((depId) => {
-                            const dep = milestones.find(m => m.id === depId)
-                            return dep ? (
-                              <Badge key={depId} variant="secondary" className="text-xs">
-                                {dep.title}
-                              </Badge>
-                            ) : null
-                          })}
-                        </div>
-                      </div>
-                    )}
+        <TabsContent value="milestones" className="space-y-4">
+          {filteredData.map((site) => (
+            <Card key={site.siteId}>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-lg">{site.siteName}</CardTitle>
+                    <p className="text-sm text-muted-foreground">{site.region} • Phase {site.phase}</p>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="timeline" className="space-y-6">
-          <Card className="shadow-xl">
-            <CardHeader>
-              <CardTitle>Project Timeline</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="relative">
-                {/* Timeline line */}
-                <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-[#00c8d7]"></div>
-                
-                <div className="space-y-8">
-                  {deploymentPhases.map((phase, index) => (
-                    <div key={phase.id} className="relative flex items-start space-x-4">
-                      {/* Timeline dot */}
-                      <div className={`relative z-10 flex items-center justify-center w-16 h-16 rounded-full ${
-                        phase.status === 'completed' ? 'bg-green-500' :
-                        phase.status === 'in-progress' ? 'bg-blue-500' :
-                        'bg-gray-300'
-                      } text-white font-bold`}>
-                        {phase.status === 'completed' ? (
-                          <CheckCircle className="w-8 h-8" />
-                        ) : (
-                          <span>{index + 1}</span>
+                  <Badge className={getStatusColor(site.status)}>
+                    {site.status}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {site.milestones.map((milestone, index) => (
+                    <div key={milestone.id} className="flex items-start space-x-4">
+                      <div className="flex flex-col items-center">
+                        {getMilestoneIcon(milestone.status)}
+                        {index < site.milestones.length - 1 && (
+                          <div className="w-0.5 h-8 bg-gray-200 mt-2" />
                         )}
                       </div>
-                      
-                      {/* Timeline content */}
-                      <div className="flex-1 min-w-0 pb-8">
-                        <div className="bg-white dark:bg-gray-800 border rounded-lg p-4 shadow-sm">
-                          <div className="flex items-center justify-between mb-2">
-                            <h3 className="font-semibold">{phase.name}</h3>
-                            <Badge variant="outline" className={`${getStatusColor(phase.status)} text-white`}>
-                              {phase.status.charAt(0).toUpperCase() + phase.status.slice(1)}
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-1">
+                          <h4 className="font-medium text-sm">{milestone.name}</h4>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-sm font-medium">{milestone.progress}%</span>
+                            <Badge variant="outline" className="text-xs">
+                              Due: {new Date(milestone.dueDate).toLocaleDateString()}
                             </Badge>
                           </div>
-                          <p className="text-gray-600 text-sm mb-3">{phase.description}</p>
-                          
-                          <div className="grid grid-cols-2 gap-4 text-sm">
-                            <div>
-                              <p className="font-medium text-gray-700">Start Date</p>
-                              <p>{new Date(phase.startDate).toLocaleDateString()}</p>
-                            </div>
-                            <div>
-                              <p className="font-medium text-gray-700">
-                                {phase.endDate ? 'Completed' : 'Est. Completion'}
-                              </p>
-                              <p>
-                                {phase.endDate 
-                                  ? new Date(phase.endDate).toLocaleDateString()
-                                  : new Date(phase.estimatedCompletion).toLocaleDateString()
-                                }
-                              </p>
-                            </div>
-                          </div>
-                          
-                          <div className="mt-3">
-                            <div className="flex items-center justify-between text-sm mb-1">
-                              <span>Progress</span>
-                              <span>{phase.progress}%</span>
-                            </div>
-                            <Progress value={phase.progress} className="h-2" />
-                          </div>
+                        </div>
+                        <Progress value={milestone.progress} className="h-1.5 mb-2" />
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <span className={getMilestoneStatusColor(milestone.status)}>
+                            {milestone.status.replace('-', ' ').toUpperCase()}
+                          </span>
+                          {milestone.actualDate && (
+                            <span>
+                              Completed: {new Date(milestone.actualDate).toLocaleDateString()}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          ))}
+        </TabsContent>
+
+        <TabsContent value="metrics" className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {filteredData.map((site) => (
+              <Card key={site.siteId}>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-lg">{site.siteName}</CardTitle>
+                      <p className="text-sm text-muted-foreground">{site.region} • Phase {site.phase}</p>
+                    </div>
+                    <Badge className={getStatusColor(site.status)}>
+                      {site.status}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center p-4 bg-blue-50 rounded-lg">
+                      <div className="text-2xl font-bold text-blue-600">
+                        {site.metrics.usersOnboarded}
+                      </div>
+                      <div className="text-sm text-blue-800 font-medium">Users Onboarded</div>
+                      <div className="text-xs text-blue-600">
+                        of {site.metrics.totalUsers} total
+                      </div>
+                      <div className="mt-2">
+                        <Progress 
+                          value={(site.metrics.usersOnboarded / site.metrics.totalUsers) * 100} 
+                          className="h-1.5" 
+                        />
+                      </div>
+                    </div>
+
+                    <div className="text-center p-4 bg-green-50 rounded-lg">
+                      <div className="text-2xl font-bold text-green-600">
+                        {site.metrics.devicesAuthenticated}
+                      </div>
+                      <div className="text-sm text-green-800 font-medium">Devices Auth'd</div>
+                      <div className="text-xs text-green-600">Active connections</div>
+                    </div>
+
+                    <div className="text-center p-4 bg-purple-50 rounded-lg">
+                      <div className="text-2xl font-bold text-purple-600">
+                        {site.metrics.policiesDeployed}
+                      </div>
+                      <div className="text-sm text-purple-800 font-medium">Policies Deployed</div>
+                      <div className="text-xs text-purple-600">Active rules</div>
+                    </div>
+
+                    <div className="text-center p-4 bg-yellow-50 rounded-lg">
+                      <div className="text-2xl font-bold text-yellow-600">
+                        {site.metrics.issuesResolved}/{site.metrics.totalIssues}
+                      </div>
+                      <div className="text-sm text-yellow-800 font-medium">Issues Resolved</div>
+                      <div className="text-xs text-yellow-600">
+                        {((site.metrics.issuesResolved / site.metrics.totalIssues) * 100).toFixed(0)}% resolution rate
+                      </div>
+                      <div className="mt-2">
+                        <Progress 
+                          value={(site.metrics.issuesResolved / site.metrics.totalIssues) * 100} 
+                          className="h-1.5" 
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </TabsContent>
       </Tabs>
     </div>

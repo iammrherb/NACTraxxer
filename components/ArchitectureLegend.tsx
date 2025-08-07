@@ -2,398 +2,229 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
-import { Shield, Cloud, Network, Server, Database, Lock, Users, Settings, Smartphone, Globe, Key, FileText, Zap, Eye, AlertTriangle } from 'lucide-react'
+import { Monitor, Smartphone, Wifi, Router, Server, Cloud, Shield, Lock, Zap, CheckCircle, AlertTriangle, XCircle } from 'lucide-react'
 
-interface ArchitectureLegendProps {
-  currentView: string
-}
-
-export default function ArchitectureLegend({ currentView }: ArchitectureLegendProps) {
-  const componentTypes = [
-    {
-      type: 'endpoint',
-      label: 'Endpoints',
-      color: '#4F46E5',
-      icon: <Smartphone className="w-4 h-4" />,
-      description: 'User devices and endpoints',
-      examples: ['Corporate Devices', 'BYOD Devices', 'IoT Devices']
-    },
-    {
-      type: 'network',
-      label: 'Network Infrastructure',
-      color: '#059669',
-      icon: <Network className="w-4 h-4" />,
-      description: 'Network access layer components',
-      examples: ['Switches', 'Wireless APs', 'Routers']
-    },
-    {
-      type: 'nac',
-      label: 'NAC Platform',
-      color: '#00c8d7',
-      icon: <Shield className="w-4 h-4" />,
-      description: 'Portnox NAC components',
-      examples: ['Portnox Cloud', 'RADIUS Server', 'Policy Engine']
-    },
-    {
-      type: 'identity',
-      label: 'Identity Providers',
-      color: '#0078D4',
-      icon: <Users className="w-4 h-4" />,
-      description: 'User authentication systems',
-      examples: ['Azure AD', 'Active Directory', 'LDAP']
-    },
-    {
-      type: 'mdm',
-      label: 'Device Management',
-      color: '#7C3AED',
-      icon: <Settings className="w-4 h-4" />,
-      description: 'Mobile device management',
-      examples: ['Microsoft Intune', 'JAMF', 'VMware Workspace ONE']
-    },
-    {
-      type: 'pki',
-      label: 'PKI Infrastructure',
-      color: '#DC2626',
-      icon: <Lock className="w-4 h-4" />,
-      description: 'Certificate management',
-      examples: ['Certificate Authority', 'Certificate Store', 'CRL']
-    },
-    {
-      type: 'firewall',
-      label: 'Security Appliances',
-      color: '#EA580C',
-      icon: <Server className="w-4 h-4" />,
-      description: 'Network security devices',
-      examples: ['FortiGate', 'Palo Alto', 'Cisco ASA']
-    },
-    {
-      type: 'cloud',
-      label: 'Cloud Services',
-      color: '#0891B2',
-      icon: <Cloud className="w-4 h-4" />,
-      description: 'Cloud platform services',
-      examples: ['AWS', 'Azure', 'Google Cloud']
-    }
+export default function ArchitectureLegend() {
+  const deviceTypes = [
+    { icon: <Monitor className="h-4 w-4" />, label: 'Workstation/Laptop', description: 'Corporate endpoints' },
+    { icon: <Smartphone className="h-4 w-4" />, label: 'Mobile Device', description: 'Smartphones, tablets' },
+    { icon: <Wifi className="h-4 w-4" />, label: 'Wireless AP', description: 'Access points' },
+    { icon: <Router className="h-4 w-4" />, label: 'Network Switch', description: 'Layer 2/3 switches' },
+    { icon: <Server className="h-4 w-4" />, label: 'Server', description: 'Physical/virtual servers' },
+    { icon: <Cloud className="h-4 w-4" />, label: 'Cloud Service', description: 'SaaS/cloud platforms' },
+    { icon: <Shield className="h-4 w-4" />, label: 'Security Device', description: 'Firewalls, security appliances' }
   ]
 
   const connectionTypes = [
-    {
-      type: 'radius',
-      label: 'RADIUS',
-      color: '#00c8d7',
-      description: 'Authentication protocol',
-      pattern: 'solid'
-    },
-    {
-      type: 'https',
-      label: 'HTTPS/REST API',
-      color: '#059669',
-      description: 'Secure web communication',
-      pattern: 'dashed'
-    },
-    {
-      type: 'ldap',
-      label: 'LDAP/SAML',
-      color: '#0078D4',
-      description: 'Directory services',
-      pattern: 'dotted'
-    },
-    {
-      type: 'syslog',
-      label: 'Syslog',
-      color: '#7C3AED',
-      description: 'System logging',
-      pattern: 'solid'
-    },
-    {
-      type: 'tacacs',
-      label: 'TACACS+',
-      color: '#DC2626',
-      description: 'Device administration',
-      pattern: 'solid'
-    },
-    {
-      type: 'data',
-      label: 'Data Flow',
-      color: '#6B7280',
-      description: 'General data communication',
-      pattern: 'solid'
-    }
+    { type: 'solid', color: 'border-green-500', label: 'Encrypted Connection', icon: <Lock className="h-3 w-3" /> },
+    { type: 'dashed', color: 'border-gray-500', label: 'Unencrypted Connection', icon: <Zap className="h-3 w-3" /> },
+    { type: 'solid', color: 'border-blue-500', label: 'RADIUS/Authentication', icon: <Shield className="h-3 w-3" /> },
+    { type: 'solid', color: 'border-purple-500', label: 'LDAP/Directory', icon: <Server className="h-3 w-3" /> }
   ]
 
-  const vendorInfo = [
-    {
-      vendor: 'cisco',
-      label: 'Cisco',
-      color: '#1BA0D7',
-      logo: '🔵',
-      description: 'Network infrastructure vendor'
-    },
-    {
-      vendor: 'aruba',
-      label: 'Aruba (HPE)',
-      color: '#FF6900',
-      logo: '🟠',
-      description: 'Wireless and switching solutions'
-    },
-    {
-      vendor: 'fortinet',
-      label: 'Fortinet',
-      color: '#EE3124',
-      logo: '🔴',
-      description: 'Security appliances and SASE'
-    },
-    {
-      vendor: 'paloalto',
-      label: 'Palo Alto Networks',
-      color: '#FF6B35',
-      logo: '🟠',
-      description: 'Next-generation security platform'
-    },
-    {
-      vendor: 'juniper',
-      label: 'Juniper Networks',
-      color: '#84BD00',
-      logo: '🟢',
-      description: 'Enterprise networking solutions'
-    },
-    {
-      vendor: 'extreme',
-      label: 'Extreme Networks',
-      color: '#7B68EE',
-      logo: '🟣',
-      description: 'Cloud-driven networking'
-    }
+  const statusIndicators = [
+    { color: 'bg-green-500', label: 'Active/Healthy', icon: <CheckCircle className="h-3 w-3" /> },
+    { color: 'bg-yellow-500', label: 'Warning/Limited', icon: <AlertTriangle className="h-3 w-3" /> },
+    { color: 'bg-red-500', label: 'Error/Blocked', icon: <XCircle className="h-3 w-3" /> },
+    { color: 'bg-gray-500', label: 'Inactive/Offline', icon: <XCircle className="h-3 w-3" /> }
   ]
 
-  const getViewSpecificInfo = () => {
-    switch (currentView) {
-      case 'complete':
-        return {
-          title: 'Complete Architecture Components',
-          description: 'Full end-to-end Zero Trust NAC deployment showing all integrated components and data flows.',
-          keyComponents: ['Portnox Cloud', 'Network Infrastructure', 'Identity Providers', 'Policy Engine']
-        }
-      case 'auth-flow':
-        return {
-          title: 'Authentication Flow Components',
-          description: '802.1X authentication sequence showing the complete RADIUS authentication process.',
-          keyComponents: ['Supplicant', 'Authenticator', 'RADIUS Server', 'Identity Store']
-        }
-      case 'pki':
-        return {
-          title: 'PKI Infrastructure Components',
-          description: 'Certificate-based authentication infrastructure for secure device and user authentication.',
-          keyComponents: ['Root CA', 'Issuing CA', 'Certificate Store', 'CRL Distribution']
-        }
-      case 'policies':
-        return {
-          title: 'Policy Framework Components',
-          description: 'Dynamic policy engine with user, device, and network-based access controls.',
-          keyComponents: ['Policy Engine', 'User Policies', 'Device Policies', 'Network Policies']
-        }
-      case 'connectivity':
-        return {
-          title: 'Connectivity Options',
-          description: 'Multi-cloud and hybrid connectivity patterns for distributed NAC deployments.',
-          keyComponents: ['SD-WAN', 'Cloud Connectors', 'VPN Gateways', 'Direct Connect']
-        }
-      case 'intune':
-        return {
-          title: 'Microsoft Intune Integration',
-          description: 'Device compliance integration with Microsoft Intune for comprehensive device management.',
-          keyComponents: ['Intune MDM', 'Azure AD', 'Compliance Policies', 'Device Enrollment']
-        }
-      case 'onboarding':
-        return {
-          title: 'Device Onboarding Workflow',
-          description: 'Automated device enrollment and certificate provisioning for new devices.',
-          keyComponents: ['Captive Portal', 'Certificate Authority', 'MDM Enrollment', 'Policy Assignment']
-        }
-      case 'fortigate-tacacs':
-        return {
-          title: 'FortiGate TACACS+ Integration',
-          description: 'Device administration authentication for FortiGate firewalls using TACACS+.',
-          keyComponents: ['FortiGate Firewall', 'TACACS+ Server', 'Active Directory', 'Admin Authentication']
-        }
-      case 'palo-tacacs':
-        return {
-          title: 'Palo Alto TACACS+ Integration',
-          description: 'Centralized device administration for Palo Alto firewalls and Panorama management.',
-          keyComponents: ['Palo Alto Firewall', 'Panorama', 'TACACS+ Server', 'Admin Authentication']
-        }
-      case 'palo-userid':
-        return {
-          title: 'Palo Alto User-ID Integration',
-          description: 'User identity mapping for Palo Alto firewalls using syslog-based User-ID integration.',
-          keyComponents: ['User-ID Agent', 'Syslog Container', 'Palo Alto Firewall', 'User Mapping']
-        }
-      case 'fortigate-fsso':
-        return {
-          title: 'FortiGate FSSO Integration',
-          description: 'Fortinet Single Sign-On integration using syslog for user session tracking.',
-          keyComponents: ['FSSO Agent', 'Syslog Container', 'FortiGate Firewall', 'User Sessions']
-        }
-      default:
-        return {
-          title: 'Architecture Components',
-          description: 'Zero Trust NAC architecture components and connections.',
-          keyComponents: []
-        }
-    }
-  }
+  const vendorColors = [
+    { vendor: 'Portnox', color: 'bg-[#00c8d7]', textColor: 'text-white' },
+    { vendor: 'Cisco', color: 'bg-blue-600', textColor: 'text-white' },
+    { vendor: 'Aruba', color: 'bg-orange-500', textColor: 'text-white' },
+    { vendor: 'Microsoft', color: 'bg-blue-500', textColor: 'text-white' },
+    { vendor: 'Fortinet', color: 'bg-red-600', textColor: 'text-white' },
+    { vendor: 'Palo Alto', color: 'bg-orange-600', textColor: 'text-white' }
+  ]
 
-  const viewInfo = getViewSpecificInfo()
+  const protocols = [
+    { name: '802.1X', description: 'Port-based network access control' },
+    { name: 'EAP-TLS', description: 'Certificate-based authentication' },
+    { name: 'RADIUS', description: 'Remote authentication protocol' },
+    { name: 'RADSEC', description: 'RADIUS over TLS/TCP' },
+    { name: 'TACACS+', description: 'Terminal access authentication' },
+    { name: 'LDAP', description: 'Directory access protocol' },
+    { name: 'SCEP', description: 'Certificate enrollment protocol' },
+    { name: 'FSSO', description: 'Fortinet Single Sign-On' },
+    { name: 'User-ID', description: 'Palo Alto user identification' }
+  ]
 
   return (
-    <div className="space-y-6">
-      {/* View Overview */}
+    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
+      {/* Device Types */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Eye className="h-5 w-5 text-blue-600" />
-            <span>{viewInfo.title}</span>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center space-x-2">
+            <Monitor className="h-5 w-5 text-[#00c8d7]" />
+            <span>Device Types</span>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <p className="text-gray-600 mb-4">{viewInfo.description}</p>
-          {viewInfo.keyComponents.length > 0 && (
-            <div>
-              <h4 className="font-semibold mb-2">Key Components:</h4>
-              <div className="flex flex-wrap gap-2">
-                {viewInfo.keyComponents.map((component, index) => (
-                  <Badge key={index} variant="outline">
-                    {component}
-                  </Badge>
-                ))}
+        <CardContent className="space-y-3">
+          {deviceTypes.map((device, index) => (
+            <div key={index} className="flex items-center space-x-3">
+              <div className="flex-shrink-0 p-2 bg-gray-100 rounded-lg">
+                {device.icon}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium text-gray-900">
+                  {device.label}
+                </div>
+                <div className="text-xs text-gray-500">
+                  {device.description}
+                </div>
               </div>
             </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Component Types */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Settings className="h-5 w-5 text-blue-600" />
-            <span>Component Types</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {componentTypes.map((component) => (
-              <div key={component.type} className="flex items-start space-x-3 p-3 border rounded-lg">
-                <div 
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
-                  style={{ backgroundColor: component.color }}
-                >
-                  {component.icon}
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-semibold">{component.label}</h4>
-                  <p className="text-sm text-gray-600 mb-2">{component.description}</p>
-                  <div className="flex flex-wrap gap-1">
-                    {component.examples.map((example, index) => (
-                      <Badge key={index} variant="secondary" className="text-xs">
-                        {example}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          ))}
         </CardContent>
       </Card>
 
       {/* Connection Types */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Network className="h-5 w-5 text-blue-600" />
-            <span>Connection Types</span>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center space-x-2">
+            <Zap className="h-5 w-5 text-[#00c8d7]" />
+            <span>Connections</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {connectionTypes.map((connection, index) => (
+            <div key={index} className="flex items-center space-x-3">
+              <div className="flex-shrink-0">
+                <div 
+                  className={`w-8 h-0.5 ${connection.color} ${
+                    connection.type === 'dashed' ? 'border-dashed border-t-2' : 'bg-current'
+                  }`}
+                />
+              </div>
+              <div className="flex items-center space-x-2">
+                {connection.icon}
+                <div className="text-sm font-medium text-gray-900">
+                  {connection.label}
+                </div>
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      {/* Status Indicators */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center space-x-2">
+            <CheckCircle className="h-5 w-5 text-[#00c8d7]" />
+            <span>Status</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {statusIndicators.map((status, index) => (
+            <div key={index} className="flex items-center space-x-3">
+              <div className={`w-3 h-3 rounded-full ${status.color}`} />
+              <div className="flex items-center space-x-2">
+                <div className="text-gray-600">
+                  {status.icon}
+                </div>
+                <div className="text-sm font-medium text-gray-900">
+                  {status.label}
+                </div>
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      {/* Vendor Colors */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center space-x-2">
+            <Shield className="h-5 w-5 text-[#00c8d7]" />
+            <span>Vendors</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {vendorColors.map((vendor, index) => (
+            <div key={index} className="flex items-center space-x-3">
+              <Badge className={`${vendor.color} ${vendor.textColor} text-xs px-2 py-1`}>
+                {vendor.vendor}
+              </Badge>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      {/* Protocols */}
+      <Card className="lg:col-span-2">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center space-x-2">
+            <Lock className="h-5 w-5 text-[#00c8d7]" />
+            <span>Protocols & Standards</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {connectionTypes.map((connection) => (
-              <div key={connection.type} className="flex items-center space-x-3 p-3 border rounded-lg">
-                <div className="flex items-center space-x-2">
-                  <div 
-                    className="w-4 h-0.5"
-                    style={{ 
-                      backgroundColor: connection.color,
-                      borderStyle: connection.pattern === 'dashed' ? 'dashed' : 
-                                  connection.pattern === 'dotted' ? 'dotted' : 'solid',
-                      borderWidth: connection.pattern !== 'solid' ? '1px' : '0',
-                      borderColor: connection.color
-                    }}
-                  />
-                  <span className="font-semibold text-sm">{connection.label}</span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {protocols.map((protocol, index) => (
+              <div key={index} className="flex items-start space-x-3">
+                <Badge variant="outline" className="text-xs font-mono">
+                  {protocol.name}
+                </Badge>
+                <div className="text-sm text-gray-600 flex-1">
+                  {protocol.description}
                 </div>
-                <p className="text-xs text-gray-600">{connection.description}</p>
               </div>
             ))}
           </div>
         </CardContent>
       </Card>
 
-      {/* Vendor Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Globe className="h-5 w-5 text-blue-600" />
-            <span>Supported Vendors</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {vendorInfo.map((vendor) => (
-              <div key={vendor.vendor} className="flex items-center space-x-3 p-3 border rounded-lg">
-                <div className="text-2xl">{vendor.logo}</div>
-                <div>
-                  <h4 className="font-semibold" style={{ color: vendor.color }}>
-                    {vendor.label}
-                  </h4>
-                  <p className="text-sm text-gray-600">{vendor.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Best Practices */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <AlertTriangle className="h-5 w-5 text-amber-600" />
-            <span>Implementation Best Practices</span>
+      {/* Authentication Flow */}
+      <Card className="lg:col-span-2">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center space-x-2">
+            <Zap className="h-5 w-5 text-[#00c8d7]" />
+            <span>Authentication Flow</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            <div className="flex items-start space-x-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0" />
-              <p className="text-sm">Start with a pilot deployment in a controlled environment before full rollout</p>
+            <div className="flex items-center space-x-3">
+              <div className="w-6 h-6 bg-[#00c8d7] text-white rounded-full flex items-center justify-center text-xs font-bold">
+                1
+              </div>
+              <div className="text-sm">
+                <span className="font-medium">Device Connection:</span> Endpoint connects to network
+              </div>
             </div>
-            <div className="flex items-start space-x-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0" />
-              <p className="text-sm">Ensure proper certificate management and PKI infrastructure before deployment</p>
+            <div className="flex items-center space-x-3">
+              <div className="w-6 h-6 bg-[#00c8d7] text-white rounded-full flex items-center justify-center text-xs font-bold">
+                2
+              </div>
+              <div className="text-sm">
+                <span className="font-medium">802.1X Request:</span> Network device requests authentication
+              </div>
             </div>
-            <div className="flex items-start space-x-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0" />
-              <p className="text-sm">Configure backup authentication methods for critical network access</p>
+            <div className="flex items-center space-x-3">
+              <div className="w-6 h-6 bg-[#00c8d7] text-white rounded-full flex items-center justify-center text-xs font-bold">
+                3
+              </div>
+              <div className="text-sm">
+                <span className="font-medium">Certificate Validation:</span> Portnox validates device certificate
+              </div>
             </div>
-            <div className="flex items-start space-x-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0" />
-              <p className="text-sm">Implement gradual policy enforcement to minimize user disruption</p>
+            <div className="flex items-center space-x-3">
+              <div className="w-6 h-6 bg-[#00c8d7] text-white rounded-full flex items-center justify-center text-xs font-bold">
+                4
+              </div>
+              <div className="text-sm">
+                <span className="font-medium">Policy Evaluation:</span> Access policies are evaluated
+              </div>
             </div>
-            <div className="flex items-start space-x-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0" />
-              <p className="text-sm">Monitor and analyze authentication logs for security insights</p>
+            <div className="flex items-center space-x-3">
+              <div className="w-6 h-6 bg-[#00c8d7] text-white rounded-full flex items-center justify-center text-xs font-bold">
+                5
+              </div>
+              <div className="text-sm">
+                <span className="font-medium">Network Access:</span> VLAN assignment and access granted
+              </div>
             </div>
           </div>
         </CardContent>
