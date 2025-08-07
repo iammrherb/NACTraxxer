@@ -1,7 +1,8 @@
 'use client'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge, Button } from '@/components/ui/badge'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Book, MapPin, Users, Calendar, Settings, Network, CheckCircle, AlertTriangle, Clock, FileText, Download } from 'lucide-react'
 
 interface SiteWorkbookProps {
@@ -108,7 +109,7 @@ Network Infrastructure:
 Project Team:
 - Project Manager: ${siteData?.projectManager}
 - Technical Owners: ${siteData?.technicalOwners.join(', ')}
-    `
+      `
       
       const blob = new Blob([pdfContent], { type: 'text/plain' })
       const url = URL.createObjectURL(blob)
@@ -156,27 +157,29 @@ Project Team:
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Book className="h-6 w-6 text-blue-600" />
-            <span>Site Workbook: {siteData.name}</span>
-          </CardTitle>
-          <div className="flex space-x-2">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => exportWorkbook('pdf')}
-            >
-              <FileText className="h-4 w-4 mr-2" />
-              Export PDF
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => exportWorkbook('excel')}
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Export Excel
-            </Button>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center space-x-2">
+              <Book className="h-6 w-6 text-blue-600" />
+              <span>Site Workbook: {siteData.name}</span>
+            </CardTitle>
+            <div className="flex space-x-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => exportWorkbook('pdf')}
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Export PDF
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => exportWorkbook('excel')}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export Excel
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -293,7 +296,7 @@ Project Team:
               
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="font-medium text-gray-600 dark:text-gray-400">RADSEC Implementation:</span>
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Implementation:</span>
                   <Badge variant="outline">{siteData.radsec}</Badge>
                 </div>
                 <div>
@@ -517,6 +520,16 @@ Project Team:
                   <p className="text-sm text-gray-600">{contact.phone}</p>
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* Notes Section */}
+          <div className="mt-6 pt-6 border-t">
+            <h3 className="text-lg font-semibold mb-3">Project Notes</h3>
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+              <p className="text-gray-700 dark:text-gray-300">
+                {siteData.notes}
+              </p>
             </div>
           </div>
         </CardContent>
