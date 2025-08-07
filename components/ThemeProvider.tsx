@@ -14,38 +14,27 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>('light')
-  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    setMounted(true)
-    
-    if (typeof window !== 'undefined') {
-      const savedTheme = localStorage.getItem('theme') as Theme
-      if (savedTheme) {
-        setTheme(savedTheme)
-      } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        setTheme('dark')
-      }
+    const savedTheme = localStorage.getItem('theme') as Theme
+    if (savedTheme) {
+      setTheme(savedTheme)
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      setTheme('dark')
     }
   }, [])
 
   useEffect(() => {
-    if (mounted && typeof window !== 'undefined') {
-      localStorage.setItem('theme', theme)
-      if (theme === 'dark') {
-        document.documentElement.classList.add('dark')
-      } else {
-        document.documentElement.classList.remove('dark')
-      }
+    localStorage.setItem('theme', theme)
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
     }
-  }, [theme, mounted])
+  }, [theme])
 
   const toggleTheme = () => {
     setTheme(theme === 'light' ? 'dark' : 'light')
-  }
-
-  if (!mounted) {
-    return <>{children}</>
   }
 
   return (
