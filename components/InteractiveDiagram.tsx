@@ -1137,12 +1137,12 @@ export default function InteractiveDiagram({
 
   const getVendorLogo = (vendor: string): string => {
     switch (vendor) {
-      case 'fortinet': return '🔥' // Placeholder for Fortinet logo
-      case 'paloalto': return '🛡️' // Placeholder for Palo Alto logo
-      case 'cisco': return '🌐' // Placeholder for Cisco logo
-      case 'aruba': return '📡' // Placeholder for Aruba logo
-      case 'juniper': return '🌿' // Placeholder for Juniper logo
-      default: return '🔧'
+      case 'fortinet': return 'FG'
+      case 'paloalto': return 'PA'
+      case 'cisco': return 'C'
+      case 'aruba': return 'A'
+      case 'juniper': return 'J'
+      default: return '?'
     }
   }
 
@@ -1191,39 +1191,51 @@ export default function InteractiveDiagram({
                 height={node.height}
                 rx={8}
                 fill={node.color}
-                stroke={isSelected ? '#3b82f6' : isConnectionStart ? '#10b981' : '#6b7280'}
+                stroke={isSelected ? '#00c8d7' : isConnectionStart ? '#10b981' : '#6b7280'}
                 strokeWidth={isSelected || isConnectionStart ? 3 : 2}
                 className="transition-all duration-200"
               />
-              
+            
               {/* Vendor logo/icon */}
               {node.vendor && (
-                <text
-                  x={node.x + 10}
-                  y={node.y + 25}
-                  fontSize="16"
-                  className="pointer-events-none"
-                >
-                  {getVendorLogo(node.vendor)}
-                </text>
+                <g>
+                  <circle
+                    cx={node.x + 20}
+                    cy={node.y + 20}
+                    r={12}
+                    fill="white"
+                    stroke="#6b7280"
+                    strokeWidth={1}
+                  />
+                  <text
+                    x={node.x + 20}
+                    y={node.y + 25}
+                    textAnchor="middle"
+                    fontSize="12"
+                    className="pointer-events-none"
+                  >
+                    {getVendorLogo(node.vendor)}
+                  </text>
+                </g>
               )}
-              
+            
               <text
                 x={node.x + node.width / 2}
                 y={node.y + node.height / 2}
                 textAnchor="middle"
                 dominantBaseline="middle"
                 className="fill-gray-800 dark:fill-gray-200 font-semibold text-sm pointer-events-none"
+                style={{ fontSize: '14px', fontWeight: '600' }}
               >
                 {node.label}
               </text>
-              
-              {/* Connection points */}
+            
+              {/* Connection points with Portnox colors */}
               <circle
                 cx={node.x + node.width / 2}
                 cy={node.y}
                 r={6}
-                fill="#3b82f6"
+                fill="#00c8d7"
                 stroke="white"
                 strokeWidth={2}
                 className="opacity-0 hover:opacity-100 transition-opacity"
@@ -1232,7 +1244,7 @@ export default function InteractiveDiagram({
                 cx={node.x + node.width}
                 cy={node.y + node.height / 2}
                 r={6}
-                fill="#3b82f6"
+                fill="#00c8d7"
                 stroke="white"
                 strokeWidth={2}
                 className="opacity-0 hover:opacity-100 transition-opacity"
@@ -1241,7 +1253,7 @@ export default function InteractiveDiagram({
                 cx={node.x + node.width / 2}
                 cy={node.y + node.height}
                 r={6}
-                fill="#3b82f6"
+                fill="#00c8d7"
                 stroke="white"
                 strokeWidth={2}
                 className="opacity-0 hover:opacity-100 transition-opacity"
@@ -1250,7 +1262,7 @@ export default function InteractiveDiagram({
                 cx={node.x}
                 cy={node.y + node.height / 2}
                 r={6}
-                fill="#3b82f6"
+                fill="#00c8d7"
                 stroke="white"
                 strokeWidth={2}
                 className="opacity-0 hover:opacity-100 transition-opacity"
@@ -1262,7 +1274,7 @@ export default function InteractiveDiagram({
               <p className="font-semibold">{node.label}</p>
               <p className="text-sm text-gray-600 dark:text-gray-400">{node.description}</p>
               {node.vendor && (
-                <p className="text-xs text-blue-600 mt-1">Vendor: {node.vendor}</p>
+                <p className="text-xs text-[#00c8d7] mt-1 font-medium">Vendor: {node.vendor}</p>
               )}
             </div>
           </TooltipContent>
@@ -1357,13 +1369,14 @@ export default function InteractiveDiagram({
   }
 
   return (
-    <div className="w-full h-[700px] overflow-auto">
+    <div className="w-full h-[700px] overflow-auto architecture-diagram">
       <svg
         ref={svgRef}
         width="1200"
         height="800"
         viewBox="0 0 1200 800"
-        className="w-full h-full"
+        className="w-full h-full bg-white"
+        style={{ backgroundColor: 'white' }}
       >
         <style>
           {`
@@ -1383,8 +1396,8 @@ export default function InteractiveDiagram({
       </svg>
       
       {/* Instructions */}
-      <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-        <p className="text-sm text-blue-800 dark:text-blue-200">
+      <div className="mt-4 p-4 bg-[#00c8d7]/10 dark:bg-[#00c8d7]/20 rounded-lg border border-[#00c8d7]/20">
+        <p className="text-sm text-[#00c8d7] dark:text-[#00c8d7]">
           <strong>Instructions:</strong> Click nodes to select them. Double-click a node to start drawing a custom connection. 
           Hover over nodes to see connection points and detailed descriptions.
         </p>

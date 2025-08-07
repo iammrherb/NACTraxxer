@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import InteractiveDiagram from './InteractiveDiagram'
 import ArchitectureLegend from './ArchitectureLegend'
-import { Cloud, Network, Shield, Settings, Zap, Globe, Lock, Users, Database, Server } from 'lucide-react'
+import { Cloud, Network, Shield, Settings, Zap, Globe, Lock, Users, Database, Server, Download } from 'lucide-react'
 
 export default function ArchitectureDesigner() {
   const [selectedView, setSelectedView] = useState('complete')
@@ -116,6 +116,140 @@ export default function ArchitectureDesigner() {
 
   const currentView = architectureViews.find(view => view.id === selectedView)
 
+  // Export Functions
+  const exportDiagram = async (format: 'svg' | 'png' | 'pdf') => {
+    const diagramElement = document.querySelector('.architecture-diagram svg')
+    if (!diagramElement) return
+
+    try {
+      if (format === 'svg') {
+        await exportAsSVG(diagramElement as SVGElement)
+      } else if (format === 'png') {
+        await exportAsPNG(diagramElement as SVGElement)
+      } else if (format === 'pdf') {
+        await exportAsPDF(diagramElement as SVGElement)
+      }
+    } catch (error) {
+      console.error('Export failed:', error)
+    }
+  }
+
+  const exportAsSVG = async (svgElement: SVGElement) => {
+    const svgData = new XMLSerializer().serializeToString(svgElement)
+    const svgWithHeader = addExportHeader(svgData, 'svg')
+    const blob = new Blob([svgWithHeader], { type: 'image/svg+xml' })
+    downloadFile(blob, `portnox-architecture-${selectedView}-${Date.now()}.svg`)
+  }
+
+  const exportAsPNG = async (svgElement: SVGElement) => {
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
+    const img = new Image()
+    
+    canvas.width = 1400
+    canvas.height = 1000
+    
+    // Add white background
+    ctx!.fillStyle = 'white'
+    ctx!.fillRect(0, 0, canvas.width, canvas.height)
+    
+    // Add header with logos
+    await addPNGHeader(ctx!, canvas.width)
+    
+    const svgData = new XMLSerializer().serializeToString(svgElement)
+    const svgBlob = new Blob([svgData], { type: 'image/svg+xml' })
+    const url = URL.createObjectURL(svgBlob)
+    
+    img.onload = () => {
+      ctx!.drawImage(img, 50, 150, canvas.width - 100, canvas.height - 200)
+      
+      canvas.toBlob((blob) => {
+        if (blob) {
+          downloadFile(blob, `portnox-architecture-${selectedView}-${Date.now()}.png`)
+        }
+      }, 'image/png')
+      
+      URL.revokeObjectURL(url)
+    }
+    
+    img.src = url
+  }
+
+  const exportAsPDF = async (svgElement: SVGElement) => {
+    // This would require a PDF library like jsPDF
+    // For now, we'll export as PNG and let user convert if needed
+    await exportAsPNG(svgElement)
+  }
+
+  const addExportHeader = (svgData: string, format: string) => {
+    const headerHeight = 100
+    const header = `
+      <g id="export-header">
+        <rect x="0" y="0" width="1200" height="${headerHeight}" fill="#00c8d7"/>
+        <image x="20" y="20" width="120" height="30" href="https://www.portnox.com/wp-content/uploads/2021/03/Portnotx_Logo_Color-768x193.png"/>
+        <image x="1050" y="15" width="130" height="40" href="https://companieslogo.com/img/orig/ABM_BIG-47f1fb05.png?t=1720244490&download=true"/>
+        <text x="600" y="35" textAnchor="middle" fill="white" fontSize="18" fontWeight="bold">
+          Portnox NAC Architecture - ${currentView?.label}
+        </text>
+        <text x="600" y="55" textAnchor="middle" fill="white" fontSize="12">
+          Generated on ${new Date().toLocaleDateString()}
+        </text>
+      </g>
+    `
+    
+    return svgData.replace('<svg', `<svg`).replace('>', `>${header}`)
+  }
+
+  const addPNGHeader = async (ctx: CanvasRenderingContext2D, width: number) => {
+    // Header background
+    ctx.fillStyle = '#00c8d7'
+    ctx.fillRect(0, 0, width, 100)
+    
+    // Load and draw Portnox logo
+    const portnoxLogo = new Image()
+    portnoxLogo.crossOrigin = 'anonymous'
+    portnoxLogo.src = 'https://www.portnox.com/wp-content/uploads/2021/03/Portnotx_Logo_Color-768x193.png'
+    
+    // Load and draw ABM logo
+    const abmLogo = new Image()
+    abmLogo.crossOrigin = 'anonymous'
+    abmLogo.src = 'https://companieslogo.com/img/orig/ABM_BIG-47f1fb05.png?t=1720244490&download=true'
+    
+    return new Promise((resolve) => {
+      let loadedCount = 0
+      const onLoad = () => {
+        loadedCount++
+        if (loadedCount === 2) {
+          ctx.drawImage(portnoxLogo, 20, 20, 120, 30)
+          ctx.drawImage(abmLogo, width - 150, 15, 130, 40)
+          
+          // Add text
+          ctx.fillStyle = 'white'
+          ctx.font = 'bold 18px Arial'
+          ctx.textAlign = 'center'
+          ctx.fillText(`Portnox NAC Architecture - ${currentView?.label}`, width / 2, 35)
+          
+          ctx.font = '12px Arial'
+          ctx.fillText(`Generated on ${new Date().toLocaleDateString()}`, width / 2, 55)
+          
+          resolve(undefined)
+        }
+      }
+      
+      portnoxLogo.onload = onLoad
+      abmLogo.onload = onLoad
+    })
+  }
+
+  const downloadFile = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = filename
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -158,15 +292,13 @@ export default function ArchitectureDesigner() {
                 <SelectContent>
                   {cloudProviders.map((provider) => (
                     <SelectItem key={provider.id} value={provider.id}>
-                      <div className="flex items-center space-x-2">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: provider.color }}
-                        />
-                        <span>{provider.label}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
+                      <div 
+                        className="w-3 h-3 rounded-full" 
+                        style={{ backgroundColor: provider.color }}
+                      />
+                      <span>{provider.label}</span>
+                    </div>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -251,16 +383,47 @@ export default function ArchitectureDesigner() {
                   {currentView?.icon}
                   <span>{currentView?.label}</span>
                 </CardTitle>
-                <div className="flex space-x-2">
-                  <Badge variant="outline">
-                    {cloudProviders.find(p => p.id === cloudProvider)?.label}
-                  </Badge>
-                  <Badge variant="outline">
-                    {networkVendors.find(v => v.id === networkVendor)?.label}
-                  </Badge>
-                  <Badge variant="outline">
-                    {connectivityOptions.find(c => c.id === connectivityType)?.label}
-                  </Badge>
+                <div className="flex items-center space-x-2">
+                  <div className="flex space-x-2">
+                    <Badge variant="outline">
+                      {cloudProviders.find(p => p.id === cloudProvider)?.label}
+                    </Badge>
+                    <Badge variant="outline">
+                      {networkVendors.find(v => v.id === networkVendor)?.label}
+                    </Badge>
+                    <Badge variant="outline">
+                      {connectivityOptions.find(c => c.id === connectivityType)?.label}
+                    </Badge>
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => exportDiagram('svg')}
+                      className="flex items-center space-x-1"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>SVG</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => exportDiagram('png')}
+                      className="flex items-center space-x-1"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>PNG</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => exportDiagram('pdf')}
+                      className="flex items-center space-x-1"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>PDF</span>
+                    </Button>
+                  </div>
                 </div>
               </div>
             </CardHeader>

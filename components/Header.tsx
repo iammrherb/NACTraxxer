@@ -12,7 +12,7 @@ export default function Header() {
   const { theme, toggleTheme } = useTheme()
   const [showUserModal, setShowUserModal] = useState(false)
   const [showThemeCustomizer, setShowThemeCustomizer] = useState(false)
-  const [customerLogo, setCustomerLogo] = useState('/placeholder.svg?height=40&width=150&text=ABM+Industries')
+  const [customerLogo, setCustomerLogo] = useState('https://companieslogo.com/img/orig/ABM_BIG-47f1fb05.png?t=1720244490&download=true')
 
   const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -27,18 +27,20 @@ export default function Header() {
 
   return (
     <>
-      <header className="bg-gradient-to-r from-blue-600 to-blue-800 text-white shadow-lg">
+      <header className="bg-gradient-to-r from-[#00c8d7] to-[#0099cc] text-white shadow-lg">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-8">
               <div className="flex items-center space-x-4">
-                <img 
-                  src="/placeholder.svg?height=50&width=150&text=Portnox+Logo" 
-                  alt="Portnox Logo" 
-                  className="h-12 filter drop-shadow-md hover:scale-105 transition-transform"
-                />
+                <div className="bg-white rounded-lg p-2 shadow-md">
+                  <img 
+                    src="https://www.portnox.com/wp-content/uploads/2021/03/Portnotx_Logo_Color-768x193.png" 
+                    alt="Portnox Logo" 
+                    className="h-10 w-auto filter hover:scale-105 transition-transform"
+                  />
+                </div>
                 <div className="h-10 w-px bg-white/30" />
-                <div className="bg-white/10 rounded-lg p-2 hover:bg-white/20 transition-colors">
+                <div className="bg-white/10 rounded-lg p-2 hover:bg-white/20 transition-colors border border-white/20">
                   <img 
                     src={customerLogo || "/placeholder.svg"} 
                     alt="Customer Logo" 
@@ -69,12 +71,12 @@ export default function Header() {
                 </label>
               </div>
 
-              <div className="flex items-center space-x-2 px-3 py-2 bg-white/10 rounded-full">
+              <div className="flex items-center space-x-2 px-3 py-2 bg-white/10 rounded-full border border-white/20">
                 <Sun className="h-4 w-4" />
                 <Switch
                   checked={theme === 'dark'}
                   onCheckedChange={toggleTheme}
-                  className="data-[state=checked]:bg-blue-500"
+                  className="data-[state=checked]:bg-[#00c8d7]"
                 />
                 <Moon className="h-4 w-4" />
               </div>
@@ -83,7 +85,7 @@ export default function Header() {
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowUserModal(true)}
-                className="text-white hover:bg-white/20"
+                className="text-white hover:bg-[#00c8d7]/20 border border-white/20"
               >
                 <Users className="h-4 w-4 mr-2" />
                 Manage Users
@@ -93,7 +95,7 @@ export default function Header() {
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowThemeCustomizer(true)}
-                className="text-white hover:bg-white/20"
+                className="text-white hover:bg-[#00c8d7]/20 border border-white/20"
               >
                 <Palette className="h-4 w-4 mr-2" />
                 Customize
