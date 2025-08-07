@@ -5,20 +5,34 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Shield, Cloud, Network, Server, Database, Lock, Users, Settings, Smartphone, Globe, Key, FileText, Zap, Eye, AlertTriangle } from 'lucide-react'
 
-interface ArchitectureLegendProps {
-  config: {
-    cloudProvider: string
-    networkVendor: string
-    authMethod: string
-    connectivity: string
-    mfaEnabled: boolean
-    guestAccess: boolean
-    byodSupport: boolean
-    complianceMode: string
-  }
+interface ArchitectureConfig {
+  cloudProvider?: string
+  networkVendor?: string
+  authMethod?: string
+  connectivity?: string
+  mfaEnabled?: boolean
+  guestAccess?: boolean
+  byodSupport?: boolean
+  complianceMode?: string
 }
 
-export default function ArchitectureLegend({ config }: ArchitectureLegendProps) {
+interface ArchitectureLegendProps {
+  config?: ArchitectureConfig
+}
+
+export default function ArchitectureLegend({ config = {} }: ArchitectureLegendProps) {
+  // Provide default values to prevent undefined errors
+  const safeConfig = {
+    cloudProvider: config?.cloudProvider || 'azure',
+    networkVendor: config?.networkVendor || 'cisco',
+    authMethod: config?.authMethod || 'radius',
+    connectivity: config?.connectivity || 'hybrid',
+    mfaEnabled: config?.mfaEnabled || false,
+    guestAccess: config?.guestAccess || false,
+    byodSupport: config?.byodSupport || false,
+    complianceMode: config?.complianceMode || 'standard'
+  }
+
   const componentTypes = [
     {
       type: 'endpoint',
@@ -154,7 +168,7 @@ export default function ArchitectureLegend({ config }: ArchitectureLegendProps) 
       description: 'Security appliances and SASE'
     },
     {
-      vendor: 'paloalto',
+      vendor: 'palo-alto',
       label: 'Palo Alto Networks',
       color: '#FF6B35',
       logo: '🟠',
@@ -176,8 +190,81 @@ export default function ArchitectureLegend({ config }: ArchitectureLegendProps) 
     }
   ]
 
+  // Get current configuration summary
+  const getConfigSummary = () => {
+    return {
+      cloudProvider: safeConfig.cloudProvider.charAt(0).toUpperCase() + safeConfig.cloudProvider.slice(1),
+      networkVendor: safeConfig.networkVendor.charAt(0).toUpperCase() + safeConfig.networkVendor.slice(1),
+      authMethod: safeConfig.authMethod.toUpperCase(),
+      connectivity: safeConfig.connectivity.charAt(0).toUpperCase() + safeConfig.connectivity.slice(1)
+    }
+  }
+
+  const configSummary = getConfigSummary()
+
   return (
     <div className="space-y-6">
+      {/* Current Configuration */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Eye className="h-5 w-5 text-blue-600" />
+            <span>Current Configuration</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center">
+              <div className="text-sm text-gray-500">Cloud Provider</div>
+              <Badge variant="outline" className="mt-1">
+                {configSummary.cloudProvider}
+              </Badge>
+            </div>
+            <div className="text-center">
+              <div className="text-sm text-gray-500">Network Vendor</div>
+              <Badge variant="outline" className="mt-1">
+                {configSummary.networkVendor}
+              </Badge>
+            </div>
+            <div className="text-center">
+              <div className="text-sm text-gray-500">Authentication</div>
+              <Badge variant="outline" className="mt-1">
+                {configSummary.authMethod}
+              </Badge>
+            </div>
+            <div className="text-center">
+              <div className="text-sm text-gray-500">Connectivity</div>
+              <Badge variant="outline" className="mt-1">
+                {configSummary.connectivity}
+              </Badge>
+            </div>
+          </div>
+          
+          <Separator className="my-4" />
+          
+          <div className="flex flex-wrap gap-2">
+            {safeConfig.mfaEnabled && (
+              <Badge variant="secondary">
+                <Shield className="h-3 w-3 mr-1" />
+                MFA Enabled
+              </Badge>
+            )}
+            {safeConfig.guestAccess && (
+              <Badge variant="secondary">
+                <Users className="h-3 w-3 mr-1" />
+                Guest Access
+              </Badge>
+            )}
+            {safeConfig.byodSupport && (
+              <Badge variant="secondary">
+                <Smartphone className="h-3 w-3 mr-1" />
+                BYOD Support
+              </Badge>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Component Types */}
       <Card>
         <CardHeader>
