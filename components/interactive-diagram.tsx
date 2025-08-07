@@ -1292,7 +1292,7 @@ const generateOnboardingConnections = (): DiagramConnection[] => {
   }
 
   return (
-    <div className="w-full">
+    <div className="w-full architecture-diagram">
       <div className="w-full h-[700px] overflow-auto border rounded-lg bg-gradient-to-br from-gray-50 to-white">
         <svg
           ref={svgRef}

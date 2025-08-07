@@ -60,31 +60,41 @@ export default function ArchitectureDesigner() {
   ]
 
   const exportDiagram = (format: 'svg' | 'png' | 'pdf') => {
-    // Find the SVG element in the InteractiveDiagram component
+  // Try multiple selectors to find the SVG element
+  let svgElement = document.querySelector('.architecture-diagram svg') as SVGElement
+  
+  if (!svgElement) {
+    // Fallback: look for any SVG in the diagram container
     const diagramContainer = document.querySelector('.architecture-diagram')
-    const svgElement = diagramContainer?.querySelector('svg')
-    
-    if (!svgElement) {
-      console.error('No SVG element found for export')
-      alert('No diagram found to export. Please ensure the diagram is loaded.')
-      return
-    }
-
-    try {
-      if (format === 'svg') {
-        exportAsSVG(svgElement)
-      } else if (format === 'png') {
-        exportAsPNG(svgElement)
-      } else if (format === 'pdf') {
-        // For PDF, we'll export as PNG first and let user convert
-        exportAsPNG(svgElement)
-        alert('PDF export: PNG file downloaded. You can convert it to PDF using online tools or print to PDF.')
-      }
-    } catch (error) {
-      console.error('Export failed:', error)
-      alert(`Failed to export as ${format.toUpperCase()}. Please try again.`)
-    }
+    svgElement = diagramContainer?.querySelector('svg') as SVGElement
   }
+  
+  if (!svgElement) {
+    // Final fallback: look for any SVG on the page
+    svgElement = document.querySelector('svg') as SVGElement
+  }
+  
+  if (!svgElement) {
+    console.error('No SVG element found for export')
+    alert('No diagram found to export. Please wait for the diagram to load and try again.')
+    return
+  }
+
+  try {
+    if (format === 'svg') {
+      exportAsSVG(svgElement)
+    } else if (format === 'png') {
+      exportAsPNG(svgElement)
+    } else if (format === 'pdf') {
+      // For PDF, we'll export as PNG first and let user convert
+      exportAsPNG(svgElement)
+      alert('PDF export: PNG file downloaded. You can convert it to PDF using online tools or print to PDF.')
+    }
+  } catch (error) {
+    console.error('Export failed:', error)
+    alert(`Failed to export as ${format.toUpperCase()}. Please try again.`)
+  }
+}
 
   const exportAsSVG = (svgElement: SVGElement) => {
     // Clone and enhance the SVG
