@@ -135,126 +135,13 @@ export default function ArchitectureDesigner() {
   }
 
   const exportAsSVG = async (svgElement: SVGElement) => {
-    // Clone the SVG to avoid modifying the original
-    const svgClone = svgElement.cloneNode(true) as SVGElement
-    
-    // Add proper dimensions and styling
-    svgClone.setAttribute('width', '1400')
-    svgClone.setAttribute('height', '1000')
-    svgClone.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
-    
-    // Add header with logos and title
-    const headerGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g')
-    headerGroup.setAttribute('id', 'export-header')
-    
-    // Header background
-    const headerBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
-    headerBg.setAttribute('x', '0')
-    headerBg.setAttribute('y', '0')
-    headerBg.setAttribute('width', '1400')
-    headerBg.setAttribute('height', '100')
-    headerBg.setAttribute('fill', '#00c8d7')
-    headerGroup.appendChild(headerBg)
-    
-    // Title text
-    const titleText = document.createElementNS('http://www.w3.org/2000/svg', 'text')
-    titleText.setAttribute('x', '700')
-    titleText.setAttribute('y', '35')
-    titleText.setAttribute('text-anchor', 'middle')
-    titleText.setAttribute('fill', 'white')
-    titleText.setAttribute('font-size', '18')
-    titleText.setAttribute('font-weight', 'bold')
-    titleText.textContent = `Portnox NAC Architecture - ${currentView?.label}`
-    headerGroup.appendChild(titleText)
-    
-    // Date text
-    const dateText = document.createElementNS('http://www.w3.org/2000/svg', 'text')
-    dateText.setAttribute('x', '700')
-    dateText.setAttribute('y', '55')
-    dateText.setAttribute('text-anchor', 'middle')
-    dateText.setAttribute('fill', 'white')
-    dateText.setAttribute('font-size', '12')
-    dateText.textContent = `Generated on ${new Date().toLocaleDateString()}`
-    headerGroup.appendChild(dateText)
-    
-    // Insert header at the beginning
-    svgClone.insertBefore(headerGroup, svgClone.firstChild)
-    
-    // Adjust viewBox to accommodate header
-    const currentViewBox = svgClone.getAttribute('viewBox') || '0 0 1200 800'
-    const viewBoxParts = currentViewBox.split(' ')
-    const newViewBox = `0 0 ${viewBoxParts[2]} ${parseInt(viewBoxParts[3]) + 100}`
-    svgClone.setAttribute('viewBox', newViewBox)
-    
-    // Move existing content down to make room for header
-    const existingContent = svgClone.querySelector('g:not(#export-header)')
-    if (existingContent) {
-      existingContent.setAttribute('transform', 'translate(0, 100)')
-    }
-    
-    const svgData = new XMLSerializer().serializeToString(svgClone)
-    const blob = new Blob([svgData], { type: 'image/svg+xml' })
+    const svgData = new XMLSerializer().serializeToString(svgElement)
+    const svgWithHeader = addExportHeader(svgData, 'svg')
+    const blob = new Blob([svgWithHeader], { type: 'image/svg+xml' })
     downloadFile(blob, `portnox-architecture-${selectedView}-${Date.now()}.svg`)
   }
 
   const exportAsPNG = async (svgElement: SVGElement) => {
-    // First create the enhanced SVG
-    const svgClone = svgElement.cloneNode(true) as SVGElement
-    svgClone.setAttribute('width', '1400')
-    svgClone.setAttribute('height', '1000')
-    svgClone.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
-    
-    // Add white background
-    const background = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
-    background.setAttribute('x', '0')
-    background.setAttribute('y', '0')
-    background.setAttribute('width', '1400')
-    background.setAttribute('height', '1000')
-    background.setAttribute('fill', 'white')
-    svgClone.insertBefore(background, svgClone.firstChild)
-    
-    // Add header
-    const headerGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g')
-    headerGroup.setAttribute('id', 'export-header')
-    
-    const headerBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
-    headerBg.setAttribute('x', '0')
-    headerBg.setAttribute('y', '0')
-    headerBg.setAttribute('width', '1400')
-    headerBg.setAttribute('height', '100')
-    headerBg.setAttribute('fill', '#00c8d7')
-    headerGroup.appendChild(headerBg)
-    
-    const titleText = document.createElementNS('http://www.w3.org/2000/svg', 'text')
-    titleText.setAttribute('x', '700')
-    titleText.setAttribute('y', '35')
-    titleText.setAttribute('text-anchor', 'middle')
-    titleText.setAttribute('fill', 'white')
-    titleText.setAttribute('font-size', '18')
-    titleText.setAttribute('font-weight', 'bold')
-    titleText.textContent = `Portnox NAC Architecture - ${currentView?.label}`
-    headerGroup.appendChild(titleText)
-    
-    const dateText = document.createElementNS('http://www.w3.org/2000/svg', 'text')
-    dateText.setAttribute('x', '700')
-    dateText.setAttribute('y', '55')
-    dateText.setAttribute('text-anchor', 'middle')
-    dateText.setAttribute('fill', 'white')
-    dateText.setAttribute('font-size', '12')
-    dateText.textContent = `Generated on ${new Date().toLocaleDateString()}`
-    headerGroup.appendChild(dateText)
-    
-    svgClone.insertBefore(headerGroup, background.nextSibling)
-    
-    // Move existing content down
-    const existingContent = Array.from(svgClone.children).find(child => 
-      child.tagName !== 'rect' && child.getAttribute('id') !== 'export-header'
-    )
-    if (existingContent) {
-      existingContent.setAttribute('transform', 'translate(0, 100)')
-    }
-    
-    // Convert to PNG
     const canvas = document.createElement('canvas')
     const ctx = canvas.getContext('2d')
     const img = new Image()
@@ -262,36 +149,30 @@ export default function ArchitectureDesigner() {
     canvas.width = 1400
     canvas.height = 1000
     
-    const svgData = new XMLSerializer().serializeToString(svgClone)
+    // Add white background
+    ctx!.fillStyle = 'white'
+    ctx!.fillRect(0, 0, canvas.width, canvas.height)
+    
+    // Add header with logos
+    await addPNGHeader(ctx!, canvas.width)
+    
+    const svgData = new XMLSerializer().serializeToString(svgElement)
     const svgBlob = new Blob([svgData], { type: 'image/svg+xml' })
     const url = URL.createObjectURL(svgBlob)
     
-    return new Promise<void>((resolve, reject) => {
-      img.onload = () => {
-        try {
-          ctx!.drawImage(img, 0, 0, 1400, 1000)
-          
-          canvas.toBlob((blob) => {
-            if (blob) {
-              downloadFile(blob, `portnox-architecture-${selectedView}-${Date.now()}.png`)
-              resolve()
-            } else {
-              reject(new Error('Failed to create PNG blob'))
-            }
-          }, 'image/png')
-          
-          URL.revokeObjectURL(url)
-        } catch (error) {
-          reject(error)
+    img.onload = () => {
+      ctx!.drawImage(img, 50, 150, canvas.width - 100, canvas.height - 200)
+      
+      canvas.toBlob((blob) => {
+        if (blob) {
+          downloadFile(blob, `portnox-architecture-${selectedView}-${Date.now()}.png`)
         }
-      }
+      }, 'image/png')
       
-      img.onerror = () => {
-        reject(new Error('Failed to load SVG image'))
-      }
-      
-      img.src = url
-    })
+      URL.revokeObjectURL(url)
+    }
+    
+    img.src = url
   }
 
   const exportAsPDF = async (svgElement: SVGElement) => {
@@ -383,7 +264,7 @@ export default function ArchitectureDesigner() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Architecture View Selection */}
             <div className="space-y-2">
-              <Label htmlFor="view-select">Architecture View</Label>
+              <Label htmlFor="view-select" />
               <Select value={selectedView} onValueChange={setSelectedView}>
                 <SelectTrigger id="view-select">
                   <SelectValue placeholder="Select view" />
@@ -403,7 +284,7 @@ export default function ArchitectureDesigner() {
 
             {/* Cloud Provider Selection */}
             <div className="space-y-2">
-              <Label htmlFor="cloud-select">Cloud Provider</Label>
+              <Label htmlFor="cloud-select" />
               <Select value={cloudProvider} onValueChange={setCloudProvider}>
                 <SelectTrigger id="cloud-select">
                   <SelectValue placeholder="Select provider" />
@@ -414,17 +295,17 @@ export default function ArchitectureDesigner() {
                       <div 
                         className="w-3 h-3 rounded-full" 
                         style={{ backgroundColor: provider.color }}
-                      />
+                      ></div>
                       <span>{provider.label}</span>
-                    </div>
-                  </SelectItem>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
 
             {/* Network Vendor Selection */}
             <div className="space-y-2">
-              <Label htmlFor="vendor-select">Network Vendor</Label>
+              <Label htmlFor="vendor-select" />
               <Select value={networkVendor} onValueChange={setNetworkVendor}>
                 <SelectTrigger id="vendor-select">
                   <SelectValue placeholder="Select vendor" />
@@ -441,7 +322,7 @@ export default function ArchitectureDesigner() {
 
             {/* Connectivity Type Selection */}
             <div className="space-y-2">
-              <Label htmlFor="connectivity-select">Connectivity</Label>
+              <Label htmlFor="connectivity-select" />
               <Select value={connectivityType} onValueChange={setConnectivityType}>
                 <SelectTrigger id="connectivity-select">
                   <SelectValue placeholder="Select connectivity" />
