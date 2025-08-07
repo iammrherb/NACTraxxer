@@ -373,20 +373,6 @@ export default function EnhancedArchitectureDiagrams() {
 
     return (
       <g key={`connection-${index}`}>
-        <line
-          x1={x1}
-          y1={y1}
-          x2={x2}
-          y2={y2}
-          stroke={strokeColor}
-          strokeWidth={strokeWidth}
-          strokeDasharray={strokeDasharray}
-          className={showAnimations ? 'diagram-connection' : ''}
-          style={{
-            animationDelay: `${index * 0.2}s`,
-            animationDuration: `${2 / animationSpeed}s`
-          }}
-        />
         <defs>
           <marker
             id={`arrowhead-${index}`}
@@ -407,8 +393,14 @@ export default function EnhancedArchitectureDiagrams() {
           y1={y1}
           x2={x2}
           y2={y2}
-          stroke="transparent"
-          strokeWidth="1"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          strokeDasharray={strokeDasharray}
+          className={showAnimations ? 'diagram-connection' : ''}
+          style={{
+            animationDelay: `${index * 0.2}s`,
+            animationDuration: `${2 / animationSpeed}s`
+          }}
           markerEnd={`url(#arrowhead-${index})`}
         />
         {connection.label && (
