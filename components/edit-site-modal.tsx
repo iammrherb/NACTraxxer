@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Building, Plus } from 'lucide-react'
+import { Building, Save } from 'lucide-react'
 
 interface Site {
   id: string
@@ -40,7 +40,6 @@ interface EditSiteModalProps {
 
 export default function EditSiteModal({ open, onOpenChange, site, onEditSite }: EditSiteModalProps) {
   const [formData, setFormData] = useState<Site>(site)
-  const [newTechnicalOwner, setNewTechnicalOwner] = useState('')
 
   useEffect(() => {
     setFormData(site)
@@ -49,23 +48,6 @@ export default function EditSiteModal({ open, onOpenChange, site, onEditSite }: 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     onEditSite(formData)
-  }
-
-  const addTechnicalOwner = () => {
-    if (newTechnicalOwner.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        technicalOwners: [...prev.technicalOwners, newTechnicalOwner.trim()]
-      }))
-      setNewTechnicalOwner('')
-    }
-  }
-
-  const removeTechnicalOwner = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      technicalOwners: prev.technicalOwners.filter((_, i) => i !== index)
-    }))
   }
 
   const handleVendorChange = (vendor: string, type: 'wired' | 'wireless', checked: boolean) => {
@@ -155,19 +137,6 @@ export default function EditSiteModal({ open, onOpenChange, site, onEditSite }: 
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="phase">Phase</Label>
-              <Select value={formData.phase} onValueChange={(value) => setFormData(prev => ({ ...prev, phase: value }))}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">Phase 1</SelectItem>
-                  <SelectItem value="2">Phase 2</SelectItem>
-                  <SelectItem value="3">Phase 3</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
               <Select value={formData.status} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value as 'Planned' | 'In Progress' | 'Complete' | 'Delayed' }))}>
                 <SelectTrigger>
@@ -181,10 +150,21 @@ export default function EditSiteModal({ open, onOpenChange, site, onEditSite }: 
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="completionPercent">Completion %</Label>
+              <Input
+                id="completionPercent"
+                type="number"
+                min="0"
+                max="100"
+                value={formData.completionPercent}
+                onChange={(e) => setFormData(prev => ({ ...prev, completionPercent: parseInt(e.target.value) || 0 }))}
+              />
+            </div>
           </div>
 
           {/* Project Details */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="users">Number of Users</Label>
               <Input
@@ -201,47 +181,6 @@ export default function EditSiteModal({ open, onOpenChange, site, onEditSite }: 
                 value={formData.projectManager}
                 onChange={(e) => setFormData(prev => ({ ...prev, projectManager: e.target.value }))}
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="completionPercent">Completion %</Label>
-              <Input
-                id="completionPercent"
-                type="number"
-                min="0"
-                max="100"
-                value={formData.completionPercent}
-                onChange={(e) => setFormData(prev => ({ ...prev, completionPercent: parseInt(e.target.value) || 0 }))}
-              />
-            </div>
-          </div>
-
-          {/* Technical Owners */}
-          <div className="space-y-2">
-            <Label>Technical Owners</Label>
-            <div className="flex space-x-2">
-              <Input
-                placeholder="Add technical owner"
-                value={newTechnicalOwner}
-                onChange={(e) => setNewTechnicalOwner(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTechnicalOwner())}
-              />
-              <Button type="button" onClick={addTechnicalOwner}>
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {formData.technicalOwners.map((owner, index) => (
-                <div key={index} className="flex items-center space-x-1 bg-secondary px-2 py-1 rounded">
-                  <span className="text-sm">{owner}</span>
-                  <button
-                    type="button"
-                    onClick={() => removeTechnicalOwner(index)}
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
             </div>
           </div>
 
@@ -350,6 +289,7 @@ export default function EditSiteModal({ open, onOpenChange, site, onEditSite }: 
               Cancel
             </Button>
             <Button type="submit">
+              <Save className="h-4 w-4 mr-2" />
               Save Changes
             </Button>
           </div>

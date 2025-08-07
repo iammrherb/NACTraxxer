@@ -10,12 +10,13 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Switch } from '@/components/ui/switch'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Shield, Users, Smartphone, Network, Plus, Edit, Trash2, Copy, Save, Download, Upload, AlertTriangle, CheckCircle, Clock } from 'lucide-react'
 
 interface Policy {
   id: string
   name: string
-  type: 'user' | 'device' | 'network' | 'application'
+  type: 'user' | 'device' | 'network' | 'application' | 'vlan' | 'compliance'
   status: 'active' | 'inactive' | 'draft'
   priority: number
   conditions: PolicyCondition[]
@@ -23,20 +24,40 @@ interface Policy {
   description: string
   createdAt: string
   updatedAt: string
+  vlanAssignment?: VLANAssignment
+  complianceRules?: ComplianceRule[]
 }
 
 interface PolicyCondition {
   id: string
-  type: 'user_group' | 'device_type' | 'location' | 'time' | 'compliance' | 'certificate'
-  operator: 'equals' | 'not_equals' | 'contains' | 'in' | 'not_in'
+  type: 'user_group' | 'device_type' | 'location' | 'time' | 'compliance' | 'certificate' | 'intune_compliance' | 'risk_score'
+  operator: 'equals' | 'not_equals' | 'contains' | 'in' | 'not_in' | 'greater_than' | 'less_than'
   value: string
   description: string
 }
 
 interface PolicyAction {
   id: string
-  type: 'allow' | 'deny' | 'quarantine' | 'redirect' | 'notify'
+  type: 'allow' | 'deny' | 'quarantine' | 'redirect' | 'notify' | 'vlan_assign' | 'bandwidth_limit' | 'remediate'
   parameters: { [key: string]: string }
+  description: string
+}
+
+interface VLANAssignment {
+  vlanId: number
+  vlanName: string
+  subnet: string
+  gateway: string
+  accessLevel: 'full' | 'limited' | 'internet_only' | 'quarantine'
+  bandwidth?: string
+}
+
+interface ComplianceRule {
+  id: string
+  name: string
+  type: 'antivirus' | 'encryption' | 'os_version' | 'patch_level' | 'jailbreak' | 'app_protection'
+  required: boolean
+  value?: string
   description: string
 }
 
@@ -44,7 +65,7 @@ export default function PolicyEditor() {
   const [policies, setPolicies] = useState<Policy[]>([
     {
       id: '1',
-      name: 'Corporate Device Access',
+      name: 'Corporate Device Full Access',
       type: 'device',
       status: 'active',
       priority: 1,
@@ -58,98 +79,134 @@ export default function PolicyEditor() {
         },
         {
           id: '2',
-          type: 'compliance',
+          type: 'intune_compliance',
           operator: 'equals',
           value: 'compliant',
-          description: 'Device must be compliant'
+          description: 'Device must be Intune compliant'
+        },
+        {
+          id: '3',
+          type: 'certificate',
+          operator: 'equals',
+          value: 'valid',
+          description: 'Valid corporate certificate required'
         }
       ],
       actions: [
         {
           id: '1',
-          type: 'allow',
+          type: 'vlan_assign',
           parameters: { vlan: '100', bandwidth: 'unlimited' },
-          description: 'Full network access'
+          description: 'Assign to corporate VLAN'
         }
       ],
-      description: 'Allow full access for compliant corporate devices',
+      description: 'Full network access for compliant corporate devices',
       createdAt: '2024-01-15T10:00:00Z',
-      updatedAt: '2024-01-20T14:30:00Z'
+      updatedAt: '2024-01-20T14:30:00Z',
+      vlanAssignment: {
+        vlanId: 100,
+        vlanName: 'Corporate',
+        subnet: '10.1.100.0/24',
+        gateway: '10.1.100.1',
+        accessLevel: 'full',
+        bandwidth: 'unlimited'
+      },
+      complianceRules: [
+        {
+          id: '1',
+          name: 'Antivirus Protection',
+          type: 'antivirus',
+          required: true,
+          description: 'Real-time antivirus protection enabled'
+        },
+        {
+          id: '2',
+          name: 'Device Encryption',
+          type: 'encryption',
+          required: true,
+          description: 'Full disk encryption enabled'
+        },
+        {
+          id: '3',
+          name: 'OS Version',
+          type: 'os_version',
+          required: true,
+          value: 'Windows 10 1909+',
+          description: 'Minimum supported OS version'
+        }
+      ]
     },
     {
       id: '2',
-      name: 'Guest Device Quarantine',
+      name: 'BYOD Limited Access',
       type: 'device',
       status: 'active',
       priority: 2,
       conditions: [
         {
-          id: '3',
+          id: '4',
           type: 'user_group',
           operator: 'equals',
-          value: 'Guests',
-          description: 'Guest users'
+          value: 'Employees',
+          description: 'Employee users'
+        },
+        {
+          id: '5',
+          type: 'device_type',
+          operator: 'in',
+          value: 'iOS,Android',
+          description: 'Personal mobile devices'
+        },
+        {
+          id: '6',
+          type: 'intune_compliance',
+          operator: 'equals',
+          value: 'compliant',
+          description: 'Basic compliance requirements met'
         }
       ],
       actions: [
         {
           id: '2',
-          type: 'quarantine',
-          parameters: { vlan: '200', bandwidth: '10Mbps' },
-          description: 'Limited guest access'
+          type: 'vlan_assign',
+          parameters: { vlan: '150', bandwidth: '50Mbps' },
+          description: 'Assign to BYOD VLAN with bandwidth limit'
         }
       ],
-      description: 'Quarantine guest devices with limited access',
+      description: 'Limited access for employee personal devices',
       createdAt: '2024-01-10T09:00:00Z',
-      updatedAt: '2024-01-18T11:15:00Z'
+      updatedAt: '2024-01-18T11:15:00Z',
+      vlanAssignment: {
+        vlanId: 150,
+        vlanName: 'BYOD',
+        subnet: '10.1.150.0/24',
+        gateway: '10.1.150.1',
+        accessLevel: 'limited',
+        bandwidth: '50Mbps'
+      },
+      complianceRules: [
+        {
+          id: '4',
+          name: 'Screen Lock',
+          type: 'app_protection',
+          required: true,
+          description: 'Device screen lock enabled'
+        },
+        {
+          id: '5',
+          name: 'Jailbreak Detection',
+          type: 'jailbreak',
+          required: true,
+          description: 'Device must not be jailbroken/rooted'
+        }
+      ]
     }
   ])
 
   const [selectedPolicy, setSelectedPolicy] = useState<Policy | null>(null)
   const [isEditing, setIsEditing] = useState(false)
   const [activeTab, setActiveTab] = useState('policies')
-
-  const policyTemplates = [
-    {
-      id: 'corporate-byod',
-      name: 'Corporate BYOD Policy',
-      description: 'Standard policy for bring-your-own-device scenarios',
-      type: 'device' as const,
-      conditions: [
-        { type: 'user_group', operator: 'in', value: 'Employees,Contractors', description: 'Authorized users' },
-        { type: 'certificate', operator: 'equals', value: 'valid', description: 'Valid certificate required' }
-      ],
-      actions: [
-        { type: 'allow', parameters: { vlan: '150', bandwidth: '50Mbps' }, description: 'Limited corporate access' }
-      ]
-    },
-    {
-      id: 'iot-devices',
-      name: 'IoT Device Policy',
-      description: 'Policy for Internet of Things devices',
-      type: 'device' as const,
-      conditions: [
-        { type: 'device_type', operator: 'in', value: 'IoT,Sensor,Camera', description: 'IoT device types' },
-        { type: 'location', operator: 'in', value: 'Building-A,Building-B', description: 'Authorized locations' }
-      ],
-      actions: [
-        { type: 'allow', parameters: { vlan: '300', bandwidth: '5Mbps' }, description: 'IoT network access' }
-      ]
-    },
-    {
-      id: 'time-based',
-      name: 'Time-Based Access Policy',
-      description: 'Access control based on time of day',
-      type: 'user' as const,
-      conditions: [
-        { type: 'time', operator: 'in', value: '08:00-18:00', description: 'Business hours only' },
-        { type: 'user_group', operator: 'equals', value: 'Employees', description: 'Employee access' }
-      ],
-      actions: [
-        { type: 'allow', parameters: { vlan: '100' }, description: 'Full access during business hours' }
-      ]
-    }
-  ]
+  const [showVLANDialog, setShowVLANDialog] = useState(false)
 
   const conditionTypes = [
     { value: 'user_group', label: 'User Group', icon: <Users className="w-4 h-4" /> },
@@ -157,7 +214,9 @@ export default function PolicyEditor() {
     { value: 'location', label: 'Location', icon: <Network className="w-4 h-4" /> },
     { value: 'time', label: 'Time', icon: <Clock className="w-4 h-4" /> },
     { value: 'compliance', label: 'Compliance', icon: <CheckCircle className="w-4 h-4" /> },
-    { value: 'certificate', label: 'Certificate', icon: <Shield className="w-4 h-4" /> }
+    { value: 'certificate', label: 'Certificate', icon: <Shield className="w-4 h-4" /> },
+    { value: 'intune_compliance', label: 'Intune Compliance', icon: <Smartphone className="w-4 h-4" /> },
+    { value: 'risk_score', label: 'Risk Score', icon: <AlertTriangle className="w-4 h-4" /> }
   ]
 
   const actionTypes = [
@@ -165,38 +224,11 @@ export default function PolicyEditor() {
     { value: 'deny', label: 'Deny', color: 'bg-red-500' },
     { value: 'quarantine', label: 'Quarantine', color: 'bg-yellow-500' },
     { value: 'redirect', label: 'Redirect', color: 'bg-blue-500' },
-    { value: 'notify', label: 'Notify', color: 'bg-purple-500' }
+    { value: 'notify', label: 'Notify', color: 'bg-purple-500' },
+    { value: 'vlan_assign', label: 'VLAN Assignment', color: 'bg-indigo-500' },
+    { value: 'bandwidth_limit', label: 'Bandwidth Limit', color: 'bg-orange-500' },
+    { value: 'remediate', label: 'Remediate', color: 'bg-teal-500' }
   ]
-
-  const createPolicyFromTemplate = (template: typeof policyTemplates[0]) => {
-    const newPolicy: Policy = {
-      id: Date.now().toString(),
-      name: template.name,
-      type: template.type,
-      status: 'draft',
-      priority: policies.length + 1,
-      conditions: template.conditions.map((cond, index) => ({
-        id: `${Date.now()}-${index}`,
-        type: cond.type as PolicyCondition['type'],
-        operator: cond.operator as PolicyCondition['operator'],
-        value: cond.value,
-        description: cond.description
-      })),
-      actions: template.actions.map((action, index) => ({
-        id: `${Date.now()}-${index}`,
-        type: action.type as PolicyAction['type'],
-        parameters: action.parameters,
-        description: action.description
-      })),
-      description: template.description,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }
-
-    setPolicies([...policies, newPolicy])
-    setSelectedPolicy(newPolicy)
-    setIsEditing(true)
-  }
 
   const duplicatePolicy = (policy: Policy) => {
     const newPolicy: Policy = {
@@ -231,7 +263,7 @@ export default function PolicyEditor() {
     const exportData = {
       policies,
       exportedAt: new Date().toISOString(),
-      version: '1.0'
+      version: '2.0'
     }
 
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { 
@@ -260,6 +292,16 @@ export default function PolicyEditor() {
     return 'text-green-600'
   }
 
+  const getAccessLevelColor = (accessLevel: string) => {
+    switch (accessLevel) {
+      case 'full': return 'bg-green-500'
+      case 'limited': return 'bg-blue-500'
+      case 'internet_only': return 'bg-yellow-500'
+      case 'quarantine': return 'bg-red-500'
+      default: return 'bg-gray-500'
+    }
+  }
+
   return (
     <div className="space-y-6">
       <Card>
@@ -284,9 +326,8 @@ export default function PolicyEditor() {
       </Card>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="policies">Active Policies</TabsTrigger>
-          <TabsTrigger value="templates">Policy Templates</TabsTrigger>
           <TabsTrigger value="editor">Policy Editor</TabsTrigger>
         </TabsList>
 
@@ -309,6 +350,11 @@ export default function PolicyEditor() {
                         <Badge variant="secondary">
                           {policy.type.charAt(0).toUpperCase() + policy.type.slice(1)}
                         </Badge>
+                        {policy.vlanAssignment && (
+                          <Badge className={getAccessLevelColor(policy.vlanAssignment.accessLevel)}>
+                            VLAN {policy.vlanAssignment.vlanId}
+                          </Badge>
+                        )}
                       </div>
                       <div className="flex items-center space-x-2">
                         <Switch
@@ -346,7 +392,7 @@ export default function PolicyEditor() {
                     
                     <p className="text-gray-600 mb-3">{policy.description}</p>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
                         <h4 className="font-medium mb-2">Conditions ({policy.conditions.length})</h4>
                         <div className="space-y-1">
@@ -374,47 +420,33 @@ export default function PolicyEditor() {
                           ))}
                         </div>
                       </div>
+
+                      {policy.vlanAssignment && (
+                        <div>
+                          <h4 className="font-medium mb-2">VLAN Assignment</h4>
+                          <div className="space-y-1">
+                            <div className="text-sm text-gray-600">
+                              VLAN {policy.vlanAssignment.vlanId} - {policy.vlanAssignment.vlanName}
+                            </div>
+                            <div className="text-sm text-gray-600">
+                              {policy.vlanAssignment.subnet}
+                            </div>
+                            <div className="text-sm text-gray-600">
+                              Access: {policy.vlanAssignment.accessLevel.replace('_', ' ')}
+                            </div>
+                            {policy.vlanAssignment.bandwidth && (
+                              <div className="text-sm text-gray-600">
+                                Bandwidth: {policy.vlanAssignment.bandwidth}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                     
                     <div className="mt-3 text-xs text-gray-500">
                       Updated: {new Date(policy.updatedAt).toLocaleDateString()}
                     </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="templates" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Policy Templates</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {policyTemplates.map((template) => (
-                  <div key={template.id} className="border rounded-lg p-4">
-                    <h3 className="font-semibold mb-2">{template.name}</h3>
-                    <p className="text-gray-600 text-sm mb-4">{template.description}</p>
-                    
-                    <div className="space-y-2 mb-4">
-                      <div className="text-xs font-medium text-gray-700">Conditions:</div>
-                      {template.conditions.map((condition, index) => (
-                        <div key={index} className="text-xs text-gray-600">
-                          • {condition.description}
-                        </div>
-                      ))}
-                    </div>
-                    
-                    <Button
-                      size="sm"
-                      onClick={() => createPolicyFromTemplate(template)}
-                      className="w-full"
-                    >
-                      <Plus className="w-4 h-4 mr-1" />
-                      Use Template
-                    </Button>
                   </div>
                 ))}
               </div>
@@ -432,14 +464,13 @@ export default function PolicyEditor() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
-                  {/* Basic Information */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="policy-name">Policy Name</Label>
                       <Input
                         id="policy-name"
                         value={selectedPolicy.name}
-                        disabled={!isEditing}
+                        readOnly={!isEditing}
                       />
                     </div>
                     <div className="space-y-2">
@@ -453,6 +484,8 @@ export default function PolicyEditor() {
                           <SelectItem value="device">Device Policy</SelectItem>
                           <SelectItem value="network">Network Policy</SelectItem>
                           <SelectItem value="application">Application Policy</SelectItem>
+                          <SelectItem value="vlan">VLAN Policy</SelectItem>
+                          <SelectItem value="compliance">Compliance Policy</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -463,139 +496,11 @@ export default function PolicyEditor() {
                     <Textarea
                       id="policy-description"
                       value={selectedPolicy.description}
-                      disabled={!isEditing}
+                      readOnly={!isEditing}
                       rows={3}
                     />
                   </div>
 
-                  {/* Conditions */}
-                  <div>
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold">Conditions</h3>
-                      {isEditing && (
-                        <Button size="sm" variant="outline">
-                          <Plus className="w-4 h-4 mr-1" />
-                          Add Condition
-                        </Button>
-                      )}
-                    </div>
-                    <div className="space-y-3">
-                      {selectedPolicy.conditions.map((condition) => (
-                        <div key={condition.id} className="border rounded-lg p-4">
-                          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                            <div>
-                              <Label>Type</Label>
-                              <Select value={condition.type} disabled={!isEditing}>
-                                <SelectTrigger>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {conditionTypes.map((type) => (
-                                    <SelectItem key={type.value} value={type.value}>
-                                      <div className="flex items-center space-x-2">
-                                        {type.icon}
-                                        <span>{type.label}</span>
-                                      </div>
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div>
-                              <Label>Operator</Label>
-                              <Select value={condition.operator} disabled={!isEditing}>
-                                <SelectTrigger>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="equals">Equals</SelectItem>
-                                  <SelectItem value="not_equals">Not Equals</SelectItem>
-                                  <SelectItem value="contains">Contains</SelectItem>
-                                  <SelectItem value="in">In</SelectItem>
-                                  <SelectItem value="not_in">Not In</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div>
-                              <Label>Value</Label>
-                              <Input value={condition.value} disabled={!isEditing} />
-                            </div>
-                            <div className="flex items-end">
-                              {isEditing && (
-                                <Button variant="ghost" size="sm" className="text-red-600">
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                          <div className="mt-2">
-                            <Label>Description</Label>
-                            <Input value={condition.description} disabled={!isEditing} />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div>
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold">Actions</h3>
-                      {isEditing && (
-                        <Button size="sm" variant="outline">
-                          <Plus className="w-4 h-4 mr-1" />
-                          Add Action
-                        </Button>
-                      )}
-                    </div>
-                    <div className="space-y-3">
-                      {selectedPolicy.actions.map((action) => (
-                        <div key={action.id} className="border rounded-lg p-4">
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                              <Label>Action Type</Label>
-                              <Select value={action.type} disabled={!isEditing}>
-                                <SelectTrigger>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {actionTypes.map((type) => (
-                                    <SelectItem key={type.value} value={type.value}>
-                                      <div className="flex items-center space-x-2">
-                                        <div className={`w-3 h-3 rounded-full ${type.color}`} />
-                                        <span>{type.label}</span>
-                                      </div>
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div>
-                              <Label>Parameters</Label>
-                              <Input 
-                                value={JSON.stringify(action.parameters)} 
-                                disabled={!isEditing} 
-                                placeholder="JSON parameters"
-                              />
-                            </div>
-                            <div className="flex items-end">
-                              {isEditing && (
-                                <Button variant="ghost" size="sm" className="text-red-600">
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                          <div className="mt-2">
-                            <Label>Description</Label>
-                            <Input value={action.description} disabled={!isEditing} />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
                   <div className="flex justify-between">
                     <div className="flex space-x-2">
                       {!isEditing ? (
@@ -628,7 +533,7 @@ export default function PolicyEditor() {
               <CardContent className="text-center py-12">
                 <AlertTriangle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-gray-600 mb-2">No Policy Selected</h3>
-                <p className="text-gray-500 mb-4">Select a policy from the Active Policies tab or create one from a template</p>
+                <p className="text-gray-500 mb-4">Select a policy from the Active Policies tab to edit</p>
                 <Button onClick={() => setActiveTab('policies')}>
                   View Policies
                 </Button>
@@ -637,6 +542,71 @@ export default function PolicyEditor() {
           )}
         </TabsContent>
       </Tabs>
+
+      <Dialog open={showVLANDialog} onOpenChange={setShowVLANDialog}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>VLAN Designer</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="vlan-id">VLAN ID</Label>
+                <Input id="vlan-id" placeholder="e.g., 100" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="vlan-name">VLAN Name</Label>
+                <Input id="vlan-name" placeholder="e.g., Corporate" />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="vlan-subnet">Subnet</Label>
+                <Input id="vlan-subnet" placeholder="e.g., 10.1.100.0/24" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="vlan-gateway">Gateway</Label>
+                <Input id="vlan-gateway" placeholder="e.g., 10.1.100.1" />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="access-level">Access Level</Label>
+              <Select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select access level" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="full">Full Network Access</SelectItem>
+                  <SelectItem value="limited">Limited Access</SelectItem>
+                  <SelectItem value="internet_only">Internet Only</SelectItem>
+                  <SelectItem value="quarantine">Quarantine</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="bandwidth">Bandwidth Limit</Label>
+              <Input id="bandwidth" placeholder="e.g., 50Mbps, unlimited" />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="vlan-description">Description</Label>
+              <Textarea id="vlan-description" placeholder="Describe the purpose of this VLAN..." />
+            </div>
+
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setShowVLANDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={() => setShowVLANDialog(false)}>
+                Create VLAN
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
