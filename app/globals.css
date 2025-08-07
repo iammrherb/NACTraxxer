@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -64,218 +66,245 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-inter;
   }
 }
 
-/* Custom styles for the architecture diagrams */
+/* Custom font classes */
+.font-inter {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Enhanced diagram styles */
 .diagram-node {
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
 }
 
 .diagram-node:hover {
-  filter: brightness(1.1);
+  filter: brightness(1.1) drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15));
   transform: scale(1.02);
 }
 
-.connection-point {
-  transition: all 0.3s ease;
-  opacity: 0;
-}
-
-.diagram-node:hover .connection-point {
-  opacity: 1;
-}
-
-.connection-point:hover {
-  r: 8;
-  fill: #10b981;
-}
-
-.connection-point.active {
-  opacity: 1;
-  fill: #10b981;
-}
-
-/* Animation for drawing connections */
-@keyframes drawLine {
-  from {
-    stroke-dashoffset: 1000;
-  }
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-
-/* Pulse animation for active elements */
-@keyframes pulse-glow {
-  0%, 100% {
-    box-shadow: 0 0 5px rgba(59, 130, 246, 0.5);
-  }
-  50% {
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.8);
-  }
-}
-
-/* Custom scrollbar styles */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 4px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 4px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
-}
-
-.dark .custom-scrollbar::-webkit-scrollbar-track {
-  background: #374151;
-}
-
-.dark .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #6b7280;
-}
-
-.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
-}
-
-/* Text shadow utility */
-.text-shadow {
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
-}
-
-/* Gradient backgrounds */
-.gradient-blue {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.gradient-purple {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-}
-
-.gradient-green {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-}
-
-/* Interactive diagram styles */
-.diagram-tooltip {
-  pointer-events: none;
-  z-index: 1000;
+.diagram-node.selected {
+  filter: brightness(1.2) drop-shadow(0 6px 20px rgba(59, 130, 246, 0.4));
+  transform: scale(1.05);
 }
 
 .diagram-connection {
+  stroke: #666;
+  stroke-width: 2;
+  fill: none;
+  transition: all 0.3s ease;
+}
+
+.diagram-connection.animated {
   stroke-dasharray: 1000;
   stroke-dashoffset: 1000;
   animation: drawLine 2s ease-out forwards;
 }
 
 .diagram-secure-connection {
-  stroke-dasharray: 5, 5;
+  stroke: #4caf50;
   stroke-width: 3;
+  stroke-dasharray: 5, 5;
+  animation: securePulse 2s ease-in-out infinite;
 }
 
-.diagram-dashed-connection {
-  stroke-dasharray: 10, 5;
-  stroke-width: 2;
-}
-
-/* Progress bar animations */
-.progress-bar {
-  transition: width 1s ease-in-out;
-}
-
-.progress-bar::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-image: linear-gradient(
-    45deg,
-    rgba(255, 255, 255, 0.2) 25%,
-    transparent 25%,
-    transparent 50%,
-    rgba(255, 255, 255, 0.2) 50%,
-    rgba(255, 255, 255, 0.2) 75%,
-    transparent 75%,
-    transparent
-  );
-  background-size: 1rem 1rem;
-  animation: progress-stripes 1s linear infinite;
-}
-
-@keyframes progress-stripes {
-  from {
-    background-position: 1rem 0;
-  }
+@keyframes drawLine {
   to {
-    background-position: 0 0;
+    stroke-dashoffset: 0;
   }
 }
 
-/* Card hover effects */
-.card-hover {
+@keyframes securePulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* Flow step animations */
+.flow-step {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.flow-step:nth-child(1) { animation-delay: 0.1s; }
+.flow-step:nth-child(2) { animation-delay: 0.2s; }
+.flow-step:nth-child(3) { animation-delay: 0.3s; }
+.flow-step:nth-child(4) { animation-delay: 0.4s; }
+.flow-step:nth-child(5) { animation-delay: 0.5s; }
+.flow-step:nth-child(6) { animation-delay: 0.6s; }
+
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Onboarding stage animations */
+.onboarding-stage {
+  opacity: 0;
+  transform: translateX(-30px);
+  animation: slideInLeft 0.8s ease-out forwards;
+}
+
+.onboarding-stage:nth-child(1) { animation-delay: 0.1s; }
+.onboarding-stage:nth-child(2) { animation-delay: 0.3s; }
+.onboarding-stage:nth-child(3) { animation-delay: 0.5s; }
+.onboarding-stage:nth-child(4) { animation-delay: 0.7s; }
+.onboarding-stage:nth-child(5) { animation-delay: 0.9s; }
+
+@keyframes slideInLeft {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* PKI node special effects */
+.pki-node {
+  filter: drop-shadow(0 2px 8px rgba(156, 39, 176, 0.2));
+}
+
+.pki-node:hover {
+  filter: drop-shadow(0 4px 16px rgba(156, 39, 176, 0.4));
+}
+
+/* Policy node effects */
+.policy-node {
+  filter: drop-shadow(0 2px 8px rgba(33, 150, 243, 0.2));
+}
+
+.policy-node:hover {
+  filter: drop-shadow(0 4px 16px rgba(33, 150, 243, 0.4));
+}
+
+/* Enhanced text rendering */
+svg text {
+  font-family: 'Inter', system-ui, sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Tooltip styles */
+.diagram-tooltip {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  max-width: 300px;
+  z-index: 1000;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.3s ease;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.diagram-tooltip.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Performance metrics styling */
+.performance-metrics {
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.performance-metrics text {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Protocol details styling */
+.protocol-details {
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+/* Certificate lifecycle styling */
+.certificate-lifecycle circle {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+/* Device onboarding paths */
+.device-onboarding-paths rect {
   transition: all 0.3s ease;
 }
 
-.card-hover:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+.device-onboarding-paths rect:hover {
+  opacity: 0.2 !important;
+  transform: translateX(5px);
 }
 
-/* Badge animations */
-.badge-pulse {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+/* Troubleshooting tree */
+.troubleshooting-tree text {
+  font-family: 'Inter', system-ui, sans-serif;
 }
 
-/* Loading spinner */
-.spinner {
-  border: 2px solid #f3f3f3;
-  border-top: 2px solid #3498db;
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* Responsive utilities */
+/* Responsive design improvements */
 @media (max-width: 768px) {
-  .mobile-stack {
-    flex-direction: column;
+  .diagram-node text {
+    font-size: 10px;
   }
   
-  .mobile-full {
-    width: 100%;
+  .flow-step text {
+    font-size: 10px;
   }
   
-  .mobile-hidden {
-    display: none;
+  .onboarding-stage text {
+    font-size: 10px;
   }
 }
 
 /* Print styles */
 @media print {
-  .no-print {
-    display: none !important;
+  .diagram-node {
+    filter: none !important;
+    transform: none !important;
   }
   
-  .print-break {
-    page-break-after: always;
+  .diagram-connection.animated {
+    animation: none;
+    stroke-dasharray: none;
+    stroke-dashoffset: 0;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .diagram-node {
+    stroke-width: 3;
+  }
+  
+  .diagram-connection {
+    stroke-width: 3;
+  }
+  
+  .diagram-secure-connection {
+    stroke-width: 4;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .diagram-node,
+  .diagram-connection,
+  .flow-step,
+  .onboarding-stage {
+    animation: none;
+    transition: none;
+  }
+  
+  .diagram-node:hover {
+    transform: none;
   }
 }

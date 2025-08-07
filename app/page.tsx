@@ -40,7 +40,7 @@ export default function ABMDesigner() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 font-inter">
       {/* Header */}
       <header className="bg-gradient-to-r from-blue-600 to-blue-800 text-white shadow-lg">
         <div className="container mx-auto px-4 py-4">
@@ -61,8 +61,8 @@ export default function ABMDesigner() {
                   />
                 </div>
               </div>
-              <h1 className="text-2xl font-bold">
-                Zero Trust NAC Architecture Designer
+              <h1 className="text-2xl font-bold font-inter">
+                Portnox NAC Architecture Designer
               </h1>
             </div>
             
@@ -112,19 +112,19 @@ export default function ABMDesigner() {
       <div className="container mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-4 bg-white shadow-sm">
-            <TabsTrigger value="architecture" className="flex items-center space-x-2">
+            <TabsTrigger value="architecture" className="flex items-center space-x-2 font-medium">
               <Network className="h-4 w-4" />
               <span>Architecture Designer</span>
             </TabsTrigger>
-            <TabsTrigger value="sites" className="flex items-center space-x-2">
+            <TabsTrigger value="sites" className="flex items-center space-x-2 font-medium">
               <List className="h-4 w-4" />
               <span>Master Site List</span>
             </TabsTrigger>
-            <TabsTrigger value="progress" className="flex items-center space-x-2">
+            <TabsTrigger value="progress" className="flex items-center space-x-2 font-medium">
               <BarChart3 className="h-4 w-4" />
               <span>Rollout Progress</span>
             </TabsTrigger>
-            <TabsTrigger value="workbook" className="flex items-center space-x-2">
+            <TabsTrigger value="workbook" className="flex items-center space-x-2 font-medium">
               <Book className="h-4 w-4" />
               <span>Site Workbook</span>
             </TabsTrigger>
