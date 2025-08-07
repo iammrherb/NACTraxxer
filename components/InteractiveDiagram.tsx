@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Wifi, Shield, Server, Monitor, Smartphone, Printer, Router, Database, Cloud, Lock, Key, CheckCircle, AlertTriangle, Zap, Play, Pause, RotateCcw } from 'lucide-react'
 
@@ -42,6 +42,49 @@ interface DiagramConnection {
   status: 'active' | 'inactive'
   encrypted: boolean
 }
+
+const diagrams = [
+  {
+    id: 'corporate-wifi',
+    name: 'Corporate WiFi Authentication',
+    description: 'EAP-TLS authentication flow for corporate wireless devices'
+  },
+  {
+    id: 'corporate-wired',
+    name: 'Corporate Wired Authentication',
+    description: '802.1X authentication for wired corporate devices'
+  },
+  {
+    id: 'guest-access',
+    name: 'Guest Access Portal',
+    description: 'Captive portal authentication for guest devices'
+  },
+  {
+    id: 'radsec-proxy',
+    name: 'RADSec Proxy Architecture',
+    description: 'Secure RADIUS proxy for cloud NAC integration'
+  },
+  {
+    id: 'fortigate-tacacs',
+    name: 'FortiGate TACACS+ Integration',
+    description: 'TACACS+ authentication for FortiGate firewall administration'
+  },
+  {
+    id: 'palo-alto-tacacs',
+    name: 'Palo Alto TACACS+ Integration',
+    description: 'TACACS+ authentication for Palo Alto firewall administration'
+  },
+  {
+    id: 'palo-alto-userid',
+    name: 'Palo Alto User-ID Integration',
+    description: 'User-ID mapping for identity-aware firewall policies'
+  },
+  {
+    id: 'fortigate-fsso',
+    name: 'FortiGate FSSO Integration',
+    description: 'Fortinet Single Sign-On integration for user identity mapping'
+  }
+]
 
 export default function InteractiveDiagram({ type, isAnimated, customerLogo }: InteractiveDiagramProps) {
   const [selectedNode, setSelectedNode] = useState<string | null>(null)
