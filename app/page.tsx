@@ -39,9 +39,9 @@ export default function ABMDesigner() {
             <div className="flex items-center space-x-8">
               <div className="flex items-center space-x-4">
                 <img 
-                  src="https://www.portnox.com/wp-content/uploads/2023/06/portnox-logo-white.png" 
+                  src="https://www.portnox.com/wp-content/uploads/2021/03/Portnotx_Logo_Color-768x193.png" 
                   alt="Portnox Logo" 
-                  className="h-12 filter drop-shadow-md hover:scale-105 transition-transform"
+                  className="h-12 filter brightness-0 invert drop-shadow-md hover:scale-105 transition-transform"
                 />
                 <Separator orientation="vertical" className="h-10 bg-white/30" />
                 <div className="bg-white/10 rounded-lg p-2 hover:bg-white/20 transition-colors">

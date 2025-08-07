@@ -1,598 +1,266 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { Card } from '@/components/ui/card'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { useEffect, useRef } from 'react'
 
 interface InteractiveDiagramProps {
   view: string
-  cloudProvider: string
-  networkVendor: string
-  connectivityType: string
-  animationSpeed: number
-}
-
-interface DiagramNode {
-  id: string
-  x: number
-  y: number
-  width: number
-  height: number
-  label: string
-  type: string
-  color: string
-  description: string
-  vendor?: string
-}
-
-interface DiagramConnection {
-  id: string
-  from: string
-  to: string
-  type: 'standard' | 'secure' | 'dashed'
-  label?: string
-  color?: string
+  vendor: string
+  connectivity: string
+  identity: string
+  deployment: string
 }
 
 export default function InteractiveDiagram({
   view,
-  cloudProvider,
-  networkVendor,
-  connectivityType,
-  animationSpeed
+  vendor,
+  connectivity,
+  identity,
+  deployment
 }: InteractiveDiagramProps) {
-  const [animationPhase, setAnimationPhase] = useState(0)
+  const svgRef = useRef<SVGSVGElement>(null)
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setAnimationPhase(prev => (prev + 1) % 4)
-    }, 2000 / animationSpeed)
+    if (svgRef.current) {
+      drawDiagram()
+    }
+  }, [view, vendor, connectivity, identity, deployment])
 
-    return () => clearInterval(interval)
-  }, [animationSpeed])
+  const drawDiagram = () => {
+    const svg = svgRef.current
+    if (!svg) return
 
-  const getDiagramData = () => {
+    // Clear existing content
+    svg.innerHTML = ''
+
     switch (view) {
-      case 'complete':
-        return getCompleteArchitecture()
-      case 'auth-flow':
-        return getAuthFlowDiagram()
-      case 'pki':
-        return getPKIDiagram()
-      case 'policies':
-        return getPolicyDiagram()
-      case 'connectivity':
-        return getConnectivityDiagram()
-      case 'intune':
-        return getIntuneDiagram()
-      case 'onboarding':
-        return getOnboardingDiagram()
       case 'radsec-proxy':
-        return getRADSecProxyDiagram()
-      case 'fortigate-tacacs':
-        return getFortigateTacacsDiagram()
-      case 'palo-tacacs':
-        return getPaloTacacsDiagram()
-      case 'palo-userid':
-        return getPaloUserIDDiagram()
-      case 'fortigate-fsso':
-        return getFortigateFSSODiagram()
-      case 'ubiquiti-wireless':
-        return getUbiquitiWirelessDiagram()
-      case 'mikrotik-wireless':
-        return getMikroTikWirelessDiagram()
-      case 'meraki-wireless':
-        return getMerakiWirelessDiagram()
-      case 'mist-wireless':
-        return getMistWirelessDiagram()
-      case 'cambium-wireless':
-        return getCambiumWirelessDiagram()
+        drawRADSecProxyDiagram(svg)
+        break
+      case 'zero-trust-nac':
+        drawZeroTrustDiagram(svg)
+        break
+      case '802.1x-auth':
+        drawAuthFlowDiagram(svg)
+        break
+      case 'pki-infrastructure':
+        drawPKIDiagram(svg)
+        break
       default:
-        return getCompleteArchitecture()
+        drawDefaultDiagram(svg)
+        break
     }
   }
 
-  const getCompleteArchitecture = () => ({
-    title: 'Complete Zero Trust NAC Architecture',
-    components: [
-      { id: 'cloud', type: 'cloud', label: 'Portnox Cloud', x: 600, y: 100, color: '#00c8d7' },
-      { id: 'radius', type: 'server', label: 'RADIUS Proxy', x: 400, y: 200, color: '#4CAF50' },
-      { id: 'switch', type: 'network', label: `${networkVendor.toUpperCase()} Switch`, x: 200, y: 300, color: '#FF9800' },
-      { id: 'ap', type: 'wireless', label: `${networkVendor.toUpperCase()} AP`, x: 600, y: 300, color: '#FF9800' },
-      { id: 'device1', type: 'device', label: 'Managed Device', x: 100, y: 400, color: '#2196F3' },
-      { id: 'device2', type: 'device', label: 'BYOD Device', x: 700, y: 400, color: '#9C27B0' },
-      { id: 'ad', type: 'identity', label: 'Active Directory', x: 800, y: 200, color: '#607D8B' },
-      { id: 'intune', type: 'mdm', label: 'Microsoft Intune', x: 1000, y: 200, color: '#3F51B5' }
-    ],
-    connections: [
-      { from: 'cloud', to: 'radius', type: 'secure', animated: true },
-      { from: 'radius', to: 'switch', type: 'radius', animated: animationPhase === 1 },
-      { from: 'radius', to: 'ap', type: 'radius', animated: animationPhase === 2 },
-      { from: 'switch', to: 'device1', type: 'wired', animated: animationPhase === 3 },
-      { from: 'ap', to: 'device2', type: 'wireless', animated: animationPhase === 0 },
-      { from: 'cloud', to: 'ad', type: 'integration', animated: false },
-      { from: 'cloud', to: 'intune', type: 'integration', animated: false }
-    ]
-  })
+  const drawRADSecProxyDiagram = (svg: SVGSVGElement) => {
+    const width = 1200
+    const height = 600
 
-  const getRADSecProxyDiagram = () => ({
-    title: 'RADSec Proxy Architecture - Simplified & Secure',
-    components: [
-      { id: 'device1', type: 'device', label: 'Corporate Device', x: 100, y: 200, color: '#2196F3' },
-      { id: 'device2', type: 'device', label: 'BYOD Device', x: 100, y: 300, color: '#9C27B0' },
-      { id: 'device3', type: 'device', label: 'IoT Device', x: 100, y: 400, color: '#FF5722' },
-      { id: 'switch', type: 'network', label: 'Network Switch', x: 250, y: 250, color: '#FF9800' },
-      { id: 'ap', type: 'wireless', label: 'Wireless AP', x: 250, y: 350, color: '#4CAF50' },
-      { id: 'radsec-proxy', type: 'server', label: 'RADSec Proxy', x: 450, y: 300, color: '#00c8d7' },
-      { id: 'internet', type: 'cloud', label: 'Internet/WAN', x: 650, y: 300, color: '#FFC107' },
-      { id: 'portnox-cloud', type: 'cloud', label: 'Portnox Cloud', x: 850, y: 200, color: '#00c8d7' },
-      { id: 'radius-server', type: 'server', label: 'Cloud RADIUS', x: 850, y: 300, color: '#4CAF50' },
-      { id: 'policy-engine', type: 'engine', label: 'Policy Engine', x: 850, y: 400, color: '#FF5722' },
-      { id: 'identity-store', type: 'identity', label: 'Identity Store', x: 850, y: 500, color: '#607D8B' }
-    ],
-    connections: [
-      { from: 'device1', to: 'switch', type: 'wired', animated: animationPhase === 0, label: '802.1X' },
-      { from: 'device2', to: 'ap', type: 'wireless', animated: animationPhase === 1, label: 'Wi-Fi Auth' },
-      { from: 'device3', to: 'ap', type: 'wireless', animated: animationPhase === 2, label: 'IoT Auth' },
-      { from: 'switch', to: 'radsec-proxy', type: 'radius', animated: animationPhase === 3, label: 'RADIUS' },
-      { from: 'ap', to: 'radsec-proxy', type: 'radius', animated: animationPhase === 0, label: 'RADIUS' },
-      { from: 'radsec-proxy', to: 'internet', type: 'secure', animated: true, label: 'RADSec/TLS' },
-      { from: 'internet', to: 'portnox-cloud', type: 'secure', animated: true, label: 'Encrypted' },
-      { from: 'portnox-cloud', to: 'radius-server', type: 'internal', animated: false },
-      { from: 'portnox-cloud', to: 'policy-engine', type: 'internal', animated: false },
-      { from: 'portnox-cloud', to: 'identity-store', type: 'internal', animated: false }
-    ]
-  })
-
-  const getAuthFlowDiagram = () => ({
-    title: '802.1X Authentication Flow',
-    components: [
-      { id: 'device', type: 'device', label: 'Endpoint Device', x: 100, y: 300, color: '#2196F3' },
-      { id: 'switch', type: 'network', label: 'Network Switch', x: 300, y: 300, color: '#FF9800' },
-      { id: 'radius', type: 'server', label: 'RADIUS Server', x: 500, y: 300, color: '#4CAF50' },
-      { id: 'ad', type: 'identity', label: 'Active Directory', x: 700, y: 300, color: '#607D8B' },
-      { id: 'portnox', type: 'cloud', label: 'Portnox Cloud', x: 900, y: 300, color: '#00c8d7' }
-    ],
-    connections: [
-      { from: 'device', to: 'switch', type: 'auth-request', animated: animationPhase === 0, label: '1. EAP Start' },
-      { from: 'switch', to: 'radius', type: 'radius', animated: animationPhase === 1, label: '2. Access-Request' },
-      { from: 'radius', to: 'ad', type: 'ldap', animated: animationPhase === 2, label: '3. LDAP Query' },
-      { from: 'radius', to: 'portnox', type: 'policy', animated: animationPhase === 3, label: '4. Policy Check' }
-    ]
-  })
-
-  const getPKIDiagram = () => ({
-    title: 'PKI Infrastructure',
-    components: [
-      { id: 'root-ca', type: 'certificate', label: 'Root CA', x: 500, y: 100, color: '#E91E63' },
-      { id: 'issuing-ca', type: 'certificate', label: 'Issuing CA', x: 500, y: 200, color: '#E91E63' },
-      { id: 'portnox-ca', type: 'certificate', label: 'Portnox CA', x: 300, y: 300, color: '#00c8d7' },
-      { id: 'scep', type: 'protocol', label: 'SCEP Server', x: 700, y: 300, color: '#4CAF50' },
-      { id: 'device-cert', type: 'certificate', label: 'Device Certificate', x: 200, y: 400, color: '#2196F3' },
-      { id: 'user-cert', type: 'certificate', label: 'User Certificate', x: 800, y: 400, color: '#FF9800' }
-    ],
-    connections: [
-      { from: 'root-ca', to: 'issuing-ca', type: 'trust', animated: false },
-      { from: 'issuing-ca', to: 'portnox-ca', type: 'trust', animated: false },
-      { from: 'issuing-ca', to: 'scep', type: 'trust', animated: false },
-      { from: 'portnox-ca', to: 'device-cert', type: 'issue', animated: animationPhase === 0 },
-      { from: 'scep', to: 'user-cert', type: 'issue', animated: animationPhase === 1 }
-    ]
-  })
-
-  const getPolicyDiagram = () => ({
-    title: 'Policy Framework',
-    components: [
-      { id: 'policy-engine', type: 'engine', label: 'Policy Engine', x: 500, y: 200, color: '#00c8d7' },
-      { id: 'device-policy', type: 'policy', label: 'Device Policies', x: 200, y: 300, color: '#4CAF50' },
-      { id: 'user-policy', type: 'policy', label: 'User Policies', x: 500, y: 300, color: '#FF9800' },
-      { id: 'network-policy', type: 'policy', label: 'Network Policies', x: 800, y: 300, color: '#9C27B0' },
-      { id: 'compliance', type: 'compliance', label: 'Compliance Rules', x: 350, y: 400, color: '#F44336' },
-      { id: 'enforcement', type: 'enforcement', label: 'Policy Enforcement', x: 650, y: 400, color: '#607D8B' }
-    ],
-    connections: [
-      { from: 'policy-engine', to: 'device-policy', type: 'control', animated: animationPhase === 0 },
-      { from: 'policy-engine', to: 'user-policy', type: 'control', animated: animationPhase === 1 },
-      { from: 'policy-engine', to: 'network-policy', type: 'control', animated: animationPhase === 2 },
-      { from: 'device-policy', to: 'compliance', type: 'check', animated: false },
-      { from: 'network-policy', to: 'enforcement', type: 'apply', animated: false }
-    ]
-  })
-
-  const getConnectivityDiagram = () => ({
-    title: 'Multi-Cloud Connectivity',
-    components: [
-      { id: 'onprem', type: 'datacenter', label: 'On-Premises', x: 200, y: 300, color: '#607D8B' },
-      { id: 'aws', type: 'cloud', label: 'AWS', x: 500, y: 200, color: '#FF9900' },
-      { id: 'azure', type: 'cloud', label: 'Azure', x: 500, y: 400, color: '#0078D4' },
-      { id: 'gcp', type: 'cloud', label: 'Google Cloud', x: 800, y: 300, color: '#4285F4' },
-      { id: 'sdwan', type: 'network', label: `${connectivityType.toUpperCase()}`, x: 500, y: 300, color: '#00c8d7' }
-    ],
-    connections: [
-      { from: 'onprem', to: 'sdwan', type: connectivityType, animated: animationPhase === 0 },
-      { from: 'sdwan', to: 'aws', type: connectivityType, animated: animationPhase === 1 },
-      { from: 'sdwan', to: 'azure', type: connectivityType, animated: animationPhase === 2 },
-      { from: 'sdwan', to: 'gcp', type: connectivityType, animated: animationPhase === 3 }
-    ]
-  })
-
-  const getIntuneDiagram = () => ({
-    title: 'Microsoft Intune Integration',
-    components: [
-      { id: 'intune', type: 'mdm', label: 'Microsoft Intune', x: 500, y: 100, color: '#3F51B5' },
-      { id: 'portnox', type: 'cloud', label: 'Portnox Cloud', x: 500, y: 250, color: '#00c8d7' },
-      { id: 'compliance', type: 'compliance', label: 'Compliance Policies', x: 300, y: 400, color: '#4CAF50' },
-      { id: 'enrollment', type: 'process', label: 'Device Enrollment', x: 700, y: 400, color: '#FF9800' },
-      { id: 'windows', type: 'device', label: 'Windows Device', x: 200, y: 500, color: '#2196F3' },
-      { id: 'ios', type: 'device', label: 'iOS Device', x: 500, y: 500, color: '#9C27B0' },
-      { id: 'android', type: 'device', label: 'Android Device', x: 800, y: 500, color: '#4CAF50' }
-    ],
-    connections: [
-      { from: 'intune', to: 'portnox', type: 'integration', animated: false },
-      { from: 'portnox', to: 'compliance', type: 'sync', animated: animationPhase === 0 },
-      { from: 'portnox', to: 'enrollment', type: 'sync', animated: animationPhase === 1 },
-      { from: 'compliance', to: 'windows', type: 'policy', animated: animationPhase === 2 },
-      { from: 'enrollment', to: 'ios', type: 'certificate', animated: animationPhase === 3 },
-      { from: 'enrollment', to: 'android', type: 'certificate', animated: animationPhase === 0 }
-    ]
-  })
-
-  const getOnboardingDiagram = () => ({
-    title: 'Device Onboarding Workflow',
-    components: [
-      { id: 'device', type: 'device', label: 'New Device', x: 100, y: 300, color: '#9E9E9E' },
-      { id: 'captive', type: 'portal', label: 'Captive Portal', x: 300, y: 200, color: '#FF9800' },
-      { id: 'enrollment', type: 'process', label: 'Enrollment Service', x: 500, y: 200, color: '#4CAF50' },
-      { id: 'certificate', type: 'certificate', label: 'Certificate Issuance', x: 700, y: 200, color: '#E91E63' },
-      { id: 'provisioned', type: 'device', label: 'Provisioned Device', x: 900, y: 300, color: '#2196F3' },
-      { id: 'network', type: 'network', label: 'Corporate Network', x: 500, y: 400, color: '#607D8B' }
-    ],
-    connections: [
-      { from: 'device', to: 'captive', type: 'redirect', animated: animationPhase === 0 },
-      { from: 'captive', to: 'enrollment', type: 'authenticate', animated: animationPhase === 1 },
-      { from: 'enrollment', to: 'certificate', type: 'request', animated: animationPhase === 2 },
-      { from: 'certificate', to: 'provisioned', type: 'install', animated: animationPhase === 3 },
-      { from: 'provisioned', to: 'network', type: 'access', animated: animationPhase === 0 }
-    ]
-  })
-
-  const getFortigateTacacsDiagram = () => ({
-    title: 'FortiGate TACACS+ Integration',
-    components: [
-      { id: 'admin', type: 'user', label: 'Network Admin', x: 100, y: 300, color: '#2196F3' },
-      { id: 'fortigate', type: 'firewall', label: 'FortiGate Firewall', x: 300, y: 300, color: '#FF4444' },
-      { id: 'tacacs', type: 'server', label: 'TACACS+ Server', x: 500, y: 300, color: '#4CAF50' },
-      { id: 'portnox', type: 'cloud', label: 'Portnox Cloud', x: 700, y: 200, color: '#00c8d7' },
-      { id: 'ad', type: 'identity', label: 'Active Directory', x: 700, y: 400, color: '#607D8B' }
-    ],
-    connections: [
-      { from: 'admin', to: 'fortigate', type: 'ssh', animated: animationPhase === 0, label: 'SSH/HTTPS Login' },
-      { from: 'fortigate', to: 'tacacs', type: 'tacacs', animated: animationPhase === 1, label: 'TACACS+ Auth' },
-      { from: 'tacacs', to: 'portnox', type: 'policy', animated: animationPhase === 2, label: 'Policy Check' },
-      { from: 'tacacs', to: 'ad', type: 'ldap', animated: animationPhase === 3, label: 'User Lookup' }
-    ]
-  })
-
-  const getPaloTacacsDiagram = () => ({
-    title: 'Palo Alto TACACS+ Integration',
-    components: [
-      { id: 'admin', type: 'user', label: 'Security Admin', x: 100, y: 300, color: '#2196F3' },
-      { id: 'palo', type: 'firewall', label: 'Palo Alto NGFW', x: 300, y: 300, color: '#FF6B35' },
-      { id: 'tacacs', type: 'server', label: 'TACACS+ Server', x: 500, y: 300, color: '#4CAF50' },
-      { id: 'portnox', type: 'cloud', label: 'Portnox Cloud', x: 700, y: 200, color: '#00c8d7' },
-      { id: 'entra', type: 'identity', label: 'Microsoft Entra ID', x: 700, y: 400, color: '#0078D4' }
-    ],
-    connections: [
-      { from: 'admin', to: 'palo', type: 'web', animated: animationPhase === 0, label: 'Web UI Access' },
-      { from: 'palo', to: 'tacacs', type: 'tacacs', animated: animationPhase === 1, label: 'TACACS+ Request' },
-      { from: 'tacacs', to: 'portnox', type: 'authorization', animated: animationPhase === 2, label: 'Authorization' },
-      { from: 'tacacs', to: 'entra', type: 'oauth', animated: animationPhase === 3, label: 'OAuth/SAML' }
-    ]
-  })
-
-  const getPaloUserIDDiagram = () => ({
-    title: 'Palo Alto User-ID Integration',
-    components: [
-      { id: 'user', type: 'user', label: 'Domain User', x: 100, y: 300, color: '#2196F3' },
-      { id: 'switch', type: 'network', label: 'Network Switch', x: 300, y: 300, color: '#FF9800' },
-      { id: 'portnox', type: 'cloud', label: 'Portnox Cloud', x: 500, y: 200, color: '#00c8d7' },
-      { id: 'palo', type: 'firewall', label: 'Palo Alto NGFW', x: 700, y: 300, color: '#FF6B35' },
-      { id: 'syslog', type: 'log', label: 'Syslog Messages', x: 500, y: 400, color: '#9C27B0' }
-    ],
-    connections: [
-      { from: 'user', to: 'switch', type: 'auth', animated: animationPhase === 0, label: '802.1X Auth' },
-      { from: 'switch', to: 'portnox', type: 'radius', animated: animationPhase === 1, label: 'RADIUS' },
-      { from: 'portnox', to: 'syslog', type: 'log', animated: animationPhase === 2, label: 'User Mapping' },
-      { from: 'syslog', to: 'palo', type: 'userid', animated: animationPhase === 3, label: 'User-ID Update' }
-    ]
-  })
-
-  const getFortigateFSSODiagram = () => ({
-    title: 'FortiGate FSSO Integration',
-    components: [
-      { id: 'user', type: 'user', label: 'Corporate User', x: 100, y: 300, color: '#2196F3' },
-      { id: 'ap', type: 'wireless', label: 'Wireless AP', x: 300, y: 300, color: '#FF9800' },
-      { id: 'portnox', type: 'cloud', label: 'Portnox Cloud', x: 500, y: 200, color: '#00c8d7' },
-      { id: 'fortigate', type: 'firewall', label: 'FortiGate NGFW', x: 700, y: 300, color: '#FF4444' },
-      { id: 'fsso', type: 'service', label: 'FSSO Agent', x: 500, y: 400, color: '#4CAF50' }
-    ],
-    connections: [
-      { from: 'user', to: 'ap', type: 'wifi', animated: animationPhase === 0, label: 'Wi-Fi Auth' },
-      { from: 'ap', to: 'portnox', type: 'radius', animated: animationPhase === 1, label: 'RADIUS' },
-      { from: 'portnox', to: 'fsso', type: 'notification', animated: animationPhase === 2, label: 'Login Event' },
-      { from: 'fsso', to: 'fortigate', type: 'fsso', animated: animationPhase === 3, label: 'FSSO Update' }
-    ]
-  })
-
-  // New wireless vendor diagrams
-  const getUbiquitiWirelessDiagram = () => ({
-    title: 'Ubiquiti UniFi Wireless Integration',
-    components: [
-      { id: 'device', type: 'device', label: 'Mobile Device', x: 100, y: 300, color: '#2196F3' },
-      { id: 'unifi-ap', type: 'wireless', label: 'UniFi Access Point', x: 300, y: 300, color: '#0559C9' },
-      { id: 'controller', type: 'controller', label: 'UniFi Controller', x: 500, y: 200, color: '#0559C9' },
-      { id: 'radius', type: 'server', label: 'RADIUS Proxy', x: 700, y: 200, color: '#4CAF50' },
-      { id: 'portnox', type: 'cloud', label: 'Portnox Cloud', x: 900, y: 200, color: '#00c8d7' },
-      { id: 'guest-portal', type: 'portal', label: 'Guest Portal', x: 500, y: 400, color: '#FF9800' }
-    ],
-    connections: [
-      { from: 'device', to: 'unifi-ap', type: 'wifi', animated: animationPhase === 0, label: 'Wi-Fi Connect' },
-      { from: 'unifi-ap', to: 'controller', type: 'capwap', animated: animationPhase === 1, label: 'CAPWAP' },
-      { from: 'controller', to: 'radius', type: 'radius', animated: animationPhase === 2, label: 'RADIUS Auth' },
-      { from: 'radius', to: 'portnox', type: 'cloud', animated: animationPhase === 3, label: 'Cloud Policy' },
-      { from: 'controller', to: 'guest-portal', type: 'redirect', animated: false, label: 'Guest Access' }
-    ]
-  })
-
-  const getMikroTikWirelessDiagram = () => ({
-    title: 'MikroTik Wireless Integration',
-    components: [
-      { id: 'device', type: 'device', label: 'Client Device', x: 100, y: 300, color: '#2196F3' },
-      { id: 'mikrotik-ap', type: 'wireless', label: 'MikroTik AP', x: 300, y: 300, color: '#293239' },
-      { id: 'routeros', type: 'router', label: 'RouterOS', x: 500, y: 200, color: '#293239' },
-      { id: 'radius', type: 'server', label: 'RADIUS Server', x: 700, y: 200, color: '#4CAF50' },
-      { id: 'portnox', type: 'cloud', label: 'Portnox Cloud', x: 900, y: 200, color: '#00c8d7' },
-      { id: 'hotspot', type: 'portal', label: 'HotSpot Portal', x: 500, y: 400, color: '#FF9800' }
-    ],
-    connections: [
-      { from: 'device', to: 'mikrotik-ap', type: 'wifi', animated: animationPhase === 0, label: 'Wireless Auth' },
-      { from: 'mikrotik-ap', to: 'routeros', type: 'internal', animated: animationPhase === 1, label: 'Internal' },
-      { from: 'routeros', to: 'radius', type: 'radius', animated: animationPhase === 2, label: 'RADIUS' },
-      { from: 'radius', to: 'portnox', type: 'policy', animated: animationPhase === 3, label: 'Policy Engine' },
-      { from: 'routeros', to: 'hotspot', type: 'captive', animated: false, label: 'Captive Portal' }
-    ]
-  })
-
-  const getMerakiWirelessDiagram = () => ({
-    title: 'Cisco Meraki Wireless Integration',
-    components: [
-      { id: 'device', type: 'device', label: 'Wireless Device', x: 100, y: 300, color: '#2196F3' },
-      { id: 'meraki-ap', type: 'wireless', label: 'Meraki Access Point', x: 300, y: 300, color: '#00BCEB' },
-      { id: 'meraki-cloud', type: 'cloud', label: 'Meraki Dashboard', x: 500, y: 200, color: '#00BCEB' },
-      { id: 'radius', type: 'server', label: 'RADIUS Proxy', x: 700, y: 200, color: '#4CAF50' },
-      { id: 'portnox', type: 'cloud', label: 'Portnox Cloud', x: 900, y: 200, color: '#00c8d7' },
-      { id: 'splash', type: 'portal', label: 'Splash Page', x: 500, y: 400, color: '#FF9800' }
-    ],
-    connections: [
-      { from: 'device', to: 'meraki-ap', type: 'wifi', animated: animationPhase === 0, label: 'Wi-Fi Connect' },
-      { from: 'meraki-ap', to: 'meraki-cloud', type: 'cloud', animated: animationPhase === 1, label: 'Cloud Managed' },
-      { from: 'meraki-cloud', to: 'radius', type: 'radius', animated: animationPhase === 2, label: 'RADIUS Auth' },
-      { from: 'radius', to: 'portnox', type: 'integration', animated: animationPhase === 3, label: 'NAC Integration' },
-      { from: 'meraki-cloud', to: 'splash', type: 'redirect', animated: false, label: 'Splash Portal' }
-    ]
-  })
-
-  const getMistWirelessDiagram = () => ({
-    title: 'Juniper Mist Wireless Integration',
-    components: [
-      { id: 'device', type: 'device', label: 'IoT Device', x: 100, y: 300, color: '#2196F3' },
-      { id: 'mist-ap', type: 'wireless', label: 'Mist Access Point', x: 300, y: 300, color: '#00A9CE' },
-      { id: 'mist-cloud', type: 'cloud', label: 'Mist AI Cloud', x: 500, y: 200, color: '#00A9CE' },
-      { id: 'radius', type: 'server', label: 'Cloud RADIUS', x: 700, y: 200, color: '#4CAF50' },
-      { id: 'portnox', type: 'cloud', label: 'Portnox Cloud', x: 900, y: 200, color: '#00c8d7' },
-      { id: 'ai-engine', type: 'ai', label: 'Mist AI Engine', x: 500, y: 400, color: '#9C27B0' }
-    ],
-    connections: [
-      { from: 'device', to: 'mist-ap', type: 'wifi', animated: animationPhase === 0, label: 'Wi-Fi 6E' },
-      { from: 'mist-ap', to: 'mist-cloud', type: 'cloud', animated: animationPhase === 1, label: 'AI-Driven' },
-      { from: 'mist-cloud', to: 'radius', type: 'radius', animated: animationPhase === 2, label: 'Cloud RADIUS' },
-      { from: 'radius', to: 'portnox', type: 'policy', animated: animationPhase === 3, label: 'Dynamic Policy' },
-      { from: 'mist-cloud', to: 'ai-engine', type: 'analytics', animated: false, label: 'AI Analytics' }
-    ]
-  })
-
-  const getCambiumWirelessDiagram = () => ({
-    title: 'Cambium Networks Wireless Integration',
-    components: [
-      { id: 'device', type: 'device', label: 'Enterprise Device', x: 100, y: 300, color: '#2196F3' },
-      { id: 'cambium-ap', type: 'wireless', label: 'Cambium Access Point', x: 300, y: 300, color: '#E31E24' },
-      { id: 'cnmaestro', type: 'controller', label: 'cnMaestro', x: 500, y: 200, color: '#E31E24' },
-      { id: 'radius', type: 'server', label: 'RADIUS Server', x: 700, y: 200, color: '#4CAF50' },
-      { id: 'portnox', type: 'cloud', label: 'Portnox Cloud', x: 900, y: 200, color: '#00c8d7' },
-      { id: 'pmp', type: 'backhaul', label: 'PMP Backhaul', x: 500, y: 400, color: '#FF9800' }
-    ],
-    connections: [
-      { from: 'device', to: 'cambium-ap', type: 'wifi', animated: animationPhase === 0, label: 'Wi-Fi 6' },
-      { from: 'cambium-ap', to: 'cnmaestro', type: 'management', animated: animationPhase === 1, label: 'Cloud Mgmt' },
-      { from: 'cnmaestro', to: 'radius', type: 'radius', animated: animationPhase === 2, label: 'RADIUS Auth' },
-      { from: 'radius', to: 'portnox', type: 'nac', animated: animationPhase === 3, label: 'NAC Policy' },
-      { from: 'cambium-ap', to: 'pmp', type: 'backhaul', animated: false, label: 'Wireless Backhaul' }
-    ]
-  })
-
-  const renderComponent = (component: any) => {
-    const getComponentIcon = (type: string) => {
-      switch (type) {
-        case 'cloud': return '☁️'
-        case 'server': return '🖥️'
-        case 'network': return '🔀'
-        case 'wireless': return '📡'
-        case 'device': return '💻'
-        case 'identity': return '👤'
-        case 'mdm': return '📱'
-        case 'certificate': return '🔐'
-        case 'firewall': return '🛡️'
-        case 'controller': return '🎛️'
-        case 'router': return '📶'
-        case 'portal': return '🌐'
-        case 'ai': return '🤖'
-        case 'backhaul': return '📶'
-        case 'engine': return '⚙️'
-        case 'policy': return '📋'
-        case 'compliance': return '✅'
-        case 'enforcement': return '🚫'
-        case 'user': return '👨‍💼'
-        case 'log': return '📊'
-        case 'service': return '🔧'
-        case 'datacenter': return '🏢'
-        case 'protocol': return '🔗'
-        case 'process': return '⚡'
-        default: return '⚙️'
-      }
-    }
-
-    return (
-      <TooltipProvider key={component.id}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <g>
-              <circle
-                cx={component.x}
-                cy={component.y}
-                r="30"
-                fill={component.color}
-                stroke="#fff"
-                strokeWidth="2"
-                className="drop-shadow-lg cursor-pointer hover:opacity-80 transition-opacity"
-              />
-              <text
-                x={component.x}
-                y={component.y}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                fontSize="20"
-                className="pointer-events-none"
-              >
-                {getComponentIcon(component.type)}
-              </text>
-              <text
-                x={component.x}
-                y={component.y + 50}
-                textAnchor="middle"
-                fontSize="12"
-                fill="#374151"
-                className="font-medium pointer-events-none"
-              >
-                {component.label}
-              </text>
-            </g>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p className="font-semibold">{component.label}</p>
-            <p className="text-sm text-gray-600">{component.type}</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    )
-  }
-
-  const renderConnection = (connection: any, components: any[]) => {
-    const fromComponent = components.find(c => c.id === connection.from)
-    const toComponent = components.find(c => c.id === connection.to)
+    // Site Network (Left side)
+    createRect(svg, 50, 150, 200, 300, '#e8f5e9', '#4caf50', 'ABM Site Network')
     
-    if (!fromComponent || !toComponent) return null
+    // Devices
+    createCircle(svg, 100, 200, 25, '#81c784', 'Corporate')
+    createCircle(svg, 100, 250, 25, '#ffb74d', 'BYOD')
+    createCircle(svg, 100, 300, 25, '#f06292', 'IoT')
+    
+    // Network Equipment
+    createRect(svg, 180, 220, 60, 40, '#c8e6c9', '#388e3c', 'Switch/AP')
 
-    const getStrokeStyle = (type: string, animated: boolean) => {
-      const baseStyle = {
-        strokeWidth: animated ? 3 : 2,
-        stroke: animated ? '#00c8d7' : '#9CA3AF'
-      }
+    // RADSec Proxy (Center)
+    createRect(svg, 350, 250, 150, 100, '#fff3e0', '#ff9800', 'RADSec Proxy')
+    createText(svg, 425, 285, 'TLS Encryption', 12, '#bf360c')
+    createText(svg, 425, 305, 'No Load Balancer', 12, '#bf360c')
+    createText(svg, 425, 325, 'No Redis Cache', 12, '#bf360c')
 
-      if (animated) {
-        return {
-          ...baseStyle,
-          strokeDasharray: '5,5',
-          className: 'animate-pulse'
-        }
-      }
+    // Internet/WAN
+    createEllipse(svg, 600, 300, 80, 40, '#e3f2fd', '#2196f3', 'Internet/WAN')
 
-      return baseStyle
-    }
+    // Portnox Cloud (Right side)
+    createRect(svg, 800, 150, 300, 300, '#e3f2fd', '#1976d2', 'Portnox Cloud')
+    
+    // Cloud Services
+    createRect(svg, 820, 200, 120, 50, '#bbdefb', '#1565c0', 'Cloud RADIUS')
+    createRect(svg, 960, 200, 120, 50, '#bbdefb', '#1565c0', 'Policy Engine')
+    createRect(svg, 820, 280, 120, 50, '#bbdefb', '#1565c0', 'Identity Store')
+    createRect(svg, 960, 280, 120, 50, '#bbdefb', '#1565c0', 'PKI Services')
+    createRect(svg, 890, 360, 120, 50, '#bbdefb', '#1565c0', 'Analytics')
 
-    const style = getStrokeStyle(connection.type, connection.animated)
+    // Connections
+    createArrow(svg, 125, 225, 180, 240, '#4caf50', 2)
+    createArrow(svg, 240, 240, 350, 280, '#ff9800', 3)
+    createArrow(svg, 500, 300, 520, 300, '#2196f3', 3)
+    createArrow(svg, 680, 300, 800, 280, '#1976d2', 3)
 
-    return (
-      <g key={`${connection.from}-${connection.to}`}>
-        <line
-          x1={fromComponent.x}
-          y1={fromComponent.y}
-          x2={toComponent.x}
-          y2={toComponent.y}
-          {...style}
-          className={style.className}
-        />
-        {connection.label && (
-          <text
-            x={(fromComponent.x + toComponent.x) / 2}
-            y={(fromComponent.y + toComponent.y) / 2 - 10}
-            textAnchor="middle"
-            fontSize="10"
-            fill="#6B7280"
-            className="font-medium"
-          >
-            {connection.label}
-          </text>
-        )}
-      </g>
-    )
+    // Labels
+    createText(svg, 150, 180, 'RADIUS', 14, '#388e3c')
+    createText(svg, 290, 220, 'RADIUS', 14, '#f57c00')
+    createText(svg, 560, 280, 'RADSec/TLS', 14, '#1565c0')
+    createText(svg, 740, 260, 'Encrypted', 14, '#1565c0')
+
+    // Benefits box
+    createRect(svg, 50, 500, 500, 80, '#e8f5e9', '#4caf50', '')
+    createText(svg, 60, 520, 'RADSec Proxy Benefits:', 14, '#2e7d32', 'bold')
+    createText(svg, 60, 540, '• Direct cloud connection - no load balancer needed', 12, '#388e3c')
+    createText(svg, 60, 555, '• Real-time authentication - no caching required', 12, '#388e3c')
+    createText(svg, 60, 570, '• Simplified architecture reduces complexity and cost', 12, '#388e3c')
   }
 
-  const diagramData = getDiagramData()
+  const drawZeroTrustDiagram = (svg: SVGSVGElement) => {
+    // Zero Trust NAC Architecture
+    createRect(svg, 100, 100, 200, 150, '#e8f5e9', '#4caf50', 'Network Infrastructure')
+    createRect(svg, 400, 100, 200, 150, '#fff3e0', '#ff9800', 'Identity Provider')
+    createRect(svg, 700, 100, 200, 150, '#e3f2fd', '#2196f3', 'Portnox Cloud')
+    createRect(svg, 400, 350, 200, 150, '#f3e5f5', '#9c27b0', 'Policy Engine')
+
+    // Connections
+    createArrow(svg, 300, 175, 400, 175, '#666', 2)
+    createArrow(svg, 600, 175, 700, 175, '#666', 2)
+    createArrow(svg, 500, 250, 500, 350, '#666', 2)
+  }
+
+  const drawAuthFlowDiagram = (svg: SVGSVGElement) => {
+    // 802.1X Authentication Flow
+    const steps = [
+      { x: 100, y: 150, label: 'Device Connect' },
+      { x: 300, y: 150, label: 'EAP Request' },
+      { x: 500, y: 150, label: 'Certificate Auth' },
+      { x: 700, y: 150, label: 'Policy Decision' },
+      { x: 900, y: 150, label: 'VLAN Assignment' }
+    ]
+
+    steps.forEach((step, index) => {
+      createCircle(svg, step.x, step.y, 40, '#2196f3', step.label)
+      if (index < steps.length - 1) {
+        createArrow(svg, step.x + 40, step.y, steps[index + 1].x - 40, steps[index + 1].y, '#666', 2)
+      }
+    })
+  }
+
+  const drawPKIDiagram = (svg: SVGSVGElement) => {
+    // PKI Infrastructure
+    createRect(svg, 400, 50, 200, 100, '#e3f2fd', '#2196f3', 'Portnox PKI CA')
+    createRect(svg, 200, 250, 150, 80, '#fff3e0', '#ff9800', 'SCEP Server')
+    createRect(svg, 450, 250, 150, 80, '#e8f5e9', '#4caf50', 'OCSP Responder')
+    createRect(svg, 700, 250, 150, 80, '#f3e5f5', '#9c27b0', 'Certificate Store')
+
+    // Connections
+    createArrow(svg, 450, 150, 275, 250, '#666', 2)
+    createArrow(svg, 550, 150, 525, 250, '#666', 2)
+    createArrow(svg, 650, 150, 775, 250, '#666', 2)
+  }
+
+  const drawDefaultDiagram = (svg: SVGSVGElement) => {
+    // Default diagram
+    createRect(svg, 300, 200, 200, 100, '#e3f2fd', '#2196f3', 'Portnox NAC')
+    createText(svg, 400, 250, 'Architecture Diagram', 16, '#1976d2', 'bold')
+  }
+
+  // Helper functions for SVG creation
+  const createRect = (svg: SVGSVGElement, x: number, y: number, width: number, height: number, fill: string, stroke: string, label: string) => {
+    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
+    rect.setAttribute('x', x.toString())
+    rect.setAttribute('y', y.toString())
+    rect.setAttribute('width', width.toString())
+    rect.setAttribute('height', height.toString())
+    rect.setAttribute('fill', fill)
+    rect.setAttribute('stroke', stroke)
+    rect.setAttribute('stroke-width', '2')
+    rect.setAttribute('rx', '8')
+    svg.appendChild(rect)
+
+    if (label) {
+      createText(svg, x + width/2, y + height/2, label, 14, stroke, 'bold')
+    }
+  }
+
+  const createCircle = (svg: SVGSVGElement, cx: number, cy: number, r: number, fill: string, label: string) => {
+    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle')
+    circle.setAttribute('cx', cx.toString())
+    circle.setAttribute('cy', cy.toString())
+    circle.setAttribute('r', r.toString())
+    circle.setAttribute('fill', fill)
+    circle.setAttribute('stroke', '#333')
+    circle.setAttribute('stroke-width', '2')
+    svg.appendChild(circle)
+
+    if (label) {
+      createText(svg, cx, cy + r + 15, label, 12, '#333')
+    }
+  }
+
+  const createEllipse = (svg: SVGSVGElement, cx: number, cy: number, rx: number, ry: number, fill: string, stroke: string, label: string) => {
+    const ellipse = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse')
+    ellipse.setAttribute('cx', cx.toString())
+    ellipse.setAttribute('cy', cy.toString())
+    ellipse.setAttribute('rx', rx.toString())
+    ellipse.setAttribute('ry', ry.toString())
+    ellipse.setAttribute('fill', fill)
+    ellipse.setAttribute('stroke', stroke)
+    ellipse.setAttribute('stroke-width', '2')
+    svg.appendChild(ellipse)
+
+    if (label) {
+      createText(svg, cx, cy, label, 14, stroke, 'bold')
+    }
+  }
+
+  const createArrow = (svg: SVGSVGElement, x1: number, y1: number, x2: number, y2: number, color: string, width: number) => {
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line')
+    line.setAttribute('x1', x1.toString())
+    line.setAttribute('y1', y1.toString())
+    line.setAttribute('x2', x2.toString())
+    line.setAttribute('y2', y2.toString())
+    line.setAttribute('stroke', color)
+    line.setAttribute('stroke-width', width.toString())
+    line.setAttribute('marker-end', 'url(#arrowhead)')
+    svg.appendChild(line)
+
+    // Create arrowhead marker if it doesn't exist
+    if (!svg.querySelector('#arrowhead')) {
+      const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs')
+      const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker')
+      marker.setAttribute('id', 'arrowhead')
+      marker.setAttribute('markerWidth', '10')
+      marker.setAttribute('markerHeight', '7')
+      marker.setAttribute('refX', '9')
+      marker.setAttribute('refY', '3.5')
+      marker.setAttribute('orient', 'auto')
+
+      const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon')
+      polygon.setAttribute('points', '0 0, 10 3.5, 0 7')
+      polygon.setAttribute('fill', color)
+
+      marker.appendChild(polygon)
+      defs.appendChild(marker)
+      svg.appendChild(defs)
+    }
+  }
+
+  const createText = (svg: SVGSVGElement, x: number, y: number, text: string, fontSize: number, fill: string, fontWeight: string = 'normal') => {
+    const textElement = document.createElementNS('http://www.w3.org/2000/svg', 'text')
+    textElement.setAttribute('x', x.toString())
+    textElement.setAttribute('y', y.toString())
+    textElement.setAttribute('text-anchor', 'middle')
+    textElement.setAttribute('dominant-baseline', 'middle')
+    textElement.setAttribute('font-size', fontSize.toString())
+    textElement.setAttribute('fill', fill)
+    textElement.setAttribute('font-weight', fontWeight)
+    textElement.textContent = text
+    svg.appendChild(textElement)
+  }
 
   return (
-    <Card className="w-full">
-      <div className="p-6">
-        <h3 className="text-lg font-semibold mb-4 text-center">{diagramData.title}</h3>
-        <div className="architecture-diagram flex justify-center">
-          <svg width="1000" height="600" viewBox="0 0 1000 600" className="border rounded-lg bg-gray-50 dark:bg-gray-900">
-            {diagramData.connections.map(connection => 
-              renderConnection(connection, diagramData.components)
-            )}
-            {diagramData.components.map(component => 
-              renderComponent(component)
-            )}
-          </svg>
-        </div>
-        
-        {/* RADSec specific information */}
-        {view === 'radsec-proxy' && (
-          <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-            <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
-              RADSec Architecture Benefits
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-800 dark:text-blue-200">
-              <div>
-                <h5 className="font-medium mb-2">Simplified Design:</h5>
-                <ul className="space-y-1 text-xs">
-                  <li>• No load balancers required</li>
-                  <li>• No Redis cache needed</li>
-                  <li>• Direct TLS encryption to cloud</li>
-                  <li>• Reduced infrastructure complexity</li>
-                </ul>
-              </div>
-              <div>
-                <h5 className="font-medium mb-2">Security Benefits:</h5>
-                <ul className="space-y-1 text-xs">
-                  <li>• End-to-end TLS encryption</li>
-                  <li>• Certificate-based authentication</li>
-                  <li>• Built-in cloud redundancy</li>
-                  <li>• Centralized policy management</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    </Card>
+    <div className="w-full bg-gray-50 rounded-lg border-2 border-gray-200 p-4">
+      <svg
+        ref={svgRef}
+        width="100%"
+        height="600"
+        viewBox="0 0 1200 600"
+        className="w-full h-auto"
+        style={{ maxHeight: '600px' }}
+      >
+        {/* SVG content will be dynamically generated */}
+      </svg>
+    </div>
   )
 }
