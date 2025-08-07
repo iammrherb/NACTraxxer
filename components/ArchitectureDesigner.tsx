@@ -331,13 +331,15 @@ export default function ArchitectureDesigner() {
                 <SelectContent>
                   {cloudProviders.map((provider) => (
                     <SelectItem key={provider.id} value={provider.id}>
-                      <div 
-                        className="w-3 h-3 rounded-full" 
-                        style={{ backgroundColor: provider.color }}
-                      />
-                      <span>{provider.label}</span>
-                    </div>
-                  </SelectItem>
+                      <div className="flex items-center space-x-2">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: provider.color }}
+                        />
+                        <span>{provider.label}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
