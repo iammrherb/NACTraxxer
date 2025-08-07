@@ -2,435 +2,449 @@
 
 import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Textarea } from '@/components/ui/textarea'
-import { Switch } from '@/components/ui/switch'
-import { Separator } from '@/components/ui/separator'
-import { Building2, Users, Network, Shield, Settings, FileText, Download, Save, Upload, Eye, EyeOff, Palette, Moon, Sun } from 'lucide-react'
-import EnhancedArchitectureDiagrams from './enhanced-architecture-diagrams'
-import SiteManagement from './site-management'
-import ProgressTracking from './progress-tracking'
-import SiteWorkbook from './site-workbook'
-import UserManagementModal from './user-management-modal'
-import ThemeCustomizer from './theme-customizer'
-
-interface ProjectData {
-  company: string
-  industry: string
-  projectManager: string
-  technicalLead: string
-  sites: number
-  users: number
-  devices: number
-  timeline: string
-  budget: string
-  compliance: string[]
-  networkVendor: string
-  identityProvider: string
-  mdmSolution: string
-}
+import { Label } from '@/components/ui/label'
+import { Slider } from '@/components/ui/slider'
+import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import InteractiveDiagram from './InteractiveDiagram'
+import ArchitectureLegend from './ArchitectureLegend'
+import { Cloud, Network, Shield, Settings, Zap, Globe, Lock, Users, Database, Server, Download } from 'lucide-react'
 
 export default function ArchitectureDesigner() {
-  const [activeTab, setActiveTab] = useState('overview')
-  const [projectData, setProjectData] = useState<ProjectData>({
-    company: 'Acme Healthcare Corp',
-    industry: 'Healthcare',
-    projectManager: 'Sarah Johnson',
-    technicalLead: 'Mike Chen',
-    sites: 12,
-    users: 2500,
-    devices: 3200,
-    timeline: '6 months',
-    budget: '$250,000',
-    compliance: ['HIPAA', 'SOX'],
-    networkVendor: 'Cisco Meraki',
-    identityProvider: 'Azure AD',
-    mdmSolution: 'Microsoft Intune'
-  })
-  
-  const [showUserModal, setShowUserModal] = useState(false)
-  const [showThemeCustomizer, setShowThemeCustomizer] = useState(false)
-  const [selectedSite, setSelectedSite] = useState<string | null>(null)
-  const [darkMode, setDarkMode] = useState(false)
+  const [selectedView, setSelectedView] = useState('complete')
+  const [cloudProvider, setCloudProvider] = useState('aws')
+  const [networkVendor, setNetworkVendor] = useState('cisco')
+  const [connectivityType, setConnectivityType] = useState('sdwan')
+  const [animationSpeed, setAnimationSpeed] = useState([1])
 
-  const handleProjectDataChange = (field: keyof ProjectData, value: any) => {
-    setProjectData(prev => ({
-      ...prev,
-      [field]: value
-    }))
-  }
+  const architectureViews = [
+    { 
+      id: 'complete', 
+      label: 'Complete Architecture', 
+      icon: <Cloud className="w-4 h-4" />,
+      description: 'Full end-to-end NAC deployment with all components'
+    },
+    { 
+      id: 'auth-flow', 
+      label: 'Authentication Flow', 
+      icon: <Shield className="w-4 h-4" />,
+      description: '802.1X authentication sequence and RADIUS flow'
+    },
+    { 
+      id: 'pki', 
+      label: 'PKI Infrastructure', 
+      icon: <Lock className="w-4 h-4" />,
+      description: 'Certificate authority and PKI components'
+    },
+    { 
+      id: 'policies', 
+      label: 'Policy Framework', 
+      icon: <Settings className="w-4 h-4" />,
+      description: 'Policy engine and rule management'
+    },
+    { 
+      id: 'connectivity', 
+      label: 'Connectivity Options', 
+      icon: <Network className="w-4 h-4" />,
+      description: 'Multi-cloud and network connectivity patterns'
+    },
+    { 
+      id: 'intune', 
+      label: 'Intune Integration', 
+      icon: <Users className="w-4 h-4" />,
+      description: 'Microsoft Intune MDM integration'
+    },
+    { 
+      id: 'onboarding', 
+      label: 'Device Onboarding', 
+      icon: <Zap className="w-4 h-4" />,
+      description: 'Device enrollment and provisioning workflows'
+    },
+    { 
+      id: 'fortigate-tacacs', 
+      label: 'FortiGate TACACS+', 
+      icon: <Server className="w-4 h-4" />,
+      description: 'FortiGate device administration with TACACS+'
+    },
+    { 
+      id: 'palo-tacacs', 
+      label: 'Palo Alto TACACS+', 
+      icon: <Server className="w-4 h-4" />,
+      description: 'Palo Alto device administration with TACACS+'
+    },
+    { 
+      id: 'palo-userid', 
+      label: 'Palo Alto User-ID', 
+      icon: <Users className="w-4 h-4" />,
+      description: 'Palo Alto User-ID integration with syslog'
+    },
+    { 
+      id: 'fortigate-fsso', 
+      label: 'FortiGate FSSO', 
+      icon: <Users className="w-4 h-4" />,
+      description: 'FortiGate FSSO integration with syslog'
+    }
+  ]
 
-  const exportProject = () => {
-    const dataStr = JSON.stringify(projectData, null, 2)
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr)
-    const exportFileDefaultName = `${projectData.company.replace(/\s+/g, '_')}_NAC_Design.json`
-    
-    const linkElement = document.createElement('a')
-    linkElement.setAttribute('href', dataUri)
-    linkElement.setAttribute('download', exportFileDefaultName)
-    linkElement.click()
-  }
+  const cloudProviders = [
+    { id: 'aws', label: 'Amazon Web Services', color: '#FF9900' },
+    { id: 'azure', label: 'Microsoft Azure', color: '#0078D4' },
+    { id: 'gcp', label: 'Google Cloud Platform', color: '#4285F4' },
+    { id: 'onprem', label: 'On-Premises', color: '#6B7280' }
+  ]
 
-  const saveProject = () => {
-    localStorage.setItem('nac-project', JSON.stringify(projectData))
-    alert('Project saved successfully!')
-  }
+  const networkVendors = [
+    { id: 'cisco', label: 'Cisco' },
+    { id: 'aruba', label: 'Aruba (HPE)' },
+    { id: 'juniper', label: 'Juniper' },
+    { id: 'extreme', label: 'Extreme Networks' },
+    { id: 'ruckus', label: 'Ruckus (CommScope)' },
+    { id: 'fortinet', label: 'Fortinet' },
+    { id: 'paloalto', label: 'Palo Alto Networks' }
+  ]
 
-  const loadProject = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        try {
-          const data = JSON.parse(e.target?.result as string)
-          setProjectData(data)
-          alert('Project loaded successfully!')
-        } catch (error) {
-          alert('Error loading project file')
-        }
+  const connectivityOptions = [
+    { id: 'sdwan', label: 'SD-WAN' },
+    { id: 'expressroute', label: 'Azure Express Route' },
+    { id: 'directconnect', label: 'AWS Direct Connect' },
+    { id: 'mpls', label: 'MPLS Network' },
+    { id: 'vpn', label: 'Site-to-Site VPN' },
+    { id: 'internet', label: 'Internet Connection' }
+  ]
+
+  const currentView = architectureViews.find(view => view.id === selectedView)
+
+  // Export Functions
+  const exportDiagram = async (format: 'svg' | 'png' | 'pdf') => {
+    const diagramElement = document.querySelector('.architecture-diagram svg')
+    if (!diagramElement) return
+
+    try {
+      if (format === 'svg') {
+        await exportAsSVG(diagramElement as SVGElement)
+      } else if (format === 'png') {
+        await exportAsPNG(diagramElement as SVGElement)
+      } else if (format === 'pdf') {
+        await exportAsPDF(diagramElement as SVGElement)
       }
-      reader.readAsText(file)
+    } catch (error) {
+      console.error('Export failed:', error)
     }
   }
 
-  return (
-    <div className={`min-h-screen bg-background ${darkMode ? 'dark' : ''}`}>
-      <div className="container mx-auto p-6 space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Zero Trust NAC Architecture Designer</h1>
-            <p className="text-muted-foreground">Design and deploy enterprise network access control solutions</p>
-          </div>
+  const exportAsSVG = async (svgElement: SVGElement) => {
+    const svgData = new XMLSerializer().serializeToString(svgElement)
+    const svgWithHeader = addExportHeader(svgData, 'svg')
+    const blob = new Blob([svgWithHeader], { type: 'image/svg+xml' })
+    downloadFile(blob, `portnox-architecture-${selectedView}-${Date.now()}.svg`)
+  }
+
+  const exportAsPNG = async (svgElement: SVGElement) => {
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
+    const img = new Image()
+    
+    canvas.width = 1400
+    canvas.height = 1000
+    
+    // Add white background
+    ctx!.fillStyle = 'white'
+    ctx!.fillRect(0, 0, canvas.width, canvas.height)
+    
+    // Add header with logos
+    await addPNGHeader(ctx!, canvas.width)
+    
+    const svgData = new XMLSerializer().serializeToString(svgElement)
+    const svgBlob = new Blob([svgData], { type: 'image/svg+xml' })
+    const url = URL.createObjectURL(svgBlob)
+    
+    img.onload = () => {
+      ctx!.drawImage(img, 50, 150, canvas.width - 100, canvas.height - 200)
+      
+      canvas.toBlob((blob) => {
+        if (blob) {
+          downloadFile(blob, `portnox-architecture-${selectedView}-${Date.now()}.png`)
+        }
+      }, 'image/png')
+      
+      URL.revokeObjectURL(url)
+    }
+    
+    img.src = url
+  }
+
+  const exportAsPDF = async (svgElement: SVGElement) => {
+    // This would require a PDF library like jsPDF
+    // For now, we'll export as PNG and let user convert if needed
+    await exportAsPNG(svgElement)
+  }
+
+  const addExportHeader = (svgData: string, format: string) => {
+    const headerHeight = 100
+    const header = `
+      <g id="export-header">
+        <rect x="0" y="0" width="1200" height="${headerHeight}" fill="#00c8d7"/>
+        <image x="20" y="20" width="120" height="30" href="https://www.portnox.com/wp-content/uploads/2021/03/Portnotx_Logo_Color-768x193.png"/>
+        <image x="1050" y="15" width="130" height="40" href="https://companieslogo.com/img/orig/ABM_BIG-47f1fb05.png?t=1720244490&download=true"/>
+        <text x="600" y="35" textAnchor="middle" fill="white" fontSize="18" fontWeight="bold">
+          Portnox NAC Architecture - ${currentView?.label}
+        </text>
+        <text x="600" y="55" textAnchor="middle" fill="white" fontSize="12">
+          Generated on ${new Date().toLocaleDateString()}
+        </text>
+      </g>
+    `
+    
+    return svgData.replace('<svg', `<svg`).replace('>', `>${header}`)
+  }
+
+  const addPNGHeader = async (ctx: CanvasRenderingContext2D, width: number) => {
+    // Header background
+    ctx.fillStyle = '#00c8d7'
+    ctx.fillRect(0, 0, width, 100)
+    
+    // Load and draw Portnox logo
+    const portnoxLogo = new Image()
+    portnoxLogo.crossOrigin = 'anonymous'
+    portnoxLogo.src = 'https://www.portnox.com/wp-content/uploads/2021/03/Portnotx_Logo_Color-768x193.png'
+    
+    // Load and draw ABM logo
+    const abmLogo = new Image()
+    abmLogo.crossOrigin = 'anonymous'
+    abmLogo.src = 'https://companieslogo.com/img/orig/ABM_BIG-47f1fb05.png?t=1720244490&download=true'
+    
+    return new Promise((resolve) => {
+      let loadedCount = 0
+      const onLoad = () => {
+        loadedCount++
+        if (loadedCount === 2) {
+          ctx.drawImage(portnoxLogo, 20, 20, 120, 30)
+          ctx.drawImage(abmLogo, width - 150, 15, 130, 40)
           
-          <div className="flex items-center space-x-2">
-            <Button variant="outline" onClick={() => setShowThemeCustomizer(true)}>
-              <Palette className="h-4 w-4 mr-2" />
-              Customize
-            </Button>
-            <Button variant="outline" onClick={() => setDarkMode(!darkMode)}>
-              {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </Button>
-            <Button variant="outline" onClick={exportProject}>
-              <Download className="h-4 w-4 mr-2" />
-              Export
-            </Button>
-            <Button variant="outline" onClick={saveProject}>
-              <Save className="h-4 w-4 mr-2" />
-              Save
-            </Button>
-            <Button variant="outline" onClick={() => document.getElementById('file-input')?.click()}>
-              <Upload className="h-4 w-4 mr-2" />
-              Load
-            </Button>
-            <input
-              id="file-input"
-              type="file"
-              accept=".json"
-              onChange={loadProject}
-              className="hidden"
+          // Add text
+          ctx.fillStyle = 'white'
+          ctx.font = 'bold 18px Arial'
+          ctx.textAlign = 'center'
+          ctx.fillText(`Portnox NAC Architecture - ${currentView?.label}`, width / 2, 35)
+          
+          ctx.font = '12px Arial'
+          ctx.fillText(`Generated on ${new Date().toLocaleDateString()}`, width / 2, 55)
+          
+          resolve(undefined)
+        }
+      }
+      
+      portnoxLogo.onload = onLoad
+      abmLogo.onload = onLoad
+    })
+  }
+
+  const downloadFile = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = filename
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Globe className="h-6 w-6 text-blue-600" />
+            <span>Zero Trust NAC Architecture Designer</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Architecture View Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="view-select">Architecture View</Label>
+              <Select value={selectedView} onValueChange={setSelectedView}>
+                <SelectTrigger id="view-select">
+                  <SelectValue placeholder="Select view" />
+                </SelectTrigger>
+                <SelectContent>
+                  {architectureViews.map((view) => (
+                    <SelectItem key={view.id} value={view.id}>
+                      <div className="flex items-center space-x-2">
+                        {view.icon}
+                        <span>{view.label}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Cloud Provider Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="cloud-select">Cloud Provider</Label>
+              <Select value={cloudProvider} onValueChange={setCloudProvider}>
+                <SelectTrigger id="cloud-select">
+                  <SelectValue placeholder="Select provider" />
+                </SelectTrigger>
+                <SelectContent>
+                  {cloudProviders.map((provider) => (
+                    <SelectItem key={provider.id} value={provider.id}>
+                      <div className="flex items-center space-x-2">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: provider.color }}
+                        />
+                        <span>{provider.label}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Network Vendor Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="vendor-select">Network Vendor</Label>
+              <Select value={networkVendor} onValueChange={setNetworkVendor}>
+                <SelectTrigger id="vendor-select">
+                  <SelectValue placeholder="Select vendor" />
+                </SelectTrigger>
+                <SelectContent>
+                  {networkVendors.map((vendor) => (
+                    <SelectItem key={vendor.id} value={vendor.id}>
+                      {vendor.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Connectivity Type Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="connectivity-select">Connectivity</Label>
+              <Select value={connectivityType} onValueChange={setConnectivityType}>
+                <SelectTrigger id="connectivity-select">
+                  <SelectValue placeholder="Select connectivity" />
+                </SelectTrigger>
+                <SelectContent>
+                  {connectivityOptions.map((option) => (
+                    <SelectItem key={option.id} value={option.id}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Animation Speed Control */}
+          <div className="mt-4 space-y-2">
+            <Label>Animation Speed: {animationSpeed[0]}x</Label>
+            <Slider
+              value={animationSpeed}
+              onValueChange={setAnimationSpeed}
+              max={3}
+              min={0.5}
+              step={0.5}
+              className="w-full"
             />
           </div>
-        </div>
 
-        {/* Project Overview Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Building2 className="h-5 w-5" />
-              <span>Project Overview</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="company">Company Name</Label>
-                <Input
-                  id="company"
-                  value={projectData.company}
-                  onChange={(e) => handleProjectDataChange('company', e.target.value)}
-                />
+          {/* Current View Info */}
+          {currentView && (
+            <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+              <div className="flex items-center space-x-2 mb-2">
+                {currentView.icon}
+                <h3 className="font-semibold text-blue-900 dark:text-blue-100">
+                  {currentView.label}
+                </h3>
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="industry">Industry</Label>
-                <Select value={projectData.industry} onValueChange={(value) => handleProjectDataChange('industry', value)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Healthcare">Healthcare</SelectItem>
-                    <SelectItem value="Financial">Financial Services</SelectItem>
-                    <SelectItem value="Education">Education</SelectItem>
-                    <SelectItem value="Manufacturing">Manufacturing</SelectItem>
-                    <SelectItem value="Government">Government</SelectItem>
-                    <SelectItem value="Technology">Technology</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="sites">Number of Sites</Label>
-                <Input
-                  id="sites"
-                  type="number"
-                  value={projectData.sites}
-                  onChange={(e) => handleProjectDataChange('sites', parseInt(e.target.value))}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="users">Total Users</Label>
-                <Input
-                  id="users"
-                  type="number"
-                  value={projectData.users}
-                  onChange={(e) => handleProjectDataChange('users', parseInt(e.target.value))}
-                />
-              </div>
+              <p className="text-sm text-blue-800 dark:text-blue-200">
+                {currentView.description}
+              </p>
             </div>
-            
-            <div className="mt-6 flex items-center justify-between">
-              <div className="flex space-x-4">
-                <Badge variant="secondary">{projectData.timeline}</Badge>
-                <Badge variant="secondary">{projectData.budget}</Badge>
-                <Badge variant="secondary">{projectData.compliance.join(', ')}</Badge>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Main Content */}
+      <Tabs defaultValue="diagram" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="diagram">Interactive Diagram</TabsTrigger>
+          <TabsTrigger value="legend">Components Legend</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="diagram" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center space-x-2">
+                  {currentView?.icon}
+                  <span>{currentView?.label}</span>
+                </CardTitle>
+                <div className="flex items-center space-x-2">
+                  <div className="flex space-x-2">
+                    <Badge variant="outline">
+                      {cloudProviders.find(p => p.id === cloudProvider)?.label}
+                    </Badge>
+                    <Badge variant="outline">
+                      {networkVendors.find(v => v.id === networkVendor)?.label}
+                    </Badge>
+                    <Badge variant="outline">
+                      {connectivityOptions.find(c => c.id === connectivityType)?.label}
+                    </Badge>
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => exportDiagram('svg')}
+                      className="flex items-center space-x-1"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>SVG</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => exportDiagram('png')}
+                      className="flex items-center space-x-1"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>PNG</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => exportDiagram('pdf')}
+                      className="flex items-center space-x-1"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>PDF</span>
+                    </Button>
+                  </div>
+                </div>
               </div>
-              
-              <Button onClick={() => setShowUserModal(true)}>
-                <Users className="h-4 w-4 mr-2" />
-                Manage Users
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+            </CardHeader>
+            <CardContent>
+              <InteractiveDiagram
+                view={selectedView}
+                cloudProvider={cloudProvider}
+                networkVendor={networkVendor}
+                connectivityType={connectivityType}
+                animationSpeed={animationSpeed[0]}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-        {/* Main Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="overview" className="flex items-center space-x-2">
-              <Eye className="h-4 w-4" />
-              <span>Overview</span>
-            </TabsTrigger>
-            <TabsTrigger value="architecture" className="flex items-center space-x-2">
-              <Network className="h-4 w-4" />
-              <span>Architecture</span>
-            </TabsTrigger>
-            <TabsTrigger value="sites" className="flex items-center space-x-2">
-              <Building2 className="h-4 w-4" />
-              <span>Sites</span>
-            </TabsTrigger>
-            <TabsTrigger value="progress" className="flex items-center space-x-2">
-              <Shield className="h-4 w-4" />
-              <span>Progress</span>
-            </TabsTrigger>
-            <TabsTrigger value="workbook" className="flex items-center space-x-2">
-              <FileText className="h-4 w-4" />
-              <span>Workbook</span>
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center space-x-2">
-              <Settings className="h-4 w-4" />
-              <span>Settings</span>
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2">
-                <EnhancedArchitectureDiagrams />
-              </div>
-              
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Project Statistics</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex justify-between">
-                      <span>Sites Configured:</span>
-                      <Badge>8/12</Badge>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Users Enrolled:</span>
-                      <Badge>2,247/2,500</Badge>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Devices Authenticated:</span>
-                      <Badge>3,156/3,200</Badge>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Compliance Status:</span>
-                      <Badge variant="secondary">98.7%</Badge>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Technology Stack</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span>Network Vendor:</span>
-                      <Badge variant="outline">{projectData.networkVendor}</Badge>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>Identity Provider:</span>
-                      <Badge variant="outline">{projectData.identityProvider}</Badge>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>MDM Solution:</span>
-                      <Badge variant="outline">{projectData.mdmSolution}</Badge>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>NAC Platform:</span>
-                      <Badge variant="outline">Portnox Cloud</Badge>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="architecture">
-            <EnhancedArchitectureDiagrams />
-          </TabsContent>
-
-          <TabsContent value="sites">
-            <SiteManagement onSiteSelect={setSelectedSite} />
-          </TabsContent>
-
-          <TabsContent value="progress">
-            <ProgressTracking />
-          </TabsContent>
-
-          <TabsContent value="workbook">
-            <SiteWorkbook selectedSite={selectedSite} />
-          </TabsContent>
-
-          <TabsContent value="settings">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Project Settings</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="pm">Project Manager</Label>
-                    <Input
-                      id="pm"
-                      value={projectData.projectManager}
-                      onChange={(e) => handleProjectDataChange('projectManager', e.target.value)}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="tl">Technical Lead</Label>
-                    <Input
-                      id="tl"
-                      value={projectData.technicalLead}
-                      onChange={(e) => handleProjectDataChange('technicalLead', e.target.value)}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="timeline">Project Timeline</Label>
-                    <Select value={projectData.timeline} onValueChange={(value) => handleProjectDataChange('timeline', value)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="3 months">3 months</SelectItem>
-                        <SelectItem value="6 months">6 months</SelectItem>
-                        <SelectItem value="9 months">9 months</SelectItem>
-                        <SelectItem value="12 months">12 months</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="budget">Budget</Label>
-                    <Input
-                      id="budget"
-                      value={projectData.budget}
-                      onChange={(e) => handleProjectDataChange('budget', e.target.value)}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle>Integration Settings</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="network-vendor">Network Vendor</Label>
-                    <Select value={projectData.networkVendor} onValueChange={(value) => handleProjectDataChange('networkVendor', value)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Cisco Meraki">Cisco Meraki</SelectItem>
-                        <SelectItem value="Cisco Catalyst">Cisco Catalyst</SelectItem>
-                        <SelectItem value="Aruba">Aruba</SelectItem>
-                        <SelectItem value="Juniper">Juniper</SelectItem>
-                        <SelectItem value="Extreme">Extreme Networks</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="identity">Identity Provider</Label>
-                    <Select value={projectData.identityProvider} onValueChange={(value) => handleProjectDataChange('identityProvider', value)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Azure AD">Azure AD</SelectItem>
-                        <SelectItem value="Active Directory">Active Directory</SelectItem>
-                        <SelectItem value="Okta">Okta</SelectItem>
-                        <SelectItem value="Google Workspace">Google Workspace</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="mdm">MDM Solution</Label>
-                    <Select value={projectData.mdmSolution} onValueChange={(value) => handleProjectDataChange('mdmSolution', value)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Microsoft Intune">Microsoft Intune</SelectItem>
-                        <SelectItem value="Jamf">Jamf</SelectItem>
-                        <SelectItem value="VMware Workspace ONE">VMware Workspace ONE</SelectItem>
-                        <SelectItem value="MobileIron">MobileIron</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-        </Tabs>
-
-        {/* Modals */}
-        <UserManagementModal 
-          isOpen={showUserModal} 
-          onClose={() => setShowUserModal(false)} 
-        />
-        
-        <ThemeCustomizer 
-          isOpen={showThemeCustomizer} 
-          onClose={() => setShowThemeCustomizer(false)} 
-        />
-      </div>
+        <TabsContent value="legend" className="space-y-4">
+          <ArchitectureLegend currentView={selectedView} />
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }
