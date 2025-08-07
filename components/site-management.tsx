@@ -1,373 +1,333 @@
 'use client'
 
 import { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table'
-import { 
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { Plus, Search, Download, Edit, Trash2, Eye, Building, MapPin, Users, Calendar, CheckCircle, Clock, AlertTriangle, XCircle, Filter } from 'lucide-react'
-import AddSiteModal from '@/components/add-site-modal'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Plus, Search, Filter, FileText, Edit, Trash2, Eye, MapPin, Building, Users, Network, CheckCircle, Clock, AlertTriangle, XCircle } from 'lucide-react'
 
 interface Site {
   id: string
   name: string
-  region: string
-  country: string
-  priority: 'High' | 'Medium' | 'Low'
-  phase: string
+  location: string
+  type: string
+  status: 'planning' | 'in-progress' | 'completed' | 'on-hold'
+  devices: number
   users: number
+  progress: number
   projectManager: string
-  technicalOwners: string[]
-  status: 'Planned' | 'In Progress' | 'Complete' | 'Delayed'
-  completionPercent: number
-  wiredVendors: string[]
-  wirelessVendors: string[]
-  deviceTypes: string[]
-  radsec: string
-  plannedStart: string
-  plannedEnd: string
-  notes: string
+  technicalOwner: string
+  deploymentDate: string
+  priority: 'high' | 'medium' | 'low'
 }
 
 interface SiteManagementProps {
   onSiteSelect: (siteId: string) => void
 }
 
-const sampleSites: Site[] = [
-  {
-    id: 'ABM-HQ001',
-    name: 'ABM Global Headquarters',
-    region: 'North America',
-    country: 'USA',
-    priority: 'High',
-    phase: '1',
-    users: 2500,
-    projectManager: 'Alex Rivera',
-    technicalOwners: ['John Smith', 'Mark Wilson'],
-    status: 'In Progress',
-    completionPercent: 35,
-    wiredVendors: ['Cisco', 'Juniper'],
-    wirelessVendors: ['Cisco'],
-    deviceTypes: ['Windows', 'Apple', 'Mobile', 'IoT'],
-    radsec: 'Native',
-    plannedStart: '2025-08-01',
-    plannedEnd: '2025-08-15',
-    notes: 'Executive network needs priority handling. Board room has custom AV equipment requiring special considerations for IoT device authentication.'
-  },
-  {
-    id: 'ABM-DC002',
-    name: 'Primary Data Center',
-    region: 'North America',
-    country: 'USA',
-    priority: 'High',
-    phase: '1',
-    users: 150,
-    projectManager: 'Marcus Chen',
-    technicalOwners: ['Emily Jones', 'Paul Davis'],
-    status: 'In Progress',
-    completionPercent: 65,
-    wiredVendors: ['Cisco'],
-    wirelessVendors: ['Aruba'],
-    deviceTypes: ['Windows', 'IoT'],
-    radsec: 'LRAD',
-    plannedStart: '2025-08-05',
-    plannedEnd: '2025-08-12',
-    notes: '24/7 operation requires careful change windows. Critical infrastructure with redundant authentication paths.'
-  },
-  {
-    id: 'ABM-EUR003',
-    name: 'European HQ',
-    region: 'EMEA',
-    country: 'Germany',
-    priority: 'Medium',
-    phase: '2',
-    users: 1200,
-    projectManager: 'Sofia Linden',
-    technicalOwners: ['Sarah Thompson'],
-    status: 'Planned',
-    completionPercent: 0,
-    wiredVendors: ['HPE'],
-    wirelessVendors: ['Cisco'],
-    deviceTypes: ['Windows', 'Apple', 'Mobile'],
-    radsec: 'Native',
-    plannedStart: '2025-09-01',
-    plannedEnd: '2025-09-15',
-    notes: 'GDPR compliance required. Multi-language support needed for user onboarding portal.'
-  },
-  {
-    id: 'ABM-MFG006',
-    name: 'Manufacturing Plant',
-    region: 'LATAM',
-    country: 'Mexico',
-    priority: 'High',
-    phase: '1',
-    users: 450,
-    projectManager: 'Maria Rodriguez',
-    technicalOwners: ['Carlos Mendez', 'Diego Ruiz'],
-    status: 'Complete',
-    completionPercent: 100,
-    wiredVendors: ['Extreme'],
-    wirelessVendors: ['Extreme'],
-    deviceTypes: ['Windows', 'IoT'],
-    radsec: 'Native',
-    plannedStart: '2025-08-15',
-    plannedEnd: '2025-08-30',
-    notes: 'Manufacturing floor required special considerations for IoT devices. Implemented using certificates for device authentication. Project completed ahead of schedule.'
-  },
-  {
-    id: 'ABM-RD007',
-    name: 'Research & Development',
-    region: 'North America',
-    country: 'USA',
-    priority: 'High',
-    phase: '1',
-    users: 320,
-    projectManager: 'James Wilson',
-    technicalOwners: ['Jennifer Lee', 'Paul Davis'],
-    status: 'In Progress',
-    completionPercent: 55,
-    wiredVendors: ['Cisco', 'Aruba'],
-    wirelessVendors: ['Cisco', 'Aruba'],
-    deviceTypes: ['Windows', 'Apple', 'Linux', 'IoT'],
-    radsec: 'LRAD',
-    plannedStart: '2025-08-03',
-    plannedEnd: '2025-08-20',
-    notes: 'Specialized lab equipment needs custom authentication. Research environment requires flexible access policies.'
-  }
-]
-
 export default function SiteManagement({ onSiteSelect }: SiteManagementProps) {
-  const [sites, setSites] = useState<Site[]>(sampleSites)
+  const [sites, setSites] = useState<Site[]>([
+    {
+      id: '1',
+      name: 'Corporate Headquarters',
+      location: 'New York, NY',
+      type: 'Corporate Office',
+      status: 'completed',
+      devices: 450,
+      users: 200,
+      progress: 100,
+      projectManager: 'John Smith',
+      technicalOwner: 'Sarah Johnson',
+      deploymentDate: '2024-01-15',
+      priority: 'high'
+    },
+    {
+      id: '2',
+      name: 'West Coast Branch',
+      location: 'San Francisco, CA',
+      type: 'Branch Office',
+      status: 'in-progress',
+      devices: 180,
+      users: 85,
+      progress: 65,
+      projectManager: 'Mike Davis',
+      technicalOwner: 'Lisa Chen',
+      deploymentDate: '2024-02-28',
+      priority: 'high'
+    },
+    {
+      id: '3',
+      name: 'Manufacturing Plant A',
+      location: 'Detroit, MI',
+      type: 'Manufacturing',
+      status: 'planning',
+      devices: 320,
+      users: 150,
+      progress: 25,
+      projectManager: 'Robert Wilson',
+      technicalOwner: 'David Brown',
+      deploymentDate: '2024-03-15',
+      priority: 'medium'
+    },
+    {
+      id: '4',
+      name: 'Distribution Center',
+      location: 'Chicago, IL',
+      type: 'Warehouse',
+      status: 'on-hold',
+      devices: 95,
+      users: 45,
+      progress: 10,
+      projectManager: 'Jennifer Lee',
+      technicalOwner: 'Mark Taylor',
+      deploymentDate: '2024-04-01',
+      priority: 'low'
+    }
+  ])
+
   const [searchTerm, setSearchTerm] = useState('')
-  const [regionFilter, setRegionFilter] = useState('all')
-  const [priorityFilter, setPriorityFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
-  const [selectedSite, setSelectedSite] = useState<Site | null>(null)
-  const [showAddModal, setShowAddModal] = useState(false)
+  const [showAddSite, setShowAddSite] = useState(false)
+  const [editingSite, setEditingSite] = useState<Site | null>(null)
 
   const filteredSites = sites.filter(site => {
     const matchesSearch = site.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         site.id.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesRegion = regionFilter === 'all' || site.region === regionFilter
-    const matchesPriority = priorityFilter === 'all' || site.priority === priorityFilter
+                         site.location.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = statusFilter === 'all' || site.status === statusFilter
-
-    return matchesSearch && matchesRegion && matchesPriority && matchesStatus
+    return matchesSearch && matchesStatus
   })
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'Complete':
+      case 'completed':
         return <CheckCircle className="h-4 w-4 text-green-600" />
-      case 'In Progress':
+      case 'in-progress':
         return <Clock className="h-4 w-4 text-blue-600" />
-      case 'Delayed':
-        return <AlertTriangle className="h-4 w-4 text-red-600" />
-      case 'Planned':
-        return <XCircle className="h-4 w-4 text-gray-600" />
+      case 'planning':
+        return <AlertTriangle className="h-4 w-4 text-yellow-600" />
+      case 'on-hold':
+        return <XCircle className="h-4 w-4 text-red-600" />
       default:
         return null
     }
   }
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'High':
-        return 'destructive'
-      case 'Medium':
-        return 'default'
-      case 'Low':
-        return 'secondary'
-      default:
-        return 'outline'
+  const getStatusBadge = (status: string) => {
+    const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
+      completed: 'default',
+      'in-progress': 'secondary',
+      planning: 'outline',
+      'on-hold': 'destructive'
     }
+    return (
+      <Badge variant={variants[status] || 'outline'} className="flex items-center space-x-1">
+        {getStatusIcon(status)}
+        <span className="capitalize">{status.replace('-', ' ')}</span>
+      </Badge>
+    )
   }
 
-  const exportToCSV = () => {
-    const headers = [
-      'Site ID', 'Site Name', 'Region', 'Country', 'Priority', 'Phase', 
-      'Users', 'Project Manager', 'Technical Owners', 'Status', 
-      'Completion %', 'RADSEC', 'Notes'
-    ]
-    
-    const csvContent = [
-      headers.join(','),
-      ...filteredSites.map(site => [
-        site.id,
-        `"${site.name}"`,
-        site.region,
-        site.country,
-        site.priority,
-        site.phase,
-        site.users,
-        `"${site.projectManager}"`,
-        `"${site.technicalOwners.join(', ')}"`,
-        site.status,
-        site.completionPercent,
-        site.radsec,
-        `"${site.notes}"`
-      ].join(','))
-    ].join('\n')
-
-    const blob = new Blob([csvContent], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `portnox-sites-${Date.now()}.csv`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
+  const getPriorityBadge = (priority: string) => {
+    const colors: Record<string, string> = {
+      high: 'bg-red-100 text-red-800',
+      medium: 'bg-yellow-100 text-yellow-800',
+      low: 'bg-green-100 text-green-800'
+    }
+    return (
+      <Badge className={colors[priority] || 'bg-gray-100 text-gray-800'}>
+        {priority.toUpperCase()}
+      </Badge>
+    )
   }
 
   const handleAddSite = (newSite: Omit<Site, 'id'>) => {
     const site: Site = {
       ...newSite,
-      id: `ABM-${Date.now().toString().slice(-6).toUpperCase()}`
+      id: (sites.length + 1).toString()
     }
-    setSites(prev => [...prev, site])
+    setSites([...sites, site])
+    setShowAddSite(false)
+  }
+
+  const handleEditSite = (updatedSite: Site) => {
+    setSites(sites.map(site => site.id === updatedSite.id ? updatedSite : site))
+    setEditingSite(null)
   }
 
   const handleDeleteSite = (siteId: string) => {
-    setSites(prev => prev.filter(site => site.id !== siteId))
+    setSites(sites.filter(site => site.id !== siteId))
   }
 
-  const handleViewSite = (site: Site) => {
-    setSelectedSite(site)
-    onSiteSelect(site.id)
+  const handleExportSites = () => {
+    const csvContent = [
+      ['Name', 'Location', 'Type', 'Status', 'Devices', 'Users', 'Progress', 'Project Manager', 'Technical Owner', 'Deployment Date', 'Priority'],
+      ...sites.map(site => [
+        site.name,
+        site.location,
+        site.type,
+        site.status,
+        site.devices.toString(),
+        site.users.toString(),
+        `${site.progress}%`,
+        site.projectManager,
+        site.technicalOwner,
+        site.deploymentDate,
+        site.priority
+      ])
+    ].map(row => row.join(',')).join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'sites-export.csv'
+    a.click()
+    window.URL.revokeObjectURL(url)
   }
 
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Building className="h-5 w-5" />
-            <span>Master Site List</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {/* Filters and Controls */}
-          <div className="flex flex-wrap gap-4 items-center mb-6">
-            <div className="flex items-center space-x-2">
-              <Search className="h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search sites..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 w-64"
-              />
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center space-x-2">
+                <Building className="h-5 w-5" />
+                <span>Master Site List</span>
+              </CardTitle>
+              <CardDescription>
+                Manage all deployment sites and track rollout progress across your organization
+              </CardDescription>
             </div>
-
-            <Button variant="outline" size="sm">
-              <Filter className="h-4 w-4 mr-2" />
-              Filter
-            </Button>
-
-            <div className="ml-auto flex space-x-2">
-              <Button variant="outline" size="sm" onClick={exportToCSV}>
-                <Download className="h-4 w-4 mr-2" />
+            <div className="flex space-x-2">
+              <Button onClick={handleExportSites} variant="outline">
+                <FileText className="h-4 w-4 mr-2" />
                 Export CSV
               </Button>
-              <Button size="sm" onClick={() => setShowAddModal(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Site
-              </Button>
+              <Dialog open={showAddSite} onOpenChange={setShowAddSite}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Site
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Add New Site</DialogTitle>
+                    <DialogDescription>
+                      Enter the details for the new deployment site
+                    </DialogDescription>
+                  </DialogHeader>
+                  <AddSiteForm onSubmit={handleAddSite} onCancel={() => setShowAddSite(false)} />
+                </DialogContent>
+              </Dialog>
             </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {/* Search and Filter Controls */}
+          <div className="flex space-x-4 mb-6">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search sites by name or location..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-48">
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="planning">Planning</SelectItem>
+                <SelectItem value="in-progress">In Progress</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="on-hold">On Hold</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Sites Table */}
-          <div className="border rounded-lg">
+          <div className="rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Site</TableHead>
-                  <TableHead>Region</TableHead>
-                  <TableHead>Priority</TableHead>
-                  <TableHead>Phase</TableHead>
-                  <TableHead>Users</TableHead>
-                  <TableHead>Project Manager</TableHead>
+                  <TableHead>Site Name</TableHead>
+                  <TableHead>Location</TableHead>
+                  <TableHead>Type</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Priority</TableHead>
+                  <TableHead>Devices</TableHead>
+                  <TableHead>Users</TableHead>
                   <TableHead>Progress</TableHead>
+                  <TableHead>Deployment Date</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredSites.map((site) => (
                   <TableRow key={site.id}>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center space-x-2">
+                        <MapPin className="h-4 w-4 text-gray-400" />
+                        <span>{site.name}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>{site.location}</TableCell>
+                    <TableCell>{site.type}</TableCell>
+                    <TableCell>{getStatusBadge(site.status)}</TableCell>
+                    <TableCell>{getPriorityBadge(site.priority)}</TableCell>
                     <TableCell>
-                      <div>
-                        <div className="font-medium">{site.name}</div>
-                        <div className="text-sm text-muted-foreground">{site.id}</div>
+                      <div className="flex items-center space-x-1">
+                        <Network className="h-4 w-4 text-gray-400" />
+                        <span>{site.devices}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-1">
+                        <Users className="h-4 w-4 text-gray-400" />
+                        <span>{site.users}</span>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-2">
-                        <MapPin className="h-4 w-4 text-muted-foreground" />
-                        <span>{site.region}</span>
-                      </div>
-                      <div className="text-sm text-muted-foreground">{site.country}</div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={getPriorityColor(site.priority)}>
-                        {site.priority}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>Phase {site.phase}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                        <span>{site.users.toLocaleString()}</span>
+                        <div className="w-16 bg-gray-200 rounded-full h-2">
+                          <div
+                            className="bg-blue-600 h-2 rounded-full"
+                            style={{ width: `${site.progress}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-sm">{site.progress}%</span>
                       </div>
                     </TableCell>
-                    <TableCell>{site.projectManager}</TableCell>
+                    <TableCell>{site.deploymentDate}</TableCell>
                     <TableCell>
-                      <div className="flex items-center space-x-2">
-                        {getStatusIcon(site.status)}
-                        <span>{site.status}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-2">
-                        <Progress value={site.completionPercent} className="w-20" />
-                        <span className="text-sm text-muted-foreground">
-                          {site.completionPercent}%
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
+                      <div className="flex space-x-1">
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleViewSite(site)}
+                          onClick={() => onSiteSelect(site.id)}
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditingSite(site)}
+                        >
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="text-destructive"
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => handleDeleteSite(site.id)}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -381,167 +341,326 @@ export default function SiteManagement({ onSiteSelect }: SiteManagementProps) {
           </div>
 
           {filteredSites.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
-              No sites found matching your criteria.
+            <div className="text-center py-8">
+              <Building className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No sites found</h3>
+              <p className="text-gray-600">
+                {searchTerm || statusFilter !== 'all' 
+                  ? 'Try adjusting your search or filter criteria'
+                  : 'Get started by adding your first deployment site'
+                }
+              </p>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Site Details Dialog */}
-      <Dialog open={!!selectedSite} onOpenChange={() => setSelectedSite(null)}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center space-x-2">
-              <Building className="h-5 w-5" />
-              <span>{selectedSite?.name}</span>
-            </DialogTitle>
-            <DialogDescription>
-              Site ID: {selectedSite?.id}
-            </DialogDescription>
-          </DialogHeader>
-          
-          {selectedSite && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="font-semibold mb-2">Basic Information</h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Region:</span>
-                        <span>{selectedSite.region}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Country:</span>
-                        <span>{selectedSite.country}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Priority:</span>
-                        <Badge variant={getPriorityColor(selectedSite.priority)}>
-                          {selectedSite.priority}
-                        </Badge>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Phase:</span>
-                        <span>Phase {selectedSite.phase}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Users:</span>
-                        <span>{selectedSite.users.toLocaleString()}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 className="font-semibold mb-2">Project Team</h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Project Manager:</span>
-                        <span>{selectedSite.projectManager}</span>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Technical Owners:</span>
-                        <div className="mt-1 flex flex-wrap gap-1">
-                          {selectedSite.technicalOwners.map((owner, index) => (
-                            <Badge key={index} variant="outline" className="text-xs">
-                              {owner}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="font-semibold mb-2">Timeline</h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Planned Start:</span>
-                        <span>{selectedSite.plannedStart}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Planned End:</span>
-                        <span>{selectedSite.plannedEnd}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Status:</span>
-                        <div className="flex items-center space-x-2">
-                          {getStatusIcon(selectedSite.status)}
-                          <span>{selectedSite.status}</span>
-                        </div>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Progress:</span>
-                        <span>{selectedSite.completionPercent}%</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 className="font-semibold mb-2">Technical Details</h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">RADSEC:</span>
-                        <span>{selectedSite.radsec}</span>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Wired Vendors:</span>
-                        <div className="mt-1 flex flex-wrap gap-1">
-                          {selectedSite.wiredVendors.map((vendor, index) => (
-                            <Badge key={index} variant="secondary" className="text-xs">
-                              {vendor}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Wireless Vendors:</span>
-                        <div className="mt-1 flex flex-wrap gap-1">
-                          {selectedSite.wirelessVendors.map((vendor, index) => (
-                            <Badge key={index} variant="secondary" className="text-xs">
-                              {vendor}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="font-semibold mb-2">Device Types</h4>
-                <div className="flex flex-wrap gap-2">
-                  {selectedSite.deviceTypes.map((type, index) => (
-                    <Badge key={index} variant="outline">
-                      {type}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-
-              {selectedSite.notes && (
-                <div>
-                  <h4 className="font-semibold mb-2">Notes</h4>
-                  <p className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">
-                    {selectedSite.notes}
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Add Site Modal */}
-      <AddSiteModal 
-        open={showAddModal} 
-        onOpenChange={setShowAddModal}
-        onAddSite={handleAddSite}
-      />
+      {/* Edit Site Dialog */}
+      {editingSite && (
+        <Dialog open={!!editingSite} onOpenChange={() => setEditingSite(null)}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Edit Site</DialogTitle>
+              <DialogDescription>
+                Update the site information and deployment details
+              </DialogDescription>
+            </DialogHeader>
+            <EditSiteForm 
+              site={editingSite} 
+              onSubmit={handleEditSite} 
+              onCancel={() => setEditingSite(null)} 
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
+  )
+}
+
+// Add Site Form Component
+function AddSiteForm({ onSubmit, onCancel }: { onSubmit: (site: Omit<Site, 'id'>) => void, onCancel: () => void }) {
+  const [formData, setFormData] = useState({
+    name: '',
+    location: '',
+    type: '',
+    status: 'planning' as const,
+    devices: 0,
+    users: 0,
+    progress: 0,
+    projectManager: '',
+    technicalOwner: '',
+    deploymentDate: '',
+    priority: 'medium' as const
+  })
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    onSubmit(formData)
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Site Name</label>
+          <Input
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Location</label>
+          <Input
+            value={formData.location}
+            onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+            required
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Site Type</label>
+          <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select site type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Corporate Office">Corporate Office</SelectItem>
+              <SelectItem value="Branch Office">Branch Office</SelectItem>
+              <SelectItem value="Manufacturing">Manufacturing</SelectItem>
+              <SelectItem value="Warehouse">Warehouse</SelectItem>
+              <SelectItem value="Retail">Retail</SelectItem>
+              <SelectItem value="Data Center">Data Center</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Priority</label>
+          <Select value={formData.priority} onValueChange={(value: 'high' | 'medium' | 'low') => setFormData({ ...formData, priority: value })}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="high">High</SelectItem>
+              <SelectItem value="medium">Medium</SelectItem>
+              <SelectItem value="low">Low</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Expected Devices</label>
+          <Input
+            type="number"
+            value={formData.devices}
+            onChange={(e) => setFormData({ ...formData, devices: parseInt(e.target.value) || 0 })}
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Expected Users</label>
+          <Input
+            type="number"
+            value={formData.users}
+            onChange={(e) => setFormData({ ...formData, users: parseInt(e.target.value) || 0 })}
+            required
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Project Manager</label>
+          <Input
+            value={formData.projectManager}
+            onChange={(e) => setFormData({ ...formData, projectManager: e.target.value })}
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Technical Owner</label>
+          <Input
+            value={formData.technicalOwner}
+            onChange={(e) => setFormData({ ...formData, technicalOwner: e.target.value })}
+            required
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Target Deployment Date</label>
+        <Input
+          type="date"
+          value={formData.deploymentDate}
+          onChange={(e) => setFormData({ ...formData, deploymentDate: e.target.value })}
+          required
+        />
+      </div>
+
+      <div className="flex justify-end space-x-2 pt-4">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit">
+          Add Site
+        </Button>
+      </div>
+    </form>
+  )
+}
+
+// Edit Site Form Component
+function EditSiteForm({ site, onSubmit, onCancel }: { site: Site, onSubmit: (site: Site) => void, onCancel: () => void }) {
+  const [formData, setFormData] = useState(site)
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    onSubmit(formData)
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Site Name</label>
+          <Input
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Location</label>
+          <Input
+            value={formData.location}
+            onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+            required
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Site Type</label>
+          <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select site type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Corporate Office">Corporate Office</SelectItem>
+              <SelectItem value="Branch Office">Branch Office</SelectItem>
+              <SelectItem value="Manufacturing">Manufacturing</SelectItem>
+              <SelectItem value="Warehouse">Warehouse</SelectItem>
+              <SelectItem value="Retail">Retail</SelectItem>
+              <SelectItem value="Data Center">Data Center</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Status</label>
+          <Select value={formData.status} onValueChange={(value: 'planning' | 'in-progress' | 'completed' | 'on-hold') => setFormData({ ...formData, status: value })}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="planning">Planning</SelectItem>
+              <SelectItem value="in-progress">In Progress</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="on-hold">On Hold</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Priority</label>
+          <Select value={formData.priority} onValueChange={(value: 'high' | 'medium' | 'low') => setFormData({ ...formData, priority: value })}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="high">High</SelectItem>
+              <SelectItem value="medium">Medium</SelectItem>
+              <SelectItem value="low">Low</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Progress (%)</label>
+          <Input
+            type="number"
+            min="0"
+            max="100"
+            value={formData.progress}
+            onChange={(e) => setFormData({ ...formData, progress: parseInt(e.target.value) || 0 })}
+            required
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Devices</label>
+          <Input
+            type="number"
+            value={formData.devices}
+            onChange={(e) => setFormData({ ...formData, devices: parseInt(e.target.value) || 0 })}
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Users</label>
+          <Input
+            type="number"
+            value={formData.users}
+            onChange={(e) => setFormData({ ...formData, users: parseInt(e.target.value) || 0 })}
+            required
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Project Manager</label>
+          <Input
+            value={formData.projectManager}
+            onChange={(e) => setFormData({ ...formData, projectManager: e.target.value })}
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Technical Owner</label>
+          <Input
+            value={formData.technicalOwner}
+            onChange={(e) => setFormData({ ...formData, technicalOwner: e.target.value })}
+            required
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Deployment Date</label>
+        <Input
+          type="date"
+          value={formData.deploymentDate}
+          onChange={(e) => setFormData({ ...formData, deploymentDate: e.target.value })}
+          required
+        />
+      </div>
+
+      <div className="flex justify-end space-x-2 pt-4">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit">
+          Update Site
+        </Button>
+      </div>
+    </form>
   )
 }

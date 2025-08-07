@@ -18,6 +18,11 @@ export default function ABMDesigner() {
   const [showUserModal, setShowUserModal] = useState(false)
   const [showThemeCustomizer, setShowThemeCustomizer] = useState(false)
   const [customerLogo, setCustomerLogo] = useState('https://servicecenter.uk.abm.com/Portal/assets/images/logo-light.png')
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -28,6 +33,10 @@ export default function ABMDesigner() {
       }
       reader.readAsDataURL(file)
     }
+  }
+
+  if (!mounted) {
+    return null
   }
 
   return (
