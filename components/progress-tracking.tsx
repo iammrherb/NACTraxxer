@@ -1,274 +1,306 @@
 'use client'
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { useState, useEffect } from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { TrendingUp, CheckCircle, Clock, AlertTriangle, Users, Download, FileText, BarChart } from 'lucide-react'
+import { BarChart3, TrendingUp, Clock, CheckCircle, AlertTriangle, XCircle, Users, Building, Calendar, Target } from 'lucide-react'
+
+interface ProgressStats {
+  totalSites: number
+  completedSites: number
+  inProgressSites: number
+  plannedSites: number
+  delayedSites: number
+  totalUsers: number
+  overallProgress: number
+}
+
+interface SiteProgress {
+  id: string
+  name: string
+  status: string
+  progress: number
+  phase: string
+  users: number
+}
+
+const sampleStats: ProgressStats = {
+  totalSites: 12,
+  completedSites: 3,
+  inProgressSites: 4,
+  plannedSites: 4,
+  delayedSites: 1,
+  totalUsers: 9550,
+  overallProgress: 35
+}
+
+const sampleSiteProgress: SiteProgress[] = [
+  { id: 'ABM-HQ001', name: 'ABM Global Headquarters', status: 'In Progress', progress: 35, phase: '1', users: 2500 },
+  { id: 'ABM-DC002', name: 'Primary Data Center', status: 'In Progress', progress: 65, phase: '1', users: 150 },
+  { id: 'ABM-EUR003', name: 'European HQ', status: 'Planned', progress: 0, phase: '2', users: 1200 },
+  { id: 'ABM-MFG006', name: 'Manufacturing Plant', status: 'Complete', progress: 100, phase: '1', users: 450 },
+  { id: 'ABM-EMEA010', name: 'London Office', status: 'Complete', progress: 100, phase: '1', users: 620 },
+  { id: 'ABM-DC012', name: 'Secondary Data Center', status: 'Complete', progress: 100, phase: '1', users: 120 }
+]
 
 export default function ProgressTracking() {
-  // Sample data - in a real app this would come from an API
-  const stats = {
-    totalSites: 12,
-    completedSites: 3,
-    inProgressSites: 4,
-    plannedSites: 5,
-    delayedSites: 0,
-    totalUsers: 9550
-  }
+  const [stats, setStats] = useState<ProgressStats>(sampleStats)
+  const [siteProgress, setSiteProgress] = useState<SiteProgress[]>(sampleSiteProgress)
+  const [animatedProgress, setAnimatedProgress] = useState(0)
 
-  const overallProgress = Math.round((stats.completedSites / stats.totalSites) * 100)
-
-  const siteProgress = [
-    { name: 'ABM Global Headquarters', status: 'In Progress', progress: 35, priority: 'High' },
-    { name: 'Primary Data Center', status: 'In Progress', progress: 65, priority: 'High' },
-    { name: 'Manufacturing Plant', status: 'Complete', progress: 100, priority: 'High' },
-    { name: 'London Office', status: 'Complete', progress: 100, priority: 'High' },
-    { name: 'Secondary Data Center', status: 'Complete', progress: 100, priority: 'High' },
-    { name: 'European HQ', status: 'Planned', progress: 0, priority: 'Medium' },
-    { name: 'APAC Regional Office', status: 'Planned', progress: 0, priority: 'Medium' },
-    { name: 'Research & Development', status: 'In Progress', progress: 55, priority: 'High' },
-    { name: 'Flagship Retail Store', status: 'Planned', progress: 0, priority: 'Medium' },
-    { name: 'Paris Office', status: 'Planned', progress: 0, priority: 'Medium' },
-    { name: 'Tokyo Office', status: 'Delayed', progress: 0, priority: 'Medium' },
-    { name: 'Satellite Office', status: 'Planned', progress: 0, priority: 'Low' }
-  ]
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Complete': return 'text-green-600'
-      case 'In Progress': return 'text-blue-600'
-      case 'Planned': return 'text-gray-600'
-      case 'Delayed': return 'text-red-600'
-      default: return 'text-gray-600'
-    }
-  }
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setAnimatedProgress(stats.overallProgress)
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [stats.overallProgress])
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'Complete': return <CheckCircle className="h-4 w-4 text-green-600" />
-      case 'In Progress': return <Clock className="h-4 w-4 text-blue-600" />
-      case 'Planned': return <Clock className="h-4 w-4 text-gray-600" />
-      case 'Delayed': return <AlertTriangle className="h-4 w-4 text-red-600" />
-      default: return <Clock className="h-4 w-4 text-gray-600" />
-    }
-  }
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'High': return 'bg-red-100 text-red-800 border-red-200'
-      case 'Medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200'
-      case 'Low': return 'bg-green-100 text-green-800 border-green-200'
-      default: return 'bg-gray-100 text-gray-800 border-gray-200'
+      case 'Complete':
+        return <CheckCircle className="h-4 w-4 text-green-600" />
+      case 'In Progress':
+        return <Clock className="h-4 w-4 text-blue-600" />
+      case 'Delayed':
+        return <AlertTriangle className="h-4 w-4 text-red-600" />
+      case 'Planned':
+        return <XCircle className="h-4 w-4 text-gray-600" />
+      default:
+        return null
     }
   }
 
   const getProgressColor = (status: string) => {
     switch (status) {
-      case 'Complete': return 'bg-green-600'
-      case 'In Progress': return 'bg-blue-600'
-      case 'Planned': return 'bg-gray-400'
-      case 'Delayed': return 'bg-red-600'
-      default: return 'bg-gray-400'
+      case 'Complete':
+        return 'bg-green-500'
+      case 'In Progress':
+        return 'bg-blue-500'
+      case 'Delayed':
+        return 'bg-red-500'
+      case 'Planned':
+        return 'bg-gray-400'
+      default:
+        return 'bg-gray-400'
     }
-  }
-
-  const exportProgressReport = () => {
-    const reportData = {
-      generatedDate: new Date().toISOString(),
-      overallStats: stats,
-      overallProgress: overallProgress,
-      siteDetails: siteProgress
-    }
-
-    const csvContent = [
-      ['Site Name', 'Status', 'Progress %', 'Priority'],
-      ...siteProgress.map(site => [
-        `"${site.name}"`,
-        site.status,
-        site.progress.toString(),
-        site.priority
-      ])
-    ].map(row => row.join(',')).join('\n')
-
-    const blob = new Blob([csvContent], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `portnox-progress-report-${Date.now()}.csv`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
-  }
-
-  const exportDetailedReport = () => {
-    const detailedReport = `
-PORTNOX NAC ROLLOUT PROGRESS REPORT
-Generated: ${new Date().toLocaleDateString()}
-
-=== OVERALL STATISTICS ===
-Total Sites: ${stats.totalSites}
-Completed Sites: ${stats.completedSites}
-In Progress Sites: ${stats.inProgressSites}
-Planned Sites: ${stats.plannedSites}
-Delayed Sites: ${stats.delayedSites}
-Total Users: ${stats.totalUsers.toLocaleString()}
-Overall Progress: ${overallProgress}%
-
-=== SITE BREAKDOWN ===
-${siteProgress.map(site => 
-  `${site.name}
-  Status: ${site.status}
-  Progress: ${site.progress}%
-  Priority: ${site.priority}
-  `
-).join('\n')}
-
-=== SUMMARY ===
-The NAC rollout is ${overallProgress}% complete with ${stats.completedSites} sites fully deployed.
-${stats.inProgressSites} sites are currently in progress.
-${stats.plannedSites} sites are scheduled for future deployment.
-${stats.delayedSites > 0 ? `${stats.delayedSites} sites are experiencing delays.` : 'No sites are currently delayed.'}
-    `
-
-    const blob = new Blob([detailedReport], { type: 'text/plain' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `portnox-detailed-report-${Date.now()}.txt`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
   }
 
   return (
     <div className="space-y-6">
+      {/* Overview Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Sites</CardTitle>
+            <Building className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalSites}</div>
+            <p className="text-xs text-muted-foreground">
+              Across all regions
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Completed Sites</CardTitle>
+            <CheckCircle className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{stats.completedSites}</div>
+            <p className="text-xs text-muted-foreground">
+              {Math.round((stats.completedSites / stats.totalSites) * 100)}% of total
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">In Progress</CardTitle>
+            <Clock className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">{stats.inProgressSites}</div>
+            <p className="text-xs text-muted-foreground">
+              Active deployments
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalUsers.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">
+              Across all sites
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Overall Progress */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center space-x-2">
-                <TrendingUp className="h-6 w-6 text-blue-600" />
-                <span>Overall NAC & RADIUS Rollout Progress</span>
-              </CardTitle>
-              <CardDescription>
-                Track deployment progress across all ABM Industries sites
-              </CardDescription>
-            </div>
-            <div className="flex space-x-2">
-              <Button variant="outline" size="sm" onClick={exportProgressReport}>
-                <BarChart className="h-4 w-4 mr-2" />
-                Export CSV
-              </Button>
-              <Button variant="outline" size="sm" onClick={exportDetailedReport}>
-                <FileText className="h-4 w-4 mr-2" />
-                Detailed Report
-              </Button>
-            </div>
-          </div>
+          <CardTitle className="flex items-center space-x-2">
+            <BarChart3 className="h-5 w-5" />
+            <span>Overall Project Progress</span>
+          </CardTitle>
+          <CardDescription>
+            Total completion across all deployment sites
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          {/* Summary Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div className="bg-green-50 dark:bg-green-900/20 p-6 rounded-lg border border-green-200 dark:border-green-800">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-green-600 dark:text-green-400">Complete Sites</p>
-                  <p className="text-3xl font-bold text-green-900 dark:text-green-100">{stats.completedSites}</p>
-                  <p className="text-sm text-green-600 dark:text-green-400">of {stats.totalSites} total sites</p>
-                </div>
-                <CheckCircle className="h-12 w-12 text-green-600" />
-              </div>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">Project Completion</span>
+              <span className="text-2xl font-bold">{animatedProgress}%</span>
             </div>
-
-            <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-lg border border-blue-200 dark:border-blue-800">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-blue-600 dark:text-blue-400">In Progress</p>
-                  <p className="text-3xl font-bold text-blue-900 dark:text-blue-100">{stats.inProgressSites}</p>
-                  <p className="text-sm text-blue-600 dark:text-blue-400">sites being deployed</p>
-                </div>
-                <Clock className="h-12 w-12 text-blue-600" />
+            <Progress value={animatedProgress} className="h-3" />
+            <div className="grid grid-cols-4 gap-4 text-sm">
+              <div className="text-center">
+                <div className="text-lg font-semibold text-green-600">{stats.completedSites}</div>
+                <div className="text-muted-foreground">Complete</div>
               </div>
-            </div>
-
-            <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Planned</p>
-                  <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{stats.plannedSites}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">sites scheduled</p>
-                </div>
-                <Clock className="h-12 w-12 text-gray-600" />
+              <div className="text-center">
+                <div className="text-lg font-semibold text-blue-600">{stats.inProgressSites}</div>
+                <div className="text-muted-foreground">In Progress</div>
               </div>
-            </div>
-
-            <div className="bg-purple-50 dark:bg-purple-900/20 p-6 rounded-lg border border-purple-200 dark:border-purple-800">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-purple-600 dark:text-purple-400">Total Users</p>
-                  <p className="text-3xl font-bold text-purple-900 dark:text-purple-100">{stats.totalUsers.toLocaleString()}</p>
-                  <p className="text-sm text-purple-600 dark:text-purple-400">across all sites</p>
-                </div>
-                <Users className="h-12 w-12 text-purple-600" />
+              <div className="text-center">
+                <div className="text-lg font-semibold text-gray-600">{stats.plannedSites}</div>
+                <div className="text-muted-foreground">Planned</div>
+              </div>
+              <div className="text-center">
+                <div className="text-lg font-semibold text-red-600">{stats.delayedSites}</div>
+                <div className="text-muted-foreground">Delayed</div>
               </div>
             </div>
           </div>
+        </CardContent>
+      </Card>
 
-          {/* Overall Progress */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Total Project Completion</h3>
-              <span className="text-2xl font-bold text-blue-600">{overallProgress}%</span>
-            </div>
-            <Progress value={overallProgress} className="h-4" />
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-              {stats.completedSites} of {stats.totalSites} sites completed
-            </p>
-          </div>
-
-          {/* Site Progress List */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Site Completion Status</h3>
-            <div className="space-y-4">
-              {siteProgress.map((site, index) => (
-                <div key={index} className="flex items-center space-x-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <div className="flex-shrink-0">
+      {/* Site Progress Details */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Target className="h-5 w-5" />
+            <span>Site Progress Details</span>
+          </CardTitle>
+          <CardDescription>
+            Individual site completion status and progress tracking
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {siteProgress.map((site) => (
+              <div key={site.id} className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
                     {getStatusIcon(site.status)}
+                    <div>
+                      <div className="font-medium">{site.name}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {site.id} • Phase {site.phase} • {site.users.toLocaleString()} users
+                      </div>
+                    </div>
                   </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium text-gray-900 dark:text-gray-100 truncate">
-                        {site.name}
-                      </h4>
-                      <div className="flex items-center space-x-2">
-                        <Badge className={getPriorityColor(site.priority)}>
-                          {site.priority}
-                        </Badge>
-                        <span className={`text-sm font-medium ${getStatusColor(site.status)}`}>
-                          {site.status}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center space-x-3">
-                      <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                        <div 
-                          className={`h-2 rounded-full transition-all duration-300 ${getProgressColor(site.status)}`}
-                          style={{ width: `${site.progress}%` }}
-                        />
-                      </div>
-                      <span className="text-sm font-medium text-gray-600 dark:text-gray-400 min-w-[40px]">
-                        {site.progress}%
-                      </span>
-                    </div>
+                  <div className="flex items-center space-x-3">
+                    <Badge variant={site.status === 'Complete' ? 'default' : 'secondary'}>
+                      {site.status}
+                    </Badge>
+                    <span className="text-sm font-medium w-12 text-right">
+                      {site.progress}%
+                    </span>
                   </div>
                 </div>
-              ))}
+                <Progress 
+                  value={site.progress} 
+                  className={`h-2 ${getProgressColor(site.status)}`}
+                />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Phase Breakdown */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Calendar className="h-5 w-5" />
+              <span>Phase Breakdown</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span>Phase 1 (Critical Sites)</span>
+                <div className="flex items-center space-x-2">
+                  <Progress value={75} className="w-20 h-2" />
+                  <span className="text-sm">6/8 sites</span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Phase 2 (Regional Offices)</span>
+                <div className="flex items-center space-x-2">
+                  <Progress value={25} className="w-20 h-2" />
+                  <span className="text-sm">1/4 sites</span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Phase 3 (Branch Offices)</span>
+                <div className="flex items-center space-x-2">
+                  <Progress value={0} className="w-20 h-2" />
+                  <span className="text-sm">0/3 sites</span>
+                </div>
+              </div>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <TrendingUp className="h-5 w-5" />
+              <span>Key Metrics</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Average Site Completion</span>
+                <span className="font-semibold">42%</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Sites On Schedule</span>
+                <span className="font-semibold text-green-600">91%</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Users Deployed</span>
+                <span className="font-semibold">4,240</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Estimated Completion</span>
+                <span className="font-semibold">Q2 2025</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Rollout Progress */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Rollout Progress</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-12 text-muted-foreground">
+            Progress tracking functionality will be implemented here
           </div>
         </CardContent>
       </Card>
