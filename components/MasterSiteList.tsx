@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -34,7 +34,7 @@ export default function MasterSiteList({ onSiteSelect }: MasterSiteListProps) {
   const [priorityFilter, setPriorityFilter] = useState('')
 
   // Sample data - in a real app this would come from an API
-  const [sites] = useState<Site[]>([
+  const [sites, setSites] = useState<Site[]>([
     {
       id: 'ABM-HQ001',
       name: 'ABM Global Headquarters',
@@ -139,17 +139,10 @@ export default function MasterSiteList({ onSiteSelect }: MasterSiteListProps) {
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span>Master Site List</span>
-          <div className="flex space-x-2">
-            <Button onClick={exportCSV} variant="outline" size="sm">
-              <Download className="h-4 w-4 mr-2" />
-              Export CSV
-            </Button>
-            <Button size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Site
-            </Button>
-          </div>
         </CardTitle>
+        <CardDescription>
+          A comprehensive list of all sites in the ABM Industries network.
+        </CardDescription>
       </CardHeader>
       <CardContent>
         {/* Filters */}
