@@ -30,6 +30,11 @@ export default function ABMDesigner() {
     }
   }
 
+  const handleSiteSelect = (siteId: string) => {
+    setSelectedSiteId(siteId)
+    setActiveTab('workbook') // Switch to workbook tab when a site is selected
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -126,7 +131,7 @@ export default function ABMDesigner() {
           </TabsContent>
 
           <TabsContent value="sites">
-            <SiteManagement onSiteSelect={setSelectedSiteId} />
+            <SiteManagement onSiteSelect={handleSiteSelect} />
           </TabsContent>
 
           <TabsContent value="progress">

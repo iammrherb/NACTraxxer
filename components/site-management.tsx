@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/dialog'
 import { Plus, Search, Download, Edit, Trash2, Eye, Building, MapPin, Users, Calendar, CheckCircle, Clock, AlertTriangle, XCircle, Filter } from 'lucide-react'
 import AddSiteModal from '@/components/add-site-modal'
+import EditSiteModal from '@/components/edit-site-modal'
 
 interface Site {
   id: string
@@ -160,7 +161,9 @@ export default function SiteManagement({ onSiteSelect }: SiteManagementProps) {
   const [priorityFilter, setPriorityFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
   const [selectedSite, setSelectedSite] = useState<Site | null>(null)
+  const [editingSite, setEditingSite] = useState<Site | null>(null)
   const [showAddModal, setShowAddModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
 
   const filteredSites = sites.filter(site => {
     const matchesSearch = site.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -245,6 +248,14 @@ export default function SiteManagement({ onSiteSelect }: SiteManagementProps) {
     setSites(prev => [...prev, site])
   }
 
+  const handleEditSite = (updatedSite: Site) => {
+    setSites(prev => prev.map(site => 
+      site.id === updatedSite.id ? updatedSite : site
+    ))
+    setEditingSite(null)
+    setShowEditModal(false)
+  }
+
   const handleDeleteSite = (siteId: string) => {
     setSites(prev => prev.filter(site => site.id !== siteId))
   }
@@ -252,6 +263,11 @@ export default function SiteManagement({ onSiteSelect }: SiteManagementProps) {
   const handleViewSite = (site: Site) => {
     setSelectedSite(site)
     onSiteSelect(site.id)
+  }
+
+  const handleEditClick = (site: Site) => {
+    setEditingSite(site)
+    setShowEditModal(true)
   }
 
   return (
@@ -276,10 +292,43 @@ export default function SiteManagement({ onSiteSelect }: SiteManagementProps) {
               />
             </div>
 
-            <Button variant="outline" size="sm">
-              <Filter className="h-4 w-4 mr-2" />
-              Filter
-            </Button>
+            <Select value={regionFilter} onValueChange={setRegionFilter}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="All Regions" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Regions</SelectItem>
+                <SelectItem value="North America">North America</SelectItem>
+                <SelectItem value="EMEA">EMEA</SelectItem>
+                <SelectItem value="APAC">APAC</SelectItem>
+                <SelectItem value="LATAM">LATAM</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="All Priorities" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Priorities</SelectItem>
+                <SelectItem value="High">High</SelectItem>
+                <SelectItem value="Medium">Medium</SelectItem>
+                <SelectItem value="Low">Low</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="All Statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="Planned">Planned</SelectItem>
+                <SelectItem value="In Progress">In Progress</SelectItem>
+                <SelectItem value="Complete">Complete</SelectItem>
+                <SelectItem value="Delayed">Delayed</SelectItem>
+              </SelectContent>
+            </Select>
 
             <div className="ml-auto flex space-x-2">
               <Button variant="outline" size="sm" onClick={exportToCSV}>
@@ -361,7 +410,11 @@ export default function SiteManagement({ onSiteSelect }: SiteManagementProps) {
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleEditClick(site)}
+                        >
                           <Edit className="h-4 w-4" />
                         </Button>
                         <Button 
@@ -542,6 +595,16 @@ export default function SiteManagement({ onSiteSelect }: SiteManagementProps) {
         onOpenChange={setShowAddModal}
         onAddSite={handleAddSite}
       />
+
+      {/* Edit Site Modal */}
+      {editingSite && (
+        <EditSiteModal
+          open={showEditModal}
+          onOpenChange={setShowEditModal}
+          site={editingSite}
+          onEditSite={handleEditSite}
+        />
+      )}
     </div>
   )
 }
