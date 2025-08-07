@@ -33,9 +33,6 @@ export default function InteractiveDiagram({
     svg.innerHTML = ''
 
     switch (view) {
-      case 'radsec-proxy':
-        drawRADSecProxyDiagram(svg)
-        break
       case 'zero-trust-nac':
         drawZeroTrustDiagram(svg)
         break
@@ -49,60 +46,6 @@ export default function InteractiveDiagram({
         drawDefaultDiagram(svg)
         break
     }
-  }
-
-  const drawRADSecProxyDiagram = (svg: SVGSVGElement) => {
-    const width = 1200
-    const height = 600
-
-    // Site Network (Left side)
-    createRect(svg, 50, 150, 200, 300, '#e8f5e9', '#4caf50', 'ABM Site Network')
-    
-    // Devices
-    createCircle(svg, 100, 200, 25, '#81c784', 'Corporate')
-    createCircle(svg, 100, 250, 25, '#ffb74d', 'BYOD')
-    createCircle(svg, 100, 300, 25, '#f06292', 'IoT')
-    
-    // Network Equipment
-    createRect(svg, 180, 220, 60, 40, '#c8e6c9', '#388e3c', 'Switch/AP')
-
-    // RADSec Proxy (Center)
-    createRect(svg, 350, 250, 150, 100, '#fff3e0', '#ff9800', 'RADSec Proxy')
-    createText(svg, 425, 285, 'TLS Encryption', 12, '#bf360c')
-    createText(svg, 425, 305, 'No Load Balancer', 12, '#bf360c')
-    createText(svg, 425, 325, 'No Redis Cache', 12, '#bf360c')
-
-    // Internet/WAN
-    createEllipse(svg, 600, 300, 80, 40, '#e3f2fd', '#2196f3', 'Internet/WAN')
-
-    // Portnox Cloud (Right side)
-    createRect(svg, 800, 150, 300, 300, '#e3f2fd', '#1976d2', 'Portnox Cloud')
-    
-    // Cloud Services
-    createRect(svg, 820, 200, 120, 50, '#bbdefb', '#1565c0', 'Cloud RADIUS')
-    createRect(svg, 960, 200, 120, 50, '#bbdefb', '#1565c0', 'Policy Engine')
-    createRect(svg, 820, 280, 120, 50, '#bbdefb', '#1565c0', 'Identity Store')
-    createRect(svg, 960, 280, 120, 50, '#bbdefb', '#1565c0', 'PKI Services')
-    createRect(svg, 890, 360, 120, 50, '#bbdefb', '#1565c0', 'Analytics')
-
-    // Connections
-    createArrow(svg, 125, 225, 180, 240, '#4caf50', 2)
-    createArrow(svg, 240, 240, 350, 280, '#ff9800', 3)
-    createArrow(svg, 500, 300, 520, 300, '#2196f3', 3)
-    createArrow(svg, 680, 300, 800, 280, '#1976d2', 3)
-
-    // Labels
-    createText(svg, 150, 180, 'RADIUS', 14, '#388e3c')
-    createText(svg, 290, 220, 'RADIUS', 14, '#f57c00')
-    createText(svg, 560, 280, 'RADSec/TLS', 14, '#1565c0')
-    createText(svg, 740, 260, 'Encrypted', 14, '#1565c0')
-
-    // Benefits box
-    createRect(svg, 50, 500, 500, 80, '#e8f5e9', '#4caf50', '')
-    createText(svg, 60, 520, 'RADSec Proxy Benefits:', 14, '#2e7d32', 'bold')
-    createText(svg, 60, 540, '• Direct cloud connection - no load balancer needed', 12, '#388e3c')
-    createText(svg, 60, 555, '• Real-time authentication - no caching required', 12, '#388e3c')
-    createText(svg, 60, 570, '• Simplified architecture reduces complexity and cost', 12, '#388e3c')
   }
 
   const drawZeroTrustDiagram = (svg: SVGSVGElement) => {

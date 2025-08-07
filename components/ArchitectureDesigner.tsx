@@ -77,13 +77,6 @@ export default function ArchitectureDesigner() {
       category: 'integration'
     },
     {
-      id: 'radsec-proxy',
-      name: 'RADSec Proxy Architecture',
-      description: 'Simplified RADSec proxy deployment without load balancers',
-      icon: <Server className="h-4 w-4" />,
-      category: 'core'
-    },
-    {
       id: 'fortigate-tacacs',
       name: 'FortiGate TACACS+ Integration',
       description: 'Fortinet firewall management with TACACS+ authentication',
@@ -192,32 +185,6 @@ export default function ArchitectureDesigner() {
 
   const getArchitectureInfo = () => {
     switch (selectedView) {
-      case 'radsec-proxy':
-        return {
-          overview: 'The RADSec Proxy architecture provides a simplified, secure connection between on-premises network equipment and Portnox Cloud NAC services. This design eliminates the need for load balancers or Redis cache, providing a direct, encrypted tunnel for RADIUS authentication.',
-          components: [
-            'Site Network Equipment (Switches/APs)',
-            'RADSec Proxy (Local)',
-            'Internet/WAN Connection',
-            'Portnox Cloud RADIUS',
-            'Cloud Policy Engine',
-            'Identity Store Integration'
-          ],
-          security: [
-            'TLS 1.3 encryption for all RADIUS traffic',
-            'Certificate-based proxy authentication',
-            'No intermediate caching or load balancing',
-            'Direct cloud connection for real-time policy updates',
-            'Simplified attack surface'
-          ],
-          deployment: [
-            'Deploy single RADSec proxy per site',
-            'Configure network equipment to use proxy as RADIUS server',
-            'Establish secure TLS connection to Portnox Cloud',
-            'No additional infrastructure components required',
-            'Automatic failover to backup cloud endpoints'
-          ]
-        }
       case 'zero-trust-nac':
         return {
           overview: 'Complete Zero Trust Network Access Control architecture leveraging Portnox Cloud NAC with comprehensive device authentication, policy enforcement, and continuous monitoring.',
@@ -478,21 +445,6 @@ export default function ArchitectureDesigner() {
             
             <TabsContent value="overview" className="space-y-4">
               <p className="text-gray-700">{architectureInfo.overview}</p>
-              {selectedView === 'radsec-proxy' && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <CheckCircle className="h-5 w-5 text-green-600" />
-                    <h4 className="font-semibold text-green-900">Simplified Architecture Benefits</h4>
-                  </div>
-                  <ul className="text-green-700 text-sm space-y-1">
-                    <li>• No load balancer required - direct proxy to cloud connection</li>
-                    <li>• No Redis cache needed - real-time authentication decisions</li>
-                    <li>• Reduced infrastructure complexity and maintenance</li>
-                    <li>• Lower total cost of ownership</li>
-                    <li>• Faster deployment and easier troubleshooting</li>
-                  </ul>
-                </div>
-              )}
             </TabsContent>
             
             <TabsContent value="components" className="space-y-4">
