@@ -12,7 +12,7 @@ export default function Header() {
   const { theme, toggleTheme } = useTheme()
   const [showUserModal, setShowUserModal] = useState(false)
   const [showThemeCustomizer, setShowThemeCustomizer] = useState(false)
-  const [customerLogo, setCustomerLogo] = useState('https://companieslogo.com/img/orig/ABM_BIG-47f1fb05.png?t=1720244490&download=true')
+  const [customerLogo, setCustomerLogo] = useState('https://servicecenter.uk.abm.com/Portal/assets/images/logo-light.png')
 
   const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -34,7 +34,7 @@ export default function Header() {
               <div className="flex items-center space-x-4">
                 <div className="bg-white rounded-lg p-2 shadow-md">
                   <img 
-                    src="https://www.portnox.com/wp-content/uploads/2021/03/Portnotx_Logo_Color-768x193.png" 
+                    src="https://www.portnox.com/wp-content/uploads/2023/06/portnox-logo-white.png" 
                     alt="Portnox Logo" 
                     className="h-10 w-auto filter hover:scale-105 transition-transform"
                   />
