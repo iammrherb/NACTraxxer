@@ -1,13 +1,12 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
+import { List, Book, TrendingUp, Network, type LucideIcon } from 'lucide-react'
 
 interface Tab {
   id: string
   label: string
-  icon: React.ComponentType<{ className?: string }>
-  component: React.ComponentType<any>
+  icon: string
 }
 
 interface TabNavigationProps {
@@ -16,44 +15,38 @@ interface TabNavigationProps {
   onTabChange: (tabId: string) => void
 }
 
+const iconMap: Record<string, LucideIcon> = {
+  list: List,
+  book: Book,
+  'chart-line': TrendingUp,
+  sitemap: Network
+}
+
 export default function TabNavigation({ tabs, activeTab, onTabChange }: TabNavigationProps) {
   return (
-    <div className="flex h-full">
-      {/* Sidebar Navigation */}
-      <div className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 p-4">
-        <nav className="space-y-2">
-          {tabs.map((tab) => {
-            const Icon = tab.icon
-            return (
-              <Button
-                key={tab.id}
-                variant={activeTab === tab.id ? 'default' : 'ghost'}
-                className={cn(
-                  'w-full justify-start',
-                  activeTab === tab.id && 'bg-blue-50 text-blue-700 hover:bg-blue-100'
-                )}
-                onClick={() => onTabChange(tab.id)}
-              >
-                <Icon className="mr-3 h-4 w-4" />
-                {tab.label}
-              </Button>
-            )
-          })}
-        </nav>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 overflow-auto">
-        <div className="p-6">
-          {tabs.map((tab) => {
-            if (tab.id === activeTab) {
-              const Component = tab.component
-              return <Component key={tab.id} />
-            }
-            return null
-          })}
-        </div>
-      </div>
+    <div className="border-b border-gray-200 dark:border-gray-700">
+      <nav className="flex space-x-1 overflow-x-auto">
+        {tabs.map((tab) => {
+          const Icon = iconMap[tab.icon]
+          const isActive = activeTab === tab.id
+          
+          return (
+            <Button
+              key={tab.id}
+              variant={isActive ? 'default' : 'ghost'}
+              className={`flex items-center space-x-2 whitespace-nowrap ${
+                isActive 
+                  ? 'border-b-2 border-blue-500 rounded-b-none' 
+                  : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+              }`}
+              onClick={() => onTabChange(tab.id)}
+            >
+              <Icon className="h-4 w-4" />
+              <span>{tab.label}</span>
+            </Button>
+          )
+        })}
+      </nav>
     </div>
   )
 }

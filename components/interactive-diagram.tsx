@@ -522,16 +522,527 @@ export default function InteractiveDiagram({
   }
 
   // Placeholder functions for other node generators
-  const generatePKINodes = (): DiagramNode[] => []
-  const generatePKIConnections = (): DiagramConnection[] => []
-  const generatePolicyNodes = (): DiagramNode[] => []
-  const generatePolicyConnections = (): DiagramConnection[] => []
-  const generateConnectivityNodes = (): DiagramNode[] => []
-  const generateConnectivityConnections = (): DiagramConnection[] => []
-  const generateIntuneNodes = (): DiagramNode[] => []
-  const generateIntuneConnections = (): DiagramConnection[] => []
-  const generateOnboardingNodes = (): DiagramNode[] => []
-  const generateOnboardingConnections = (): DiagramConnection[] => []
+  const generatePKINodes = (): DiagramNode[] => {
+  return [
+    {
+      id: 'portnox-ca',
+      x: 450, y: 50, width: 300, height: 100,
+      label: 'Portnox Private CA',
+      type: 'pki',
+      color: '#e3f2fd',
+      icon: '🔐',
+      description: 'Private Certificate Authority for issuing X.509 certificates with automated lifecycle management'
+    },
+    {
+      id: 'scep-server',
+      x: 200, y: 200, width: 200, height: 80,
+      label: 'SCEP Server',
+      type: 'cert',
+      color: '#e8f5e9',
+      icon: '📜',
+      description: 'Simple Certificate Enrollment Protocol server for automated certificate provisioning'
+    },
+    {
+      id: 'ocsp-responder',
+      x: 500, y: 200, width: 200, height: 80,
+      label: 'OCSP Responder',
+      type: 'cert',
+      color: '#e8f5e9',
+      icon: '✅',
+      description: 'Online Certificate Status Protocol for real-time certificate validation'
+    },
+    {
+      id: 'crl-distribution',
+      x: 800, y: 200, width: 200, height: 80,
+      label: 'CRL Distribution Point',
+      type: 'cert',
+      color: '#e8f5e9',
+      icon: '📋',
+      description: 'Certificate Revocation List distribution for offline validation'
+    },
+    {
+      id: 'intune-connector',
+      x: 100, y: 350, width: 180, height: 80,
+      label: 'Intune SCEP Connector',
+      type: 'mdm',
+      color: '#fff3e0',
+      icon: '🔗',
+      description: 'Microsoft Intune connector for SCEP certificate enrollment'
+    },
+    {
+      id: 'cert-templates',
+      x: 350, y: 350, width: 180, height: 80,
+      label: 'Certificate Templates',
+      type: 'template',
+      color: '#f3e5f5',
+      icon: '📄',
+      description: 'Predefined certificate templates for different device types'
+    },
+    {
+      id: 'key-escrow',
+      x: 600, y: 350, width: 180, height: 80,
+      label: 'Key Escrow Service',
+      type: 'security',
+      color: '#fff3e0',
+      icon: '🔑',
+      description: 'Secure key recovery and escrow for compliance requirements'
+    },
+    {
+      id: 'end-devices',
+      x: 850, y: 350, width: 180, height: 80,
+      label: 'End Devices',
+      type: 'device',
+      color: '#e8f5e9',
+      icon: '💻',
+      description: 'Corporate devices receiving certificates for 802.1X authentication'
+    }
+  ]
+}
+
+const generatePKIConnections = (): DiagramConnection[] => {
+  return [
+    { id: 'ca-to-scep', from: 'portnox-ca', to: 'scep-server', type: 'secure', label: 'Certificate Issuance' },
+    { id: 'ca-to-ocsp', from: 'portnox-ca', to: 'ocsp-responder', type: 'secure', label: 'Status Updates' },
+    { id: 'ca-to-crl', from: 'portnox-ca', to: 'crl-distribution', type: 'standard', label: 'CRL Publishing' },
+    { id: 'ca-to-templates', from: 'portnox-ca', to: 'cert-templates', type: 'dashed', label: 'Template Management' },
+    { id: 'ca-to-escrow', from: 'portnox-ca', to: 'key-escrow', type: 'secure', label: 'Key Backup' },
+    { id: 'scep-to-intune', from: 'scep-server', to: 'intune-connector', type: 'standard', label: 'SCEP Enrollment' },
+    { id: 'intune-to-devices', from: 'intune-connector', to: 'end-devices', type: 'standard', label: 'Certificate Deploy' },
+    { id: 'templates-to-devices', from: 'cert-templates', to: 'end-devices', type: 'dashed', label: 'Profile Push' }
+  ]
+}
+
+// Policy Framework nodes and connections
+const generatePolicyNodes = (): DiagramNode[] => {
+  return [
+    {
+      id: 'policy-engine',
+      x: 400, y: 50, width: 400, height: 100,
+      label: 'Portnox Policy Engine',
+      type: 'policy',
+      color: '#e3f2fd',
+      icon: '⚙️',
+      description: 'Centralized policy management and enforcement engine with real-time decision making'
+    },
+    {
+      id: 'user-policies',
+      x: 50, y: 200, width: 200, height: 120,
+      label: 'User-Based Policies',
+      type: 'policy',
+      color: '#d4edda',
+      icon: '👤',
+      description: 'Identity-based access control policies with role-based permissions'
+    },
+    {
+      id: 'device-policies',
+      x: 300, y: 200, width: 200, height: 120,
+      label: 'Device Compliance',
+      type: 'policy',
+      color: '#cce5ff',
+      icon: '📱',
+      description: 'Device health and compliance policies including OS version, encryption status'
+    },
+    {
+      id: 'network-policies',
+      x: 550, y: 200, width: 200, height: 120,
+      label: 'Network Segmentation',
+      type: 'policy',
+      color: '#fff3cd',
+      icon: '🌐',
+      description: 'VLAN assignment and network access policies based on user/device context'
+    },
+    {
+      id: 'time-policies',
+      x: 800, y: 200, width: 200, height: 120,
+      label: 'Time-Based Access',
+      type: 'policy',
+      color: '#f8d7da',
+      icon: '⏰',
+      description: 'Temporal access controls with business hours and maintenance windows'
+    },
+    {
+      id: 'location-policies',
+      x: 50, y: 370, width: 200, height: 120,
+      label: 'Location-Based',
+      type: 'policy',
+      color: '#e2e3e5',
+      icon: '📍',
+      description: 'Geographic and network location-based access policies'
+    },
+    {
+      id: 'risk-policies',
+      x: 300, y: 370, width: 200, height: 120,
+      label: 'Risk Assessment',
+      type: 'policy',
+      color: '#ffeaa7',
+      icon: '⚠️',
+      description: 'Dynamic risk-based policies with threat intelligence integration'
+    },
+    {
+      id: 'guest-policies',
+      x: 550, y: 370, width: 200, height: 120,
+      label: 'Guest Access',
+      type: 'policy',
+      color: '#dda0dd',
+      icon: '🎫',
+      description: 'Sponsored guest access with time-limited credentials and restricted access'
+    },
+    {
+      id: 'iot-policies',
+      x: 800, y: 370, width: 200, height: 120,
+      label: 'IoT Device Policies',
+      type: 'policy',
+      color: '#98fb98',
+      icon: '🔌',
+      description: 'IoT device policies with MAC Authentication Bypass and device profiling'
+    }
+  ]
+}
+
+const generatePolicyConnections = (): DiagramConnection[] => {
+  return [
+    { id: 'engine-to-user', from: 'policy-engine', to: 'user-policies', type: 'standard', label: 'Identity Lookup' },
+    { id: 'engine-to-device', from: 'policy-engine', to: 'device-policies', type: 'standard', label: 'Compliance Check' },
+    { id: 'engine-to-network', from: 'policy-engine', to: 'network-policies', type: 'standard', label: 'VLAN Assignment' },
+    { id: 'engine-to-time', from: 'policy-engine', to: 'time-policies', type: 'standard', label: 'Time Validation' },
+    { id: 'engine-to-location', from: 'policy-engine', to: 'location-policies', type: 'dashed', label: 'Location Check' },
+    { id: 'engine-to-risk', from: 'policy-engine', to: 'risk-policies', type: 'secure', label: 'Risk Analysis' },
+    { id: 'engine-to-guest', from: 'policy-engine', to: 'guest-policies', type: 'dashed', label: 'Guest Validation' },
+    { id: 'engine-to-iot', from: 'policy-engine', to: 'iot-policies', type: 'standard', label: 'Device Profiling' }
+  ]
+}
+
+// Connectivity Options nodes and connections
+const generateConnectivityNodes = (): DiagramNode[] => {
+  return [
+    {
+      id: 'portnox-global',
+      x: 500, y: 300, width: 300, height: 100,
+      label: 'Portnox Global Cloud',
+      type: 'cloud',
+      color: '#e3f2fd',
+      icon: '🌍',
+      description: 'Global cloud infrastructure with regional presence and edge locations'
+    },
+    {
+      id: 'aws-regions',
+      x: 50, y: 50, width: 200, height: 100,
+      label: 'AWS Multi-Region',
+      type: 'aws',
+      color: '#fff3e0',
+      icon: '☁️',
+      description: 'AWS infrastructure across multiple regions with auto-failover'
+    },
+    {
+      id: 'azure-regions',
+      x: 300, y: 50, width: 200, height: 100,
+      label: 'Azure Global',
+      type: 'azure',
+      color: '#e1f5fe',
+      icon: '🔷',
+      description: 'Azure infrastructure with ExpressRoute connectivity'
+    },
+    {
+      id: 'gcp-regions',
+      x: 550, y: 50, width: 200, height: 100,
+      label: 'Google Cloud',
+      type: 'gcp',
+      color: '#e8f5e9',
+      icon: '🌐',
+      description: 'Google Cloud Platform with dedicated interconnect'
+    },
+    {
+      id: 'edge-locations',
+      x: 800, y: 50, width: 200, height: 100,
+      label: 'Edge Locations',
+      type: 'edge',
+      color: '#f0f8ff',
+      icon: '📡',
+      description: 'Edge computing locations for reduced latency'
+    },
+    {
+      id: 'sdwan-fabric',
+      x: 50, y: 500, width: 200, height: 80,
+      label: 'SD-WAN Fabric',
+      type: 'sdwan',
+      color: '#ffe4e1',
+      icon: '🕸️',
+      description: 'Software-defined WAN with dynamic path selection'
+    },
+    {
+      id: 'mpls-backbone',
+      x: 300, y: 500, width: 200, height: 80,
+      label: 'MPLS Backbone',
+      type: 'mpls',
+      color: '#f5deb3',
+      icon: '🛤️',
+      description: 'Traditional MPLS network with QoS guarantees'
+    },
+    {
+      id: 'internet-breakout',
+      x: 550, y: 500, width: 200, height: 80,
+      label: 'Internet Breakout',
+      type: 'internet',
+      color: '#e6e6fa',
+      icon: '🌐',
+      description: 'Direct internet connectivity with security controls'
+    },
+    {
+      id: 'private-circuits',
+      x: 800, y: 500, width: 200, height: 80,
+      label: 'Private Circuits',
+      type: 'private',
+      color: '#f0fff0',
+      icon: '🔒',
+      description: 'Dedicated private circuits for sensitive traffic'
+    }
+  ]
+}
+
+const generateConnectivityConnections = (): DiagramConnection[] => {
+  return [
+    { id: 'aws-to-global', from: 'aws-regions', to: 'portnox-global', type: 'secure', label: 'RADSec/TLS' },
+    { id: 'azure-to-global', from: 'azure-regions', to: 'portnox-global', type: 'secure', label: 'RADSec/TLS' },
+    { id: 'gcp-to-global', from: 'gcp-regions', to: 'portnox-global', type: 'secure', label: 'RADSec/TLS' },
+    { id: 'edge-to-global', from: 'edge-locations', to: 'portnox-global', type: 'secure', label: 'Edge Sync' },
+    { id: 'global-to-sdwan', from: 'portnox-global', to: 'sdwan-fabric', type: 'dashed', label: 'Dynamic Routing' },
+    { id: 'global-to-mpls', from: 'portnox-global', to: 'mpls-backbone', type: 'standard', label: 'QoS Traffic' },
+    { id: 'global-to-internet', from: 'portnox-global', to: 'internet-breakout', type: 'standard', label: 'Public Access' },
+    { id: 'global-to-private', from: 'portnox-global', to: 'private-circuits', type: 'secure', label: 'Dedicated Links' }
+  ]
+}
+
+// Intune Integration nodes and connections
+const generateIntuneNodes = (): DiagramNode[] => {
+  return [
+    {
+      id: 'intune-portal',
+      x: 450, y: 50, width: 300, height: 100,
+      label: 'Microsoft Intune Portal',
+      type: 'intune',
+      color: '#e1f5fe',
+      icon: '🏢',
+      description: 'Centralized device management portal with policy configuration'
+    },
+    {
+      id: 'portnox-scep',
+      x: 450, y: 200, width: 300, height: 80,
+      label: 'Portnox SCEP Connector',
+      type: 'pki',
+      color: '#e3f2fd',
+      icon: '🔗',
+      description: 'SCEP connector integrating Portnox PKI with Intune certificate profiles'
+    },
+    {
+      id: 'windows-devices',
+      x: 50, y: 350, width: 180, height: 100,
+      label: 'Windows Devices',
+      type: 'device',
+      color: '#e8f5e9',
+      icon: '🖥️',
+      description: 'Corporate Windows devices with Intune management agent'
+    },
+    {
+      id: 'ios-devices',
+      x: 280, y: 350, width: 180, height: 100,
+      label: 'iOS Devices',
+      type: 'device',
+      color: '#e8f5e9',
+      icon: '📱',
+      description: 'Corporate and BYOD iOS devices with MDM enrollment'
+    },
+    {
+      id: 'android-devices',
+      x: 510, y: 350, width: 180, height: 100,
+      label: 'Android Devices',
+      type: 'device',
+      color: '#e8f5e9',
+      icon: '📱',
+      description: 'Android devices with work profile management'
+    },
+    {
+      id: 'macos-devices',
+      x: 740, y: 350, width: 180, height: 100,
+      label: 'macOS Devices',
+      type: 'device',
+      color: '#e8f5e9',
+      icon: '💻',
+      description: 'Corporate Mac devices with automated enrollment'
+    },
+    {
+      id: 'compliance-policies',
+      x: 50, y: 500, width: 200, height: 80,
+      label: 'Compliance Policies',
+      type: 'policy',
+      color: '#fff3cd',
+      icon: '✅',
+      description: 'Device compliance requirements and health attestation'
+    },
+    {
+      id: 'app-protection',
+      x: 300, y: 500, width: 200, height: 80,
+      label: 'App Protection',
+      type: 'security',
+      color: '#f8d7da',
+      icon: '🛡️',
+      description: 'Application-level security policies and data protection'
+    },
+    {
+      id: 'conditional-access',
+      x: 550, y: 500, width: 200, height: 80,
+      label: 'Conditional Access',
+      type: 'security',
+      color: '#d4edda',
+      icon: '🚪',
+      description: 'Azure AD conditional access policies integration'
+    },
+    {
+      id: 'wifi-profiles',
+      x: 800, y: 500, width: 200, height: 80,
+      label: 'WiFi Profiles',
+      type: 'network',
+      color: '#e2e3e5',
+      icon: '📶',
+      description: '802.1X WiFi profiles with certificate-based authentication'
+    }
+  ]
+}
+
+const generateIntuneConnections = (): DiagramConnection[] => {
+  return [
+    { id: 'portal-to-scep', from: 'intune-portal', to: 'portnox-scep', type: 'secure', label: 'SCEP Configuration' },
+    { id: 'scep-to-windows', from: 'portnox-scep', to: 'windows-devices', type: 'standard', label: 'Certificate Deploy' },
+    { id: 'scep-to-ios', from: 'portnox-scep', to: 'ios-devices', type: 'standard', label: 'Certificate Deploy' },
+    { id: 'scep-to-android', from: 'portnox-scep', to: 'android-devices', type: 'standard', label: 'Certificate Deploy' },
+    { id: 'scep-to-macos', from: 'portnox-scep', to: 'macos-devices', type: 'standard', label: 'Certificate Deploy' },
+    { id: 'portal-to-compliance', from: 'intune-portal', to: 'compliance-policies', type: 'dashed', label: 'Policy Push' },
+    { id: 'portal-to-app', from: 'intune-portal', to: 'app-protection', type: 'dashed', label: 'App Policies' },
+    { id: 'portal-to-conditional', from: 'intune-portal', to: 'conditional-access', type: 'secure', label: 'Access Control' },
+    { id: 'portal-to-wifi', from: 'intune-portal', to: 'wifi-profiles', type: 'standard', label: 'Network Profiles' }
+  ]
+}
+
+// Device Onboarding nodes and connections
+const generateOnboardingNodes = (): DiagramNode[] => {
+  return [
+    {
+      id: 'onboarding-portal',
+      x: 400, y: 50, width: 400, height: 100,
+      label: 'Device Onboarding Portal',
+      type: 'portal',
+      color: '#e3f2fd',
+      icon: '🌐',
+      description: 'Self-service device registration portal with multi-factor authentication'
+    },
+    {
+      id: 'corporate-enrollment',
+      x: 50, y: 200, width: 200, height: 150,
+      label: 'Corporate Device Enrollment',
+      type: 'flow',
+      color: '#d4edda',
+      icon: '🏢',
+      description: 'Automated enrollment for corporate-owned devices via Intune/JAMF'
+    },
+    {
+      id: 'byod-enrollment',
+      x: 300, y: 200, width: 200, height: 150,
+      label: 'BYOD Self-Service',
+      type: 'flow',
+      color: '#cce5ff',
+      icon: '📱',
+      description: 'Bring Your Own Device enrollment with user consent and privacy controls'
+    },
+    {
+      id: 'guest-access',
+      x: 550, y: 200, width: 200, height: 150,
+      label: 'Guest Access Portal',
+      type: 'flow',
+      color: '#fff3cd',
+      icon: '🎫',
+      description: 'Sponsored guest access with time-limited credentials and sponsor approval'
+    },
+    {
+      id: 'iot-onboarding',
+      x: 800, y: 200, width: 200, height: 150,
+      label: 'IoT Device Onboarding',
+      type: 'flow',
+      color: '#f8d7da',
+      icon: '🔌',
+      description: 'IoT device registration with MAC Authentication Bypass and device profiling'
+    },
+    {
+      id: 'certificate-issuance',
+      x: 200, y: 400, width: 200, height: 80,
+      label: 'Certificate Issuance',
+      type: 'cert',
+      color: '#e8f5e9',
+      icon: '📜',
+      description: 'Automated certificate generation and deployment to enrolled devices'
+    },
+    {
+      id: 'device-profiling',
+      x: 450, y: 400, width: 200, height: 80,
+      label: 'Device Profiling',
+      type: 'analysis',
+      color: '#f3e5f5',
+      icon: '🔍',
+      description: 'Automated device fingerprinting and classification'
+    },
+    {
+      id: 'policy-assignment',
+      x: 700, y: 400, width: 200, height: 80,
+      label: 'Policy Assignment',
+      type: 'policy',
+      color: '#fff3e0',
+      icon: '📋',
+      description: 'Dynamic policy assignment based on device type and user context'
+    },
+    {
+      id: 'network-access',
+      x: 200, y: 520, width: 200, height: 80,
+      label: 'Network Access Grant',
+      type: 'network',
+      color: '#e2e3e5',
+      icon: '🌐',
+      description: 'VLAN assignment and network access provisioning'
+    },
+    {
+      id: 'monitoring-alerts',
+      x: 450, y: 520, width: 200, height: 80,
+      label: 'Monitoring & Alerts',
+      type: 'monitoring',
+      color: '#ffeaa7',
+      icon: '📊',
+      description: 'Real-time monitoring of onboarding process with alerting'
+    },
+    {
+      id: 'compliance-check',
+      x: 700, y: 520, width: 200, height: 80,
+      label: 'Compliance Validation',
+      type: 'security',
+      color: '#dda0dd',
+      icon: '✅',
+      description: 'Continuous compliance monitoring and remediation'
+    }
+  ]
+}
+
+const generateOnboardingConnections = (): DiagramConnection[] => {
+  return [
+    { id: 'portal-to-corporate', from: 'onboarding-portal', to: 'corporate-enrollment', type: 'standard', label: 'MDM Enrollment' },
+    { id: 'portal-to-byod', from: 'onboarding-portal', to: 'byod-enrollment', type: 'standard', label: 'Self-Service' },
+    { id: 'portal-to-guest', from: 'onboarding-portal', to: 'guest-access', type: 'dashed', label: 'Sponsor Approval' },
+    { id: 'portal-to-iot', from: 'onboarding-portal', to: 'iot-onboarding', type: 'standard', label: 'Device Registration' },
+    { id: 'corporate-to-cert', from: 'corporate-enrollment', to: 'certificate-issuance', type: 'secure', label: 'Auto-Provision' },
+    { id: 'byod-to-cert', from: 'byod-enrollment', to: 'certificate-issuance', type: 'secure', label: 'User Consent' },
+    { id: 'iot-to-profiling', from: 'iot-onboarding', to: 'device-profiling', type: 'standard', label: 'Fingerprinting' },
+    { id: 'profiling-to-policy', from: 'device-profiling', to: 'policy-assignment', type: 'dashed', label: 'Classification' },
+    { id: 'cert-to-network', from: 'certificate-issuance', to: 'network-access', type: 'standard', label: 'Access Grant' },
+    { id: 'policy-to-network', from: 'policy-assignment', to: 'network-access', type: 'standard', label: 'VLAN Assignment' },
+    { id: 'network-to-monitoring', from: 'network-access', to: 'monitoring-alerts', type: 'dashed', label: 'Status Updates' },
+    { id: 'monitoring-to-compliance', from: 'monitoring-alerts', to: 'compliance-check', type: 'standard', label: 'Health Check' }
+  ]
+}
 
   const handleNodeClick = (nodeId: string) => {
     setSelectedNode(selectedNode === nodeId ? null : nodeId)

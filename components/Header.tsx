@@ -1,18 +1,18 @@
 'use client'
 
 import { useState } from 'react'
+import { Sun, Moon, Users, Palette, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
-import { Upload, Users, Palette, Sun, Moon, Monitor } from 'lucide-react'
+import { Switch } from '@/components/ui/switch'
 import { useTheme } from '@/components/ThemeProvider'
-import UserManagementModal from '@/components/UserManagementModal'
-import ThemeCustomizer from '@/components/ThemeCustomizer'
+import UserManagementModal from './UserManagementModal'
+import ThemeCustomizer from './ThemeCustomizer'
 
 export default function Header() {
-  const { theme, setTheme } = useTheme()
+  const { theme, toggleTheme } = useTheme()
   const [showUserModal, setShowUserModal] = useState(false)
   const [showThemeCustomizer, setShowThemeCustomizer] = useState(false)
-  const [customerLogo, setCustomerLogo] = useState('https://ahorrainvierte.com/wp-content/uploads/abm-industries-inc.png')
+  const [customerLogo, setCustomerLogo] = useState('/placeholder.svg?height=40&width=150&text=ABM+Industries')
 
   const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -25,53 +25,32 @@ export default function Header() {
     }
   }
 
-  const toggleTheme = () => {
-    if (theme === 'light') {
-      setTheme('dark')
-    } else if (theme === 'dark') {
-      setTheme('system')
-    } else {
-      setTheme('light')
-    }
-  }
-
-  const getThemeIcon = () => {
-    switch (theme) {
-      case 'light':
-        return <Sun className="h-4 w-4" />
-      case 'dark':
-        return <Moon className="h-4 w-4" />
-      default:
-        return <Monitor className="h-4 w-4" />
-    }
-  }
-
   return (
     <>
       <header className="bg-gradient-to-r from-blue-600 to-blue-800 text-white shadow-lg">
-        <div className="container mx-auto px-4 py-4">
+        <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-8">
               <div className="flex items-center space-x-4">
                 <img 
-                  src="https://www.portnox.com/wp-content/uploads/2021/03/Portnotx_Logo_Color-768x193.png" 
+                  src="/placeholder.svg?height=50&width=150&text=Portnox+Logo" 
                   alt="Portnox Logo" 
-                  className="h-12 filter brightness-0 invert drop-shadow-md hover:scale-105 transition-transform"
+                  className="h-12 filter drop-shadow-md hover:scale-105 transition-transform"
                 />
-                <Separator orientation="vertical" className="h-10 bg-white/30" />
+                <div className="h-10 w-px bg-white/30" />
                 <div className="bg-white/10 rounded-lg p-2 hover:bg-white/20 transition-colors">
                   <img 
                     src={customerLogo || "/placeholder.svg"} 
-                    alt="ABM Industries Logo" 
+                    alt="Customer Logo" 
                     className="h-10 max-w-[150px] object-contain"
                   />
                 </div>
               </div>
-              <h1 className="text-2xl font-bold">
-                Zero Trust NAC Architecture Designer
+              <h1 className="text-2xl font-bold text-shadow">
+                Portnox NAC Architecture Designer
               </h1>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               <div className="relative">
                 <input
@@ -89,7 +68,17 @@ export default function Header() {
                   <span className="text-sm">Change Logo</span>
                 </label>
               </div>
-              
+
+              <div className="flex items-center space-x-2 px-3 py-2 bg-white/10 rounded-full">
+                <Sun className="h-4 w-4" />
+                <Switch
+                  checked={theme === 'dark'}
+                  onCheckedChange={toggleTheme}
+                  className="data-[state=checked]:bg-blue-500"
+                />
+                <Moon className="h-4 w-4" />
+              </div>
+
               <Button
                 variant="ghost"
                 size="sm"
@@ -99,7 +88,7 @@ export default function Header() {
                 <Users className="h-4 w-4 mr-2" />
                 Manage Users
               </Button>
-              
+
               <Button
                 variant="ghost"
                 size="sm"
@@ -108,15 +97,6 @@ export default function Header() {
               >
                 <Palette className="h-4 w-4 mr-2" />
                 Customize
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={toggleTheme}
-                className="text-white hover:bg-white/20"
-              >
-                {getThemeIcon()}
               </Button>
             </div>
           </div>

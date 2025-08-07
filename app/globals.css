@@ -68,113 +68,204 @@
   }
 }
 
-/* Custom animations */
+/* Custom styles for the architecture diagrams */
+.diagram-node {
+  transition: all 0.3s ease;
+}
+
+.diagram-node:hover {
+  filter: brightness(1.1);
+  transform: scale(1.02);
+}
+
+.connection-point {
+  transition: all 0.3s ease;
+  opacity: 0;
+}
+
+.diagram-node:hover .connection-point {
+  opacity: 1;
+}
+
+.connection-point:hover {
+  r: 8;
+  fill: #10b981;
+}
+
+.connection-point.active {
+  opacity: 1;
+  fill: #10b981;
+}
+
+/* Animation for drawing connections */
 @keyframes drawLine {
+  from {
+    stroke-dashoffset: 1000;
+  }
   to {
     stroke-dashoffset: 0;
   }
 }
 
-.animate-draw-line {
-  animation: drawLine 2s ease-out forwards;
+/* Pulse animation for active elements */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(59, 130, 246, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.8);
+  }
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar styles */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
   background: #f1f1f1;
+  border-radius: 4px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: #c1c1c1;
-  border-radius: 3px;
+  border-radius: 4px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
 }
 
-/* Portnox brand colors */
-:root {
-  --portnox-primary: #0066cc;
-  --portnox-secondary: #4a90e2;
-  --portnox-accent: #f39c12;
-  --portnox-success: #27ae60;
-  --portnox-warning: #f39c12;
-  --portnox-error: #e74c3c;
+.dark .custom-scrollbar::-webkit-scrollbar-track {
+  background: #374151;
 }
 
-/* Component-specific styles */
-.diagram-node {
-  transition: all 0.2s ease-in-out;
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #6b7280;
 }
 
-.diagram-node:hover {
-  transform: scale(1.05);
-  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
 }
 
-.connection-line {
-  transition: stroke-width 0.2s ease-in-out;
+/* Text shadow utility */
+.text-shadow {
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
 }
 
-.connection-line:hover {
+/* Gradient backgrounds */
+.gradient-blue {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.gradient-purple {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.gradient-green {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+/* Interactive diagram styles */
+.diagram-tooltip {
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.diagram-connection {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: drawLine 2s ease-out forwards;
+}
+
+.diagram-secure-connection {
+  stroke-dasharray: 5, 5;
   stroke-width: 3;
+}
+
+.diagram-dashed-connection {
+  stroke-dasharray: 10, 5;
+  stroke-width: 2;
 }
 
 /* Progress bar animations */
 .progress-bar {
-  transition: width 0.3s ease-in-out;
+  transition: width 1s ease-in-out;
+}
+
+.progress-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.2) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0.2) 75%,
+    transparent 75%,
+    transparent
+  );
+  background-size: 1rem 1rem;
+  animation: progress-stripes 1s linear infinite;
+}
+
+@keyframes progress-stripes {
+  from {
+    background-position: 1rem 0;
+  }
+  to {
+    background-position: 0 0;
+  }
 }
 
 /* Card hover effects */
 .card-hover {
-  transition: all 0.2s ease-in-out;
+  transition: all 0.3s ease;
 }
 
 .card-hover:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
 
-/* Button loading state */
-.btn-loading {
-  position: relative;
-  color: transparent;
+/* Badge animations */
+.badge-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-.btn-loading::after {
-  content: '';
-  position: absolute;
-  width: 16px;
-  height: 16px;
-  top: 50%;
-  left: 50%;
-  margin-left: -8px;
-  margin-top: -8px;
-  border: 2px solid #ffffff;
+/* Loading spinner */
+.spinner {
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #3498db;
   border-radius: 50%;
-  border-top-color: transparent;
+  width: 20px;
+  height: 20px;
   animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 /* Responsive utilities */
 @media (max-width: 768px) {
-  .mobile-hidden {
-    display: none;
+  .mobile-stack {
+    flex-direction: column;
   }
   
-  .mobile-full-width {
+  .mobile-full {
     width: 100%;
+  }
+  
+  .mobile-hidden {
+    display: none;
   }
 }
 
@@ -184,11 +275,7 @@
     display: none !important;
   }
   
-  .print-break-before {
-    page-break-before: always;
-  }
-  
-  .print-break-after {
+  .print-break {
     page-break-after: always;
   }
 }

@@ -1,10 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { ZoomIn, ZoomOut, RotateCcw, Maximize2 } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 interface InteractiveDiagramProps {
@@ -49,34 +45,6 @@ export default function InteractiveDiagram({
   const [selectedNode, setSelectedNode] = useState<string | null>(null)
   const [isDrawingConnection, setIsDrawingConnection] = useState(false)
   const [connectionStart, setConnectionStart] = useState<string | null>(null)
-  const [zoomLevel, setZoomLevel] = useState(1)
-  const [selectedComponent, setSelectedComponent] = useState<string | null>(null)
-
-  const components = {
-    overview: [
-      { id: 'internet', name: 'Internet', x: 50, y: 10, type: 'cloud' },
-      { id: 'firewall', name: 'Firewall', x: 50, y: 25, type: 'security' },
-      { id: 'portnox', name: 'Portnox NAC', x: 50, y: 40, type: 'nac' },
-      { id: 'switch', name: 'Core Switch', x: 30, y: 60, type: 'network' },
-      { id: 'wireless', name: 'Wireless Controller', x: 70, y: 60, type: 'network' },
-      { id: 'users', name: 'End Users', x: 20, y: 80, type: 'endpoint' },
-      { id: 'devices', name: 'IoT Devices', x: 80, y: 80, type: 'endpoint' }
-    ],
-    security: [
-      { id: 'dmz', name: 'DMZ Zone', x: 50, y: 20, type: 'zone' },
-      { id: 'internal', name: 'Internal Zone', x: 30, y: 50, type: 'zone' },
-      { id: 'guest', name: 'Guest Zone', x: 70, y: 50, type: 'zone' },
-      { id: 'quarantine', name: 'Quarantine Zone', x: 50, y: 80, type: 'zone' }
-    ],
-    users: [
-      { id: 'employees', name: 'Employees', x: 25, y: 30, type: 'user' },
-      { id: 'contractors', name: 'Contractors', x: 75, y: 30, type: 'user' },
-      { id: 'guests', name: 'Guests', x: 25, y: 70, type: 'user' },
-      { id: 'iot', name: 'IoT Devices', x: 75, y: 70, type: 'user' }
-    ]
-  }
-
-  const currentComponents = components[view as keyof typeof components] || components.overview
 
   useEffect(() => {
     generateDiagram()
@@ -576,19 +544,6 @@ export default function InteractiveDiagram({
     }
   }
 
-  const getComponentColor = (type: string) => {
-    switch (type) {
-      case 'cloud': return 'bg-blue-500'
-      case 'security': return 'bg-red-500'
-      case 'nac': return 'bg-purple-500'
-      case 'network': return 'bg-green-500'
-      case 'endpoint': return 'bg-orange-500'
-      case 'zone': return 'bg-gray-500'
-      case 'user': return 'bg-indigo-500'
-      default: return 'bg-gray-400'
-    }
-  }
-
   const handleNodeClick = (nodeId: string) => {
     if (isDrawingConnection) {
       if (connectionStart && connectionStart !== nodeId) {
@@ -785,135 +740,37 @@ export default function InteractiveDiagram({
   }
 
   return (
-    <div className="space-y-4">
-      {/* Controls */}
-      <div className="flex justify-between items-center">
-        <div className="flex space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setZoomLevel(Math.min(zoomLevel + 0.2, 2))}
-          >
-            <ZoomIn className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setZoomLevel(Math.max(zoomLevel - 0.2, 0.5))}
-          >
-            <ZoomOut className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setZoomLevel(1)}
-          >
-            <RotateCcw className="h-4 w-4" />
-          </Button>
-        </div>
-        <div className="flex items-center space-x-2">
-          <span className="text-sm text-gray-600">Zoom: {Math.round(zoomLevel * 100)}%</span>
-          <Button variant="outline" size="sm">
-            <Maximize2 className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Diagram */}
-      <Card className="bg-gray-50">
-        <CardContent className="p-0">
-          <div 
-            className="relative w-full h-96 overflow-hidden"
-            style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'center' }}
-          >
-            <svg className="w-full h-full">
-              {/* Connection Lines */}
-              {view === 'overview' && (
-                <>
-                  <line x1="50%" y1="10%" x2="50%" y2="25%" stroke="#94a3b8" strokeWidth="2" />
-                  <line x1="50%" y1="25%" x2="50%" y2="40%" stroke="#94a3b8" strokeWidth="2" />
-                  <line x1="50%" y1="40%" x2="30%" y2="60%" stroke="#94a3b8" strokeWidth="2" />
-                  <line x1="50%" y1="40%" x2="70%" y2="60%" stroke="#94a3b8" strokeWidth="2" />
-                  <line x1="30%" y1="60%" x2="20%" y2="80%" stroke="#94a3b8" strokeWidth="2" />
-                  <line x1="70%" y1="60%" x2="80%" y2="80%" stroke="#94a3b8" strokeWidth="2" />
-                </>
-              )}
-            </svg>
-
-            {/* Components */}
-            {currentComponents.map((component) => (
-              <div
-                key={component.id}
-                className={`absolute transform -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-all duration-200 ${
-                  selectedComponent === component.id ? 'scale-110' : 'hover:scale-105'
-                }`}
-                style={{ left: `${component.x}%`, top: `${component.y}%` }}
-                onClick={() => setSelectedComponent(component.id)}
-              >
-                <div className={`w-16 h-16 rounded-lg ${getComponentColor(component.type)} flex items-center justify-center text-white text-xs font-semibold shadow-lg`}>
-                  {component.name.split(' ').map(word => word[0]).join('')}
-                </div>
-                <div className="text-center mt-1">
-                  <Badge variant="outline" className="text-xs">
-                    {component.name}
-                  </Badge>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Component Details */}
-      {selectedComponent && (
-        <Card>
-          <CardContent className="p-4">
-            <h4 className="font-semibold mb-2">
-              {currentComponents.find(c => c.id === selectedComponent)?.name}
-            </h4>
-            <div className="text-sm text-gray-600 space-y-1">
-              <p><strong>Type:</strong> {currentComponents.find(c => c.id === selectedComponent)?.type}</p>
-              <p><strong>Cloud Provider:</strong> {cloudProvider}</p>
-              <p><strong>Network Vendor:</strong> {networkVendor}</p>
-              <p><strong>Connectivity:</strong> {connectivityType}</p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* SVG Diagram */}
-      <div className="w-full h-[600px] overflow-auto">
-        <svg
-          ref={svgRef}
-          width="1200"
-          height="800"
-          viewBox="0 0 1200 800"
-          className="w-full h-full"
-        >
-          <style>
-            {`
-              @keyframes drawLine {
-                to {
-                  stroke-dashoffset: 0;
-                }
+    <div className="w-full h-[600px] overflow-auto">
+      <svg
+        ref={svgRef}
+        width="1200"
+        height="800"
+        viewBox="0 0 1200 800"
+        className="w-full h-full"
+      >
+        <style>
+          {`
+            @keyframes drawLine {
+              to {
+                stroke-dashoffset: 0;
               }
-            `}
-          </style>
-          
-          {/* Render connections first (behind nodes) */}
-          {connections.map(renderConnection)}
-          
-          {/* Render nodes */}
-          {nodes.map(renderNode)}
-        </svg>
+            }
+          `}
+        </style>
         
-        {/* Instructions */}
-        <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-          <p className="text-sm text-blue-800 dark:text-blue-200">
-            <strong>Instructions:</strong> Click nodes to select them. Double-click a node to start drawing a custom connection. 
-            Hover over nodes to see connection points and detailed descriptions.
-          </p>
-        </div>
+        {/* Render connections first (behind nodes) */}
+        {connections.map(renderConnection)}
+        
+        {/* Render nodes */}
+        {nodes.map(renderNode)}
+      </svg>
+      
+      {/* Instructions */}
+      <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+        <p className="text-sm text-blue-800 dark:text-blue-200">
+          <strong>Instructions:</strong> Click nodes to select them. Double-click a node to start drawing a custom connection. 
+          Hover over nodes to see connection points and detailed descriptions.
+        </p>
       </div>
     </div>
   )
