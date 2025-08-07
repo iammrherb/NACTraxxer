@@ -4,558 +4,397 @@ import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Progress } from '@/components/ui/progress'
-import { Smartphone, Monitor, Wifi, Shield, CheckCircle, Clock, AlertCircle, Users, Settings, Download, QrCode, Mail } from 'lucide-react'
+import { Play, Pause, RotateCcw, CheckCircle, Clock, AlertCircle } from 'lucide-react'
 
 interface OnboardingStep {
   id: string
-  title: string
+  name: string
   description: string
-  status: 'pending' | 'in_progress' | 'completed' | 'failed'
-  duration: string
-  details: string[]
+  duration: number
+  status: 'pending' | 'active' | 'complete' | 'error'
+  requirements?: string[]
 }
 
 interface OnboardingScenario {
   id: string
   name: string
-  type: 'corporate' | 'byod' | 'guest' | 'iot'
-  icon: React.ComponentType<any>
   description: string
+  deviceType: string
+  userType: string
   steps: OnboardingStep[]
-  estimatedTime: string
-  requirements: string[]
+  totalDuration: number
 }
 
 export default function OnboardingScenarios() {
   const [selectedScenario, setSelectedScenario] = useState<string>('corporate')
-  const [simulationRunning, setSimulationRunning] = useState(false)
+  const [isRunning, setIsRunning] = useState(false)
   const [currentStep, setCurrentStep] = useState(0)
+  const [progress, setProgress] = useState(0)
 
   const scenarios: OnboardingScenario[] = [
     {
       id: 'corporate',
-      name: 'Corporate Device Onboarding',
-      type: 'corporate',
-      icon: Monitor,
-      description: 'Automated onboarding for corporate-managed devices with certificate deployment via Intune',
-      estimatedTime: '5-10 minutes',
-      requirements: [
-        'Device enrolled in Microsoft Intune',
-        'User authenticated with Azure AD',
-        'Device compliance policy met',
-        'Network connectivity to Portnox Cloud'
-      ],
+      name: 'Corporate Device',
+      description: 'Intune-managed corporate device onboarding',
+      deviceType: 'Windows Laptop',
+      userType: 'Employee',
+      totalDuration: 45,
       steps: [
         {
           id: '1',
-          title: 'Device Detection',
-          description: 'Network infrastructure detects new device connection',
-          status: 'completed',
-          duration: '< 1 second',
-          details: [
-            'Switch/AP detects device MAC address',
-            'Initial 802.1X authentication request sent',
-            'Device placed in pre-authentication VLAN'
-          ]
+          name: 'Device Detection',
+          description: 'Network access attempt detected',
+          duration: 5,
+          status: 'pending'
         },
         {
           id: '2',
-          title: 'Certificate Request',
-          description: 'Device requests certificate from Intune via SCEP',
-          status: 'completed',
-          duration: '30-60 seconds',
-          details: [
-            'Device contacts Intune SCEP service',
-            'User credentials validated against Azure AD',
-            'Device compliance status checked',
-            'Certificate generated and deployed'
-          ]
+          name: 'Certificate Validation',
+          description: 'Validate device certificate from Intune',
+          duration: 10,
+          status: 'pending',
+          requirements: ['Valid device certificate', 'Intune enrollment']
         },
         {
           id: '3',
-          title: 'EAP-TLS Authentication',
-          description: 'Device authenticates using deployed certificate',
-          status: 'in_progress',
-          duration: '5-10 seconds',
-          details: [
-            'Device presents certificate to network',
-            'Certificate validated against Portnox CA',
-            'OCSP check performed for revocation status',
-            'User identity extracted from certificate'
-          ]
+          name: 'Compliance Check',
+          description: 'Verify device compliance status',
+          duration: 15,
+          status: 'pending',
+          requirements: ['Antivirus updated', 'OS patches current', 'Encryption enabled']
         },
         {
           id: '4',
-          title: 'Policy Evaluation',
-          description: 'Portnox evaluates access policies for user and device',
+          name: 'User Authentication',
+          description: 'Authenticate user via Active Directory',
+          duration: 10,
           status: 'pending',
-          duration: '1-2 seconds',
-          details: [
-            'User group membership determined',
-            'Device compliance status verified',
-            'Location and time-based policies applied',
-            'VLAN and access permissions calculated'
-          ]
+          requirements: ['Valid AD credentials', 'MFA completion']
         },
         {
           id: '5',
-          title: 'Network Access Granted',
-          description: 'Device granted appropriate network access',
-          status: 'pending',
-          duration: '1-2 seconds',
-          details: [
-            'RADIUS Accept sent to network infrastructure',
-            'VLAN assignment and ACLs applied',
-            'Device moved to production network',
-            'Access logged and monitored'
-          ]
+          name: 'Network Access Granted',
+          description: 'Grant access to corporate network',
+          duration: 5,
+          status: 'pending'
         }
       ]
     },
     {
       id: 'byod',
-      name: 'BYOD Device Onboarding',
-      type: 'byod',
-      icon: Smartphone,
-      description: 'Self-service onboarding for personal devices with user-initiated certificate enrollment',
-      estimatedTime: '10-15 minutes',
-      requirements: [
-        'Valid corporate user account',
-        'Device meets minimum security requirements',
-        'User accepts BYOD policy terms',
-        'Email access for verification'
-      ],
+      name: 'BYOD Device',
+      description: 'Bring Your Own Device self-service onboarding',
+      deviceType: 'Personal iPhone',
+      userType: 'Employee',
+      totalDuration: 120,
       steps: [
         {
           id: '1',
-          title: 'Portal Access',
-          description: 'User accesses self-service onboarding portal',
-          status: 'completed',
-          duration: '1-2 minutes',
-          details: [
-            'User connects to guest/onboarding WiFi',
-            'Captive portal redirects to onboarding site',
-            'User authenticates with corporate credentials',
-            'Device information collected'
-          ]
+          name: 'Device Detection',
+          description: 'Unknown device detected on network',
+          duration: 5,
+          status: 'pending'
         },
         {
           id: '2',
-          title: 'Policy Acceptance',
-          description: 'User reviews and accepts BYOD policies',
-          status: 'completed',
-          duration: '2-3 minutes',
-          details: [
-            'BYOD policy document presented',
-            'User acknowledges terms and conditions',
-            'Device registration information collected',
-            'Emergency contact details verified'
-          ]
+          name: 'Captive Portal Redirect',
+          description: 'Redirect to self-service portal',
+          duration: 10,
+          status: 'pending'
         },
         {
           id: '3',
-          title: 'Certificate Installation',
-          description: 'User downloads and installs network certificate',
-          status: 'in_progress',
-          duration: '3-5 minutes',
-          details: [
-            'Certificate profile generated for device',
-            'Installation instructions provided',
-            'User downloads certificate bundle',
-            'WiFi profile automatically configured'
-          ]
+          name: 'User Authentication',
+          description: 'Employee authenticates with corporate credentials',
+          duration: 30,
+          status: 'pending',
+          requirements: ['Corporate username/password', 'MFA verification']
         },
         {
           id: '4',
-          title: 'Network Connection',
-          description: 'Device connects to corporate network',
+          name: 'Device Registration',
+          description: 'Register device and install certificates',
+          duration: 60,
           status: 'pending',
-          duration: '1-2 minutes',
-          details: [
-            'Device attempts 802.1X authentication',
-            'Certificate validated by network',
-            'BYOD policies applied',
-            'Limited network access granted'
-          ]
+          requirements: ['Device enrollment', 'Certificate installation']
         },
         {
           id: '5',
-          title: 'Compliance Check',
-          description: 'Device compliance verified and access finalized',
-          status: 'pending',
-          duration: '2-3 minutes',
-          details: [
-            'Device security posture assessed',
-            'OS version and patch level checked',
-            'Antivirus status verified',
-            'Final access permissions applied'
-          ]
+          name: 'Policy Application',
+          description: 'Apply BYOD security policies',
+          duration: 10,
+          status: 'pending'
+        },
+        {
+          id: '6',
+          name: 'Network Access Granted',
+          description: 'Grant limited network access',
+          duration: 5,
+          status: 'pending'
         }
       ]
     },
     {
       id: 'guest',
-      name: 'Guest Access Onboarding',
-      type: 'guest',
-      icon: Users,
-      description: 'Sponsored guest access with approval workflow and time-limited access',
-      estimatedTime: '5-20 minutes',
-      requirements: [
-        'Valid sponsor employee',
-        'Guest contact information',
-        'Business justification',
-        'Sponsor approval'
-      ],
+      name: 'Guest Access',
+      description: 'Sponsored guest access workflow',
+      deviceType: 'Personal Laptop',
+      userType: 'Visitor',
+      totalDuration: 90,
       steps: [
         {
           id: '1',
-          title: 'Guest Registration',
-          description: 'Guest provides contact information and business purpose',
-          status: 'completed',
-          duration: '2-3 minutes',
-          details: [
-            'Guest connects to open guest WiFi',
-            'Registration form completed',
-            'Contact information verified',
-            'Business purpose documented'
-          ]
+          name: 'Device Detection',
+          description: 'Unknown device detected',
+          duration: 5,
+          status: 'pending'
         },
         {
           id: '2',
-          title: 'Sponsor Selection',
-          description: 'Guest selects sponsor from employee directory',
-          status: 'completed',
-          duration: '1-2 minutes',
-          details: [
-            'Employee directory searched',
-            'Sponsor contact selected',
-            'Meeting details provided',
-            'Approval request generated'
-          ]
+          name: 'Guest Portal Redirect',
+          description: 'Redirect to guest registration portal',
+          duration: 10,
+          status: 'pending'
         },
         {
           id: '3',
-          title: 'Sponsor Approval',
-          description: 'Sponsor receives and approves guest access request',
-          status: 'in_progress',
-          duration: '5-15 minutes',
-          details: [
-            'Email notification sent to sponsor',
-            'Guest details and purpose reviewed',
-            'Access duration specified',
-            'Approval or denial submitted'
-          ]
+          name: 'Sponsor Request',
+          description: 'Request sponsorship from employee',
+          duration: 45,
+          status: 'pending',
+          requirements: ['Sponsor email', 'Business justification']
         },
         {
           id: '4',
-          title: 'Access Credentials',
-          description: 'Guest receives temporary access credentials',
+          name: 'Sponsor Approval',
+          description: 'Employee approves guest access',
+          duration: 20,
           status: 'pending',
-          duration: '1 minute',
-          details: [
-            'Temporary username/password generated',
-            'Access credentials sent via SMS/email',
-            'Guest network SSID provided',
-            'Usage guidelines communicated'
-          ]
+          requirements: ['Sponsor approval', 'Access duration set']
         },
         {
           id: '5',
-          title: 'Network Access',
-          description: 'Guest connects with time-limited internet access',
-          status: 'pending',
-          duration: '1 minute',
-          details: [
-            'Guest authenticates with credentials',
-            'Internet-only access granted',
-            'Bandwidth limits applied',
-            'Session time tracking initiated'
-          ]
+          name: 'Terms Acceptance',
+          description: 'Guest accepts terms and conditions',
+          duration: 5,
+          status: 'pending'
+        },
+        {
+          id: '6',
+          name: 'Guest Network Access',
+          description: 'Grant limited guest network access',
+          duration: 5,
+          status: 'pending'
         }
       ]
     },
     {
       id: 'iot',
-      name: 'IoT Device Onboarding',
-      type: 'iot',
-      icon: Settings,
-      description: 'MAC-based authentication for IoT devices with automated profiling and micro-segmentation',
-      estimatedTime: '2-5 minutes',
-      requirements: [
-        'Device MAC address registration',
-        'Device type classification',
-        'Network segmentation policies',
-        'Monitoring and alerting setup'
-      ],
+      name: 'IoT Device',
+      description: 'IoT device MAC-based authentication',
+      deviceType: 'IP Camera',
+      userType: 'System',
+      totalDuration: 30,
       steps: [
         {
           id: '1',
-          title: 'Device Discovery',
-          description: 'IoT device detected on network',
-          status: 'completed',
-          duration: '< 1 second',
-          details: [
-            'Device MAC address detected',
-            'Initial network connection attempt',
-            'Device placed in quarantine VLAN',
-            'Traffic analysis initiated'
-          ]
+          name: 'Device Detection',
+          description: 'New MAC address detected',
+          duration: 5,
+          status: 'pending'
         },
         {
           id: '2',
-          title: 'Device Profiling',
-          description: 'Automated device classification and profiling',
-          status: 'completed',
-          duration: '30-60 seconds',
-          details: [
-            'Device fingerprinting performed',
-            'Manufacturer OUI lookup',
-            'Traffic pattern analysis',
-            'Device type classification'
-          ]
+          name: 'MAC Authentication',
+          description: 'Authenticate using MAC address',
+          duration: 10,
+          status: 'pending',
+          requirements: ['MAC address in whitelist', 'Device fingerprinting']
         },
         {
           id: '3',
-          title: 'MAC Authentication',
-          description: 'Device authenticated using MAC address bypass',
-          status: 'in_progress',
-          duration: '5-10 seconds',
-          details: [
-            'MAC address validated against whitelist',
-            'Device ownership verified',
-            'Security posture assessed',
-            'Authentication decision made'
-          ]
+          name: 'Device Profiling',
+          description: 'Profile device type and capabilities',
+          duration: 10,
+          status: 'pending',
+          requirements: ['DHCP fingerprinting', 'HTTP user agent analysis']
         },
         {
           id: '4',
-          title: 'Micro-segmentation',
-          description: 'Device placed in appropriate network segment',
-          status: 'pending',
-          duration: '1-2 seconds',
-          details: [
-            'IoT VLAN assignment',
-            'Firewall rules applied',
-            'Communication restrictions enforced',
-            'Monitoring policies activated'
-          ]
-        },
-        {
-          id: '5',
-          title: 'Continuous Monitoring',
-          description: 'Device behavior monitoring and anomaly detection',
-          status: 'pending',
-          duration: 'Ongoing',
-          details: [
-            'Traffic patterns monitored',
-            'Anomaly detection active',
-            'Security alerts configured',
-            'Compliance reporting enabled'
-          ]
+          name: 'IoT Network Access',
+          description: 'Grant access to IoT VLAN',
+          duration: 5,
+          status: 'pending'
         }
       ]
     }
   ]
 
-  const getStatusIcon = (status: OnboardingStep['status']) => {
-    switch (status) {
-      case 'completed':
-        return <CheckCircle className="h-5 w-5 text-green-600" />
-      case 'in_progress':
-        return <Clock className="h-5 w-5 text-blue-600" />
-      case 'failed':
-        return <AlertCircle className="h-5 w-5 text-red-600" />
-      default:
-        return <div className="h-5 w-5 rounded-full border-2 border-gray-300" />
-    }
-  }
+  const currentScenario = scenarios.find(s => s.id === selectedScenario)!
 
-  const getStatusColor = (status: OnboardingStep['status']) => {
-    switch (status) {
-      case 'completed': return 'text-green-600'
-      case 'in_progress': return 'text-blue-600'
-      case 'failed': return 'text-red-600'
-      default: return 'text-gray-500'
-    }
-  }
-
-  const simulateOnboarding = async () => {
-    setSimulationRunning(true)
+  const startSimulation = () => {
+    setIsRunning(true)
     setCurrentStep(0)
+    setProgress(0)
     
-    const scenario = scenarios.find(s => s.id === selectedScenario)
-    if (!scenario) return
-
-    for (let i = 0; i < scenario.steps.length; i++) {
-      setCurrentStep(i)
-      await new Promise(resolve => setTimeout(resolve, 2000)) // 2 second delay between steps
-    }
+    // Reset all steps
+    currentScenario.steps.forEach(step => {
+      step.status = 'pending'
+    })
     
-    setSimulationRunning(false)
+    simulateSteps()
   }
 
-  const selectedScenarioData = scenarios.find(s => s.id === selectedScenario)
-  const completedSteps = selectedScenarioData?.steps.filter(s => s.status === 'completed').length || 0
-  const totalSteps = selectedScenarioData?.steps.length || 0
-  const progressPercentage = (completedSteps / totalSteps) * 100
+  const simulateSteps = () => {
+    let stepIndex = 0
+    let totalProgress = 0
+    
+    const processStep = () => {
+      if (stepIndex < currentScenario.steps.length) {
+        const step = currentScenario.steps[stepIndex]
+        step.status = 'active'
+        setCurrentStep(stepIndex)
+        
+        setTimeout(() => {
+          step.status = 'complete'
+          totalProgress += (step.duration / currentScenario.totalDuration) * 100
+          setProgress(totalProgress)
+          stepIndex++
+          
+          if (stepIndex < currentScenario.steps.length) {
+            processStep()
+          } else {
+            setIsRunning(false)
+          }
+        }, step.duration * 50) // Speed up for demo
+      }
+    }
+    
+    processStep()
+  }
+
+  const resetSimulation = () => {
+    setIsRunning(false)
+    setCurrentStep(0)
+    setProgress(0)
+    currentScenario.steps.forEach(step => {
+      step.status = 'pending'
+    })
+  }
+
+  const getStepIcon = (status: string) => {
+    switch (status) {
+      case 'complete': return <CheckCircle className="h-4 w-4 text-green-600" />
+      case 'active': return <Clock className="h-4 w-4 text-blue-600 animate-spin" />
+      case 'error': return <AlertCircle className="h-4 w-4 text-red-600" />
+      default: return <div className="h-4 w-4 rounded-full border-2 border-gray-300" />
+    }
+  }
 
   return (
     <div className="space-y-6">
+      {/* Scenario Selection */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {scenarios.map((scenario) => (
+          <Button
+            key={scenario.id}
+            variant={selectedScenario === scenario.id ? "default" : "outline"}
+            className="h-auto p-3 text-left"
+            onClick={() => setSelectedScenario(scenario.id)}
+          >
+            <div>
+              <div className="font-medium text-sm">{scenario.name}</div>
+              <div className="text-xs opacity-70">{scenario.deviceType}</div>
+            </div>
+          </Button>
+        ))}
+      </div>
+
+      {/* Scenario Details */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Wifi className="h-6 w-6 text-blue-600" />
-            <span>Device Onboarding Scenarios</span>
-          </CardTitle>
-          <p className="text-gray-600 dark:text-gray-400">
-            Interactive visualization of different device onboarding workflows and authentication processes.
-          </p>
+          <div className="flex justify-between items-start">
+            <div>
+              <CardTitle className="flex items-center space-x-2">
+                <span>{currentScenario.name} Onboarding</span>
+                <Badge variant="outline">{currentScenario.userType}</Badge>
+              </CardTitle>
+              <p className="text-sm text-gray-600 mt-1">{currentScenario.description}</p>
+            </div>
+            <div className="flex space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={startSimulation}
+                disabled={isRunning}
+              >
+                <Play className="h-4 w-4 mr-2" />
+                Start Simulation
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={resetSimulation}
+              >
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Reset
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          <Tabs value={selectedScenario} onValueChange={setSelectedScenario} className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              {scenarios.map((scenario) => {
-                const Icon = scenario.icon
-                return (
-                  <TabsTrigger key={scenario.id} value={scenario.id} className="flex items-center space-x-2">
-                    <Icon className="h-4 w-4" />
-                    <span className="hidden sm:inline">{scenario.name.split(' ')[0]}</span>
-                  </TabsTrigger>
-                )
-              })}
-            </TabsList>
+          {/* Progress Bar */}
+          <div className="mb-6">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-medium">Overall Progress</span>
+              <span className="text-sm text-gray-600">{Math.round(progress)}%</span>
+            </div>
+            <Progress value={progress} className="h-2" />
+            <div className="flex justify-between text-xs text-gray-500 mt-1">
+              <span>0s</span>
+              <span>{currentScenario.totalDuration}s</span>
+            </div>
+          </div>
 
-            {scenarios.map((scenario) => (
-              <TabsContent key={scenario.id} value={scenario.id} className="space-y-6">
-                {/* Scenario Overview */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  <div className="lg:col-span-2 space-y-4">
-                    <div>
-                      <h3 className="text-xl font-semibold mb-2">{scenario.name}</h3>
-                      <p className="text-gray-600 dark:text-gray-400 mb-4">{scenario.description}</p>
-                      
-                      <div className="flex items-center space-x-4 mb-4">
-                        <Badge variant="outline">
-                          <Clock className="h-4 w-4 mr-1" />
-                          {scenario.estimatedTime}
-                        </Badge>
-                        <Badge variant="outline">
-                          {totalSteps} Steps
-                        </Badge>
-                      </div>
-
-                      <div className="mb-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium">Progress</span>
-                          <span className="text-sm text-gray-500">{completedSteps}/{totalSteps} completed</span>
-                        </div>
-                        <Progress value={progressPercentage} className="w-full" />
-                      </div>
-
-                      <Button 
-                        onClick={simulateOnboarding} 
-                        disabled={simulationRunning}
-                        className="w-full sm:w-auto"
-                      >
-                        {simulationRunning ? (
-                          <>
-                            <Clock className="h-4 w-4 mr-2 animate-spin" />
-                            Simulating...
-                          </>
-                        ) : (
-                          <>
-                            <Settings className="h-4 w-4 mr-2" />
-                            Simulate Onboarding
-                          </>
-                        )}
-                      </Button>
-                    </div>
+          {/* Steps */}
+          <div className="space-y-4">
+            {currentScenario.steps.map((step, index) => (
+              <div
+                key={step.id}
+                className={`flex items-start space-x-4 p-4 rounded-lg border ${
+                  step.status === 'active' ? 'bg-blue-50 border-blue-200' :
+                  step.status === 'complete' ? 'bg-green-50 border-green-200' :
+                  'bg-gray-50 border-gray-200'
+                }`}
+              >
+                <div className="flex-shrink-0 mt-1">
+                  {getStepIcon(step.status)}
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium">{step.name}</h4>
+                    <Badge variant="outline" className="text-xs">
+                      {step.duration}s
+                    </Badge>
                   </div>
-
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="font-semibold mb-2">Requirements</h4>
-                      <ul className="space-y-2">
-                        {scenario.requirements.map((req, index) => (
-                          <li key={index} className="flex items-start space-x-2 text-sm">
-                            <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                            <span>{req}</span>
-                          </li>
+                  <p className="text-sm text-gray-600 mt-1">{step.description}</p>
+                  {step.requirements && (
+                    <div className="mt-2">
+                      <p className="text-xs font-medium text-gray-700 mb-1">Requirements:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {step.requirements.map((req, reqIndex) => (
+                          <Badge key={reqIndex} variant="secondary" className="text-xs">
+                            {req}
+                          </Badge>
                         ))}
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Onboarding Steps */}
-                <div className="space-y-4">
-                  <h4 className="text-lg font-semibold">Onboarding Process</h4>
-                  <div className="space-y-4">
-                    {scenario.steps.map((step, index) => (
-                      <div
-                        key={step.id}
-                        className={`border rounded-lg p-4 transition-all ${
-                          simulationRunning && currentStep === index
-                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                            : 'border-gray-200'
-                        }`}
-                      >
-                        <div className="flex items-start space-x-4">
-                          <div className="flex-shrink-0 mt-1">
-                            {getStatusIcon(step.status)}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between mb-2">
-                              <h5 className="font-medium">{step.title}</h5>
-                              <Badge variant="outline" className="text-xs">
-                                {step.duration}
-                              </Badge>
-                            </div>
-                            <p className={`text-sm mb-3 ${getStatusColor(step.status)}`}>
-                              {step.description}
-                            </p>
-                            <div className="space-y-1">
-                              {step.details.map((detail, detailIndex) => (
-                                <div key={detailIndex} className="flex items-start space-x-2 text-xs text-gray-600 dark:text-gray-400">
-                                  <div className="w-1 h-1 bg-gray-400 rounded-full mt-2 flex-shrink-0" />
-                                  <span>{detail}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  )}
                 </div>
-
-                {/* Quick Actions */}
-                <div className="border-t pt-4">
-                  <h4 className="font-semibold mb-3">Quick Actions</h4>
-                  <div className="flex flex-wrap gap-2">
-                    <Button variant="outline" size="sm">
-                      <Download className="h-4 w-4 mr-2" />
-                      Download Guide
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <QrCode className="h-4 w-4 mr-2" />
-                      Generate QR Code
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <Mail className="h-4 w-4 mr-2" />
-                      Email Instructions
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <Settings className="h-4 w-4 mr-2" />
-                      Configure Policies
-                    </Button>
-                  </div>
-                </div>
-              </TabsContent>
+              </div>
             ))}
-          </Tabs>
+          </div>
         </CardContent>
       </Card>
     </div>

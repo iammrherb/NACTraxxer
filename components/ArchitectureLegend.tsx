@@ -190,6 +190,16 @@ export default function ArchitectureLegend({ currentView }: ArchitectureLegendPr
     ]
   }
 
+  const legendItems = [
+    { type: 'cloud', color: 'bg-blue-500', label: 'Cloud Services', description: 'Internet and cloud resources' },
+    { type: 'security', color: 'bg-red-500', label: 'Security Components', description: 'Firewalls and security appliances' },
+    { type: 'nac', color: 'bg-purple-500', label: 'NAC Components', description: 'Portnox NAC system components' },
+    { type: 'network', color: 'bg-green-500', label: 'Network Infrastructure', description: 'Switches, routers, and controllers' },
+    { type: 'endpoint', color: 'bg-orange-500', label: 'Endpoints', description: 'User devices and IoT endpoints' },
+    { type: 'zone', color: 'bg-gray-500', label: 'Security Zones', description: 'Network segmentation zones' },
+    { type: 'user', color: 'bg-indigo-500', label: 'User Groups', description: 'Different user categories' }
+  ]
+
   return (
     <div className="space-y-6">
       <Card>
@@ -240,6 +250,22 @@ export default function ArchitectureLegend({ currentView }: ArchitectureLegendPr
                 </div>
               </div>
             ))}
+            <div key="additional-items" className="space-y-4">
+              <h4 className="font-semibold text-lg text-gray-900 dark:text-gray-100 border-b pb-2">
+                Additional Components
+              </h4>
+              <div className="space-y-3">
+                {legendItems.map((item) => (
+                  <div key={item.type} className="flex items-center space-x-3">
+                    <div className={`w-4 h-4 rounded ${item.color}`} />
+                    <div className="flex-1">
+                      <div className="font-medium text-sm">{item.label}</div>
+                      <div className="text-xs text-gray-600">{item.description}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
