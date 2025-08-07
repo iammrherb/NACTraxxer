@@ -1,370 +1,283 @@
 'use client'
 
-import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
-import { Save, Download, Upload, FileText, Network, Users, Shield, Settings, CheckCircle, AlertCircle } from 'lucide-react'
+import { Progress } from '@/components/ui/progress'
+import { Book, MapPin, Users, Calendar, Settings, CheckCircle, Clock, AlertTriangle, XCircle } from 'lucide-react'
 
-interface SiteInfo {
-  name: string
-  location: string
-  contactPerson: string
-  contactEmail: string
-  contactPhone: string
+interface SiteWorkbookProps {
+  siteId: string | null
 }
 
-interface NetworkConfig {
-  vlanId: string
-  subnetRange: string
-  gatewayIp: string
-  dnsServers: string
-  radiusServer: string
-  radiusSecret: string
-}
+export default function SiteWorkbook({ siteId }: SiteWorkbookProps) {
+  // Sample site data - in a real app this would be fetched based on siteId
+  const siteData = siteId ? {
+    id: 'ABM-HQ001',
+    name: 'ABM Global Headquarters',
+    region: 'North America',
+    country: 'USA',
+    priority: 'High',
+    phase: '1',
+    users: 2500,
+    projectManager: 'Alex Rivera',
+    technicalOwners: ['John Smith', 'Mark Wilson'],
+    status: 'In Progress',
+    completionPercent: 35,
+    notes: 'Executive network needs priority handling. Board room has custom AV equipment requiring special considerations for IoT device authentication.',
+    wiredVendors: ['Cisco', 'Juniper'],
+    wirelessVendors: ['Cisco'],
+    deviceTypes: ['Windows', 'Apple', 'Mobile', 'IoT'],
+    radsec: 'Native',
+    plannedStart: '2025-08-01',
+    plannedEnd: '2025-08-15',
+    deploymentChecklist: [
+      { item: 'Intune Configuration', status: 'complete' },
+      { item: 'Certificate Templates', status: 'complete' },
+      { item: 'RADIUS Configuration', status: 'in-progress' },
+      { item: 'Switch Configuration', status: 'in-progress' },
+      { item: 'Wireless Configuration', status: 'pending' },
+      { item: 'Policy Configuration', status: 'pending' },
+      { item: 'User Testing', status: 'pending' },
+      { item: 'Go-Live', status: 'pending' }
+    ]
+  } : null
 
-export default function SiteWorkbook() {
-  const [selectedSite, setSelectedSite] = useState('site1')
-  const [siteInfo, setSiteInfo] = useState<SiteInfo>({
-    name: 'Corporate Headquarters',
-    location: 'New York, NY',
-    contactPerson: 'John Smith',
-    contactEmail: 'john.smith@company.com',
-    contactPhone: '+1 (555) 123-4567'
-  })
-
-  const [networkConfig, setNetworkConfig] = useState<NetworkConfig>({
-    vlanId: '100',
-    subnetRange: '192.168.100.0/24',
-    gatewayIp: '192.168.100.1',
-    dnsServers: '8.8.8.8, 8.8.4.4',
-    radiusServer: '192.168.1.10',
-    radiusSecret: 'shared-secret-123'
-  })
-
-  const [validationStatus, setValidationStatus] = useState({
-    siteInfo: true,
-    networkConfig: true,
-    deviceConfig: false,
-    policies: true
-  })
-
-  const sites = [
-    { id: 'site1', name: 'Corporate Headquarters', status: 'active' },
-    { id: 'site2', name: 'West Coast Office', status: 'pending' },
-    { id: 'site3', name: 'Manufacturing Plant', status: 'draft' },
-    { id: 'site4', name: 'Research Facility', status: 'draft' }
-  ]
-
-  const updateSiteInfo = (field: keyof SiteInfo, value: string) => {
-    setSiteInfo(prev => ({ ...prev, [field]: value }))
+  if (!siteId || !siteData) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Site Workbook</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-12 text-muted-foreground">
+            {siteId ? `Site workbook for ${siteId}` : 'Select a site to view its workbook'}
+          </div>
+        </CardContent>
+      </Card>
+    )
   }
 
-  const updateNetworkConfig = (field: keyof NetworkConfig, value: string) => {
-    setNetworkConfig(prev => ({ ...prev, [field]: value }))
-  }
-
-  const exportWorkbook = () => {
-    const workbookData = {
-      siteInfo,
-      networkConfig,
-      timestamp: new Date().toISOString()
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'High': return 'destructive'
+      case 'Medium': return 'default'
+      case 'Low': return 'secondary'
+      default: return 'outline'
     }
-    
-    const blob = new Blob([JSON.stringify(workbookData, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `site-workbook-${selectedSite}.json`
-    link.click()
-    URL.revokeObjectURL(url)
   }
 
-  const getStatusIcon = (isValid: boolean) => {
-    return isValid ? 
-      <CheckCircle className="h-4 w-4 text-green-500" /> : 
-      <AlertCircle className="h-4 w-4 text-red-500" />
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Complete': return 'text-green-600'
+      case 'In Progress': return 'text-blue-600'
+      case 'Planned': return 'text-gray-600'
+      case 'Delayed': return 'text-red-600'
+      default: return 'text-gray-600'
+    }
+  }
+
+  const getChecklistIcon = (status: string) => {
+    switch (status) {
+      case 'complete':
+        return <CheckCircle className="h-4 w-4 text-green-600" />
+      case 'in-progress':
+        return <Clock className="h-4 w-4 text-blue-600" />
+      case 'pending':
+        return <XCircle className="h-4 w-4 text-gray-400" />
+      default:
+        return <XCircle className="h-4 w-4 text-gray-400" />
+    }
   }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Site Workbook</h2>
-          <p className="text-muted-foreground">Configure and document site-specific settings</p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" onClick={exportWorkbook}>
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
-          <Button>
-            <Save className="h-4 w-4 mr-2" />
-            Save Changes
-          </Button>
-        </div>
-      </div>
-
-      {/* Site Selection */}
       <Card>
         <CardHeader>
-          <CardTitle>Site Selection</CardTitle>
+          <CardTitle>Site Workbook: {siteData.name}</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center space-x-4">
-            <div className="flex-1">
-              <Label htmlFor="site-select">Select Site</Label>
-              <Select value={selectedSite} onValueChange={setSelectedSite}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose a site" />
-                </SelectTrigger>
-                <SelectContent>
-                  {sites.map((site) => (
-                    <SelectItem key={site.id} value={site.id}>
-                      <div className="flex items-center space-x-2">
-                        <span>{site.name}</span>
-                        <Badge variant={site.status === 'active' ? 'default' : 'secondary'}>
-                          {site.status}
-                        </Badge>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Basic Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold flex items-center space-x-2">
+                <MapPin className="h-5 w-5 text-blue-600" />
+                <span>Site Information</span>
+              </h3>
+              
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Site ID:</span>
+                  <span className="font-mono">{siteData.id}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Region:</span>
+                  <span>{siteData.region}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Country:</span>
+                  <span>{siteData.country}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Priority:</span>
+                  <Badge variant={getPriorityColor(siteData.priority)}>
+                    {siteData.priority}
+                  </Badge>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Phase:</span>
+                  <span>Phase {siteData.phase}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Users:</span>
+                  <span>{siteData.users.toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Project Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold flex items-center space-x-2">
+                <Users className="h-5 w-5 text-blue-600" />
+                <span>Project Team</span>
+              </h3>
+              
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Project Manager:</span>
+                  <span>{siteData.projectManager}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Technical Owners:</span>
+                  <div className="text-right">
+                    {siteData.technicalOwners.map((owner, index) => (
+                      <div key={index}>{owner}</div>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Status:</span>
+                  <span className={`font-medium ${getStatusColor(siteData.status)}`}>
+                    {siteData.status}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Completion:</span>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-20 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <div 
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${siteData.completionPercent}%` }}
+                      />
+                    </div>
+                    <span className="text-sm font-medium">{siteData.completionPercent}%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Timeline */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold flex items-center space-x-2">
+                <Calendar className="h-5 w-5 text-blue-600" />
+                <span>Project Timeline</span>
+              </h3>
+              
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Planned Start:</span>
+                  <span>{new Date(siteData.plannedStart).toLocaleDateString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Planned End:</span>
+                  <span>{new Date(siteData.plannedEnd).toLocaleDateString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Duration:</span>
+                  <span>
+                    {Math.ceil((new Date(siteData.plannedEnd).getTime() - new Date(siteData.plannedStart).getTime()) / (1000 * 60 * 60 * 24))} days
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Technical Configuration */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold flex items-center space-x-2">
+                <Settings className="h-5 w-5 text-blue-600" />
+                <span>Technical Configuration</span>
+              </h3>
+              
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">RADSEC Implementation:</span>
+                  <Badge variant="outline">{siteData.radsec}</Badge>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Wired Vendors:</span>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {siteData.wiredVendors.map((vendor, index) => (
+                      <Badge key={index} variant="outline" className="text-xs">
+                        {vendor}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Wireless Vendors:</span>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {siteData.wirelessVendors.map((vendor, index) => (
+                      <Badge key={index} variant="outline" className="text-xs">
+                        {vendor}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Device Types:</span>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {siteData.deviceTypes.map((type, index) => (
+                      <Badge key={index} variant="outline" className="text-xs">
+                        {type}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Deployment Checklist */}
+          <div className="mt-6 pt-6 border-t">
+            <h3 className="text-lg font-semibold mb-4">Deployment Checklist</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {siteData.deploymentChecklist.map((item, index) => (
+                <div key={index} className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  {getChecklistIcon(item.status)}
+                  <span className={`flex-1 ${item.status === 'complete' ? 'line-through text-gray-500' : ''}`}>
+                    {item.item}
+                  </span>
+                  <Badge 
+                    variant={item.status === 'complete' ? 'default' : item.status === 'in-progress' ? 'secondary' : 'outline'}
+                    className="text-xs"
+                  >
+                    {item.status.replace('-', ' ')}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Notes Section */}
+          <div className="mt-6 pt-6 border-t">
+            <h3 className="text-lg font-semibold mb-3">Project Notes</h3>
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+              <p className="text-gray-700 dark:text-gray-300">
+                {siteData.notes}
+              </p>
             </div>
           </div>
         </CardContent>
       </Card>
-
-      {/* Configuration Tabs */}
-      <Tabs defaultValue="site-info" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="site-info" className="flex items-center space-x-2">
-            <FileText className="h-4 w-4" />
-            <span>Site Info</span>
-            {getStatusIcon(validationStatus.siteInfo)}
-          </TabsTrigger>
-          <TabsTrigger value="network" className="flex items-center space-x-2">
-            <Network className="h-4 w-4" />
-            <span>Network</span>
-            {getStatusIcon(validationStatus.networkConfig)}
-          </TabsTrigger>
-          <TabsTrigger value="devices" className="flex items-center space-x-2">
-            <Settings className="h-4 w-4" />
-            <span>Devices</span>
-            {getStatusIcon(validationStatus.deviceConfig)}
-          </TabsTrigger>
-          <TabsTrigger value="policies" className="flex items-center space-x-2">
-            <Shield className="h-4 w-4" />
-            <span>Policies</span>
-            {getStatusIcon(validationStatus.policies)}
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="site-info" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Site Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="site-name">Site Name</Label>
-                  <Input
-                    id="site-name"
-                    value={siteInfo.name}
-                    onChange={(e) => updateSiteInfo('name', e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="location">Location</Label>
-                  <Input
-                    id="location"
-                    value={siteInfo.location}
-                    onChange={(e) => updateSiteInfo('location', e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <Separator />
-
-              <h4 className="font-semibold">Primary Contact</h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="contact-person">Contact Person</Label>
-                  <Input
-                    id="contact-person"
-                    value={siteInfo.contactPerson}
-                    onChange={(e) => updateSiteInfo('contactPerson', e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="contact-email">Email</Label>
-                  <Input
-                    id="contact-email"
-                    type="email"
-                    value={siteInfo.contactEmail}
-                    onChange={(e) => updateSiteInfo('contactEmail', e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="contact-phone">Phone</Label>
-                  <Input
-                    id="contact-phone"
-                    value={siteInfo.contactPhone}
-                    onChange={(e) => updateSiteInfo('contactPhone', e.target.value)}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="network" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Network Configuration</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="vlan-id">VLAN ID</Label>
-                  <Input
-                    id="vlan-id"
-                    value={networkConfig.vlanId}
-                    onChange={(e) => updateNetworkConfig('vlanId', e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="subnet-range">Subnet Range</Label>
-                  <Input
-                    id="subnet-range"
-                    value={networkConfig.subnetRange}
-                    onChange={(e) => updateNetworkConfig('subnetRange', e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="gateway-ip">Gateway IP</Label>
-                  <Input
-                    id="gateway-ip"
-                    value={networkConfig.gatewayIp}
-                    onChange={(e) => updateNetworkConfig('gatewayIp', e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="dns-servers">DNS Servers</Label>
-                  <Input
-                    id="dns-servers"
-                    value={networkConfig.dnsServers}
-                    onChange={(e) => updateNetworkConfig('dnsServers', e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <Separator />
-
-              <h4 className="font-semibold">RADIUS Configuration</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="radius-server">RADIUS Server</Label>
-                  <Input
-                    id="radius-server"
-                    value={networkConfig.radiusServer}
-                    onChange={(e) => updateNetworkConfig('radiusServer', e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="radius-secret">Shared Secret</Label>
-                  <Input
-                    id="radius-secret"
-                    type="password"
-                    value={networkConfig.radiusSecret}
-                    onChange={(e) => updateNetworkConfig('radiusSecret', e.target.value)}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="devices" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Device Configuration</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <Settings className="h-16 w-16 mx-auto text-gray-400 mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Device Configuration</h3>
-                <p className="text-muted-foreground mb-4">
-                  Configure network devices and access points for this site
-                </p>
-                <Button variant="outline">
-                  <Upload className="h-4 w-4 mr-2" />
-                  Import Device List
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="policies" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Access Policies</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="p-4 border rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-semibold">Corporate Devices</h4>
-                    <Badge variant="default">Active</Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Full network access for managed corporate devices
-                  </p>
-                  <div className="text-xs text-muted-foreground">
-                    VLAN: 100 | Access Level: Full | Authentication: Certificate
-                  </div>
-                </div>
-
-                <div className="p-4 border rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-semibold">Guest Devices</h4>
-                    <Badge variant="secondary">Active</Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Limited internet access for guest devices
-                  </p>
-                  <div className="text-xs text-muted-foreground">
-                    VLAN: 200 | Access Level: Internet Only | Authentication: Captive Portal
-                  </div>
-                </div>
-
-                <div className="p-4 border rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-semibold">IoT Devices</h4>
-                    <Badge variant="outline">Pending</Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Restricted access for IoT and smart devices
-                  </p>
-                  <div className="text-xs text-muted-foreground">
-                    VLAN: 300 | Access Level: Restricted | Authentication: MAC Address
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
     </div>
   )
 }

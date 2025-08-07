@@ -4,268 +4,213 @@ import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Label } from '@/components/ui/label'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
-import { Cloud, Network, Shield, Settings, Zap, Eye, Download, RefreshCw, Play, Pause } from 'lucide-react'
-
-interface ArchitectureConfig {
-  cloudProvider: string
-  networkVendor: string
-  connectivityType: string
-  deploymentType: string
-  authMethod: string
-  mdmIntegration: string
-}
+import { Slider } from '@/components/ui/slider'
+import { Switch } from '@/components/ui/switch'
+import { Label } from '@/components/ui/label'
+import InteractiveDiagram from '@/components/interactive-diagram'
+import ArchitectureLegend from '@/components/architecture-legend'
+import PolicyEditor from '@/components/policy-editor'
+import OnboardingScenarios from '@/components/onboarding-scenarios'
+import { Download, Settings, Play, Pause, RotateCcw } from 'lucide-react'
 
 export default function ArchitectureDesigner() {
-  const [config, setConfig] = useState<ArchitectureConfig>({
-    cloudProvider: 'portnox-cloud',
-    networkVendor: 'cisco',
-    connectivityType: 'wired-wireless',
-    deploymentType: 'hybrid',
-    authMethod: 'certificate',
-    mdmIntegration: 'microsoft-intune'
-  })
+  const [selectedView, setSelectedView] = useState('complete')
+  const [cloudProvider, setCloudProvider] = useState('aws')
+  const [networkVendor, setNetworkVendor] = useState('cisco')
+  const [connectivityType, setConnectivityType] = useState('expressroute')
+  const [animationSpeed, setAnimationSpeed] = useState([1])
+  const [showDataFlow, setShowDataFlow] = useState(false)
+  const [showPolicyEditor, setShowPolicyEditor] = useState(false)
+  const [showOnboardingScenarios, setShowOnboardingScenarios] = useState(false)
 
-  const [currentView, setCurrentView] = useState('complete')
-  const [animationSpeed, setAnimationSpeed] = useState(2)
-  const [isAnimating, setIsAnimating] = useState(false)
+  const architectureViews = [
+    { value: 'complete', label: 'Complete Architecture', description: 'Full end-to-end NAC deployment' },
+    { value: 'auth-flow', label: 'Authentication Flow', description: 'Step-by-step authentication process' },
+    { value: 'pki', label: 'PKI Architecture', description: 'Certificate management and PKI components' },
+    { value: 'radsec-proxy', label: 'RADSec Proxy Design', description: 'Detailed proxy architecture and deployment' },
+    { value: 'policies', label: 'Policy Framework', description: 'NAC policies and enforcement points' },
+    { value: 'connectivity', label: 'Connectivity Options', description: 'Network connectivity patterns' },
+    { value: 'intune', label: 'Intune Integration', description: 'Microsoft Intune certificate deployment' },
+    { value: 'onboarding', label: 'Device Onboarding', description: 'Device enrollment and onboarding flows' }
+  ]
 
-  const updateConfig = (key: keyof ArchitectureConfig, value: string) => {
-    setConfig(prev => ({ ...prev, [key]: value }))
-  }
+  const cloudProviders = [
+    { value: 'aws', label: 'Amazon Web Services', icon: '☁️' },
+    { value: 'azure', label: 'Microsoft Azure', icon: '🔷' },
+    { value: 'gcp', label: 'Google Cloud Platform', icon: '🌐' },
+    { value: 'onprem', label: 'On-Premises', icon: '🏢' }
+  ]
 
-  const exportDiagram = () => {
-    // Export functionality would be implemented here
-    console.log('Exporting diagram with config:', config)
-  }
+  const networkVendors = [
+    { value: 'cisco', label: 'Cisco Meraki', icon: '🔧' },
+    { value: 'aruba', label: 'Aruba Networks', icon: '📡' },
+    { value: 'juniper', label: 'Juniper Networks', icon: '🌿' },
+    { value: 'extreme', label: 'Extreme Networks', icon: '⚡' },
+    { value: 'fortinet', label: 'Fortinet', icon: '🛡️' }
+  ]
 
-  const resetConfig = () => {
-    setConfig({
-      cloudProvider: 'portnox-cloud',
-      networkVendor: 'cisco',
-      connectivityType: 'wired-wireless',
-      deploymentType: 'hybrid',
-      authMethod: 'certificate',
-      mdmIntegration: 'microsoft-intune'
-    })
+  const connectivityOptions = [
+    { value: 'expressroute', label: 'Azure ExpressRoute', description: 'Dedicated private connection' },
+    { value: 'directconnect', label: 'AWS Direct Connect', description: 'Dedicated network connection to AWS' },
+    { value: 'sdwan', label: 'SD-WAN', description: 'Software-defined WAN connectivity' },
+    { value: 'mpls', label: 'MPLS Network', description: 'Traditional MPLS connectivity' },
+    { value: 'vpn', label: 'Site-to-Site VPN', description: 'IPSec VPN tunnels' },
+    { value: 'internet', label: 'Internet', description: 'Public internet connectivity' }
+  ]
+
+  const exportDiagram = (format: 'svg' | 'png' | 'pdf') => {
+    // Implementation for exporting diagrams
+    console.log(`Exporting diagram as ${format}`)
   }
 
   return (
     <div className="space-y-6">
-      {/* Configuration Panel */}
+      {/* Header */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Settings className="h-5 w-5" />
-            <span>Architecture Configuration</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="infrastructure" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="infrastructure">Infrastructure</TabsTrigger>
-              <TabsTrigger value="authentication">Authentication</TabsTrigger>
-              <TabsTrigger value="integration">Integration</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="infrastructure" className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="cloudProvider">Cloud Provider</Label>
-                  <Select value={config.cloudProvider} onValueChange={(value) => updateConfig('cloudProvider', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select cloud provider" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="portnox-cloud">Portnox Cloud</SelectItem>
-                      <SelectItem value="aws">Amazon Web Services</SelectItem>
-                      <SelectItem value="azure">Microsoft Azure</SelectItem>
-                      <SelectItem value="gcp">Google Cloud Platform</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="networkVendor">Network Vendor</Label>
-                  <Select value={config.networkVendor} onValueChange={(value) => updateConfig('networkVendor', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select network vendor" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="cisco">Cisco</SelectItem>
-                      <SelectItem value="aruba">Aruba Networks</SelectItem>
-                      <SelectItem value="juniper">Juniper Networks</SelectItem>
-                      <SelectItem value="fortinet">Fortinet</SelectItem>
-                      <SelectItem value="extreme">Extreme Networks</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="connectivityType">Connectivity Type</Label>
-                  <Select value={config.connectivityType} onValueChange={(value) => updateConfig('connectivityType', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select connectivity type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="wired-only">Wired Only</SelectItem>
-                      <SelectItem value="wireless-only">Wireless Only</SelectItem>
-                      <SelectItem value="wired-wireless">Wired + Wireless</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="deploymentType">Deployment Type</Label>
-                  <Select value={config.deploymentType} onValueChange={(value) => updateConfig('deploymentType', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select deployment type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="cloud-only">Cloud Only</SelectItem>
-                      <SelectItem value="on-premises">On-Premises</SelectItem>
-                      <SelectItem value="hybrid">Hybrid</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="authentication" className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="authMethod">Authentication Method</Label>
-                  <Select value={config.authMethod} onValueChange={(value) => updateConfig('authMethod', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select authentication method" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="certificate">Certificate-based</SelectItem>
-                      <SelectItem value="username-password">Username/Password</SelectItem>
-                      <SelectItem value="mab">MAC Authentication Bypass</SelectItem>
-                      <SelectItem value="multi-factor">Multi-Factor Authentication</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="mdmIntegration">MDM Integration</Label>
-                  <Select value={config.mdmIntegration} onValueChange={(value) => updateConfig('mdmIntegration', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select MDM platform" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="microsoft-intune">Microsoft Intune</SelectItem>
-                      <SelectItem value="jamf">Jamf Pro</SelectItem>
-                      <SelectItem value="vmware-workspace-one">VMware Workspace ONE</SelectItem>
-                      <SelectItem value="mobileiron">MobileIron</SelectItem>
-                      <SelectItem value="none">No MDM Integration</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="integration" className="space-y-4">
-              <div className="space-y-4">
-                <div className="p-4 border rounded-lg">
-                  <h4 className="font-semibold mb-2">Active Integrations</h4>
-                  <div className="flex flex-wrap gap-2">
-                    <Badge variant="secondary">
-                      <Cloud className="h-3 w-3 mr-1" />
-                      {config.cloudProvider}
-                    </Badge>
-                    <Badge variant="secondary">
-                      <Network className="h-3 w-3 mr-1" />
-                      {config.networkVendor}
-                    </Badge>
-                    <Badge variant="secondary">
-                      <Shield className="h-3 w-3 mr-1" />
-                      {config.authMethod}
-                    </Badge>
-                    {config.mdmIntegration !== 'none' && (
-                      <Badge variant="secondary">
-                        <Settings className="h-3 w-3 mr-1" />
-                        {config.mdmIntegration}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
-
-      {/* Diagram Controls */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Eye className="h-5 w-5" />
-            <span>Diagram Controls</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="space-y-2">
-                <Label>View Type</Label>
-                <Select value={currentView} onValueChange={setCurrentView}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="complete">Complete Architecture</SelectItem>
-                    <SelectItem value="authentication">Authentication Flow</SelectItem>
-                    <SelectItem value="network">Network Topology</SelectItem>
-                    <SelectItem value="policies">Policy Enforcement</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Separator orientation="vertical" className="h-12" />
-
-              <div className="space-y-2">
-                <Label>Animation Speed</Label>
-                <div className="flex items-center space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setAnimationSpeed(Math.max(1, animationSpeed - 1))}
-                  >
-                    -
-                  </Button>
-                  <span className="w-8 text-center">{animationSpeed}x</span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setAnimationSpeed(Math.min(5, animationSpeed + 1))}
-                  >
-                    +
-                  </Button>
-                </div>
-              </div>
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsAnimating(!isAnimating)}
-              >
-                {isAnimating ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+          <CardTitle className="flex items-center justify-between">
+            <span>Portnox NAC Architecture Designer</span>
+            <div className="flex items-center space-x-2">
+              <Button variant="outline" size="sm" onClick={() => exportDiagram('png')}>
+                <Download className="h-4 w-4 mr-2" />
+                Export PNG
               </Button>
+              <Button variant="outline" size="sm" onClick={() => exportDiagram('svg')}>
+                <Download className="h-4 w-4 mr-2" />
+                Export SVG
+              </Button>
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Architecture View Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="view-select">Architecture View</Label>
+              <Select value={selectedView} onValueChange={setSelectedView}>
+                <SelectTrigger id="view-select">
+                  <SelectValue placeholder="Select view" />
+                </SelectTrigger>
+                <SelectContent>
+                  {architectureViews.map((view) => (
+                    <SelectItem key={view.value} value={view.value}>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{view.label}</span>
+                        <span className="text-xs text-muted-foreground">{view.description}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Cloud Provider Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="cloud-select">Cloud Provider</Label>
+              <Select value={cloudProvider} onValueChange={setCloudProvider}>
+                <SelectTrigger id="cloud-select">
+                  <SelectValue placeholder="Select provider" />
+                </SelectTrigger>
+                <SelectContent>
+                  {cloudProviders.map((provider) => (
+                    <SelectItem key={provider.value} value={provider.value}>
+                      <span className="flex items-center space-x-2">
+                        <span>{provider.icon}</span>
+                        <span>{provider.label}</span>
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Network Vendor Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="vendor-select">Network Vendor</Label>
+              <Select value={networkVendor} onValueChange={setNetworkVendor}>
+                <SelectTrigger id="vendor-select">
+                  <SelectValue placeholder="Select vendor" />
+                </SelectTrigger>
+                <SelectContent>
+                  {networkVendors.map((vendor) => (
+                    <SelectItem key={vendor.value} value={vendor.value}>
+                      <span className="flex items-center space-x-2">
+                        <span>{vendor.icon}</span>
+                        <span>{vendor.label}</span>
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Connectivity Type */}
+            <div className="space-y-2">
+              <Label htmlFor="connectivity-select">Connectivity</Label>
+              <Select value={connectivityType} onValueChange={setConnectivityType}>
+                <SelectTrigger id="connectivity-select">
+                  <SelectValue placeholder="Select connectivity" />
+                </SelectTrigger>
+                <SelectContent>
+                  {connectivityOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{option.label}</span>
+                        <span className="text-xs text-muted-foreground">{option.description}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Animation Controls */}
+          <div className="mt-6 flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="data-flow"
+                  checked={showDataFlow}
+                  onCheckedChange={setShowDataFlow}
+                />
+                <Label htmlFor="data-flow">Show Data Flow</Label>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Label htmlFor="animation-speed">Animation Speed:</Label>
+                <div className="w-32">
+                  <Slider
+                    id="animation-speed"
+                    min={0.5}
+                    max={3}
+                    step={0.5}
+                    value={animationSpeed}
+                    onValueChange={setAnimationSpeed}
+                  />
+                </div>
+                <Badge variant="outline">{animationSpeed[0]}x</Badge>
+              </div>
             </div>
 
             <div className="flex items-center space-x-2">
-              <Button variant="outline" size="sm" onClick={resetConfig}>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Reset
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowPolicyEditor(!showPolicyEditor)}
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Policy Editor
               </Button>
-              <Button variant="outline" size="sm" onClick={exportDiagram}>
-                <Download className="h-4 w-4 mr-2" />
-                Export
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowOnboardingScenarios(!showOnboardingScenarios)}
+              >
+                <Play className="h-4 w-4 mr-2" />
+                Onboarding Flows
               </Button>
             </div>
           </div>
@@ -275,24 +220,122 @@ export default function ArchitectureDesigner() {
       {/* Interactive Diagram */}
       <Card>
         <CardHeader>
-          <CardTitle>Architecture Diagram</CardTitle>
+          <CardTitle>
+            {architectureViews.find(v => v.value === selectedView)?.label || 'Architecture Diagram'}
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="relative bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg p-8 min-h-[600px]">
-            {/* This would contain the actual interactive diagram */}
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center space-y-4">
-                <Zap className="h-16 w-16 mx-auto text-blue-500" />
-                <h3 className="text-xl font-semibold">Interactive Diagram</h3>
-                <p className="text-muted-foreground max-w-md">
-                  The architecture diagram will be rendered here based on your configuration settings.
-                  Current view: <Badge variant="outline">{currentView}</Badge>
-                </p>
-              </div>
-            </div>
-          </div>
+          <InteractiveDiagram
+            view={selectedView}
+            cloudProvider={cloudProvider}
+            networkVendor={networkVendor}
+            connectivityType={connectivityType}
+            animationSpeed={animationSpeed[0]}
+            showDataFlow={showDataFlow}
+          />
         </CardContent>
       </Card>
+
+      {/* Architecture Legend */}
+      <ArchitectureLegend 
+        view={selectedView}
+        cloudProvider={cloudProvider}
+        networkVendor={networkVendor}
+      />
+
+      {/* Policy Editor */}
+      {showPolicyEditor && (
+        <PolicyEditor 
+          onClose={() => setShowPolicyEditor(false)}
+        />
+      )}
+
+      {/* Onboarding Scenarios */}
+      {showOnboardingScenarios && (
+        <OnboardingScenarios 
+          onClose={() => setShowOnboardingScenarios(false)}
+        />
+      )}
+
+      {/* Technical Details */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>RADSec Proxy Architecture</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h4 className="font-semibold text-blue-900 mb-2">Container-Based Deployment</h4>
+                <ul className="text-sm text-blue-800 space-y-1">
+                  <li>• Docker containers for easy deployment and scaling</li>
+                  <li>• Kubernetes orchestration for high availability</li>
+                  <li>• Auto-scaling based on RADIUS request volume</li>
+                  <li>• Health checks and automatic failover</li>
+                </ul>
+              </div>
+              
+              <div className="bg-green-50 p-4 rounded-lg">
+                <h4 className="font-semibold text-green-900 mb-2">High Availability Features</h4>
+                <ul className="text-sm text-green-800 space-y-1">
+                  <li>• Active/Active proxy pairs in different AZs</li>
+                  <li>• 7-day authentication cache for offline operation</li>
+                  <li>• Load balancing across multiple proxy instances</li>
+                  <li>• Automatic failback when primary comes online</li>
+                </ul>
+              </div>
+              
+              <div className="bg-purple-50 p-4 rounded-lg">
+                <h4 className="font-semibold text-purple-900 mb-2">Security & Compliance</h4>
+                <ul className="text-sm text-purple-800 space-y-1">
+                  <li>• TLS 1.3 encryption for all RADSec communications</li>
+                  <li>• Certificate-based mutual authentication</li>
+                  <li>• Audit logging for all authentication events</li>
+                  <li>• FIPS 140-2 Level 2 compliance ready</li>
+                </ul>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Implementation Checklist</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {[
+                { task: 'Deploy RADSec proxy containers', status: 'complete' },
+                { task: 'Configure TLS certificates', status: 'complete' },
+                { task: 'Set up load balancer', status: 'in-progress' },
+                { task: 'Configure RADIUS shared secrets', status: 'in-progress' },
+                { task: 'Test authentication flow', status: 'pending' },
+                { task: 'Enable monitoring and alerting', status: 'pending' },
+                { task: 'Document runbook procedures', status: 'pending' },
+                { task: 'Conduct failover testing', status: 'pending' }
+              ].map((item, index) => (
+                <div key={index} className="flex items-center space-x-3">
+                  <div className={`w-3 h-3 rounded-full ${
+                    item.status === 'complete' ? 'bg-green-500' :
+                    item.status === 'in-progress' ? 'bg-yellow-500' : 'bg-gray-300'
+                  }`} />
+                  <span className={`text-sm ${
+                    item.status === 'complete' ? 'line-through text-gray-500' : ''
+                  }`}>
+                    {item.task}
+                  </span>
+                  <Badge variant={
+                    item.status === 'complete' ? 'default' :
+                    item.status === 'in-progress' ? 'secondary' : 'outline'
+                  }>
+                    {item.status}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

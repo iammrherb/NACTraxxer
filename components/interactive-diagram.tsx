@@ -26,8 +26,6 @@ interface DiagramNode {
   description: string
   icon?: string
   status?: 'active' | 'standby' | 'offline'
-  ports?: string
-  latency?: string
 }
 
 interface DiagramConnection {
@@ -114,9 +112,7 @@ export default function InteractiveDiagram({
         type: 'cloud',
         color: '#e3f2fd',
         icon: '☁️',
-        description: 'Cloud-based NAC engine with Private PKI, policy management, and RADIUS authentication services',
-        ports: 'HTTPS: 443, RADSec: 2083',
-        latency: '< 50ms global'
+        description: 'Cloud-based NAC engine with Private PKI, policy management, and RADIUS authentication services'
       },
       {
         id: 'cloud-proxy-primary',
@@ -126,9 +122,7 @@ export default function InteractiveDiagram({
         color: cloudColor,
         icon: '🔄',
         status: 'active',
-        description: `Primary ${cloudProvider.toUpperCase()} RADSec proxy with 7-day authentication cache`,
-        ports: 'RADSec: 2083, RADIUS: 1812/1813',
-        latency: '< 10ms regional'
+        description: `Primary ${cloudProvider.toUpperCase()} RADSec proxy with 7-day cache`
       },
       {
         id: 'cloud-proxy-standby',
@@ -138,9 +132,7 @@ export default function InteractiveDiagram({
         color: cloudColor,
         icon: '🔄',
         status: 'standby',
-        description: `Standby ${cloudProvider.toUpperCase()} RADSec proxy for high availability`,
-        ports: 'RADSec: 2083, RADIUS: 1812/1813',
-        latency: '< 10ms regional'
+        description: `Standby ${cloudProvider.toUpperCase()} RADSec proxy for high availability`
       },
       {
         id: 'connectivity',
@@ -149,8 +141,7 @@ export default function InteractiveDiagram({
         type: 'connectivity',
         color: '#f3e5f5',
         icon: '🌐',
-        description: `${getConnectivityLabel(connectivityType)} network connectivity with redundancy and failover`,
-        ports: getConnectivityPorts(connectivityType)
+        description: `${getConnectivityLabel(connectivityType)} network connectivity with redundancy`
       },
       {
         id: 'site-infrastructure',
@@ -159,8 +150,7 @@ export default function InteractiveDiagram({
         type: 'site',
         color: '#e8f5e9',
         icon: '🏢',
-        description: `Physical location with ${vendorLabel} network infrastructure including switches, wireless controllers, and firewalls`,
-        ports: '802.1X, RADIUS, SNMP'
+        description: `Physical location with ${vendorLabel} network infrastructure and 802.1X authentication`
       },
       {
         id: 'intune',
@@ -169,8 +159,7 @@ export default function InteractiveDiagram({
         type: 'intune',
         color: '#e1f5fe',
         icon: '📱',
-        description: 'Mobile Device Management solution for certificate deployment, device configuration management, and compliance enforcement',
-        ports: 'HTTPS: 443, SCEP: 80/443'
+        description: 'Mobile Device Management for certificate deployment and device configuration'
       },
       {
         id: 'endpoints',
@@ -179,8 +168,7 @@ export default function InteractiveDiagram({
         type: 'device',
         color: '#f5f5f5',
         icon: '💻',
-        description: 'Corporate devices with certificates deployed via Intune including Windows, macOS, iOS, and Android devices',
-        ports: '802.1X EAP-TLS, HTTPS'
+        description: 'Corporate devices with certificates deployed via Intune for 802.1X authentication'
       }
     ]
   }
@@ -259,161 +247,6 @@ export default function InteractiveDiagram({
     ]
   }
 
-  const generateAuthFlowNodes = (): DiagramNode[] => {
-    return [
-      {
-        id: 'device',
-        x: 50, y: 300, width: 120, height: 80,
-        label: 'End Device',
-        type: 'device',
-        color: '#e8f5e9',
-        icon: '💻',
-        description: 'User device with EAP-TLS certificate attempting network access',
-        ports: '802.1X Supplicant'
-      },
-      {
-        id: 'nas',
-        x: 250, y: 300, width: 150, height: 80,
-        label: `${networkVendor.toUpperCase()} NAS`,
-        type: 'network',
-        color: '#e8f5e9',
-        icon: '🔧',
-        description: 'Network Access Server (Switch/AP) acting as 802.1X Authenticator',
-        ports: 'RADIUS: 1812/1813'
-      },
-      {
-        id: 'proxy',
-        x: 500, y: 300, width: 180, height: 80,
-        label: `RADSec Proxy (${cloudProvider.toUpperCase()})`,
-        type: cloudProvider,
-        color: getCloudColor(cloudProvider),
-        icon: '🔄',
-        description: 'RADIUS over TLS proxy with 7-day authentication cache for offline support',
-        ports: 'RADSec: 2083'
-      },
-      {
-        id: 'portnox',
-        x: 800, y: 300, width: 200, height: 100,
-        label: 'Portnox Cloud',
-        type: 'cloud',
-        color: '#e3f2fd',
-        icon: '☁️',
-        description: 'Cloud NAC authentication engine with policy evaluation and certificate validation',
-        ports: 'HTTPS: 443, OCSP: 80'
-      },
-      {
-        id: 'identity',
-        x: 800, y: 450, width: 200, height: 80,
-        label: 'Azure AD/Entra ID',
-        type: 'identity',
-        color: '#e3f2fd',
-        icon: '🔐',
-        description: 'Identity provider for user authentication and group membership validation',
-        ports: 'LDAPS: 636, HTTPS: 443'
-      }
-    ]
-  }
-
-  const generateAuthFlowConnections = (): DiagramConnection[] => {
-    return [
-      { id: 'device-to-nas', from: 'device', to: 'nas', type: 'standard', label: '1. EAP-Start' },
-      { id: 'nas-to-proxy', from: 'nas', to: 'proxy', type: 'standard', label: '2. Access-Request' },
-      { id: 'proxy-to-portnox', from: 'proxy', to: 'portnox', type: 'secure', label: '3. RADSec' },
-      { id: 'portnox-to-identity', from: 'portnox', to: 'identity', type: 'standard', label: '4. LDAP Query' },
-      { id: 'identity-to-portnox', from: 'identity', to: 'portnox', type: 'standard', label: '5. User Info' },
-      { id: 'portnox-to-proxy-return', from: 'portnox', to: 'proxy', type: 'secure', label: '6. Access-Accept' },
-      { id: 'proxy-to-nas-return', from: 'proxy', to: 'nas', type: 'standard', label: '7. VLAN Assignment' },
-      { id: 'nas-to-device-return', from: 'nas', to: 'device', type: 'standard', label: '8. EAP-Success' }
-    ]
-  }
-
-  const generatePKINodes = (): DiagramNode[] => {
-    return [
-      {
-        id: 'pki-ca',
-        x: 400, y: 50, width: 200, height: 80,
-        label: 'Portnox Private CA',
-        type: 'pki',
-        color: '#e3f2fd',
-        icon: '🔐',
-        description: 'Private Certificate Authority for issuing X.509 certificates with RSA 2048-bit keys and SHA-256 signatures',
-        ports: 'HTTPS: 443'
-      },
-      {
-        id: 'scep',
-        x: 200, y: 200, width: 150, height: 60,
-        label: 'SCEP Server',
-        type: 'cert',
-        color: '#e3f2fd',
-        icon: '📜',
-        description: 'Simple Certificate Enrollment Protocol server for automated certificate enrollment',
-        ports: 'HTTP: 80, HTTPS: 443'
-      },
-      {
-        id: 'ocsp',
-        x: 450, y: 200, width: 150, height: 60,
-        label: 'OCSP Responder',
-        type: 'cert',
-        color: '#e3f2fd',
-        icon: '✅',
-        description: 'Online Certificate Status Protocol responder for real-time certificate validation',
-        ports: 'HTTP: 80, HTTPS: 443'
-      },
-      {
-        id: 'cdp',
-        x: 700, y: 200, width: 150, height: 60,
-        label: 'CRL/CDP',
-        type: 'cert',
-        color: '#e3f2fd',
-        icon: '📋',
-        description: 'Certificate Revocation List and Distribution Point for certificate status updates',
-        ports: 'HTTP: 80, HTTPS: 443'
-      },
-      {
-        id: 'intune-mdm',
-        x: 200, y: 350, width: 150, height: 60,
-        label: 'Intune MDM',
-        type: 'mdm',
-        color: '#fff3e0',
-        icon: '📱',
-        description: 'Mobile Device Management for certificate deployment with SCEP profiles',
-        ports: 'HTTPS: 443'
-      },
-      {
-        id: 'end-device',
-        x: 450, y: 350, width: 150, height: 60,
-        label: 'End Device',
-        type: 'device',
-        color: '#e8f5e9',
-        icon: '💻',
-        description: 'Device receiving certificates with automatic renewal 30 days before expiry',
-        ports: 'HTTPS: 443'
-      },
-      {
-        id: 'network-device',
-        x: 700, y: 350, width: 150, height: 60,
-        label: 'Network Device',
-        type: 'network',
-        color: '#e8f5e9',
-        icon: '🔧',
-        description: 'Network infrastructure validating certificates during 802.1X authentication',
-        ports: 'OCSP: 80, RADIUS: 1812'
-      }
-    ]
-  }
-
-  const generatePKIConnections = (): DiagramConnection[] => {
-    return [
-      { id: 'ca-to-scep', from: 'pki-ca', to: 'scep', type: 'standard', label: 'Issue Cert' },
-      { id: 'ca-to-ocsp', from: 'pki-ca', to: 'ocsp', type: 'standard', label: 'Status Update' },
-      { id: 'ca-to-cdp', from: 'pki-ca', to: 'cdp', type: 'standard', label: 'CRL Update' },
-      { id: 'scep-to-intune', from: 'scep', to: 'intune-mdm', type: 'dashed', label: 'SCEP Profile' },
-      { id: 'intune-to-device', from: 'intune-mdm', to: 'end-device', type: 'secure', label: 'Deploy Cert' },
-      { id: 'device-to-network', from: 'end-device', to: 'network-device', type: 'standard', label: '802.1X Auth' },
-      { id: 'network-to-ocsp', from: 'network-device', to: 'ocsp', type: 'dashed', label: 'Verify Status' }
-    ]
-  }
-
   const generateRADSecProxyNodes = (): DiagramNode[] => {
     const cloudColor = getCloudColor(cloudProvider)
     
@@ -425,8 +258,7 @@ export default function InteractiveDiagram({
         type: 'cloud',
         color: '#e3f2fd',
         icon: '☁️',
-        description: 'Cloud NAC service with global load balancing and regional failover',
-        ports: 'HTTPS: 443, RADSec: 2083'
+        description: 'Cloud NAC service with global reach'
       },
       {
         id: 'load-balancer',
@@ -435,8 +267,7 @@ export default function InteractiveDiagram({
         type: 'load-balancer',
         color: cloudColor,
         icon: '⚖️',
-        description: 'Application Load Balancer with health checks and auto-scaling',
-        ports: 'HTTP: 80, HTTPS: 443'
+        description: 'Application Load Balancer with health checks'
       },
       {
         id: 'proxy-container-1',
@@ -446,8 +277,7 @@ export default function InteractiveDiagram({
         color: '#e8f5e9',
         icon: '📦',
         status: 'active',
-        description: 'Docker container running RADSec proxy with 7-day authentication cache',
-        ports: 'RADSec: 2083, Health: 8080'
+        description: 'Docker container running RADSec proxy with 7-day cache'
       },
       {
         id: 'proxy-container-2',
@@ -457,8 +287,7 @@ export default function InteractiveDiagram({
         color: '#e8f5e9',
         icon: '📦',
         status: 'active',
-        description: 'Docker container running RADSec proxy with 7-day authentication cache',
-        ports: 'RADSec: 2083, Health: 8080'
+        description: 'Docker container running RADSec proxy with 7-day cache'
       },
       {
         id: 'cache-storage',
@@ -467,8 +296,7 @@ export default function InteractiveDiagram({
         type: 'storage',
         color: '#fff3e0',
         icon: '💾',
-        description: 'Shared cache for authentication decisions with 7-day retention',
-        ports: 'Redis: 6379'
+        description: 'Shared cache for authentication decisions'
       },
       {
         id: 'monitoring',
@@ -477,8 +305,7 @@ export default function InteractiveDiagram({
         type: 'monitoring',
         color: '#f3e5f5',
         icon: '📊',
-        description: 'CloudWatch/Prometheus monitoring with alerting and log aggregation',
-        ports: 'HTTPS: 443, Syslog: 514'
+        description: 'CloudWatch/Prometheus monitoring with alerting'
       },
       {
         id: 'site-nas',
@@ -487,8 +314,7 @@ export default function InteractiveDiagram({
         type: 'network',
         color: '#e8f5e9',
         icon: '🔧',
-        description: 'Network Access Server with RADIUS client configuration',
-        ports: 'RADIUS: 1812/1813'
+        description: 'Network Access Server with RADIUS client'
       }
     ]
   }
@@ -575,270 +401,67 @@ export default function InteractiveDiagram({
     ]
   }
 
-  const generatePolicyNodes = (): DiagramNode[] => {
+  // Additional generator functions for other views...
+  const generateAuthFlowNodes = (): DiagramNode[] => {
     return [
       {
-        id: 'policy-engine',
-        x: 400, y: 50, width: 400, height: 100,
-        label: 'Portnox Policy Engine',
-        type: 'policy',
-        color: '#e3f2fd',
-        icon: '⚙️',
-        description: 'Central policy management and decision engine with real-time policy updates via RADIUS CoA',
-        ports: 'HTTPS: 443, RADIUS CoA: 3799'
-      },
-      {
-        id: 'user-policies',
-        x: 100, y: 200, width: 200, height: 120,
-        label: 'User Policies',
-        type: 'policy',
-        color: '#d4edda',
-        icon: '👤',
-        description: 'Policies based on user identity, group membership, and time-based access controls',
-        ports: 'LDAP: 389/636'
-      },
-      {
-        id: 'device-policies',
-        x: 350, y: 200, width: 200, height: 120,
-        label: 'Device Policies',
-        type: 'policy',
-        color: '#cce5ff',
+        id: 'device',
+        x: 50, y: 300, width: 120, height: 80,
+        label: 'End Device',
+        type: 'device',
+        color: '#e8f5e9',
         icon: '💻',
-        description: 'Policies based on device type, compliance status, and certificate validity',
-        ports: 'MDM APIs, OCSP: 80'
+        description: 'User device with certificate attempting network access'
       },
       {
-        id: 'network-policies',
-        x: 600, y: 200, width: 200, height: 120,
-        label: 'Network Policies',
-        type: 'policy',
-        color: '#fff3cd',
-        icon: '🌐',
-        description: 'Policies based on network location, VLAN assignment, and geolocation',
-        ports: 'SNMP: 161, NetFlow'
+        id: 'nas',
+        x: 250, y: 300, width: 150, height: 80,
+        label: `${networkVendor.toUpperCase()} NAS`,
+        type: 'network',
+        color: '#e8f5e9',
+        icon: '🔧',
+        description: 'Network Access Server handling 802.1X authentication'
       },
       {
-        id: 'compliance-policies',
-        x: 850, y: 200, width: 200, height: 120,
-        label: 'Compliance Policies',
-        type: 'policy',
-        color: '#f8d7da',
-        icon: '🛡️',
-        description: 'Policies based on device compliance, security posture, and vulnerability status',
-        ports: 'MDM APIs, HTTPS: 443'
-      }
-    ]
-  }
-
-  const generatePolicyConnections = (): DiagramConnection[] => {
-    return [
-      { id: 'engine-to-user', from: 'policy-engine', to: 'user-policies', type: 'standard', label: 'User Context' },
-      { id: 'engine-to-device', from: 'policy-engine', to: 'device-policies', type: 'standard', label: 'Device Info' },
-      { id: 'engine-to-network', from: 'policy-engine', to: 'network-policies', type: 'standard', label: 'Network Context' },
-      { id: 'engine-to-compliance', from: 'policy-engine', to: 'compliance-policies', type: 'standard', label: 'Compliance Status' }
-    ]
-  }
-
-  const generateConnectivityNodes = (): DiagramNode[] => {
-    return [
+        id: 'proxy',
+        x: 500, y: 300, width: 180, height: 80,
+        label: `RADSec Proxy`,
+        type: cloudProvider,
+        color: getCloudColor(cloudProvider),
+        icon: '🔄',
+        description: 'RADIUS over TLS proxy with 7-day cache'
+      },
       {
-        id: 'portnox-center',
-        x: 450, y: 300, width: 300, height: 100,
+        id: 'portnox',
+        x: 800, y: 300, width: 200, height: 100,
         label: 'Portnox Cloud',
         type: 'cloud',
         color: '#e3f2fd',
         icon: '☁️',
-        description: 'Central NAC service with global load balancing and regional failover',
-        ports: 'HTTPS: 443, RADSec: 2083'
+        description: 'Cloud NAC service for authentication decisions'
       },
       {
-        id: 'aws-proxy',
-        x: 100, y: 100, width: 200, height: 80,
-        label: 'AWS RADSec Proxy',
-        type: 'aws',
-        color: '#fff3e0',
-        icon: '🟠',
-        description: 'Amazon Web Services RADSec proxy with auto-scaling and high availability',
-        ports: 'RADSec: 2083, Health Check: 8080'
-      },
-      {
-        id: 'azure-proxy',
-        x: 350, y: 100, width: 200, height: 80,
-        label: 'Azure RADSec Proxy',
-        type: 'azure',
-        color: '#e1f5fe',
-        icon: '🔷',
-        description: 'Microsoft Azure RADSec proxy with Express Route connectivity',
-        ports: 'RADSec: 2083, Health Check: 8080'
-      },
-      {
-        id: 'gcp-proxy',
-        x: 600, y: 100, width: 200, height: 80,
-        label: 'GCP RADSec Proxy',
-        type: 'gcp',
-        color: '#e8f5e9',
-        icon: '🌐',
-        description: 'Google Cloud Platform RADSec proxy with Cloud Interconnect',
-        ports: 'RADSec: 2083, Health Check: 8080'
-      },
-      {
-        id: 'onprem-proxy',
-        x: 850, y: 100, width: 200, height: 80,
-        label: 'On-Prem RADSec Proxy',
-        type: 'onprem',
-        color: '#ffeaa7',
-        icon: '🏢',
-        description: 'On-premises RADSec proxy for air-gapped environments',
-        ports: 'RADSec: 2083, RADIUS: 1812/1813'
-      }
-    ]
-  }
-
-  const generateConnectivityConnections = (): DiagramConnection[] => {
-    return [
-      { id: 'aws-to-center', from: 'aws-proxy', to: 'portnox-center', type: 'secure', label: 'TLS 1.3' },
-      { id: 'azure-to-center', from: 'azure-proxy', to: 'portnox-center', type: 'secure', label: 'TLS 1.3' },
-      { id: 'gcp-to-center', from: 'gcp-proxy', to: 'portnox-center', type: 'secure', label: 'TLS 1.3' },
-      { id: 'onprem-to-center', from: 'onprem-proxy', to: 'portnox-center', type: 'secure', label: 'VPN/TLS' }
-    ]
-  }
-
-  const generateIntuneNodes = (): DiagramNode[] => {
-    return [
-      {
-        id: 'intune-main',
-        x: 450, y: 300, width: 300, height: 200,
-        label: 'Microsoft Intune',
-        type: 'intune',
-        color: '#e1f5fe',
-        icon: '📱',
-        description: 'Microsoft Mobile Device Management solution with certificate profiles and compliance policies',
-        ports: 'HTTPS: 443, Graph API'
-      },
-      {
-        id: 'portnox-pki',
-        x: 450, y: 50, width: 300, height: 100,
-        label: 'Portnox Private PKI',
-        type: 'pki',
+        id: 'identity',
+        x: 800, y: 450, width: 200, height: 80,
+        label: 'Azure AD/Entra ID',
+        type: 'identity',
         color: '#e3f2fd',
         icon: '🔐',
-        description: 'Private Certificate Authority integrated with Intune via SCEP for automated certificate deployment',
-        ports: 'SCEP: 80/443, OCSP: 80'
-      },
-      {
-        id: 'windows-devices',
-        x: 100, y: 350, width: 150, height: 80,
-        label: 'Windows Devices',
-        type: 'device',
-        color: '#e8f5e9',
-        icon: '🖥️',
-        description: 'Windows 10/11 corporate devices with Intune management and certificate-based authentication',
-        ports: 'HTTPS: 443, 802.1X'
-      },
-      {
-        id: 'ios-devices',
-        x: 100, y: 450, width: 150, height: 80,
-        label: 'iOS Devices',
-        type: 'device',
-        color: '#e8f5e9',
-        icon: '📱',
-        description: 'Apple iOS devices with supervised enrollment and certificate profiles',
-        ports: 'HTTPS: 443, 802.1X'
-      },
-      {
-        id: 'android-devices',
-        x: 850, y: 350, width: 150, height: 80,
-        label: 'Android Devices',
-        type: 'device',
-        color: '#e8f5e9',
-        icon: '📱',
-        description: 'Android Enterprise devices with work profile and certificate deployment',
-        ports: 'HTTPS: 443, 802.1X'
-      },
-      {
-        id: 'macos-devices',
-        x: 850, y: 450, width: 150, height: 80,
-        label: 'macOS Devices',
-        type: 'device',
-        color: '#e8f5e9',
-        icon: '💻',
-        description: 'Apple macOS devices with device enrollment program and certificate management',
-        ports: 'HTTPS: 443, 802.1X'
+        description: 'Identity provider for user authentication'
       }
     ]
   }
 
-  const generateIntuneConnections = (): DiagramConnection[] => {
+  const generateAuthFlowConnections = (): DiagramConnection[] => {
     return [
-      { id: 'pki-to-intune', from: 'portnox-pki', to: 'intune-main', type: 'dashed', label: 'SCEP Integration' },
-      { id: 'intune-to-windows', from: 'intune-main', to: 'windows-devices', type: 'secure', label: 'Profile Push' },
-      { id: 'intune-to-ios', from: 'intune-main', to: 'ios-devices', type: 'secure', label: 'Profile Push' },
-      { id: 'intune-to-android', from: 'intune-main', to: 'android-devices', type: 'secure', label: 'Profile Push' },
-      { id: 'intune-to-macos', from: 'intune-main', to: 'macos-devices', type: 'secure', label: 'Profile Push' }
-    ]
-  }
-
-  const generateOnboardingNodes = (): DiagramNode[] => {
-    return [
-      {
-        id: 'onboarding-portal',
-        x: 400, y: 50, width: 400, height: 100,
-        label: 'Device Onboarding Portal',
-        type: 'portal',
-        color: '#e3f2fd',
-        icon: '🌐',
-        description: 'Self-service device onboarding portal with multi-language support and QR code generation',
-        ports: 'HTTPS: 443, WebSocket: 443'
-      },
-      {
-        id: 'corporate-flow',
-        x: 100, y: 200, width: 200, height: 120,
-        label: 'Corporate Device Flow',
-        type: 'flow',
-        color: '#d4edda',
-        icon: '🏢',
-        description: 'Automated onboarding for corporate managed devices via Intune with zero-touch deployment',
-        ports: 'MDM APIs, SCEP: 80/443'
-      },
-      {
-        id: 'byod-flow',
-        x: 350, y: 200, width: 200, height: 120,
-        label: 'BYOD Flow',
-        type: 'flow',
-        color: '#cce5ff',
-        icon: '📱',
-        description: 'Bring Your Own Device onboarding with user certificate enrollment and policy acceptance',
-        ports: 'HTTPS: 443, SCEP: 80'
-      },
-      {
-        id: 'guest-flow',
-        x: 600, y: 200, width: 200, height: 120,
-        label: 'Guest Access Flow',
-        type: 'flow',
-        color: '#fff3cd',
-        icon: '👥',
-        description: 'Guest user onboarding with sponsor approval workflow and time-limited access',
-        ports: 'HTTPS: 443, SMS Gateway'
-      },
-      {
-        id: 'iot-flow',
-        x: 850, y: 200, width: 200, height: 120,
-        label: 'IoT Device Flow',
-        type: 'flow',
-        color: '#f8d7da',
-        icon: '🔌',
-        description: 'IoT device registration with MAC Authentication Bypass and device profiling',
-        ports: 'HTTPS: 443, SNMP: 161'
-      }
-    ]
-  }
-
-  const generateOnboardingConnections = (): DiagramConnection[] => {
-    return [
-      { id: 'portal-to-corporate', from: 'onboarding-portal', to: 'corporate-flow', type: 'standard', label: 'MDM Redirect' },
-      { id: 'portal-to-byod', from: 'onboarding-portal', to: 'byod-flow', type: 'standard', label: 'Self-Service' },
-      { id: 'portal-to-guest', from: 'onboarding-portal', to: 'guest-flow', type: 'standard', label: 'Sponsor Request' },
-      { id: 'portal-to-iot', from: 'onboarding-portal', to: 'iot-flow', type: 'standard', label: 'MAC Registration' }
+      { id: 'device-to-nas', from: 'device', to: 'nas', type: 'standard', label: '1. EAP Start' },
+      { id: 'nas-to-proxy', from: 'nas', to: 'proxy', type: 'standard', label: '2. RADIUS Request' },
+      { id: 'proxy-to-portnox', from: 'proxy', to: 'portnox', type: 'secure', label: '3. RADSec Forward' },
+      { id: 'portnox-to-identity', from: 'portnox', to: 'identity', type: 'standard', label: '4. Identity Lookup' },
+      { id: 'identity-to-portnox', from: 'identity', to: 'portnox', type: 'standard', label: '5. User Info' },
+      { id: 'portnox-to-proxy-return', from: 'portnox', to: 'proxy', type: 'secure', label: '6. Auth Decision' },
+      { id: 'proxy-to-nas-return', from: 'proxy', to: 'nas', type: 'standard', label: '7. RADIUS Response' },
+      { id: 'nas-to-device-return', from: 'nas', to: 'device', type: 'standard', label: '8. Network Access' }
     ]
   }
 
@@ -898,16 +521,17 @@ export default function InteractiveDiagram({
     }
   }
 
-  const getConnectivityPorts = (type: string): string => {
-    switch (type) {
-      case 'sdwan': return 'IPSec: 500/4500, BGP: 179'
-      case 'expressroute': return 'BGP: 179, VLAN Tagging'
-      case 'directconnect': return 'BGP: 179, VLAN: 802.1Q'
-      case 'mpls': return 'BGP: 179, OSPF, IS-IS'
-      case 'vpn': return 'IPSec: 500/4500, IKE'
-      default: return 'Various protocols'
-    }
-  }
+  // Placeholder functions for other node generators
+  const generatePKINodes = (): DiagramNode[] => []
+  const generatePKIConnections = (): DiagramConnection[] => []
+  const generatePolicyNodes = (): DiagramNode[] => []
+  const generatePolicyConnections = (): DiagramConnection[] => []
+  const generateConnectivityNodes = (): DiagramNode[] => []
+  const generateConnectivityConnections = (): DiagramConnection[] => []
+  const generateIntuneNodes = (): DiagramNode[] => []
+  const generateIntuneConnections = (): DiagramConnection[] => []
+  const generateOnboardingNodes = (): DiagramNode[] => []
+  const generateOnboardingConnections = (): DiagramConnection[] => []
 
   const handleNodeClick = (nodeId: string) => {
     setSelectedNode(selectedNode === nodeId ? null : nodeId)
@@ -969,8 +593,8 @@ export default function InteractiveDiagram({
               {/* Node icon */}
               <text
                 x={node.x + 15}
-                y={node.y + 30}
-                fontSize="24"
+                y={node.y + 25}
+                fontSize="20"
                 className="pointer-events-none"
               >
                 {node.icon}
@@ -1006,16 +630,6 @@ export default function InteractiveDiagram({
                 {node.label}
               </p>
               <p className="text-sm text-muted-foreground mt-1">{node.description}</p>
-              {node.ports && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  <strong>Ports:</strong> {node.ports}
-                </p>
-              )}
-              {node.latency && (
-                <p className="text-xs text-muted-foreground">
-                  <strong>Latency:</strong> {node.latency}
-                </p>
-              )}
               {node.status && (
                 <Badge variant="outline" className="mt-2">
                   Status: {node.status}
@@ -1110,15 +724,15 @@ export default function InteractiveDiagram({
         {connection.label && (
           <g>
             <rect
-              x={midX - connection.label.length * 3}
-              y={midY - 12}
-              width={connection.label.length * 6}
+              x={midX - 40}
+              y={midY - 15}
+              width={80}
               height={20}
               rx={10}
               fill="white"
               stroke={stroke}
               strokeWidth={1}
-              opacity={0.95}
+              opacity={0.9}
             />
             <text
               x={midX}
@@ -1218,11 +832,6 @@ export default function InteractiveDiagram({
                 <div>
                   <h3 className="font-semibold text-lg">{nodes.find(n => n.id === selectedNode)?.label}</h3>
                   <p className="text-muted-foreground">{nodes.find(n => n.id === selectedNode)?.description}</p>
-                  {nodes.find(n => n.id === selectedNode)?.ports && (
-                    <p className="text-sm text-muted-foreground mt-1">
-                      <strong>Ports:</strong> {nodes.find(n => n.id === selectedNode)?.ports}
-                    </p>
-                  )}
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
