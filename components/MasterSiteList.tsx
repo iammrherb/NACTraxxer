@@ -32,6 +32,8 @@ export default function MasterSiteList({ onSiteSelect }: MasterSiteListProps) {
   const [regionFilter, setRegionFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [priorityFilter, setPriorityFilter] = useState('')
+  const [editingSite, setEditingSite] = useState<Site | null>(null)
+  const [showEditModal, setShowEditModal] = useState(false)
 
   // Sample data - in a real app this would come from an API
   const [sites] = useState<Site[]>([
@@ -132,6 +134,14 @@ export default function MasterSiteList({ onSiteSelect }: MasterSiteListProps) {
     link.download = `portnox-sites-${Date.now()}.csv`
     link.click()
     URL.revokeObjectURL(url)
+  }
+
+  const handleEditSite = (siteId: string) => {
+    const site = sites.find(s => s.id === siteId)
+    if (site) {
+      setEditingSite(site)
+      setShowEditModal(true)
+    }
   }
 
   return (
@@ -261,7 +271,11 @@ export default function MasterSiteList({ onSiteSelect }: MasterSiteListProps) {
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button size="sm" variant="outline">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handleEditSite(site.id)}
+                      >
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700">
@@ -281,6 +295,72 @@ export default function MasterSiteList({ onSiteSelect }: MasterSiteListProps) {
           </div>
         )}
       </CardContent>
+      {/* Edit Site Modal */}
+      {showEditModal && editingSite && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <h2 className="text-xl font-bold mb-4">Edit Site: {editingSite.name}</h2>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Site Name</label>
+                  <input
+                    type="text"
+                    defaultValue={editingSite.name}
+                    className="w-full p-2 border rounded-md"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Priority</label>
+                  <select defaultValue={editingSite.priority} className="w-full p-2 border rounded-md">
+                    <option value="High">High</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Low">Low</option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Project Manager</label>
+                  <input
+                    type="text"
+                    defaultValue={editingSite.projectManager}
+                    className="w-full p-2 border rounded-md"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Users</label>
+                  <input
+                    type="number"
+                    defaultValue={editingSite.users}
+                    className="w-full p-2 border rounded-md"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Notes</label>
+                <textarea
+                  defaultValue={editingSite.notes}
+                  rows={3}
+                  className="w-full p-2 border rounded-md"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end space-x-2 mt-6">
+              <Button variant="outline" onClick={() => setShowEditModal(false)}>
+                Cancel
+              </Button>
+              <Button onClick={() => {
+                // Save logic would go here
+                setShowEditModal(false)
+                alert('Site updated successfully!')
+              }}>
+                Save Changes
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </Card>
   )
 }

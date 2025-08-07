@@ -178,9 +178,139 @@ export default function ArchitectureDesigner() {
   const currentView = architectureViews.find(view => view.id === selectedView)
 
   const handleExport = (format: 'png' | 'svg' | 'pdf') => {
-    // Export functionality would be implemented here
-    console.log(`Exporting diagram as ${format.toUpperCase()}`)
-    alert(`Export as ${format.toUpperCase()} - Feature coming soon!`)
+    const exportData = {
+      architecture: currentView?.name,
+      vendor: networkVendors.find(v => v.id === selectedVendor)?.name,
+      connectivity: connectivityOptions.find(c => c.id === selectedConnectivity)?.name,
+      identity: identityProviders.find(i => i.id === selectedIdentity)?.name,
+      exportDate: new Date().toISOString(),
+      format: format
+    }
+
+    if (format === 'png') {
+      // Create a canvas and draw the diagram
+      const canvas = document.createElement('canvas')
+      canvas.width = 1200
+      canvas.height = 800
+      const ctx = canvas.getContext('2d')
+      
+      if (ctx) {
+        // Set background
+        ctx.fillStyle = '#ffffff'
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
+        
+        // Add title
+        ctx.fillStyle = '#1f2937'
+        ctx.font = 'bold 24px Arial'
+        ctx.textAlign = 'center'
+        ctx.fillText(`${currentView?.name} - ${exportData.vendor}`, canvas.width / 2, 50)
+        
+        // Add export info
+        ctx.font = '14px Arial'
+        ctx.fillText(`Exported: ${new Date().toLocaleDateString()}`, canvas.width / 2, 80)
+        
+        // Add architecture details
+        ctx.textAlign = 'left'
+        ctx.font = '16px Arial'
+        ctx.fillText(`Network Vendor: ${exportData.vendor}`, 50, 150)
+        ctx.fillText(`Connectivity: ${exportData.connectivity}`, 50, 180)
+        ctx.fillText(`Identity Provider: ${exportData.identity}`, 50, 210)
+        
+        // Convert to blob and download
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const url = URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = url
+            link.download = `portnox-architecture-${selectedView}-${Date.now()}.png`
+            link.click()
+            URL.revokeObjectURL(url)
+          }
+        })
+      }
+    } else if (format === 'svg') {
+      // Create SVG content
+      const svgContent = `
+        <svg width="1200" height="800" xmlns="http://www.w3.org/2000/svg">
+          <rect width="100%" height="100%" fill="white"/>
+          <text x="600" y="50" textAnchor="middle" fontSize="24" fontWeight="bold" fill="#1f2937">
+            ${currentView?.name} - ${exportData.vendor}
+          </text>
+          <text x="600" y="80" textAnchor="middle" fontSize="14" fill="#6b7280">
+            Exported: ${new Date().toLocaleDateString()}
+          </text>
+          <text x="50" y="150" fontSize="16" fill="#1f2937">Network Vendor: ${exportData.vendor}</text>
+          <text x="50" y="180" fontSize="16" fill="#1f2937">Connectivity: ${exportData.connectivity}</text>
+          <text x="50" y="210" fontSize="16" fill="#1f2937">Identity Provider: ${exportData.identity}</text>
+          
+          <!-- Architecture diagram elements would go here -->
+          <rect x="100" y="250" width="200" height="150" fill="#e8f5e9" stroke="#4caf50" strokeWidth="2" rx="8"/>
+          <text x="200" y="335" textAnchor="middle" fontSize="14" fontWeight="bold" fill="#2e7d32">Network Infrastructure</text>
+          
+          <rect x="400" y="250" width="200" height="150" fill="#fff3e0" stroke="#ff9800" strokeWidth="2" rx="8"/>
+          <text x="500" y="335" textAnchor="middle" fontSize="14" fontWeight="bold" fill="#e65100">Identity Provider</text>
+          
+          <rect x="700" y="250" width="200" height="150" fill="#e3f2fd" stroke="#2196f3" strokeWidth="2" rx="8"/>
+          <text x="800" y="335" textAnchor="middle" fontSize="14" fontWeight="bold" fill="#1565c0">Portnox Cloud</text>
+          
+          <!-- Connection lines -->
+          <line x1="300" y1="325" x2="400" y2="325" stroke="#666" strokeWidth="2" markerEnd="url(#arrowhead)"/>
+          <line x1="600" y1="325" x2="700" y2="325" stroke="#666" strokeWidth="2" markerEnd="url(#arrowhead)"/>
+          
+          <defs>
+            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+              <polygon points="0 0, 10 3.5, 0 7" fill="#666"/>
+            </marker>
+          </defs>
+        </svg>
+      `
+      
+      const blob = new Blob([svgContent], { type: 'image/svg+xml' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `portnox-architecture-${selectedView}-${Date.now()}.svg`
+      link.click()
+      URL.revokeObjectURL(url)
+    } else if (format === 'pdf') {
+      // Create PDF-like content (text format for now)
+      const pdfContent = `
+PORTNOX NAC ARCHITECTURE REPORT
+Generated: ${new Date().toLocaleDateString()}
+
+Architecture: ${currentView?.name}
+Description: ${currentView?.description}
+
+Configuration:
+- Network Vendor: ${exportData.vendor}
+- Connectivity: ${exportData.connectivity}
+- Identity Provider: ${exportData.identity}
+- Deployment Type: ${deploymentTypes.find(d => d.id === selectedDeployment)?.name}
+
+Architecture Overview:
+${getArchitectureInfo().overview}
+
+Key Components:
+${getArchitectureInfo().components.map((comp, i) => `${i + 1}. ${comp}`).join('\n')}
+
+Security Features:
+${getArchitectureInfo().security.map((sec, i) => `• ${sec}`).join('\n')}
+
+Deployment Steps:
+${getArchitectureInfo().deployment.map((step, i) => `${i + 1}. ${step}`).join('\n')}
+
+---
+Report generated by Portnox NAC Architecture Designer
+      `
+      
+      const blob = new Blob([pdfContent], { type: 'text/plain' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `portnox-architecture-report-${selectedView}-${Date.now()}.txt`
+      link.click()
+      URL.revokeObjectURL(url)
+    }
   }
 
   const getArchitectureInfo = () => {
@@ -209,6 +339,56 @@ export default function ArchitectureDesigner() {
             'Automated certificate provisioning',
             'Centralized policy management',
             'Scalable across multiple sites'
+          ]
+        }
+      case '802.1x-auth':
+        return {
+          overview: 'EAP-TLS certificate-based authentication workflow showing the complete 802.1X authentication process from device connection to network access.',
+          components: [
+            'End Device with Certificate',
+            'Network Access Server (NAS)',
+            'RADIUS Server',
+            'Certificate Authority',
+            'Policy Decision Point'
+          ],
+          security: [
+            'Mutual certificate authentication',
+            'EAP-TLS encryption',
+            'Certificate validation',
+            'Policy-based access control',
+            'Session monitoring'
+          ],
+          deployment: [
+            'Deploy certificates to devices',
+            'Configure NAS for 802.1X',
+            'Set up RADIUS authentication',
+            'Define access policies',
+            'Test authentication flow'
+          ]
+        }
+      case 'pki-infrastructure':
+        return {
+          overview: 'Portnox Private PKI infrastructure with comprehensive certificate lifecycle management, SCEP enrollment, and OCSP validation.',
+          components: [
+            'Portnox Private CA',
+            'SCEP Server',
+            'OCSP Responder',
+            'Certificate Store',
+            'Management Console'
+          ],
+          security: [
+            'Private certificate authority',
+            'Automated certificate enrollment',
+            'Real-time certificate validation',
+            'Certificate revocation lists',
+            'Secure key management'
+          ],
+          deployment: [
+            'Set up private CA',
+            'Configure SCEP enrollment',
+            'Deploy OCSP responder',
+            'Integrate with MDM',
+            'Test certificate lifecycle'
           ]
         }
       default:
