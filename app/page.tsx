@@ -6,7 +6,8 @@ export default function Home() {
   useEffect(() => {
     // Initialize the application after component mounts
     if (typeof window !== 'undefined') {
-      // Initialize all the JavaScript functionality
+      // Define all functions first, then initialize
+      defineGlobalFunctions()
       initializeApplication()
     }
   }, [])
@@ -2091,34 +2092,34 @@ export default function Home() {
                     <span class="mode-icon"><i class="fas fa-moon"></i></span>
                 </label>
                 
-                <div class="manage-users-btn" onclick="openModal('userManagementModal')">
+                <div class="manage-users-btn" onclick="showTab && showTab('master-list') || openModal('userManagementModal')">
                     <i class="fas fa-users"></i> Manage Users
                 </div>
                 
-                <div class="theme-settings" onclick="toggleThemeOptions()">
+                <div class="theme-settings" onclick="toggleThemeOptions && toggleThemeOptions()">
                     <i class="fas fa-palette"></i> Customize
                 </div>
                 <div id="themeOptions" class="theme-options">
                     <div class="theme-title">Customize Theme Colors</div>
                     <div class="color-option">
                         <label>Primary Color:</label>
-                        <input type="color" id="primaryColor" value="#1a73e8" onchange="updateThemeColor('--primary-color', this.value)">
+                        <input type="color" id="primaryColor" value="#1a73e8" onchange="updateThemeColor && updateThemeColor('--primary-color', this.value)">
                     </div>
                     <div class="color-option">
                         <label>Planned Status:</label>
-                        <input type="color" id="plannedColor" value="#17a2b8" onchange="updateThemeColor('--chart-planned', this.value)">
+                        <input type="color" id="plannedColor" value="#17a2b8" onchange="updateThemeColor && updateThemeColor('--chart-planned', this.value)">
                     </div>
                     <div class="color-option">
                         <label>In Progress Status:</label>
-                        <input type="color" id="inProgressColor" value="#ff9800" onchange="updateThemeColor('--chart-in-progress', this.value)">
+                        <input type="color" id="inProgressColor" value="#ff9800" onchange="updateThemeColor && updateThemeColor('--chart-in-progress', this.value)">
                     </div>
                     <div class="color-option">
                         <label>Complete Status:</label>
-                        <input type="color" id="completeColor" value="#0f9d58" onchange="updateThemeColor('--chart-complete', this.value)">
+                        <input type="color" id="completeColor" value="#0f9d58" onchange="updateThemeColor && updateThemeColor('--chart-complete', this.value)">
                     </div>
                     <div class="color-option">
                         <label>Delayed Status:</label>
-                        <input type="color" id="delayedColor" value="#d93025" onchange="updateThemeColor('--chart-delayed', this.value)">
+                        <input type="color" id="delayedColor" value="#d93025" onchange="updateThemeColor && updateThemeColor('--chart-delayed', this.value)">
                     </div>
                 </div>
             </div>
@@ -2128,10 +2129,10 @@ export default function Home() {
     <div class="container">
         <div class="tab-container">
             <div class="tabs">
-                <div class="tab active" onclick="showTab('master-list')"><i class="fas fa-list"></i> Master Site List</div>
-                <div class="tab" onclick="showTab('site-workbook')"><i class="fas fa-book"></i> Site Workbook</div>
-                <div class="tab" onclick="showTab('rollout-progress')"><i class="fas fa-chart-line"></i> Rollout Progress</div>
-                <div class="tab" onclick="showTab('architecture')"><i class="fas fa-sitemap"></i> Architecture</div>
+                <div class="tab active" onclick="showTab && showTab('master-list')"><i class="fas fa-list"></i> Master Site List</div>
+                <div class="tab" onclick="showTab && showTab('site-workbook')"><i class="fas fa-book"></i> Site Workbook</div>
+                <div class="tab" onclick="showTab && showTab('rollout-progress')"><i class="fas fa-chart-line"></i> Rollout Progress</div>
+                <div class="tab" onclick="showTab && showTab('architecture')"><i class="fas fa-sitemap"></i> Architecture</div>
             </div>
             
             <!-- Master Site List Tab -->
@@ -2180,17 +2181,17 @@ export default function Home() {
                     <table id="siteTable">
                         <thead>
                             <tr>
-                                <th onclick="sortTable(0)">Site ID <i class="fas fa-sort"></i></th>
-                                <th onclick="sortTable(1)">Site Name <i class="fas fa-sort"></i></th>
-                                <th onclick="sortTable(2)">Region <i class="fas fa-sort"></i></th>
-                                <th onclick="sortTable(3)">Country <i class="fas fa-sort"></i></th>
-                                <th onclick="sortTable(4)">Priority <i class="fas fa-sort"></i></th>
-                                <th onclick="sortTable(5)">Phase <i class="fas fa-sort"></i></th>
-                                <th onclick="sortTable(6)">Users <i class="fas fa-sort"></i></th>
-                                <th onclick="sortTable(7)">Project Manager <i class="fas fa-sort"></i></th>
-                                <th onclick="sortTable(8)">Technical Owners <i class="fas fa-sort"></i></th>
-                                <th onclick="sortTable(9)">Status <i class="fas fa-sort"></i></th>
-                                <th onclick="sortTable(10)">Completion <i class="fas fa-sort"></i></th>
+                                <th onclick="sortTable && sortTable(0)">Site ID <i class="fas fa-sort"></i></th>
+                                <th onclick="sortTable && sortTable(1)">Site Name <i class="fas fa-sort"></i></th>
+                                <th onclick="sortTable && sortTable(2)">Region <i class="fas fa-sort"></i></th>
+                                <th onclick="sortTable && sortTable(3)">Country <i class="fas fa-sort"></i></th>
+                                <th onclick="sortTable && sortTable(4)">Priority <i class="fas fa-sort"></i></th>
+                                <th onclick="sortTable && sortTable(5)">Phase <i class="fas fa-sort"></i></th>
+                                <th onclick="sortTable && sortTable(6)">Users <i class="fas fa-sort"></i></th>
+                                <th onclick="sortTable && sortTable(7)">Project Manager <i class="fas fa-sort"></i></th>
+                                <th onclick="sortTable && sortTable(8)">Technical Owners <i class="fas fa-sort"></i></th>
+                                <th onclick="sortTable && sortTable(9)">Status <i class="fas fa-sort"></i></th>
+                                <th onclick="sortTable && sortTable(10)">Completion <i class="fas fa-sort"></i></th>
                                 <th>Notes</th>
                                 <th>Actions</th>
                             </tr>
@@ -2312,13 +2313,13 @@ export default function Home() {
                     <h3>Network Architecture Overview</h3>
                     <div class="architecture-controls">
                         <div class="diagram-controls">
-                            <button class="diagram-btn active" onclick="showArchitectureView('complete')">Complete Architecture</button>
-                            <button class="diagram-btn" onclick="showArchitectureView('auth-flow')">Authentication Flow</button>
-                            <button class="diagram-btn" onclick="showArchitectureView('pki')">PKI & Certificate</button>
-                            <button class="diagram-btn" onclick="showArchitectureView('policies')">Policies & Rules</button>
-                            <button class="diagram-btn" onclick="showArchitectureView('connectivity')">Connectivity Options</button>
+                            <button class="diagram-btn active" onclick="showArchitectureView && showArchitectureView('complete')">Complete Architecture</button>
+                            <button class="diagram-btn" onclick="showArchitectureView && showArchitectureView('auth-flow')">Authentication Flow</button>
+                            <button class="diagram-btn" onclick="showArchitectureView && showArchitectureView('pki')">PKI & Certificate</button>
+                            <button class="diagram-btn" onclick="showArchitectureView && showArchitectureView('policies')">Policies & Rules</button>
+                            <button class="diagram-btn" onclick="showArchitectureView && showArchitectureView('connectivity')">Connectivity Options</button>
                         </div>
-                        <button class="export-svg-btn" onclick="exportSVG()">
+                        <button class="export-svg-btn" onclick="exportSVG && exportSVG()">
                             <i class="fas fa-download"></i> Export SVG
                         </button>
                     </div>
@@ -2326,16 +2327,16 @@ export default function Home() {
                     <!-- Cloud Provider Selection -->
                     <div class="cloud-provider-controls">
                         <label>RADSec Proxy Location:</label>
-                        <button class="cloud-btn aws" onclick="setCloudProvider('aws', event)">AWS</button>
-                        <button class="cloud-btn azure active" onclick="setCloudProvider('azure', event)">Azure</button>
-                        <button class="cloud-btn gcp" onclick="setCloudProvider('gcp', event)">GCP</button>
-                        <button class="cloud-btn onprem" onclick="setCloudProvider('onprem', event)">On-Premises VM</button>
+                        <button class="cloud-btn aws" onclick="setCloudProvider && setCloudProvider('aws', event)">AWS</button>
+                        <button class="cloud-btn azure active" onclick="setCloudProvider && setCloudProvider('azure', event)">Azure</button>
+                        <button class="cloud-btn gcp" onclick="setCloudProvider && setCloudProvider('gcp', event)">GCP</button>
+                        <button class="cloud-btn onprem" onclick="setCloudProvider && setCloudProvider('onprem', event)">On-Premises VM</button>
                     </div>
                     
                     <!-- Vendor Selection -->
                     <div class="vendor-controls">
                         <label>Network Vendor:</label>
-                        <select class="vendor-select" id="networkVendorSelect" onchange="updateNetworkVendor(this.value)">
+                        <select class="vendor-select" id="networkVendorSelect" onchange="updateNetworkVendor && updateNetworkVendor(this.value)">
                             <option value="cisco">Cisco</option>
                             <option value="meraki">Cisco Meraki</option>
                             <option value="juniper">Juniper</option>
@@ -2347,7 +2348,7 @@ export default function Home() {
                         </select>
                         
                         <label>Connectivity Type:</label>
-                        <select class="vendor-select" id="connectivitySelect" onchange="updateConnectivityType(this.value)">
+                        <select class="vendor-select" id="connectivitySelect" onchange="updateConnectivityType && updateConnectivityType(this.value)">
                             <option value="sdwan">SD-WAN</option>
                             <option value="expressroute">Express Route</option>
                             <option value="mpls">MPLS</option>
@@ -2497,7 +2498,7 @@ export default function Home() {
                         <div id="policyRules">
                             <!-- Policy rules will be added dynamically -->
                         </div>
-                        <button onclick="addPolicyRule()" class="success-button">
+                        <button onclick="addPolicyRule && addPolicyRule()" class="success-button">
                             <i class="fas fa-plus"></i> Add Policy Rule
                         </button>
                     </div>
@@ -2659,7 +2660,7 @@ export default function Home() {
     <!-- Add/Edit Site Modal -->
     <div id="siteModal" class="modal">
         <div class="modal-content">
-            <span class="close" onclick="closeModal('siteModal')">&times;</span>
+            <span class="close" onclick="closeModal && closeModal('siteModal')">&times;</span>
             <h2 id="modalTitle">Add New Site</h2>
             
             <form id="siteForm">
@@ -2742,7 +2743,7 @@ export default function Home() {
                         <div id="techOwnersContainer" class="tech-owner-container">
                             <!-- Technical owner fields will be added dynamically -->
                         </div>
-                        <button type="button" class="add-owner-btn" onclick="addTechOwnerField()">
+                        <button type="button" class="add-owner-btn" onclick="addTechOwnerField && addTechOwnerField()">
                             <i class="fas fa-plus"></i> Add Technical Owner
                         </button>
                         <div class="validation-error" id="techOwnersError">At least one technical owner is required</div>
@@ -2796,7 +2797,7 @@ export default function Home() {
                             <h4>Wired Network Vendors</h4>
                             <div class="vendor-input-group">
                                 <input type="text" id="newWiredVendor" placeholder="Enter vendor name">
-                                <button type="button" onclick="addVendor('wired')">Add</button>
+                                <button type="button" onclick="addVendor && addVendor('wired')">Add</button>
                             </div>
                             <div id="wiredVendorsList" class="vendor-list">
                                 <!-- Wired vendors will be populated here -->
@@ -2811,7 +2812,7 @@ export default function Home() {
                             <h4>Wireless Network Vendors</h4>
                             <div class="vendor-input-group">
                                 <input type="text" id="newWirelessVendor" placeholder="Enter vendor name">
-                                <button type="button" onclick="addVendor('wireless')">Add</button>
+                                <button type="button" onclick="addVendor && addVendor('wireless')">Add</button>
                             </div>
                             <div id="wirelessVendorsList" class="vendor-list">
                                 <!-- Wireless vendors will be populated here -->
@@ -2860,7 +2861,7 @@ export default function Home() {
                 </div>
                 
                 <div class="modal-footer">
-                    <button type="button" onclick="closeModal('siteModal')"><i class="fas fa-times"></i> Cancel</button>
+                    <button type="button" onclick="closeModal && closeModal('siteModal')"><i class="fas fa-times"></i> Cancel</button>
                     <button type="submit" class="success-button"><i class="fas fa-save"></i> Save Site</button>
                 </div>
             </form>
@@ -2870,11 +2871,11 @@ export default function Home() {
     <!-- Notes Modal -->
     <div id="notesModal" class="modal">
         <div class="modal-content">
-            <span class="close" onclick="closeModal('notesModal')">&times;</span>
+            <span class="close" onclick="closeModal && closeModal('notesModal')">&times;</span>
             <h2 id="notesModalTitle">Notes for Site</h2>
             <div id="notesContent"></div>
             <div class="modal-footer">
-                <button onclick="closeModal('notesModal')"><i class="fas fa-times"></i> Close</button>
+                <button onclick="closeModal && closeModal('notesModal')"><i class="fas fa-times"></i> Close</button>
             </div>
         </div>
     </div>
@@ -2882,7 +2883,7 @@ export default function Home() {
     <!-- User Management Modal -->
     <div id="userManagementModal" class="modal">
         <div class="modal-content">
-            <span class="close" onclick="closeModal('userManagementModal')">&times;</span>
+            <span class="close" onclick="closeModal && closeModal('userManagementModal')">&times;</span>
             <h2>User Management</h2>
             
             <div class="user-list-container">
@@ -2899,7 +2900,7 @@ export default function Home() {
                 <div style="display: flex; gap: 10px;">
                     <input type="text" id="newProjectManagerName" placeholder="Full Name" style="flex: 1;">
                     <input type="email" id="newProjectManagerEmail" placeholder="Email" style="flex: 1;">
-                    <button onclick="addProjectManager()" class="success-button"><i class="fas fa-plus"></i> Add</button>
+                    <button onclick="addProjectManager && addProjectManager()" class="success-button"><i class="fas fa-plus"></i> Add</button>
                 </div>
             </div>
             
@@ -2924,1147 +2925,15 @@ export default function Home() {
                         <option value="IT Manager">IT Manager</option>
                         <option value="System Administrator">System Administrator</option>
                     </select>
-                    <button onclick="addTechnicalOwner()" class="success-button"><i class="fas fa-plus"></i> Add</button>
+                    <button onclick="addTechnicalOwner && addTechnicalOwner()" class="success-button"><i class="fas fa-plus"></i> Add</button>
                 </div>
             </div>
             
             <div class="modal-footer">
-                <button onclick="closeModal('userManagementModal')"><i class="fas fa-check"></i> Done</button>
+                <button onclick="closeModal && closeModal('userManagementModal')"><i class="fas fa-check"></i> Done</button>
             </div>
         </div>
     </div>
-    
-    <script>
-        // Initialize the application
-        function initializeApplication() {
-            // Global variables
-            window.projectManagers = [
-                { id: 1, name: "Alex Rivera", email: "alex.rivera@abm.com", role: "Senior Project Manager" },
-                { id: 2, name: "Marcus Chen", email: "marcus.chen@abm.com", role: "Project Manager" },
-                { id: 3, name: "Sofia Linden", email: "sofia.linden@abm.com", role: "Project Manager" },
-                { id: 4, name: "Michael Zhang", email: "michael.zhang@abm.com", role: "Project Manager" }
-            ];
-            
-            window.technicalOwners = [
-                { id: 1, name: "John Smith", email: "john.smith@abm.com", role: "Network Administrator" },
-                { id: 2, name: "Mark Wilson", email: "mark.wilson@abm.com", role: "Security Engineer" },
-                { id: 3, name: "Emily Jones", email: "emily.jones@abm.com", role: "Network Engineer" },
-                { id: 4, name: "Paul Davis", email: "paul.davis@abm.com", role: "IT Manager" },
-                { id: 5, name: "Sarah Thompson", email: "sarah.thompson@abm.com", role: "Network Administrator" },
-                { id: 6, name: "Carlos Mendez", email: "carlos.mendez@abm.com", role: "Network Engineer" }
-            ];
-            
-            // Sample sites data
-            window.sites = {
-                'ABM-HQ001': {
-                    id: 'ABM-HQ001',
-                    name: 'ABM Global Headquarters',
-                    region: 'North America',
-                    country: 'USA',
-                    priority: 'High',
-                    phase: '1',
-                    users: 2500,
-                    projectManager: 'Alex Rivera',
-                    technicalOwners: ['John Smith', 'Mark Wilson'],
-                    wiredVendors: ['Cisco', 'Juniper'],
-                    wirelessVendors: ['Cisco'],
-                    deviceTypes: ['Windows', 'Apple', 'Mobile', 'IoT'],
-                    radsec: 'Native',
-                    plannedStart: '2025-08-01',
-                    plannedEnd: '2025-08-15',
-                    status: 'In Progress',
-                    completionPercent: 35,
-                    notes: 'Executive network needs priority handling. Board room has custom AV equipment.'
-                },
-                'ABM-DC002': {
-                    id: 'ABM-DC002',
-                    name: 'Primary Data Center',
-                    region: 'North America',
-                    country: 'USA',
-                    priority: 'High',
-                    phase: '1',
-                    users: 150,
-                    projectManager: 'Marcus Chen',
-                    technicalOwners: ['Emily Jones', 'Paul Davis'],
-                    wiredVendors: ['Cisco'],
-                    wirelessVendors: ['Aruba'],
-                    deviceTypes: ['Windows', 'IoT'],
-                    radsec: 'LRAD',
-                    plannedStart: '2025-08-05',
-                    plannedEnd: '2025-08-12',
-                    status: 'In Progress',
-                    completionPercent: 65,
-                    notes: '24/7 operation requires careful change windows.'
-                },
-                'ABM-EUR003': {
-                    id: 'ABM-EUR003',
-                    name: 'European HQ',
-                    region: 'EMEA',
-                    country: 'Germany',
-                    priority: 'Medium',
-                    phase: '2',
-                    users: 1200,
-                    projectManager: 'Sofia Linden',
-                    technicalOwners: ['Sarah Thompson'],
-                    wiredVendors: ['HPE'],
-                    wirelessVendors: ['Cisco'],
-                    deviceTypes: ['Windows', 'Apple', 'Mobile'],
-                    radsec: 'Native',
-                    plannedStart: '2025-09-01',
-                    plannedEnd: '2025-09-15',
-                    status: 'Planned',
-                    completionPercent: 0,
-                    notes: 'GDPR compliance required.'
-                }
-            };
-            
-            // Architecture diagram variables
-            window.currentArchView = 'complete';
-            window.currentCloudProvider = 'azure';
-            window.currentNetworkVendor = 'cisco';
-            window.currentConnectivityType = 'sdwan';
-            window.connectionPoints = [];
-            window.isDrawingConnection = false;
-            window.startPoint = null;
-            window.policyRules = [];
-            
-            // Vendor management for sites
-            window.siteWiredVendors = [];
-            window.siteWirelessVendors = [];
-            
-            // Sort direction tracking
-            window.sortDirection = {};
-            
-            // Initialize the application
-            refreshSiteTable();
-            updateProgressData();
-            renderProjectManagerList();
-            renderTechnicalOwnerList();
-            
-            // Initialize event listeners
-            initializeEventListeners();
-        }
-        
-        // Initialize Event Listeners
-        function initializeEventListeners() {
-            // Theme toggle
-            const themeToggle = document.getElementById('themeToggle');
-            const savedTheme = localStorage.getItem('theme') || 'light';
-            
-            document.documentElement.setAttribute('data-theme', savedTheme);
-            themeToggle.checked = savedTheme === 'dark';
-            
-            themeToggle.addEventListener('change', function() {
-                if (this.checked) {
-                    document.documentElement.setAttribute('data-theme', 'dark');
-                    localStorage.setItem('theme', 'dark');
-                } else {
-                    document.documentElement.setAttribute('data-theme', 'light');
-                    localStorage.setItem('theme', 'light');
-                }
-            });
-            
-            // Customer logo upload
-            document.getElementById('customerLogo').addEventListener('change', function(event) {
-                const file = event.target.files[0];
-                if (file && file.type.match('image.*')) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        const logoDisplay = document.getElementById('customerLogoDisplay');
-                        logoDisplay.innerHTML = '<img src="' + e.target.result + '" alt="Customer Logo">';
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
-            
-            // Export CSV functionality
-            document.getElementById('exportCSV').addEventListener('click', function() {
-                const siteArray = Object.values(window.sites);
-                let csv = 'Site ID,Site Name,Region,Country,Priority,Phase,Users,Project Manager,Technical Owners,Status,Completion %,RADSEC,Notes\\n';
-                
-                siteArray.forEach(site => {
-                    csv += '"' + site.id + '","' + site.name + '","' + site.region + '","' + site.country + '","' + site.priority + '","' + site.phase + '","' + site.users + '","' + site.projectManager + '","' + site.technicalOwners.join(', ') + '","' + site.status + '","' + site.completionPercent + '","' + site.radsec + '","' + site.notes + '"\\n';
-                });
-                
-                const blob = new Blob([csv], { type: 'text/csv' });
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'portnox-deployment-' + Date.now() + '.csv';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-            });
-            
-            // Add Site button functionality
-            document.getElementById('addSiteBtn').addEventListener('click', function() {
-                document.getElementById('modalTitle').textContent = 'Add New Site';
-                document.getElementById('siteForm').reset();
-                document.getElementById('editSiteId').value = '';
-                document.getElementById('techOwnersContainer').innerHTML = '';
-                window.siteWiredVendors = [];
-                window.siteWirelessVendors = [];
-                displayVendors('wired');
-                displayVendors('wireless');
-                addTechOwnerField();
-                openModal('siteModal');
-            });
-            
-            // Filter functionality
-            document.getElementById('searchInput').addEventListener('input', filterTable);
-            document.getElementById('regionFilter').addEventListener('change', filterTable);
-            document.getElementById('priorityFilter').addEventListener('change', filterTable);
-            document.getElementById('phaseFilter').addEventListener('change', filterTable);
-            document.getElementById('statusFilter').addEventListener('change', filterTable);
-            
-            // Form handling
-            document.getElementById('siteForm').addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                if (!validateSiteForm()) {
-                    return;
-                }
-                
-                const editingSiteId = document.getElementById('editSiteId').value;
-                const siteId = document.getElementById('siteId').value;
-                
-                const siteData = {
-                    id: siteId,
-                    name: document.getElementById('siteName').value,
-                    region: document.getElementById('region').value,
-                    country: document.getElementById('country').value,
-                    priority: document.getElementById('priority').value,
-                    phase: document.getElementById('phase').value,
-                    users: parseInt(document.getElementById('users').value),
-                    projectManager: document.getElementById('projectManager').value,
-                    technicalOwners: Array.from(document.querySelectorAll('.tech-owner-select')).map(select => select.value).filter(v => v),
-                    wiredVendors: window.siteWiredVendors,
-                    wirelessVendors: window.siteWirelessVendors,
-                    deviceTypes: Array.from(document.querySelectorAll('input[name="deviceTypes"]:checked')).map(cb => cb.value),
-                    radsec: document.getElementById('radsec').value,
-                    plannedStart: document.getElementById('plannedStart').value,
-                    plannedEnd: document.getElementById('plannedEnd').value,
-                    status: document.getElementById('status').value,
-                    completionPercent: parseInt(document.getElementById('completionPercent').value),
-                    notes: document.getElementById('notes').value
-                };
-                
-                // If editing, delete the old site if the ID changed
-                if (editingSiteId && editingSiteId !== siteId) {
-                    delete window.sites[editingSiteId];
-                }
-                
-                window.sites[siteId] = siteData;
-                
-                refreshSiteTable();
-                updateProgressData();
-                closeModal('siteModal');
-                
-                // Reset form
-                document.getElementById('siteForm').reset();
-                document.getElementById('editSiteId').value = '';
-                window.siteWiredVendors = [];
-                window.siteWirelessVendors = [];
-            });
-            
-            // Close modal when clicking outside
-            window.onclick = function(event) {
-                if (event.target.classList.contains('modal')) {
-                    event.target.style.display = 'none';
-                }
-            };
-        }
-        
-        // Site management functions
-        function refreshSiteTable() {
-            const tbody = document.querySelector('#siteTable tbody');
-            tbody.innerHTML = '';
-            
-            Object.values(window.sites).forEach(site => {
-                const row = document.createElement('tr');
-                row.className = 'priority-' + site.priority.toLowerCase();
-                row.innerHTML = 
-                    '<td>' + site.id + '</td>' +
-                    '<td>' + site.name + '</td>' +
-                    '<td>' + site.region + '</td>' +
-                    '<td>' + site.country + '</td>' +
-                    '<td><span class="badge badge-' + site.priority.toLowerCase() + '">' + site.priority + '</span></td>' +
-                    '<td>Phase ' + site.phase + '</td>' +
-                    '<td>' + site.users.toLocaleString() + '</td>' +
-                    '<td>' + site.projectManager + '</td>' +
-                    '<td>' + site.technicalOwners.join(', ') + '</td>' +
-                    '<td><span class="status-' + site.status.toLowerCase().replace(' ', '-') + '">' + site.status + '</span></td>' +
-                    '<td>' +
-                        '<div class="site-progress-container">' +
-                            '<div class="site-progress-bar-container">' +
-                                '<div class="site-progress-bar ' + site.status.toLowerCase().replace(' ', '-') + '" style="width: ' + site.completionPercent + '%"></div>' +
-                            '</div>' +
-                            '<span class="site-progress-value">' + site.completionPercent + '%</span>' +
-                        '</div>' +
-                    '</td>' +
-                    '<td>' +
-                        '<i class="fas fa-sticky-note notes-icon" onclick="showNotes(\'' + site.id + '\')"></i>' +
-                    '</td>' +
-                    '<td>' +
-                        '<div class="actions">' +
-                            '<button onclick="editSite(\'' + site.id + '\')"><i class="fas fa-edit"></i></button>' +
-                            '<button onclick="viewSiteWorkbook(\'' + site.id + '\')"><i class="fas fa-book"></i></button>' +
-                            '<button class="danger-button" onclick="deleteSite(\'' + site.id + '\')"><i class="fas fa-trash"></i></button>' +
-                        '</div>' +
-                    '</td>';
-                tbody.appendChild(row);
-            });
-        }
-        
-        function editSite(siteId) {
-            const site = window.sites[siteId];
-            if (!site) return;
-            
-            document.getElementById('modalTitle').textContent = 'Edit Site';
-            document.getElementById('editSiteId').value = siteId;
-            document.getElementById('siteId').value = site.id;
-            document.getElementById('siteName').value = site.name;
-            document.getElementById('region').value = site.region;
-            document.getElementById('country').value = site.country;
-            document.getElementById('priority').value = site.priority;
-            document.getElementById('phase').value = site.phase;
-            document.getElementById('users').value = site.users;
-            document.getElementById('projectManager').value = site.projectManager;
-            document.getElementById('plannedStart').value = site.plannedStart;
-            document.getElementById('plannedEnd').value = site.plannedEnd;
-            document.getElementById('status').value = site.status;
-            document.getElementById('completionPercent').value = site.completionPercent;
-            document.getElementById('radsec').value = site.radsec;
-            document.getElementById('notes').value = site.notes;
-            
-            // Set vendors
-            window.siteWiredVendors = site.wiredVendors || [];
-            window.siteWirelessVendors = site.wirelessVendors || [];
-            displayVendors('wired');
-            displayVendors('wireless');
-            
-            // Set device types
-            document.querySelectorAll('input[name="deviceTypes"]').forEach(checkbox => {
-                checkbox.checked = site.deviceTypes.includes(checkbox.value);
-            });
-            
-            // Set technical owners
-            const techOwnersContainer = document.getElementById('techOwnersContainer');
-            techOwnersContainer.innerHTML = '';
-            site.technicalOwners.forEach(owner => {
-                addTechOwnerField(owner);
-            });
-            
-            openModal('siteModal');
-        }
-        
-        function deleteSite(siteId) {
-            if (confirm('Are you sure you want to delete site ' + siteId + '?')) {
-                delete window.sites[siteId];
-                refreshSiteTable();
-                updateProgressData();
-            }
-        }
-        
-        function viewSiteWorkbook(siteId) {
-            const site = window.sites[siteId];
-            if (!site) return;
-            
-            showTab('site-workbook');
-            
-            document.getElementById('workbook-title').textContent = 'Site Workbook: ' + site.name;
-            
-            const workbookContent = document.getElementById('workbook-content');
-            workbookContent.innerHTML = 
-                '<div class="detail-row">' +
-                    '<div class="detail-label">Site ID:</div>' +
-                    '<div class="detail-value">' + site.id + '</div>' +
-                '</div>' +
-                '<div class="detail-row">' +
-                    '<div class="detail-label">Site Name:</div>' +
-                    '<div class="detail-value">' + site.name + '</div>' +
-                '</div>' +
-                '<div class="detail-row">' +
-                    '<div class="detail-label">Region:</div>' +
-                    '<div class="detail-value">' + site.region + '</div>' +
-                '</div>' +
-                '<div class="detail-row">' +
-                    '<div class="detail-label">Country:</div>' +
-                    '<div class="detail-value">' + site.country + '</div>' +
-                '</div>' +
-                '<div class="detail-row">' +
-                    '<div class="detail-label">Priority:</div>' +
-                    '<div class="detail-value"><span class="badge badge-' + site.priority.toLowerCase() + '">' + site.priority + '</span></div>' +
-                '</div>' +
-                '<div class="detail-row">' +
-                    '<div class="detail-label">Phase:</div>' +
-                    '<div class="detail-value">Phase ' + site.phase + '</div>' +
-                '</div>' +
-                '<div class="detail-row">' +
-                    '<div class="detail-label">Number of Users:</div>' +
-                    '<div class="detail-value">' + site.users.toLocaleString() + '</div>' +
-                '</div>' +
-                '<div class="detail-row">' +
-                    '<div class="detail-label">Project Manager:</div>' +
-                    '<div class="detail-value">' + site.projectManager + '</div>' +
-                '</div>' +
-                '<div class="detail-row">' +
-                    '<div class="detail-label">Technical Owners:</div>' +
-                    '<div class="detail-value">' + site.technicalOwners.join(', ') + '</div>' +
-                '</div>' +
-                '<div class="detail-row">' +
-                    '<div class="detail-label">RADSEC Implementation:</div>' +
-                    '<div class="detail-value">' + site.radsec + '</div>' +
-                '</div>' +
-                '<div class="detail-row">' +
-                    '<div class="detail-label">Planned Start Date:</div>' +
-                    '<div class="detail-value">' + site.plannedStart + '</div>' +
-                '</div>' +
-                '<div class="detail-row">' +
-                    '<div class="detail-label">Planned End Date:</div>' +
-                    '<div class="detail-value">' + site.plannedEnd + '</div>' +
-                '</div>' +
-                '<div class="detail-row">' +
-                    '<div class="detail-label">Status:</div>' +
-                    '<div class="detail-value"><span class="status-' + site.status.toLowerCase().replace(' ', '-') + '">' + site.status + '</span></div>' +
-                '</div>' +
-                '<div class="detail-row">' +
-                    '<div class="detail-label">Completion:</div>' +
-                    '<div class="detail-value">' +
-                        '<div class="site-progress-container">' +
-                            '<div class="site-progress-bar-container">' +
-                                '<div class="site-progress-bar ' + site.status.toLowerCase().replace(' ', '-') + '" style="width: ' + site.completionPercent + '%"></div>' +
-                            '</div>' +
-                            '<span class="site-progress-value">' + site.completionPercent + '%</span>' +
-                        '</div>' +
-                    '</div>' +
-                '</div>' +
-                '<div class="detail-row">' +
-                    '<div class="detail-label">Wired Vendors:</div>' +
-                    '<div class="detail-value">' + site.wiredVendors.join(', ') + '</div>' +
-                '</div>' +
-                '<div class="detail-row">' +
-                    '<div class="detail-label">Wireless Vendors:</div>' +
-                    '<div class="detail-value">' + site.wirelessVendors.join(', ') + '</div>' +
-                '</div>' +
-                '<div class="detail-row">' +
-                    '<div class="detail-label">Device Types:</div>' +
-                    '<div class="detail-value">' + site.deviceTypes.map(type => '<span class="tag">' + type + '</span>').join('') + '</div>' +
-                '</div>' +
-                '<div class="detail-row">' +
-                    '<div class="detail-label">Notes:</div>' +
-                    '<div class="detail-value">' + (site.notes || 'No notes available') + '</div>' +
-                '</div>';
-        }
-        
-        function showNotes(siteId) {
-            const site = window.sites[siteId];
-            if (!site) return;
-            
-            document.getElementById('notesModalTitle').textContent = 'Notes for ' + site.name;
-            document.getElementById('notesContent').innerHTML = 
-                '<p><strong>Site ID:</strong> ' + site.id + '</p>' +
-                '<p><strong>Notes:</strong></p>' +
-                '<p>' + (site.notes || 'No notes available for this site.') + '</p>';
-            
-            openModal('notesModal');
-        }
-        
-        // Vendor management functions
-        function addVendor(type) {
-            const inputId = type === 'wired' ? 'newWiredVendor' : 'newWirelessVendor';
-            const vendorName = document.getElementById(inputId).value.trim();
-            
-            if (!vendorName) {
-                alert('Please enter a vendor name');
-                return;
-            }
-            
-            const vendorList = type === 'wired' ? window.siteWiredVendors : window.siteWirelessVendors;
-            
-            if (!vendorList.includes(vendorName)) {
-                vendorList.push(vendorName);
-                displayVendors(type);
-                document.getElementById(inputId).value = '';
-            } else {
-                alert('This vendor has already been added');
-            }
-        }
-        
-        function removeVendor(type, vendor) {
-            if (type === 'wired') {
-                window.siteWiredVendors = window.siteWiredVendors.filter(v => v !== vendor);
-            } else {
-                window.siteWirelessVendors = window.siteWirelessVendors.filter(v => v !== vendor);
-            }
-            displayVendors(type);
-        }
-        
-        function displayVendors(type) {
-            const containerId = type === 'wired' ? 'wiredVendorsList' : 'wirelessVendorsList';
-            const container = document.getElementById(containerId);
-            const vendorList = type === 'wired' ? window.siteWiredVendors : window.siteWirelessVendors;
-            
-            container.innerHTML = '';
-            vendorList.forEach(vendor => {
-                const vendorItem = document.createElement('div');
-                vendorItem.className = 'vendor-item';
-                vendorItem.innerHTML = 
-                    '<span>' + vendor + '</span>' +
-                    '<button type="button" onclick="removeVendor(\'' + type + '\', \'' + vendor + '\')">' +
-                        '<i class="fas fa-times"></i>' +
-                    '</button>';
-                container.appendChild(vendorItem);
-            });
-            
-            // Update hidden input
-            const hiddenInput = document.getElementById(type + 'Vendors');
-            hiddenInput.value = vendorList.join(',');
-        }
-        
-        // Technical owner field management
-        function addTechOwnerField(selectedValue = '') {
-            const container = document.getElementById('techOwnersContainer');
-            const entry = document.createElement('div');
-            entry.className = 'tech-owner-entry';
-            
-            const select = document.createElement('select');
-            select.className = 'tech-owner-select';
-            select.innerHTML = '<option value="">Select Technical Owner</option>';
-            
-            window.technicalOwners.forEach(owner => {
-                const option = document.createElement('option');
-                option.value = owner.name;
-                option.textContent = owner.name + ' (' + owner.role + ')';
-                if (owner.name === selectedValue) {
-                    option.selected = true;
-                }
-                select.appendChild(option);
-            });
-            
-            const removeBtn = document.createElement('span');
-            removeBtn.className = 'remove-owner';
-            removeBtn.innerHTML = '<i class="fas fa-times"></i>';
-            removeBtn.onclick = function() {
-                entry.remove();
-            };
-            
-            entry.appendChild(select);
-            entry.appendChild(removeBtn);
-            container.appendChild(entry);
-        }
-        
-        // User management functions
-        function renderProjectManagerList() {
-            const container = document.getElementById('projectManagerList');
-            container.innerHTML = '';
-            
-            window.projectManagers.forEach(pm => {
-                const userItem = document.createElement('div');
-                userItem.className = 'user-item';
-                userItem.innerHTML = 
-                    '<div class="user-info">' +
-                        '<div class="user-icon">' + pm.name.split(' ').map(n => n[0]).join('') + '</div>' +
-                        '<div class="user-details">' +
-                            '<div class="user-name">' + pm.name + '</div>' +
-                            '<div class="user-role">' + pm.email + '</div>' +
-                        '</div>' +
-                    '</div>' +
-                    '<div class="user-actions">' +
-                        '<button class="user-action-btn delete" onclick="deleteProjectManager(' + pm.id + ')">' +
-                            '<i class="fas fa-trash"></i>' +
-                        '</button>' +
-                    '</div>';
-                container.appendChild(userItem);
-            });
-            
-            // Update project manager dropdown
-            const pmSelect = document.getElementById('projectManager');
-            pmSelect.innerHTML = '<option value="">Select Project Manager</option>';
-            window.projectManagers.forEach(pm => {
-                const option = document.createElement('option');
-                option.value = pm.name;
-                option.textContent = pm.name;
-                pmSelect.appendChild(option);
-            });
-        }
-        
-        function renderTechnicalOwnerList() {
-            const container = document.getElementById('technicalOwnerList');
-            container.innerHTML = '';
-            
-            window.technicalOwners.forEach(to => {
-                const userItem = document.createElement('div');
-                userItem.className = 'user-item';
-                userItem.innerHTML = 
-                    '<div class="user-info">' +
-                        '<div class="user-icon">' + to.name.split(' ').map(n => n[0]).join('') + '</div>' +
-                        '<div class="user-details">' +
-                            '<div class="user-name">' + to.name + '</div>' +
-                            '<div class="user-role">' + to.role + ' - ' + to.email + '</div>' +
-                        '</div>' +
-                    '</div>' +
-                    '<div class="user-actions">' +
-                        '<button class="user-action-btn delete" onclick="deleteTechnicalOwner(' + to.id + ')">' +
-                            '<i class="fas fa-trash"></i>' +
-                        '</button>' +
-                    '</div>';
-                container.appendChild(userItem);
-            });
-        }
-        
-        function addProjectManager() {
-            const name = document.getElementById('newProjectManagerName').value.trim();
-            const email = document.getElementById('newProjectManagerEmail').value.trim();
-            
-            if (!name || !email) {
-                alert('Please enter both name and email');
-                return;
-            }
-            
-            const newPM = {
-                id: Date.now(),
-                name: name,
-                email: email,
-                role: 'Project Manager'
-            };
-            
-            window.projectManagers.push(newPM);
-            renderProjectManagerList();
-            
-            document.getElementById('newProjectManagerName').value = '';
-            document.getElementById('newProjectManagerEmail').value = '';
-        }
-        
-        function addTechnicalOwner() {
-            const name = document.getElementById('newTechnicalOwnerName').value.trim();
-            const email = document.getElementById('newTechnicalOwnerEmail').value.trim();
-            const role = document.getElementById('newTechnicalOwnerRole').value;
-            
-            if (!name || !email || !role) {
-                alert('Please enter name, email, and role');
-                return;
-            }
-            
-            const newTO = {
-                id: Date.now(),
-                name: name,
-                email: email,
-                role: role
-            };
-            
-            window.technicalOwners.push(newTO);
-            renderTechnicalOwnerList();
-            
-            document.getElementById('newTechnicalOwnerName').value = '';
-            document.getElementById('newTechnicalOwnerEmail').value = '';
-            document.getElementById('newTechnicalOwnerRole').value = '';
-        }
-        
-        function deleteProjectManager(id) {
-            if (confirm('Are you sure you want to delete this project manager?')) {
-                window.projectManagers = window.projectManagers.filter(pm => pm.id !== id);
-                renderProjectManagerList();
-            }
-        }
-        
-        function deleteTechnicalOwner(id) {
-            if (confirm('Are you sure you want to delete this technical owner?')) {
-                window.technicalOwners = window.technicalOwners.filter(to => to.id !== id);
-                renderTechnicalOwnerList();
-            }
-        }
-        
-        // Progress tracking functions
-        function updateProgressData() {
-            const siteArray = Object.values(window.sites);
-            
-            const completedSites = siteArray.filter(s => s.status === 'Complete').length;
-            const inProgressSites = siteArray.filter(s => s.status === 'In Progress').length;
-            const plannedSites = siteArray.filter(s => s.status === 'Planned').length;
-            const delayedSites = siteArray.filter(s => s.status === 'Delayed').length;
-            const totalUsers = siteArray.reduce((sum, s) => sum + s.users, 0);
-            
-            document.getElementById('completedSitesCard').textContent = completedSites;
-            document.getElementById('inProgressSitesCard').textContent = inProgressSites;
-            document.getElementById('plannedSitesCard').textContent = plannedSites;
-            document.getElementById('totalUsersCard').textContent = totalUsers.toLocaleString();
-            
-            const totalSites = siteArray.length;
-            const overallPercent = totalSites > 0 ? Math.round((completedSites / totalSites) * 100) : 0;
-            
-            const progressBar = document.getElementById('overallProgressBar');
-            progressBar.style.width = overallPercent + '%';
-            progressBar.textContent = overallPercent + '%';
-            
-            // Update donut chart
-            updateDonutChart(completedSites, inProgressSites, plannedSites, delayedSites);
-            
-            // Update site progress list
-            updateSiteProgressList();
-        }
-        
-        function updateDonutChart(completed, inProgress, planned, delayed) {
-            const total = completed + inProgress + planned + delayed;
-            const completePercent = total > 0 ? Math.round((completed / total) * 100) : 0;
-            
-            const donutPercent = document.querySelector('#statusChart .donut-percent');
-            if (donutPercent) {
-                donutPercent.textContent = completePercent + '%';
-            }
-            
-            // Update checklist chart (simulated)
-            const checklistPercent = Math.round((completed * 100 + inProgress * 50) / (total * 100) * 100);
-            const checklistElement = document.getElementById('checklistPercent');
-            if (checklistElement) {
-                checklistElement.textContent = checklistPercent + '%';
-            }
-        }
-        
-        function updateSiteProgressList() {
-            const container = document.getElementById('siteProgressList');
-            const siteArray = Object.values(window.sites);
-            
-            let html = '<h3>Site Completion Status</h3>';
-            
-            siteArray.forEach(site => {
-                html += 
-                    '<div style="margin: 15px 0;">' +
-                        '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">' +
-                            '<span style="font-weight: 500;">' + site.name + '</span>' +
-                            '<span class="status-' + site.status.toLowerCase().replace(' ', '-') + '">' + site.status + '</span>' +
-                        '</div>' +
-                        '<div class="site-progress-container">' +
-                            '<div class="site-progress-bar-container">' +
-                                '<div class="site-progress-bar ' + site.status.toLowerCase().replace(' ', '-') + '" style="width: ' + site.completionPercent + '%"></div>' +
-                            '</div>' +
-                            '<span class="site-progress-value">' + site.completionPercent + '%</span>' +
-                        '</div>' +
-                    '</div>';
-            });
-            
-            container.innerHTML = html;
-        }
-        
-        // Filter functionality
-        function filterTable() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const regionFilter = document.getElementById('regionFilter').value;
-            const priorityFilter = document.getElementById('priorityFilter').value;
-            const phaseFilter = document.getElementById('phaseFilter').value;
-            const statusFilter = document.getElementById('statusFilter').value;
-            
-            const rows = document.querySelectorAll('#siteTable tbody tr');
-            
-            rows.forEach(row => {
-                const text = row.textContent.toLowerCase();
-                const region = row.cells[2].textContent;
-                const priority = row.cells[4].textContent;
-                const phase = row.cells[5].textContent.replace('Phase ', '');
-                const status = row.cells[9].textContent;
-                
-                const matchesSearch = text.includes(searchTerm);
-                const matchesRegion = !regionFilter || region === regionFilter;
-                const matchesPriority = !priorityFilter || priority === priorityFilter;
-                const matchesPhase = !phaseFilter || phase === phaseFilter;
-                const matchesStatus = !statusFilter || status === statusFilter;
-                
-                if (matchesSearch && matchesRegion && matchesPriority && matchesPhase && matchesStatus) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-        }
-        
-        // Sort functionality
-        function sortTable(columnIndex) {
-            const table = document.getElementById('siteTable');
-            const tbody = table.querySelector('tbody');
-            const rows = Array.from(tbody.querySelectorAll('tr'));
-            
-            const direction = window.sortDirection[columnIndex] === 'asc' ? 'desc' : 'asc';
-            window.sortDirection[columnIndex] = direction;
-            
-            rows.sort((a, b) => {
-                let aValue = a.cells[columnIndex].textContent;
-                let bValue = b.cells[columnIndex].textContent;
-                
-                // Handle numeric columns
-                if (columnIndex === 5) { // Phase
-                    aValue = parseInt(aValue.replace('Phase ', ''));
-                    bValue = parseInt(bValue.replace('Phase ', ''));
-                } else if (columnIndex === 6 || columnIndex === 10) { // Users, Completion
-                    aValue = parseInt(aValue.replace(/[,%]/g, ''));
-                    bValue = parseInt(bValue.replace(/[,%]/g, ''));
-                }
-                
-                if (direction === 'asc') {
-                    return aValue > bValue ? 1 : -1;
-                } else {
-                    return aValue < bValue ? 1 : -1;
-                }
-            });
-            
-            tbody.innerHTML = '';
-            rows.forEach(row => tbody.appendChild(row));
-        }
-        
-        // Form validation
-        function validateSiteForm() {
-            let isValid = true;
-            
-            // Validate required fields
-            const requiredFields = [
-                'siteId', 'siteName', 'region', 'country', 'priority',
-                'phase', 'users', 'projectManager', 'plannedStart',
-                'plannedEnd', 'status', 'completionPercent', 'radsec'
-            ];
-            
-            requiredFields.forEach(field => {
-                const element = document.getElementById(field);
-                const errorElement = document.getElementById(field + 'Error');
-                
-                if (!element.value) {
-                    element.classList.add('invalid-input');
-                    errorElement.style.display = 'block';
-                    isValid = false;
-                } else {
-                    element.classList.remove('invalid-input');
-                    errorElement.style.display = 'none';
-                }
-            });
-            
-            // Validate vendors
-            if (window.siteWiredVendors.length === 0) {
-                document.getElementById('wiredVendorsError').style.display = 'block';
-                isValid = false;
-            } else {
-                document.getElementById('wiredVendorsError').style.display = 'none';
-            }
-            
-            if (window.siteWirelessVendors.length === 0) {
-                document.getElementById('wirelessVendorsError').style.display = 'block';
-                isValid = false;
-            } else {
-                document.getElementById('wirelessVendorsError').style.display = 'none';
-            }
-            
-            // Validate device types
-            const deviceTypes = document.querySelectorAll('input[name="deviceTypes"]:checked');
-            if (deviceTypes.length === 0) {
-                document.getElementById('deviceTypesError').style.display = 'block';
-                isValid = false;
-            } else {
-                document.getElementById('deviceTypesError').style.display = 'none';
-            }
-            
-            // Validate technical owners
-            const techOwners = document.querySelectorAll('.tech-owner-select');
-            if (techOwners.length === 0 || !Array.from(techOwners).some(select => select.value)) {
-                document.getElementById('techOwnersError').style.display = 'block';
-                isValid = false;
-            } else {
-                document.getElementById('techOwnersError').style.display = 'none';
-            }
-            
-            return isValid;
-        }
-        
-        // Modal functions
-        function openModal(modalId) {
-            document.getElementById(modalId).style.display = 'block';
-            
-            if (modalId === 'userManagementModal') {
-                renderProjectManagerList();
-                renderTechnicalOwnerList();
-            }
-        }
-        
-        function closeModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
-        }
-        
-        // Tab switching
-        function showTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            
-            document.getElementById(tabId).classList.add('active');
-            document.querySelector('.tab[onclick="showTab(\'' + tabId + '\')"]').classList.add('active');
-            
-            if (tabId === 'rollout-progress') {
-                updateProgressData();
-            } else if (tabId === 'architecture') {
-                // Initialize architecture diagram
-                setTimeout(() => {
-                    showArchitectureView('complete');
-                }, 100);
-            }
-        }
-        
-        // Theme customization
-        function toggleThemeOptions() {
-            const themeOptions = document.getElementById('themeOptions');
-            themeOptions.style.display = themeOptions.style.display === 'block' ? 'none' : 'block';
-        }
-        
-        function updateThemeColor(variable, value) {
-            document.documentElement.style.setProperty(variable, value);
-            
-            if (variable === '--primary-color') {
-                const darkerColor = adjustColorBrightness(value, -20);
-                document.documentElement.style.setProperty('--primary-dark', darkerColor);
-            }
-        }
-        
-        function adjustColorBrightness(hex, percent) {
-            let r = parseInt(hex.substring(1, 3), 16);
-            let g = parseInt(hex.substring(3, 5), 16);
-            let b = parseInt(hex.substring(5, 7), 16);
-            
-            r = Math.max(0, Math.min(255, r + percent));
-            g = Math.max(0, Math.min(255, g + percent));
-            b = Math.max(0, Math.min(255, b + percent));
-            
-            return '#' + r.toString(16).padStart(2, '0') + g.toString(16).padStart(2, '0') + b.toString(16).padStart(2, '0');
-        }
-        
-        // Architecture diagram functions
-        function showArchitectureView(view) {
-            window.currentArchView = view;
-            
-            // Update button states
-            document.querySelectorAll('.diagram-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            
-            const clickedBtn = document.querySelector('.diagram-btn[onclick="showArchitectureView(\'' + view + '\')"]');
-            if (clickedBtn) clickedBtn.classList.add('active');
-            
-            // Show/hide policy editor
-            const policyEditor = document.getElementById('policyEditor');
-            if (view === 'policies') {
-                policyEditor.style.display = 'block';
-                if (window.policyRules.length === 0) {
-                    // Add default policy rules
-                    addPolicyRule('Corporate Users', 'EAP-TLS', 'Certificate Valid', 'Allow', 'VLAN 100');
-                    addPolicyRule('Guest Users', 'Captive Portal', 'Sponsor Approved', 'Allow', 'VLAN 200');
-                    addPolicyRule('IoT Devices', 'MAB', 'MAC Registered', 'Allow', 'VLAN 300');
-                }
-            } else {
-                if (policyEditor) policyEditor.style.display = 'none';
-            }
-            
-            // Draw the appropriate diagram
-            const svg = document.getElementById('architectureDiagram');
-            svg.innerHTML = '';
-            window.connectionPoints = [];
-            
-            switch(view) {
-                case 'complete':
-                    drawCompleteArchitecture(svg);
-                    break;
-                case 'auth-flow':
-                    drawAuthFlowDiagram(svg);
-                    break;
-                case 'pki':
-                    drawPKIDiagram(svg);
-                    break;
-                case 'policies':
-                    drawPoliciesDiagram(svg);
-                    break;
-                case 'connectivity':
-                    drawConnectivityDiagram(svg);
-                    break;
-            }
-        }
-        
-        function drawCompleteArchitecture(svg) {
-            // Simple placeholder diagram
-            const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-            rect.setAttribute('x', '100');
-            rect.setAttribute('y', '100');
-            rect.setAttribute('width', '200');
-            rect.setAttribute('height', '100');
-            rect.setAttribute('fill', '#e3f2fd');
-            rect.setAttribute('stroke', '#1976d2');
-            rect.setAttribute('stroke-width', '2');
-            svg.appendChild(rect);
-            
-            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-            text.setAttribute('x', '200');
-            text.setAttribute('y', '160');
-            text.setAttribute('text-anchor', 'middle');
-            text.setAttribute('font-size', '16');
-            text.setAttribute('font-weight', 'bold');
-            text.textContent = 'Portnox Cloud';
-            svg.appendChild(text);
-        }
-        
-        function drawAuthFlowDiagram(svg) {
-            // Simple placeholder for auth flow
-            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-            text.setAttribute('x', '200');
-            text.setAttribute('y', '160');
-            text.setAttribute('text-anchor', 'middle');
-            text.setAttribute('font-size', '16');
-            text.textContent = 'Authentication Flow Diagram';
-            svg.appendChild(text);
-        }
-        
-        function drawPKIDiagram(svg) {
-            // Simple placeholder for PKI
-            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-            text.setAttribute('x', '200');
-            text.setAttribute('y', '160');
-            text.setAttribute('text-anchor', 'middle');
-            text.setAttribute('font-size', '16');
-            text.textContent = 'PKI Infrastructure Diagram';
-            svg.appendChild(text);
-        }
-        
-        function drawPoliciesDiagram(svg) {
-            // Simple placeholder for policies
-            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-            text.setAttribute('x', '200');
-            text.setAttribute('y', '160');
-            text.setAttribute('text-anchor', 'middle');
-            text.setAttribute('font-size', '16');
-            text.textContent = 'Policies & Rules Diagram';
-            svg.appendChild(text);
-        }
-        
-        function drawConnectivityDiagram(svg) {
-            // Simple placeholder for connectivity
-            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-            text.setAttribute('x', '200');
-            text.setAttribute('y', '160');
-            text.setAttribute('text-anchor', 'middle');
-            text.setAttribute('font-size', '16');
-            text.textContent = 'Connectivity Options Diagram';
-            svg.appendChild(text);
-        }
-        
-        function setCloudProvider(provider, event) {
-            window.currentCloudProvider = provider;
-            document.querySelectorAll('.cloud-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            event.target.classList.add('active');
-            showArchitectureView(window.currentArchView);
-        }
-        
-        function updateNetworkVendor(vendor) {
-            window.currentNetworkVendor = vendor;
-            showArchitectureView(window.currentArchView);
-        }
-        
-        function updateConnectivityType(type) {
-            window.currentConnectivityType = type;
-            showArchitectureView(window.currentArchView);
-        }
-        
-        function exportSVG() {
-            const svg = document.getElementById('architectureDiagram');
-            const svgData = new XMLSerializer().serializeToString(svg);
-            const svgBlob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
-            const svgUrl = URL.createObjectURL(svgBlob);
-            
-            const downloadLink = document.createElement('a');
-            downloadLink.href = svgUrl;
-            downloadLink.download = 'portnox-architecture-' + window.currentArchView + '-' + Date.now() + '.svg';
-            document.body.appendChild(downloadLink);
-            downloadLink.click();
-            document.body.removeChild(downloadLink);
-        }
-        
-        // Policy management functions
-        function addPolicyRule(userGroup = '', authMethod = '', condition = '', action = '', vlan = '') {
-            const ruleId = 'rule-' + Date.now();
-            const rule = {
-                id: ruleId,
-                userGroup,
-                authMethod,
-                condition,
-                action,
-                vlan
-            };
-            
-            window.policyRules.push(rule);
-            displayPolicyRules();
-        }
-        
-        function displayPolicyRules() {
-            const container = document.getElementById('policyRules');
-            if (!container) return;
-            
-            container.innerHTML = '';
-            
-            window.policyRules.forEach(rule => {
-                const ruleDiv = document.createElement('div');
-                ruleDiv.className = 'policy-rule';
-                ruleDiv.innerHTML = 
-                    '<select value="' + rule.userGroup + '">' +
-                        '<option value="">Select Group</option>' +
-                        '<option value="Corporate Users"' + (rule.userGroup === 'Corporate Users' ? ' selected' : '') + '>Corporate Users</option>' +
-                        '<option value="Guest Users"' + (rule.userGroup === 'Guest Users' ? ' selected' : '') + '>Guest Users</option>' +
-                        '<option value="IoT Devices"' + (rule.userGroup === 'IoT Devices' ? ' selected' : '') + '>IoT Devices</option>' +
-                        '<option value="BYOD"' + (rule.userGroup === 'BYOD' ? ' selected' : '') + '>BYOD</option>' +
-                    '</select>' +
-                    '<select value="' + rule.authMethod + '">' +
-                        '<option value="">Auth Method</option>' +
-                        '<option value="EAP-TLS"' + (rule.authMethod === 'EAP-TLS' ? ' selected' : '') + '>EAP-TLS</option>' +
-                        '<option value="PEAP-MSCHAPv2"' + (rule.authMethod === 'PEAP-MSCHAPv2' ? ' selected' : '') + '>PEAP-MSCHAPv2</option>' +
-                        '<option value="MAB"' + (rule.authMethod === 'MAB' ? ' selected' : '') + '>MAB</option>' +
-                        '<option value="Captive Portal"' + (rule.authMethod === 'Captive Portal' ? ' selected' : '') + '>Captive Portal</option>' +
-                    '</select>' +
-                    '<input type="text" placeholder="Condition" value="' + rule.condition + '">' +
-                    '<div class="policy-action ' + (rule.action === 'Allow' ? 'allow' : 'deny') + '">' + (rule.action || 'Allow') + '</div>' +
-                    '<input type="text" placeholder="VLAN" value="' + rule.vlan + '" style="width: 100px;">' +
-                    '<button class="remove-policy-btn" onclick="removePolicyRule(\'' + rule.id + '\')">' +
-                        '<i class="fas fa-trash"></i>' +
-                    '</button>';
-                container.appendChild(ruleDiv);
-            });
-        }
-        
-        function removePolicyRule(ruleId) {
-            window.policyRules = window.policyRules.filter(rule => rule.id !== ruleId);
-            displayPolicyRules();
-        }
-        
-        // Make functions globally accessible
-        window.showTab = showTab;
-        window.openModal = openModal;
-        window.closeModal = closeModal;
-        window.toggleThemeOptions = toggleThemeOptions;
-        window.updateThemeColor = updateThemeColor;
-        window.sortTable = sortTable;
-        window.editSite = editSite;
-        window.deleteSite = deleteSite;
-        window.viewSiteWorkbook = viewSiteWorkbook;
-        window.showNotes = showNotes;
-        window.addVendor = addVendor;
-        window.removeVendor = removeVendor;
-        window.addTechOwnerField = addTechOwnerField;
-        window.deleteProjectManager = deleteProjectManager;
-        window.deleteTechnicalOwner = deleteTechnicalOwner;
-        window.addProjectManager = addProjectManager;
-        window.addTechnicalOwner = addTechnicalOwner;
-        window.showArchitectureView = showArchitectureView;
-        window.setCloudProvider = setCloudProvider;
-        window.updateNetworkVendor = updateNetworkVendor;
-        window.updateConnectivityType = updateConnectivityType;
-        window.exportSVG = exportSVG;
-        window.addPolicyRule = addPolicyRule;
-        window.removePolicyRule = removePolicyRule;
-    </script>
 </body>
 </html>
       `
@@ -4072,7 +2941,1183 @@ export default function Home() {
   )
 }
 
+// Define all global functions first
+function defineGlobalFunctions() {
+  // Global variables
+  window.projectManagers = [
+    { id: 1, name: "Alex Rivera", email: "alex.rivera@abm.com", role: "Senior Project Manager" },
+    { id: 2, name: "Marcus Chen", email: "marcus.chen@abm.com", role: "Project Manager" },
+    { id: 3, name: "Sofia Linden", email: "sofia.linden@abm.com", role: "Project Manager" },
+    { id: 4, name: "Michael Zhang", email: "michael.zhang@abm.com", role: "Project Manager" }
+  ];
+  
+  window.technicalOwners = [
+    { id: 1, name: "John Smith", email: "john.smith@abm.com", role: "Network Administrator" },
+    { id: 2, name: "Mark Wilson", email: "mark.wilson@abm.com", role: "Security Engineer" },
+    { id: 3, name: "Emily Jones", email: "emily.jones@abm.com", role: "Network Engineer" },
+    { id: 4, name: "Paul Davis", email: "paul.davis@abm.com", role: "IT Manager" },
+    { id: 5, name: "Sarah Thompson", email: "sarah.thompson@abm.com", role: "Network Administrator" },
+    { id: 6, name: "Carlos Mendez", email: "carlos.mendez@abm.com", role: "Network Engineer" }
+  ];
+  
+  // Sample sites data
+  window.sites = {
+    'ABM-HQ001': {
+      id: 'ABM-HQ001',
+      name: 'ABM Global Headquarters',
+      region: 'North America',
+      country: 'USA',
+      priority: 'High',
+      phase: '1',
+      users: 2500,
+      projectManager: 'Alex Rivera',
+      technicalOwners: ['John Smith', 'Mark Wilson'],
+      wiredVendors: ['Cisco', 'Juniper'],
+      wirelessVendors: ['Cisco'],
+      deviceTypes: ['Windows', 'Apple', 'Mobile', 'IoT'],
+      radsec: 'Native',
+      plannedStart: '2025-08-01',
+      plannedEnd: '2025-08-15',
+      status: 'In Progress',
+      completionPercent: 35,
+      notes: 'Executive network needs priority handling. Board room has custom AV equipment.'
+    },
+    'ABM-DC002': {
+      id: 'ABM-DC002',
+      name: 'Primary Data Center',
+      region: 'North America',
+      country: 'USA',
+      priority: 'High',
+      phase: '1',
+      users: 150,
+      projectManager: 'Marcus Chen',
+      technicalOwners: ['Emily Jones', 'Paul Davis'],
+      wiredVendors: ['Cisco'],
+      wirelessVendors: ['Aruba'],
+      deviceTypes: ['Windows', 'IoT'],
+      radsec: 'LRAD',
+      plannedStart: '2025-08-05',
+      plannedEnd: '2025-08-12',
+      status: 'In Progress',
+      completionPercent: 65,
+      notes: '24/7 operation requires careful change windows.'
+    },
+    'ABM-EUR003': {
+      id: 'ABM-EUR003',
+      name: 'European HQ',
+      region: 'EMEA',
+      country: 'Germany',
+      priority: 'Medium',
+      phase: '2',
+      users: 1200,
+      projectManager: 'Sofia Linden',
+      technicalOwners: ['Sarah Thompson'],
+      wiredVendors: ['HPE'],
+      wirelessVendors: ['Cisco'],
+      deviceTypes: ['Windows', 'Apple', 'Mobile'],
+      radsec: 'Native',
+      plannedStart: '2025-09-01',
+      plannedEnd: '2025-09-15',
+      status: 'Planned',
+      completionPercent: 0,
+      notes: 'GDPR compliance required.'
+    }
+  };
+  
+  // Architecture diagram variables
+  window.currentArchView = 'complete';
+  window.currentCloudProvider = 'azure';
+  window.currentNetworkVendor = 'cisco';
+  window.currentConnectivityType = 'sdwan';
+  window.connectionPoints = [];
+  window.isDrawingConnection = false;
+  window.startPoint = null;
+  window.policyRules = [];
+  
+  // Vendor management for sites
+  window.siteWiredVendors = [];
+  window.siteWirelessVendors = [];
+  
+  // Sort direction tracking
+  window.sortDirection = {};
+
+  // Tab switching
+  window.showTab = function(tabId) {
+    document.querySelectorAll('.tab-content').forEach(tab => {
+      tab.classList.remove('active');
+    });
+    
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.classList.remove('active');
+    });
+    
+    const targetTab = document.getElementById(tabId);
+    if (targetTab) {
+      targetTab.classList.add('active');
+    }
+    
+    const tabButton = document.querySelector('.tab[onclick*="' + tabId + '"]');
+    if (tabButton) {
+      tabButton.classList.add('active');
+    }
+    
+    if (tabId === 'rollout-progress') {
+      updateProgressData();
+    } else if (tabId === 'architecture') {
+      // Initialize architecture diagram
+      setTimeout(() => {
+        showArchitectureView('complete');
+      }, 100);
+    }
+  };
+
+  // Site management functions
+  window.refreshSiteTable = function() {
+    const tbody = document.querySelector('#siteTable tbody');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    
+    Object.values(window.sites).forEach(site => {
+      const row = document.createElement('tr');
+      row.className = 'priority-' + site.priority.toLowerCase();
+      row.innerHTML = 
+        '<td>' + site.id + '</td>' +
+        '<td>' + site.name + '</td>' +
+        '<td>' + site.region + '</td>' +
+        '<td>' + site.country + '</td>' +
+        '<td><span class="badge badge-' + site.priority.toLowerCase() + '">' + site.priority + '</span></td>' +
+        '<td>Phase ' + site.phase + '</td>' +
+        '<td>' + site.users.toLocaleString() + '</td>' +
+        '<td>' + site.projectManager + '</td>' +
+        '<td>' + site.technicalOwners.join(', ') + '</td>' +
+        '<td><span class="status-' + site.status.toLowerCase().replace(' ', '-') + '">' + site.status + '</span></td>' +
+        '<td>' +
+          '<div class="site-progress-container">' +
+            '<div class="site-progress-bar-container">' +
+              '<div class="site-progress-bar ' + site.status.toLowerCase().replace(' ', '-') + '" style="width: ' + site.completionPercent + '%"></div>' +
+            '</div>' +
+            '<span class="site-progress-value">' + site.completionPercent + '%</span>' +
+          '</div>' +
+        '</td>' +
+        '<td>' +
+          '<i class="fas fa-sticky-note notes-icon" onclick="showNotes(\'' + site.id + '\')"></i>' +
+        '</td>' +
+        '<td>' +
+          '<div class="actions">' +
+            '<button onclick="editSite(\'' + site.id + '\')"><i class="fas fa-edit"></i></button>' +
+            '<button onclick="viewSiteWorkbook(\'' + site.id + '\')"><i class="fas fa-book"></i></button>' +
+            '<button class="danger-button" onclick="deleteSite(\'' + site.id + '\')"><i class="fas fa-trash"></i></button>' +
+          '</div>' +
+        '</td>';
+      tbody.appendChild(row);
+    });
+  };
+
+  window.editSite = function(siteId) {
+    const site = window.sites[siteId];
+    if (!site) return;
+    
+    document.getElementById('modalTitle').textContent = 'Edit Site';
+    document.getElementById('editSiteId').value = siteId;
+    document.getElementById('siteId').value = site.id;
+    document.getElementById('siteName').value = site.name;
+    document.getElementById('region').value = site.region;
+    document.getElementById('country').value = site.country;
+    document.getElementById('priority').value = site.priority;
+    document.getElementById('phase').value = site.phase;
+    document.getElementById('users').value = site.users;
+    document.getElementById('projectManager').value = site.projectManager;
+    document.getElementById('plannedStart').value = site.plannedStart;
+    document.getElementById('plannedEnd').value = site.plannedEnd;
+    document.getElementById('status').value = site.status;
+    document.getElementById('completionPercent').value = site.completionPercent;
+    document.getElementById('radsec').value = site.radsec;
+    document.getElementById('notes').value = site.notes;
+    
+    // Set vendors
+    window.siteWiredVendors = site.wiredVendors || [];
+    window.siteWirelessVendors = site.wirelessVendors || [];
+    displayVendors('wired');
+    displayVendors('wireless');
+    
+    // Set device types
+    document.querySelectorAll('input[name="deviceTypes"]').forEach(checkbox => {
+      checkbox.checked = site.deviceTypes.includes(checkbox.value);
+    });
+    
+    // Set technical owners
+    const techOwnersContainer = document.getElementById('techOwnersContainer');
+    techOwnersContainer.innerHTML = '';
+    site.technicalOwners.forEach(owner => {
+      addTechOwnerField(owner);
+    });
+    
+    openModal('siteModal');
+  };
+
+  window.deleteSite = function(siteId) {
+    if (confirm('Are you sure you want to delete site ' + siteId + '?')) {
+      delete window.sites[siteId];
+      refreshSiteTable();
+      updateProgressData();
+    }
+  };
+
+  window.viewSiteWorkbook = function(siteId) {
+    const site = window.sites[siteId];
+    if (!site) return;
+    
+    showTab('site-workbook');
+    
+    document.getElementById('workbook-title').textContent = 'Site Workbook: ' + site.name;
+    
+    const workbookContent = document.getElementById('workbook-content');
+    workbookContent.innerHTML = 
+      '<div class="detail-row">' +
+        '<div class="detail-label">Site ID:</div>' +
+        '<div class="detail-value">' + site.id + '</div>' +
+      '</div>' +
+      '<div class="detail-row">' +
+        '<div class="detail-label">Site Name:</div>' +
+        '<div class="detail-value">' + site.name + '</div>' +
+      '</div>' +
+      '<div class="detail-row">' +
+        '<div class="detail-label">Region:</div>' +
+        '<div class="detail-value">' + site.region + '</div>' +
+      '</div>' +
+      '<div class="detail-row">' +
+        '<div class="detail-label">Country:</div>' +
+        '<div class="detail-value">' + site.country + '</div>' +
+      '</div>' +
+      '<div class="detail-row">' +
+        '<div class="detail-label">Priority:</div>' +
+        '<div class="detail-value"><span class="badge badge-' + site.priority.toLowerCase() + '">' + site.priority + '</span></div>' +
+      '</div>' +
+      '<div class="detail-row">' +
+        '<div class="detail-label">Phase:</div>' +
+        '<div class="detail-value">Phase ' + site.phase + '</div>' +
+      '</div>' +
+      '<div class="detail-row">' +
+        '<div class="detail-label">Number of Users:</div>' +
+        '<div class="detail-value">' + site.users.toLocaleString() + '</div>' +
+      '</div>' +
+      '<div class="detail-row">' +
+        '<div class="detail-label">Project Manager:</div>' +
+        '<div class="detail-value">' + site.projectManager + '</div>' +
+      '</div>' +
+      '<div class="detail-row">' +
+        '<div class="detail-label">Technical Owners:</div>' +
+        '<div class="detail-value">' + site.technicalOwners.join(', ') + '</div>' +
+      '</div>' +
+      '<div class="detail-row">' +
+        '<div class="detail-label">RADSEC Implementation:</div>' +
+        '<div class="detail-value">' + site.radsec + '</div>' +
+      '</div>' +
+      '<div class="detail-row">' +
+        '<div class="detail-label">Planned Start Date:</div>' +
+        '<div class="detail-value">' + site.plannedStart + '</div>' +
+      '</div>' +
+      '<div class="detail-row">' +
+        '<div class="detail-label">Planned End Date:</div>' +
+        '<div class="detail-value">' + site.plannedEnd + '</div>' +
+      '</div>' +
+      '<div class="detail-row">' +
+        '<div class="detail-label">Status:</div>' +
+        '<div class="detail-value"><span class="status-' + site.status.toLowerCase().replace(' ', '-') + '">' + site.status + '</span></div>' +
+      '</div>' +
+      '<div class="detail-row">' +
+        '<div class="detail-label">Completion:</div>' +
+        '<div class="detail-value">' +
+          '<div class="site-progress-container">' +
+            '<div class="site-progress-bar-container">' +
+              '<div class="site-progress-bar ' + site.status.toLowerCase().replace(' ', '-') + '" style="width: ' + site.completionPercent + '%"></div>' +
+            '</div>' +
+            '<span class="site-progress-value">' + site.completionPercent + '%</span>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="detail-row">' +
+        '<div class="detail-label">Wired Vendors:</div>' +
+        '<div class="detail-value">' + site.wiredVendors.join(', ') + '</div>' +
+      '</div>' +
+      '<div class="detail-row">' +
+        '<div class="detail-label">Wireless Vendors:</div>' +
+        '<div class="detail-value">' + site.wirelessVendors.join(', ') + '</div>' +
+      '</div>' +
+      '<div class="detail-row">' +
+        '<div class="detail-label">Device Types:</div>' +
+        '<div class="detail-value">' + site.deviceTypes.map(type => '<span class="tag">' + type + '</span>').join('') + '</div>' +
+      '</div>' +
+      '<div class="detail-row">' +
+        '<div class="detail-label">Notes:</div>' +
+        '<div class="detail-value">' + (site.notes || 'No notes available') + '</div>' +
+      '</div>';
+  };
+
+  window.showNotes = function(siteId) {
+    const site = window.sites[siteId];
+    if (!site) return;
+    
+    document.getElementById('notesModalTitle').textContent = 'Notes for ' + site.name;
+    document.getElementById('notesContent').innerHTML = 
+      '<p><strong>Site ID:</strong> ' + site.id + '</p>' +
+      '<p><strong>Notes:</strong></p>' +
+      '<p>' + (site.notes || 'No notes available for this site.') + '</p>';
+    
+    openModal('notesModal');
+  };
+
+  // Vendor management functions
+  window.addVendor = function(type) {
+    const inputId = type === 'wired' ? 'newWiredVendor' : 'newWirelessVendor';
+    const vendorName = document.getElementById(inputId).value.trim();
+    
+    if (!vendorName) {
+      alert('Please enter a vendor name');
+      return;
+    }
+    
+    const vendorList = type === 'wired' ? window.siteWiredVendors : window.siteWirelessVendors;
+    
+    if (!vendorList.includes(vendorName)) {
+      vendorList.push(vendorName);
+      displayVendors(type);
+      document.getElementById(inputId).value = '';
+    } else {
+      alert('This vendor has already been added');
+    }
+  };
+
+  window.removeVendor = function(type, vendor) {
+    if (type === 'wired') {
+      window.siteWiredVendors = window.siteWiredVendors.filter(v => v !== vendor);
+    } else {
+      window.siteWirelessVendors = window.siteWirelessVendors.filter(v => v !== vendor);
+    }
+    displayVendors(type);
+  };
+
+  window.displayVendors = function(type) {
+    const containerId = type === 'wired' ? 'wiredVendorsList' : 'wirelessVendorsList';
+    const container = document.getElementById(containerId);
+    const vendorList = type === 'wired' ? window.siteWiredVendors : window.siteWirelessVendors;
+    
+    if (!container) return;
+    
+    container.innerHTML = '';
+    vendorList.forEach(vendor => {
+      const vendorItem = document.createElement('div');
+      vendorItem.className = 'vendor-item';
+      vendorItem.innerHTML = 
+        '<span>' + vendor + '</span>' +
+        '<button type="button" onclick="removeVendor(\'' + type + '\', \'' + vendor + '\')">' +
+          '<i class="fas fa-times"></i>' +
+        '</button>';
+      container.appendChild(vendorItem);
+    });
+    
+    // Update hidden input
+    const hiddenInput = document.getElementById(type + 'Vendors');
+    if (hiddenInput) {
+      hiddenInput.value = vendorList.join(',');
+    }
+  };
+
+  // Technical owner field management
+  window.addTechOwnerField = function(selectedValue = '') {
+    const container = document.getElementById('techOwnersContainer');
+    if (!container) return;
+    
+    const entry = document.createElement('div');
+    entry.className = 'tech-owner-entry';
+    
+    const select = document.createElement('select');
+    select.className = 'tech-owner-select';
+    select.innerHTML = '<option value="">Select Technical Owner</option>';
+    
+    window.technicalOwners.forEach(owner => {
+      const option = document.createElement('option');
+      option.value = owner.name;
+      option.textContent = owner.name + ' (' + owner.role + ')';
+      if (owner.name === selectedValue) {
+        option.selected = true;
+      }
+      select.appendChild(option);
+    });
+    
+    const removeBtn = document.createElement('span');
+    removeBtn.className = 'remove-owner';
+    removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+    removeBtn.onclick = function() {
+      entry.remove();
+    };
+    
+    entry.appendChild(select);
+    entry.appendChild(removeBtn);
+    container.appendChild(entry);
+  };
+
+  // User management functions
+  window.renderProjectManagerList = function() {
+    const container = document.getElementById('projectManagerList');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    window.projectManagers.forEach(pm => {
+      const userItem = document.createElement('div');
+      userItem.className = 'user-item';
+      userItem.innerHTML = 
+        '<div class="user-info">' +
+          '<div class="user-icon">' + pm.name.split(' ').map(n => n[0]).join('') + '</div>' +
+          '<div class="user-details">' +
+            '<div class="user-name">' + pm.name + '</div>' +
+            '<div class="user-role">' + pm.email + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="user-actions">' +
+          '<button class="user-action-btn delete" onclick="deleteProjectManager(' + pm.id + ')">' +
+            '<i class="fas fa-trash"></i>' +
+          '</button>' +
+        '</div>';
+      container.appendChild(userItem);
+    });
+    
+    // Update project manager dropdown
+    const pmSelect = document.getElementById('projectManager');
+    if (pmSelect) {
+      pmSelect.innerHTML = '<option value="">Select Project Manager</option>';
+      window.projectManagers.forEach(pm => {
+        const option = document.createElement('option');
+        option.value = pm.name;
+        option.textContent = pm.name;
+        pmSelect.appendChild(option);
+      });
+    }
+  };
+
+  window.renderTechnicalOwnerList = function() {
+    const container = document.getElementById('technicalOwnerList');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    window.technicalOwners.forEach(to => {
+      const userItem = document.createElement('div');
+      userItem.className = 'user-item';
+      userItem.innerHTML = 
+        '<div class="user-info">' +
+          '<div class="user-icon">' + to.name.split(' ').map(n => n[0]).join('') + '</div>' +
+          '<div class="user-details">' +
+            '<div class="user-name">' + to.name + '</div>' +
+            '<div class="user-role">' + to.role + ' - ' + to.email + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="user-actions">' +
+          '<button class="user-action-btn delete" onclick="deleteTechnicalOwner(' + to.id + ')">' +
+            '<i class="fas fa-trash"></i>' +
+          '</button>' +
+        '</div>';
+      container.appendChild(userItem);
+    });
+  };
+
+  window.addProjectManager = function() {
+    const name = document.getElementById('newProjectManagerName').value.trim();
+    const email = document.getElementById('newProjectManagerEmail').value.trim();
+    
+    if (!name || !email) {
+      alert('Please enter both name and email');
+      return;
+    }
+    
+    const newPM = {
+      id: Date.now(),
+      name: name,
+      email: email,
+      role: 'Project Manager'
+    };
+    
+    window.projectManagers.push(newPM);
+    renderProjectManagerList();
+    
+    document.getElementById('newProjectManagerName').value = '';
+    document.getElementById('newProjectManagerEmail').value = '';
+  };
+
+  window.addTechnicalOwner = function() {
+    const name = document.getElementById('newTechnicalOwnerName').value.trim();
+    const email = document.getElementById('newTechnicalOwnerEmail').value.trim();
+    const role = document.getElementById('newTechnicalOwnerRole').value;
+    
+    if (!name || !email || !role) {
+      alert('Please enter name, email, and role');
+      return;
+    }
+    
+    const newTO = {
+      id: Date.now(),
+      name: name,
+      email: email,
+      role: role
+    };
+    
+    window.technicalOwners.push(newTO);
+    renderTechnicalOwnerList();
+    
+    document.getElementById('newTechnicalOwnerName').value = '';
+    document.getElementById('newTechnicalOwnerEmail').value = '';
+    document.getElementById('newTechnicalOwnerRole').value = '';
+  };
+
+  window.deleteProjectManager = function(id) {
+    if (confirm('Are you sure you want to delete this project manager?')) {
+      window.projectManagers = window.projectManagers.filter(pm => pm.id !== id);
+      renderProjectManagerList();
+    }
+  };
+
+  window.deleteTechnicalOwner = function(id) {
+    if (confirm('Are you sure you want to delete this technical owner?')) {
+      window.technicalOwners = window.technicalOwners.filter(to => to.id !== id);
+      renderTechnicalOwnerList();
+    }
+  };
+
+  // Progress tracking functions
+  window.updateProgressData = function() {
+    const siteArray = Object.values(window.sites);
+    
+    const completedSites = siteArray.filter(s => s.status === 'Complete').length;
+    const inProgressSites = siteArray.filter(s => s.status === 'In Progress').length;
+    const plannedSites = siteArray.filter(s => s.status === 'Planned').length;
+    const delayedSites = siteArray.filter(s => s.status === 'Delayed').length;
+    const totalUsers = siteArray.reduce((sum, s) => sum + s.users, 0);
+    
+    const completedCard = document.getElementById('completedSitesCard');
+    const inProgressCard = document.getElementById('inProgressSitesCard');
+    const plannedCard = document.getElementById('plannedSitesCard');
+    const totalUsersCard = document.getElementById('totalUsersCard');
+    
+    if (completedCard) completedCard.textContent = completedSites;
+    if (inProgressCard) inProgressCard.textContent = inProgressSites;
+    if (plannedCard) plannedCard.textContent = plannedSites;
+    if (totalUsersCard) totalUsersCard.textContent = totalUsers.toLocaleString();
+    
+    const totalSites = siteArray.length;
+    const overallPercent = totalSites > 0 ? Math.round((completedSites / totalSites) * 100) : 0;
+    
+    const progressBar = document.getElementById('overallProgressBar');
+    if (progressBar) {
+      progressBar.style.width = overallPercent + '%';
+      progressBar.textContent = overallPercent + '%';
+    }
+    
+    // Update donut chart
+    updateDonutChart(completedSites, inProgressSites, plannedSites, delayedSites);
+    
+    // Update site progress list
+    updateSiteProgressList();
+  };
+
+  window.updateDonutChart = function(completed, inProgress, planned, delayed) {
+    const total = completed + inProgress + planned + delayed;
+    const completePercent = total > 0 ? Math.round((completed / total) * 100) : 0;
+    
+    const donutPercent = document.querySelector('#statusChart .donut-percent');
+    if (donutPercent) {
+      donutPercent.textContent = completePercent + '%';
+    }
+    
+    // Update checklist chart (simulated)
+    const checklistPercent = Math.round((completed * 100 + inProgress * 50) / (total * 100) * 100);
+    const checklistElement = document.getElementById('checklistPercent');
+    if (checklistElement) {
+      checklistElement.textContent = checklistPercent + '%';
+    }
+  };
+
+  window.updateSiteProgressList = function() {
+    const container = document.getElementById('siteProgressList');
+    if (!container) return;
+    
+    const siteArray = Object.values(window.sites);
+    
+    let html = '<h3>Site Completion Status</h3>';
+    
+    siteArray.forEach(site => {
+      html += 
+        '<div style="margin: 15px 0;">' +
+          '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">' +
+            '<span style="font-weight: 500;">' + site.name + '</span>' +
+            '<span class="status-' + site.status.toLowerCase().replace(' ', '-') + '">' + site.status + '</span>' +
+          '</div>' +
+          '<div class="site-progress-container">' +
+            '<div class="site-progress-bar-container">' +
+              '<div class="site-progress-bar ' + site.status.toLowerCase().replace(' ', '-') + '" style="width: ' + site.completionPercent + '%"></div>' +
+            '</div>' +
+            '<span class="site-progress-value">' + site.completionPercent + '%</span>' +
+          '</div>' +
+        '</div>';
+    });
+    
+    container.innerHTML = html;
+  };
+
+  // Filter functionality
+  window.filterTable = function() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const regionFilter = document.getElementById('regionFilter').value;
+    const priorityFilter = document.getElementById('priorityFilter').value;
+    const phaseFilter = document.getElementById('phaseFilter').value;
+    const statusFilter = document.getElementById('statusFilter').value;
+    
+    const rows = document.querySelectorAll('#siteTable tbody tr');
+    
+    rows.forEach(row => {
+      const text = row.textContent.toLowerCase();
+      const region = row.cells[2].textContent;
+      const priority = row.cells[4].textContent;
+      const phase = row.cells[5].textContent.replace('Phase ', '');
+      const status = row.cells[9].textContent;
+      
+      const matchesSearch = text.includes(searchTerm);
+      const matchesRegion = !regionFilter || region === regionFilter;
+      const matchesPriority = !priorityFilter || priority === priorityFilter;
+      const matchesPhase = !phaseFilter || phase === phaseFilter;
+      const matchesStatus = !statusFilter || status === statusFilter;
+      
+      if (matchesSearch && matchesRegion && matchesPriority && matchesPhase && matchesStatus) {
+        row.style.display = '';
+      } else {
+        row.style.display = 'none';
+      }
+    });
+  };
+
+  // Sort functionality
+  window.sortTable = function(columnIndex) {
+    const table = document.getElementById('siteTable');
+    if (!table) return;
+    
+    const tbody = table.querySelector('tbody');
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    
+    const direction = window.sortDirection[columnIndex] === 'asc' ? 'desc' : 'asc';
+    window.sortDirection[columnIndex] = direction;
+    
+    rows.sort((a, b) => {
+      let aValue = a.cells[columnIndex].textContent;
+      let bValue = b.cells[columnIndex].textContent;
+      
+      // Handle numeric columns
+      if (columnIndex === 5) { // Phase
+        aValue = parseInt(aValue.replace('Phase ', ''));
+        bValue = parseInt(bValue.replace('Phase ', ''));
+      } else if (columnIndex === 6 || columnIndex === 10) { // Users, Completion
+        aValue = parseInt(aValue.replace(/[,%]/g, ''));
+        bValue = parseInt(bValue.replace(/[,%]/g, ''));
+      }
+      
+      if (direction === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+    
+    tbody.innerHTML = '';
+    rows.forEach(row => tbody.appendChild(row));
+  };
+
+  // Form validation
+  window.validateSiteForm = function() {
+    let isValid = true;
+    
+    // Validate required fields
+    const requiredFields = [
+      'siteId', 'siteName', 'region', 'country', 'priority',
+      'phase', 'users', 'projectManager', 'plannedStart',
+      'plannedEnd', 'status', 'completionPercent', 'radsec'
+    ];
+    
+    requiredFields.forEach(field => {
+      const element = document.getElementById(field);
+      const errorElement = document.getElementById(field + 'Error');
+      
+      if (element && !element.value) {
+        element.classList.add('invalid-input');
+        if (errorElement) errorElement.style.display = 'block';
+        isValid = false;
+      } else if (element && errorElement) {
+        element.classList.remove('invalid-input');
+        errorElement.style.display = 'none';
+      }
+    });
+    
+    // Validate vendors
+    if (window.siteWiredVendors.length === 0) {
+      const errorElement = document.getElementById('wiredVendorsError');
+      if (errorElement) errorElement.style.display = 'block';
+      isValid = false;
+    } else {
+      const errorElement = document.getElementById('wiredVendorsError');
+      if (errorElement) errorElement.style.display = 'none';
+    }
+    
+    if (window.siteWirelessVendors.length === 0) {
+      const errorElement = document.getElementById('wirelessVendorsError');
+      if (errorElement) errorElement.style.display = 'block';
+      isValid = false;
+    } else {
+      const errorElement = document.getElementById('wirelessVendorsError');
+      if (errorElement) errorElement.style.display = 'none';
+    }
+    
+    // Validate device types
+    const deviceTypes = document.querySelectorAll('input[name="deviceTypes"]:checked');
+    if (deviceTypes.length === 0) {
+      const errorElement = document.getElementById('deviceTypesError');
+      if (errorElement) errorElement.style.display = 'block';
+      isValid = false;
+    } else {
+      const errorElement = document.getElementById('deviceTypesError');
+      if (errorElement) errorElement.style.display = 'none';
+    }
+    
+    // Validate technical owners
+    const techOwners = document.querySelectorAll('.tech-owner-select');
+    if (techOwners.length === 0 || !Array.from(techOwners).some(select => select.value)) {
+      const errorElement = document.getElementById('techOwnersError');
+      if (errorElement) errorElement.style.display = 'block';
+      isValid = false;
+    } else {
+      const errorElement = document.getElementById('techOwnersError');
+      if (errorElement) errorElement.style.display = 'none';
+    }
+    
+    return isValid;
+  };
+
+  // Modal functions
+  window.openModal = function(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+      modal.style.display = 'block';
+      
+      if (modalId === 'userManagementModal') {
+        renderProjectManagerList();
+        renderTechnicalOwnerList();
+      }
+    }
+  };
+
+  window.closeModal = function(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+      modal.style.display = 'none';
+    }
+  };
+
+  // Theme customization
+  window.toggleThemeOptions = function() {
+    const themeOptions = document.getElementById('themeOptions');
+    if (themeOptions) {
+      themeOptions.style.display = themeOptions.style.display === 'block' ? 'none' : 'block';
+    }
+  };
+
+  window.updateThemeColor = function(variable, value) {
+    document.documentElement.style.setProperty(variable, value);
+    
+    if (variable === '--primary-color') {
+      const darkerColor = adjustColorBrightness(value, -20);
+      document.documentElement.style.setProperty('--primary-dark', darkerColor);
+    }
+  };
+
+  window.adjustColorBrightness = function(hex, percent) {
+    let r = parseInt(hex.substring(1, 3), 16);
+    let g = parseInt(hex.substring(3, 5), 16);
+    let b = parseInt(hex.substring(5, 7), 16);
+    
+    r = Math.max(0, Math.min(255, r + percent));
+    g = Math.max(0, Math.min(255, g + percent));
+    b = Math.max(0, Math.min(255, b + percent));
+    
+    return '#' + r.toString(16).padStart(2, '0') + g.toString(16).padStart(2, '0') + b.toString(16).padStart(2, '0');
+  };
+
+  // Architecture diagram functions
+  window.showArchitectureView = function(view) {
+    window.currentArchView = view;
+    
+    // Update button states
+    document.querySelectorAll('.diagram-btn').forEach(btn => {
+      btn.classList.remove('active');
+    });
+    
+    const clickedBtn = document.querySelector('.diagram-btn[onclick*="' + view + '"]');
+    if (clickedBtn) clickedBtn.classList.add('active');
+    
+    // Show/hide policy editor
+    const policyEditor = document.getElementById('policyEditor');
+    if (view === 'policies') {
+      if (policyEditor) policyEditor.style.display = 'block';
+      if (window.policyRules.length === 0) {
+        // Add default policy rules
+        addPolicyRule('Corporate Users', 'EAP-TLS', 'Certificate Valid', 'Allow', 'VLAN 100');
+        addPolicyRule('Guest Users', 'Captive Portal', 'Sponsor Approved', 'Allow', 'VLAN 200');
+        addPolicyRule('IoT Devices', 'MAB', 'MAC Registered', 'Allow', 'VLAN 300');
+      }
+    } else {
+      if (policyEditor) policyEditor.style.display = 'none';
+    }
+    
+    // Draw the appropriate diagram
+    const svg = document.getElementById('architectureDiagram');
+    if (svg) {
+      svg.innerHTML = '';
+      window.connectionPoints = [];
+      
+      switch(view) {
+        case 'complete':
+          drawCompleteArchitecture(svg);
+          break;
+        case 'auth-flow':
+          drawAuthFlowDiagram(svg);
+          break;
+        case 'pki':
+          drawPKIDiagram(svg);
+          break;
+        case 'policies':
+          drawPoliciesDiagram(svg);
+          break;
+        case 'connectivity':
+          drawConnectivityDiagram(svg);
+          break;
+      }
+    }
+  };
+
+  window.drawCompleteArchitecture = function(svg) {
+    // Simple placeholder diagram
+    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    rect.setAttribute('x', '100');
+    rect.setAttribute('y', '100');
+    rect.setAttribute('width', '200');
+    rect.setAttribute('height', '100');
+    rect.setAttribute('fill', '#e3f2fd');
+    rect.setAttribute('stroke', '#1976d2');
+    rect.setAttribute('stroke-width', '2');
+    svg.appendChild(rect);
+    
+    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    text.setAttribute('x', '200');
+    text.setAttribute('y', '160');
+    text.setAttribute('text-anchor', 'middle');
+    text.setAttribute('font-size', '16');
+    text.setAttribute('font-weight', 'bold');
+    text.textContent = 'Portnox Cloud';
+    svg.appendChild(text);
+  };
+
+  window.drawAuthFlowDiagram = function(svg) {
+    // Simple placeholder for auth flow
+    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    text.setAttribute('x', '200');
+    text.setAttribute('y', '160');
+    text.setAttribute('text-anchor', 'middle');
+    text.setAttribute('font-size', '16');
+    text.textContent = 'Authentication Flow Diagram';
+    svg.appendChild(text);
+  };
+
+  window.drawPKIDiagram = function(svg) {
+    // Simple placeholder for PKI
+    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    text.setAttribute('x', '200');
+    text.setAttribute('y', '160');
+    text.setAttribute('text-anchor', 'middle');
+    text.setAttribute('font-size', '16');
+    text.textContent = 'PKI Infrastructure Diagram';
+    svg.appendChild(text);
+  };
+
+  window.drawPoliciesDiagram = function(svg) {
+    // Simple placeholder for policies
+    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    text.setAttribute('x', '200');
+    text.setAttribute('y', '160');
+    text.setAttribute('text-anchor', 'middle');
+    text.setAttribute('font-size', '16');
+    text.textContent = 'Policies & Rules Diagram';
+    svg.appendChild(text);
+  };
+
+  window.drawConnectivityDiagram = function(svg) {
+    // Simple placeholder for connectivity
+    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    text.setAttribute('x', '200');
+    text.setAttribute('y', '160');
+    text.setAttribute('text-anchor', 'middle');
+    text.setAttribute('font-size', '16');
+    text.textContent = 'Connectivity Options Diagram';
+    svg.appendChild(text);
+  };
+
+  window.setCloudProvider = function(provider, event) {
+    window.currentCloudProvider = provider;
+    document.querySelectorAll('.cloud-btn').forEach(btn => {
+      btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    showArchitectureView(window.currentArchView);
+  };
+
+  window.updateNetworkVendor = function(vendor) {
+    window.currentNetworkVendor = vendor;
+    showArchitectureView(window.currentArchView);
+  };
+
+  window.updateConnectivityType = function(type) {
+    window.currentConnectivityType = type;
+    showArchitectureView(window.currentArchView);
+  };
+
+  window.exportSVG = function() {
+    const svg = document.getElementById('architectureDiagram');
+    if (!svg) return;
+    
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const svgBlob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
+    const svgUrl = URL.createObjectURL(svgBlob);
+    
+    const downloadLink = document.createElement('a');
+    downloadLink.href = svgUrl;
+    downloadLink.download = 'portnox-architecture-' + window.currentArchView + '-' + Date.now() + '.svg';
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+  };
+
+  // Policy management functions
+  window.addPolicyRule = function(userGroup = '', authMethod = '', condition = '', action = '', vlan = '') {
+    const ruleId = 'rule-' + Date.now();
+    const rule = {
+      id: ruleId,
+      userGroup,
+      authMethod,
+      condition,
+      action,
+      vlan
+    };
+    
+    window.policyRules.push(rule);
+    displayPolicyRules();
+  };
+
+  window.displayPolicyRules = function() {
+    const container = document.getElementById('policyRules');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    window.policyRules.forEach(rule => {
+      const ruleDiv = document.createElement('div');
+      ruleDiv.className = 'policy-rule';
+      ruleDiv.innerHTML = 
+        '<select value="' + rule.userGroup + '">' +
+          '<option value="">Select Group</option>' +
+          '<option value="Corporate Users"' + (rule.userGroup === 'Corporate Users' ? ' selected' : '') + '>Corporate Users</option>' +
+          '<option value="Guest Users"' + (rule.userGroup === 'Guest Users' ? ' selected' : '') + '>Guest Users</option>' +
+          '<option value="IoT Devices"' + (rule.userGroup === 'IoT Devices' ? ' selected' : '') + '>IoT Devices</option>' +
+          '<option value="BYOD"' + (rule.userGroup === 'BYOD' ? ' selected' : '') + '>BYOD</option>' +
+        '</select>' +
+        '<select value="' + rule.authMethod + '">' +
+          '<option value="">Auth Method</option>' +
+          '<option value="EAP-TLS"' + (rule.authMethod === 'EAP-TLS' ? ' selected' : '') + '>EAP-TLS</option>' +
+          '<option value="PEAP-MSCHAPv2"' + (rule.authMethod === 'PEAP-MSCHAPv2' ? ' selected' : '') + '>PEAP-MSCHAPv2</option>' +
+          '<option value="MAB"' + (rule.authMethod === 'MAB' ? ' selected' : '') + '>MAB</option>' +
+          '<option value="Captive Portal"' + (rule.authMethod === 'Captive Portal' ? ' selected' : '') + '>Captive Portal</option>' +
+        '</select>' +
+        '<input type="text" placeholder="Condition" value="' + rule.condition + '">' +
+        '<div class="policy-action ' + (rule.action === 'Allow' ? 'allow' : 'deny') + '">' + (rule.action || 'Allow') + '</div>' +
+        '<input type="text" placeholder="VLAN" value="' + rule.vlan + '" style="width: 100px;">' +
+        '<button class="remove-policy-btn" onclick="removePolicyRule(\'' + rule.id + '\')">' +
+          '<i class="fas fa-trash"></i>' +
+        '</button>';
+      container.appendChild(ruleDiv);
+    });
+  };
+
+  window.removePolicyRule = function(ruleId) {
+    window.policyRules = window.policyRules.filter(rule => rule.id !== ruleId);
+    displayPolicyRules();
+  };
+}
+
+// Initialize the application
 function initializeApplication() {
-  // This function will be called from the useEffect
-  // All initialization is now handled in the HTML script tag
+  // Initialize the application
+  refreshSiteTable();
+  updateProgressData();
+  renderProjectManagerList();
+  renderTechnicalOwnerList();
+  
+  // Initialize event listeners
+  initializeEventListeners();
+}
+
+// Initialize Event Listeners
+function initializeEventListeners() {
+  // Theme toggle
+  const themeToggle = document.getElementById('themeToggle');
+  if (themeToggle) {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    themeToggle.checked = savedTheme === 'dark';
+    
+    themeToggle.addEventListener('change', function() {
+      if (this.checked) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+      } else {
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', 'light');
+      }
+    });
+  }
+  
+  // Customer logo upload
+  const customerLogo = document.getElementById('customerLogo');
+  if (customerLogo) {
+    customerLogo.addEventListener('change', function(event) {
+      const file = event.target.files[0];
+      if (file && file.type.match('image.*')) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const logoDisplay = document.getElementById('customerLogoDisplay');
+          if (logoDisplay) {
+            logoDisplay.innerHTML = '<img src="' + e.target.result + '" alt="Customer Logo">';
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+  }
+  
+  // Export CSV functionality
+  const exportCSV = document.getElementById('exportCSV');
+  if (exportCSV) {
+    exportCSV.addEventListener('click', function() {
+      const siteArray = Object.values(window.sites);
+      let csv = 'Site ID,Site Name,Region,Country,Priority,Phase,Users,Project Manager,Technical Owners,Status,Completion %,RADSEC,Notes\n';
+      
+      siteArray.forEach(site => {
+        csv += '"' + site.id + '","' + site.name + '","' + site.region + '","' + site.country + '","' + site.priority + '","' + site.phase + '","' + site.users + '","' + site.projectManager + '","' + site.technicalOwners.join(', ') + '","' + site.status + '","' + site.completionPercent + '","' + site.radsec + '","' + site.notes + '"\n';
+      });
+      
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'portnox-deployment-' + Date.now() + '.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    });
+  }
+  
+  // Add Site button functionality
+  const addSiteBtn = document.getElementById('addSiteBtn');
+  if (addSiteBtn) {
+    addSiteBtn.addEventListener('click', function() {
+      document.getElementById('modalTitle').textContent = 'Add New Site';
+      document.getElementById('siteForm').reset();
+      document.getElementById('editSiteId').value = '';
+      document.getElementById('techOwnersContainer').innerHTML = '';
+      window.siteWiredVendors = [];
+      window.siteWirelessVendors = [];
+      displayVendors('wired');
+      displayVendors('wireless');
+      addTechOwnerField();
+      openModal('siteModal');
+    });
+  }
+  
+  // Filter functionality
+  const searchInput = document.getElementById('searchInput');
+  const regionFilter = document.getElementById('regionFilter');
+  const priorityFilter = document.getElementById('priorityFilter');
+  const phaseFilter = document.getElementById('phaseFilter');
+  const statusFilter = document.getElementById('statusFilter');
+  
+  if (searchInput) searchInput.addEventListener('input', filterTable);
+  if (regionFilter) regionFilter.addEventListener('change', filterTable);
+  if (priorityFilter) priorityFilter.addEventListener('change', filterTable);
+  if (phaseFilter) phaseFilter.addEventListener('change', filterTable);
+  if (statusFilter) statusFilter.addEventListener('change', filterTable);
+  
+  // Form handling
+  const siteForm = document.getElementById('siteForm');
+  if (siteForm) {
+    siteForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      if (!validateSiteForm()) {
+        return;
+      }
+      
+      const editingSiteId = document.getElementById('editSiteId').value;
+      const siteId = document.getElementById('siteId').value;
+      
+      const siteData = {
+        id: siteId,
+        name: document.getElementById('siteName').value,
+        region: document.getElementById('region').value,
+        country: document.getElementById('country').value,
+        priority: document.getElementById('priority').value,
+        phase: document.getElementById('phase').value,
+        users: parseInt(document.getElementById('users').value),
+        projectManager: document.getElementById('projectManager').value,
+        technicalOwners: Array.from(document.querySelectorAll('.tech-owner-select')).map(select => select.value).filter(v => v),
+        wiredVendors: window.siteWiredVendors,
+        wirelessVendors: window.siteWirelessVendors,
+        deviceTypes: Array.from(document.querySelectorAll('input[name="deviceTypes"]:checked')).map(cb => cb.value),
+        radsec: document.getElementById('radsec').value,
+        plannedStart: document.getElementById('plannedStart').value,
+        plannedEnd: document.getElementById('plannedEnd').value,
+        status: document.getElementById('status').value,
+        completionPercent: parseInt(document.getElementById('completionPercent').value),
+        notes: document.getElementById('notes').value
+      };
+      
+      // If editing, delete the old site if the ID changed
+      if (editingSiteId && editingSiteId !== siteId) {
+        delete window.sites[editingSiteId];
+      }
+      
+      window.sites[siteId] = siteData;
+      
+      refreshSiteTable();
+      updateProgressData();
+      closeModal('siteModal');
+      
+      // Reset form
+      document.getElementById('siteForm').reset();
+      document.getElementById('editSiteId').value = '';
+      window.siteWiredVendors = [];
+      window.siteWirelessVendors = [];
+    });
+  }
+  
+  // Close modal when clicking outside
+  window.onclick = function(event) {
+    if (event.target.classList.contains('modal')) {
+      event.target.style.display = 'none';
+    }
+  };
 }
