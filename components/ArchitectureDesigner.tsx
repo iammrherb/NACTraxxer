@@ -1,248 +1,285 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState } from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Label } from '@/components/ui/label'
+import { Slider } from '@/components/ui/slider'
 import { Badge } from '@/components/ui/badge'
-import { Download, Zap, Shield, Wifi, Server, Cloud, Settings } from 'lucide-react'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import InteractiveDiagram from './InteractiveDiagram'
 import ArchitectureLegend from './ArchitectureLegend'
-import PolicyEditor from './PolicyEditor'
-import OnboardingScenarios from './OnboardingScenarios'
-
-type DiagramView = 'complete' | 'auth-flow' | 'pki' | 'policies' | 'connectivity' | 'intune' | 'onboarding'
-type CloudProvider = 'aws' | 'azure' | 'gcp' | 'onprem'
-type NetworkVendor = 'cisco' | 'meraki' | 'juniper' | 'aruba' | 'hpe' | 'extreme' | 'fortinet'
-type ConnectivityType = 'sdwan' | 'expressroute' | 'mpls' | 'vpn' | 'directconnect'
+import { Cloud, Network, Shield, Settings, Zap, Globe, Lock, Users, Database, Server } from 'lucide-react'
 
 export default function ArchitectureDesigner() {
-  const [currentView, setCurrentView] = useState<DiagramView>('complete')
-  const [cloudProvider, setCloudProvider] = useState<CloudProvider>('azure')
-  const [networkVendor, setNetworkVendor] = useState<NetworkVendor>('cisco')
-  const [connectivityType, setConnectivityType] = useState<ConnectivityType>('sdwan')
-  const [animationSpeed, setAnimationSpeed] = useState(1)
-  const diagramRef = useRef<HTMLDivElement>(null)
+  const [selectedView, setSelectedView] = useState('complete')
+  const [cloudProvider, setCloudProvider] = useState('aws')
+  const [networkVendor, setNetworkVendor] = useState('cisco')
+  const [connectivityType, setConnectivityType] = useState('sdwan')
+  const [animationSpeed, setAnimationSpeed] = useState([1])
 
-  const diagramViews = [
-    { id: 'complete', label: 'Complete Architecture', icon: Server },
-    { id: 'auth-flow', label: 'Authentication Flow', icon: Shield },
-    { id: 'pki', label: 'PKI & Certificate', icon: Zap },
-    { id: 'policies', label: 'Access Policies', icon: Settings },
-    { id: 'connectivity', label: 'Connectivity Options', icon: Wifi },
-    { id: 'intune', label: 'Intune Integration', icon: Cloud },
-    { id: 'onboarding', label: 'Device Onboarding', icon: Settings }
+  const architectureViews = [
+    { 
+      id: 'complete', 
+      label: 'Complete Architecture', 
+      icon: <Cloud className="w-4 h-4" />,
+      description: 'Full end-to-end NAC deployment with all components'
+    },
+    { 
+      id: 'auth-flow', 
+      label: 'Authentication Flow', 
+      icon: <Shield className="w-4 h-4" />,
+      description: '802.1X authentication sequence and RADIUS flow'
+    },
+    { 
+      id: 'pki', 
+      label: 'PKI Infrastructure', 
+      icon: <Lock className="w-4 h-4" />,
+      description: 'Certificate authority and PKI components'
+    },
+    { 
+      id: 'policies', 
+      label: 'Policy Framework', 
+      icon: <Settings className="w-4 h-4" />,
+      description: 'Policy engine and rule management'
+    },
+    { 
+      id: 'connectivity', 
+      label: 'Connectivity Options', 
+      icon: <Network className="w-4 h-4" />,
+      description: 'Multi-cloud and network connectivity patterns'
+    },
+    { 
+      id: 'intune', 
+      label: 'Intune Integration', 
+      icon: <Users className="w-4 h-4" />,
+      description: 'Microsoft Intune MDM integration'
+    },
+    { 
+      id: 'onboarding', 
+      label: 'Device Onboarding', 
+      icon: <Zap className="w-4 h-4" />,
+      description: 'Device enrollment and provisioning workflows'
+    },
+    { 
+      id: 'fortigate-tacacs', 
+      label: 'FortiGate TACACS+', 
+      icon: <Server className="w-4 h-4" />,
+      description: 'FortiGate device administration with TACACS+'
+    },
+    { 
+      id: 'palo-tacacs', 
+      label: 'Palo Alto TACACS+', 
+      icon: <Server className="w-4 h-4" />,
+      description: 'Palo Alto device administration with TACACS+'
+    },
+    { 
+      id: 'palo-userid', 
+      label: 'Palo Alto User-ID', 
+      icon: <Users className="w-4 h-4" />,
+      description: 'Palo Alto User-ID integration with syslog'
+    },
+    { 
+      id: 'fortigate-fsso', 
+      label: 'FortiGate FSSO', 
+      icon: <Users className="w-4 h-4" />,
+      description: 'FortiGate FSSO integration with syslog'
+    }
   ]
 
   const cloudProviders = [
-    { id: 'aws', label: 'AWS', color: 'bg-orange-100 text-orange-800 border-orange-200' },
-    { id: 'azure', label: 'Azure', color: 'bg-blue-100 text-blue-800 border-blue-200' },
-    { id: 'gcp', label: 'GCP', color: 'bg-green-100 text-green-800 border-green-200' },
-    { id: 'onprem', label: 'On-Premises', color: 'bg-gray-100 text-gray-800 border-gray-200' }
+    { id: 'aws', label: 'Amazon Web Services', color: '#FF9900' },
+    { id: 'azure', label: 'Microsoft Azure', color: '#0078D4' },
+    { id: 'gcp', label: 'Google Cloud Platform', color: '#4285F4' },
+    { id: 'onprem', label: 'On-Premises', color: '#6B7280' }
   ]
 
-  const exportDiagram = async (format: 'svg' | 'png') => {
-    if (!diagramRef.current) return
+  const networkVendors = [
+    { id: 'cisco', label: 'Cisco' },
+    { id: 'aruba', label: 'Aruba (HPE)' },
+    { id: 'juniper', label: 'Juniper' },
+    { id: 'extreme', label: 'Extreme Networks' },
+    { id: 'ruckus', label: 'Ruckus (CommScope)' },
+    { id: 'fortinet', label: 'Fortinet' },
+    { id: 'paloalto', label: 'Palo Alto Networks' }
+  ]
 
-    const svg = diagramRef.current.querySelector('svg')
-    if (!svg) return
+  const connectivityOptions = [
+    { id: 'sdwan', label: 'SD-WAN' },
+    { id: 'expressroute', label: 'Azure Express Route' },
+    { id: 'directconnect', label: 'AWS Direct Connect' },
+    { id: 'mpls', label: 'MPLS Network' },
+    { id: 'vpn', label: 'Site-to-Site VPN' },
+    { id: 'internet', label: 'Internet Connection' }
+  ]
 
-    if (format === 'svg') {
-      const svgData = new XMLSerializer().serializeToString(svg)
-      const blob = new Blob([svgData], { type: 'image/svg+xml' })
-      const url = URL.createObjectURL(blob)
-      
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `portnox-architecture-${currentView}-${Date.now()}.svg`
-      link.click()
-      
-      URL.revokeObjectURL(url)
-    } else {
-      // For PNG export, we'd need to convert SVG to canvas
-      const canvas = document.createElement('canvas')
-      const ctx = canvas.getContext('2d')
-      const img = new Image()
-      
-      const svgData = new XMLSerializer().serializeToString(svg)
-      const svgBlob = new Blob([svgData], { type: 'image/svg+xml' })
-      const url = URL.createObjectURL(svgBlob)
-      
-      img.onload = () => {
-        canvas.width = img.width
-        canvas.height = img.height
-        ctx?.drawImage(img, 0, 0)
-        
-        canvas.toBlob((blob) => {
-          if (blob) {
-            const pngUrl = URL.createObjectURL(blob)
-            const link = document.createElement('a')
-            link.href = pngUrl
-            link.download = `portnox-architecture-${currentView}-${Date.now()}.png`
-            link.click()
-            URL.revokeObjectURL(pngUrl)
-          }
-        }, 'image/png')
-        
-        URL.revokeObjectURL(url)
-      }
-      
-      img.src = url
-    }
-  }
+  const currentView = architectureViews.find(view => view.id === selectedView)
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
-            <Server className="h-6 w-6 text-blue-600" />
-            <span>Portnox Cloud NAC Architecture Designer</span>
+            <Globe className="h-6 w-6 text-blue-600" />
+            <span>Zero Trust NAC Architecture Designer</span>
           </CardTitle>
-          <p className="text-gray-600 dark:text-gray-400">
-            Interactive architecture diagrams with customizable components, export capabilities, and detailed legends.
-          </p>
         </CardHeader>
         <CardContent>
-          {/* Controls */}
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-            <div className="flex flex-wrap items-center gap-3">
-              {diagramViews.map((view) => {
-                const Icon = view.icon
-                return (
-                  <Button
-                    key={view.id}
-                    variant={currentView === view.id ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setCurrentView(view.id as DiagramView)}
-                    className="flex items-center space-x-2"
-                  >
-                    <Icon className="h-4 w-4" />
-                    <span>{view.label}</span>
-                  </Button>
-                )
-              })}
-            </div>
-            
-            <div className="flex items-center space-x-3">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => exportDiagram('svg')}
-                className="flex items-center space-x-2"
-              >
-                <Download className="h-4 w-4" />
-                <span>Export SVG</span>
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => exportDiagram('png')}
-                className="flex items-center space-x-2"
-              >
-                <Download className="h-4 w-4" />
-                <span>Export PNG</span>
-              </Button>
-            </div>
-          </div>
-
-          {/* Configuration Options */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div>
-              <label className="block text-sm font-medium mb-2">Cloud Provider</label>
-              <div className="flex flex-wrap gap-2">
-                {cloudProviders.map((provider) => (
-                  <Badge
-                    key={provider.id}
-                    variant={cloudProvider === provider.id ? 'default' : 'outline'}
-                    className={`cursor-pointer ${cloudProvider === provider.id ? '' : provider.color}`}
-                    onClick={() => setCloudProvider(provider.id as CloudProvider)}
-                  >
-                    {provider.label}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">Network Vendor</label>
-              <Select value={networkVendor} onValueChange={(value) => setNetworkVendor(value as NetworkVendor)}>
-                <SelectTrigger>
-                  <SelectValue />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Architecture View Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="view-select">Architecture View</Label>
+              <Select value={selectedView} onValueChange={setSelectedView}>
+                <SelectTrigger id="view-select">
+                  <SelectValue placeholder="Select view" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="cisco">Cisco</SelectItem>
-                  <SelectItem value="meraki">Cisco Meraki</SelectItem>
-                  <SelectItem value="juniper">Juniper</SelectItem>
-                  <SelectItem value="aruba">Aruba</SelectItem>
-                  <SelectItem value="hpe">HPE</SelectItem>
-                  <SelectItem value="extreme">Extreme Networks</SelectItem>
-                  <SelectItem value="fortinet">Fortinet</SelectItem>
+                  {architectureViews.map((view) => (
+                    <SelectItem key={view.id} value={view.id}>
+                      <div className="flex items-center space-x-2">
+                        {view.icon}
+                        <span>{view.label}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-2">Connectivity</label>
-              <Select value={connectivityType} onValueChange={(value) => setConnectivityType(value as ConnectivityType)}>
-                <SelectTrigger>
-                  <SelectValue />
+            {/* Cloud Provider Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="cloud-select">Cloud Provider</Label>
+              <Select value={cloudProvider} onValueChange={setCloudProvider}>
+                <SelectTrigger id="cloud-select">
+                  <SelectValue placeholder="Select provider" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="sdwan">SD-WAN</SelectItem>
-                  <SelectItem value="expressroute">Express Route</SelectItem>
-                  <SelectItem value="mpls">MPLS</SelectItem>
-                  <SelectItem value="vpn">Site-to-Site VPN</SelectItem>
-                  <SelectItem value="directconnect">Direct Connect</SelectItem>
+                  {cloudProviders.map((provider) => (
+                    <SelectItem key={provider.id} value={provider.id}>
+                      <div className="flex items-center space-x-2">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: provider.color }}
+                        />
+                        <span>{provider.label}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-2">Animation Speed</label>
-              <Select value={animationSpeed.toString()} onValueChange={(value) => setAnimationSpeed(Number(value))}>
-                <SelectTrigger>
-                  <SelectValue />
+            {/* Network Vendor Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="vendor-select">Network Vendor</Label>
+              <Select value={networkVendor} onValueChange={setNetworkVendor}>
+                <SelectTrigger id="vendor-select">
+                  <SelectValue placeholder="Select vendor" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="0.5">Slow</SelectItem>
-                  <SelectItem value="1">Normal</SelectItem>
-                  <SelectItem value="2">Fast</SelectItem>
-                  <SelectItem value="0">No Animation</SelectItem>
+                  {networkVendors.map((vendor) => (
+                    <SelectItem key={vendor.id} value={vendor.id}>
+                      {vendor.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Connectivity Type Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="connectivity-select">Connectivity</Label>
+              <Select value={connectivityType} onValueChange={setConnectivityType}>
+                <SelectTrigger id="connectivity-select">
+                  <SelectValue placeholder="Select connectivity" />
+                </SelectTrigger>
+                <SelectContent>
+                  {connectivityOptions.map((option) => (
+                    <SelectItem key={option.id} value={option.id}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
 
-          {/* Interactive Diagram */}
-          <div ref={diagramRef} className="bg-white dark:bg-gray-800 rounded-lg border-2 border-gray-200 dark:border-gray-700 p-6 mb-6">
-            <InteractiveDiagram
-              view={currentView}
-              cloudProvider={cloudProvider}
-              networkVendor={networkVendor}
-              connectivityType={connectivityType}
-              animationSpeed={animationSpeed}
+          {/* Animation Speed Control */}
+          <div className="mt-4 space-y-2">
+            <Label>Animation Speed: {animationSpeed[0]}x</Label>
+            <Slider
+              value={animationSpeed}
+              onValueChange={setAnimationSpeed}
+              max={3}
+              min={0.5}
+              step={0.5}
+              className="w-full"
             />
           </div>
 
-          {/* Policy Editor for policies view */}
-          {currentView === 'policies' && (
-            <div className="mb-6">
-              <PolicyEditor />
+          {/* Current View Info */}
+          {currentView && (
+            <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+              <div className="flex items-center space-x-2 mb-2">
+                {currentView.icon}
+                <h3 className="font-semibold text-blue-900 dark:text-blue-100">
+                  {currentView.label}
+                </h3>
+              </div>
+              <p className="text-sm text-blue-800 dark:text-blue-200">
+                {currentView.description}
+              </p>
             </div>
           )}
-
-          {/* Onboarding Scenarios for onboarding view */}
-          {currentView === 'onboarding' && (
-            <div className="mb-6">
-              <OnboardingScenarios />
-            </div>
-          )}
-
-          {/* Architecture Legend */}
-          <ArchitectureLegend currentView={currentView} />
         </CardContent>
       </Card>
+
+      {/* Main Content */}
+      <Tabs defaultValue="diagram" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="diagram">Interactive Diagram</TabsTrigger>
+          <TabsTrigger value="legend">Components Legend</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="diagram" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center space-x-2">
+                  {currentView?.icon}
+                  <span>{currentView?.label}</span>
+                </CardTitle>
+                <div className="flex space-x-2">
+                  <Badge variant="outline">
+                    {cloudProviders.find(p => p.id === cloudProvider)?.label}
+                  </Badge>
+                  <Badge variant="outline">
+                    {networkVendors.find(v => v.id === networkVendor)?.label}
+                  </Badge>
+                  <Badge variant="outline">
+                    {connectivityOptions.find(c => c.id === connectivityType)?.label}
+                  </Badge>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <InteractiveDiagram
+                view={selectedView}
+                cloudProvider={cloudProvider}
+                networkVendor={networkVendor}
+                connectivityType={connectivityType}
+                animationSpeed={animationSpeed[0]}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="legend" className="space-y-4">
+          <ArchitectureLegend currentView={selectedView} />
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }
