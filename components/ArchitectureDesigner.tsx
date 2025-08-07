@@ -9,228 +9,143 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
-import { Download, Eye, Settings, Zap, Shield, Network, Wifi, Router, Cloud } from 'lucide-react'
+import { Download, Settings, Eye, Zap, Shield, Network, Wifi, Server, Cloud, Users, Database, Router, Smartphone, Laptop, Monitor, Printer, Globe, Lock, CheckCircle, AlertTriangle, Info } from 'lucide-react'
 import InteractiveDiagram from './InteractiveDiagram'
-import ArchitectureLegend from './ArchitectureLegend'
-import PolicyEditor from './PolicyEditor'
-import OnboardingScenarios from './OnboardingScenarios'
 
 export default function ArchitectureDesigner() {
   const [selectedView, setSelectedView] = useState('complete')
-  const [cloudProvider, setCloudProvider] = useState('portnox')
-  const [networkVendor, setNetworkVendor] = useState('cisco')
-  const [connectivityType, setConnectivityType] = useState('radsec')
-  const [animationSpeed, setAnimationSpeed] = useState([1])
-  const [showAdvanced, setShowAdvanced] = useState(false)
-  const [enableAnimations, setEnableAnimations] = useState(true)
+  const [selectedVendor, setSelectedVendor] = useState('cisco')
+  const [selectedCloudProvider, setSelectedCloudProvider] = useState('aws')
+  const [selectedConnectivity, setSelectedConnectivity] = useState('mpls')
+  const [animationSpeed, setAnimationSpeed] = useState(1)
+  const [showLabels, setShowLabels] = useState(true)
+  const [showConnections, setShowConnections] = useState(true)
 
   const architectureViews = [
     { id: 'complete', name: 'Complete Architecture', icon: Network, description: 'Full Zero Trust NAC deployment' },
-    { id: 'auth-flow', name: 'Authentication Flow', icon: Shield, description: '802.1X authentication process' },
-    { id: 'pki', name: 'PKI Infrastructure', icon: Shield, description: 'Certificate management and PKI' },
-    { id: 'policies', name: 'Policy Framework', icon: Settings, description: 'Dynamic policy enforcement' },
-    { id: 'connectivity', name: 'Multi-Cloud Connectivity', icon: Cloud, description: 'Cloud and hybrid connectivity' },
-    { id: 'intune', name: 'Microsoft Intune Integration', icon: Settings, description: 'MDM and device management' },
-    { id: 'onboarding', name: 'Device Onboarding', icon: Zap, description: 'Automated device provisioning' },
-    { id: 'radsec-proxy', name: 'RADSec Proxy', icon: Shield, description: 'Secure RADIUS over TLS' },
-    { id: 'fortigate-tacacs', name: 'FortiGate TACACS+', icon: Shield, description: 'Fortinet firewall admin auth' },
-    { id: 'palo-tacacs', name: 'Palo Alto TACACS+', icon: Shield, description: 'Palo Alto admin authentication' },
-    { id: 'palo-userid', name: 'Palo Alto User-ID', icon: Shield, description: 'User identity integration' },
-    { id: 'fortigate-fsso', name: 'FortiGate FSSO', icon: Shield, description: 'Fortinet single sign-on' },
-    { id: 'ubiquiti-wireless', name: 'Ubiquiti UniFi Wireless', icon: Wifi, description: 'UniFi wireless integration' },
-    { id: 'mikrotik-wireless', name: 'MikroTik Wireless', icon: Wifi, description: 'MikroTik wireless solution' },
-    { id: 'meraki-wireless', name: 'Cisco Meraki Wireless', icon: Wifi, description: 'Meraki cloud wireless' },
-    { id: 'mist-wireless', name: 'Juniper Mist Wireless', icon: Wifi, description: 'Mist AI-driven wireless' },
-    { id: 'cambium-wireless', name: 'Cambium Networks Wireless', icon: Wifi, description: 'Cambium wireless solution' }
+    { id: 'auth-flow', name: '802.1X Authentication Flow', icon: Shield, description: 'Step-by-step authentication process' },
+    { id: 'pki', name: 'PKI Infrastructure', icon: Lock, description: 'Certificate authority and PKI components' },
+    { id: 'policies', name: 'Policy Framework', icon: Settings, description: 'Policy engine and enforcement points' },
+    { id: 'connectivity', name: 'Multi-Cloud Connectivity', icon: Cloud, description: 'Cloud and hybrid connectivity options' },
+    { id: 'intune', name: 'Microsoft Intune Integration', icon: Smartphone, description: 'Mobile device management integration' },
+    { id: 'onboarding', name: 'Device Onboarding', icon: Zap, description: 'Automated device provisioning workflow' },
+    { id: 'radsec-proxy', name: 'RADSec Proxy', icon: Server, description: 'Simplified RADSec proxy architecture' },
+    { id: 'fortigate-tacacs', name: 'FortiGate TACACS+', icon: Shield, description: 'FortiGate firewall admin authentication' },
+    { id: 'palo-tacacs', name: 'Palo Alto TACACS+', icon: Shield, description: 'Palo Alto NGFW admin authentication' },
+    { id: 'palo-userid', name: 'Palo Alto User-ID', icon: Users, description: 'User identity mapping for firewall policies' },
+    { id: 'fortigate-fsso', name: 'FortiGate FSSO', icon: Users, description: 'Fortinet Single Sign-On integration' },
+    { id: 'ubiquiti-wireless', name: 'Ubiquiti UniFi Wireless', icon: Wifi, description: 'UniFi wireless infrastructure integration' },
+    { id: 'mikrotik-wireless', name: 'MikroTik Wireless', icon: Wifi, description: 'MikroTik wireless and RouterOS integration' },
+    { id: 'meraki-wireless', name: 'Cisco Meraki Wireless', icon: Wifi, description: 'Meraki cloud-managed wireless' },
+    { id: 'mist-wireless', name: 'Juniper Mist Wireless', icon: Wifi, description: 'Mist AI-driven wireless platform' },
+    { id: 'cambium-wireless', name: 'Cambium Networks Wireless', icon: Wifi, description: 'Cambium wireless and cnMaestro' }
   ]
 
   const networkVendors = [
-    'Cisco', 'Aruba/HPE', 'Juniper', 'Extreme Networks', 'Fortinet', 'Palo Alto', 
-    'Ubiquiti', 'MikroTik', 'Ruckus/CommScope', 'Meraki', 'Mist', 'Cambium Networks'
+    { id: 'cisco', name: 'Cisco', description: 'Catalyst switches, ISE integration' },
+    { id: 'aruba', name: 'Aruba (HPE)', description: 'ClearPass integration, ArubaOS' },
+    { id: 'juniper', name: 'Juniper', description: 'EX/QFX switches, Mist wireless' },
+    { id: 'extreme', name: 'Extreme Networks', description: 'ExtremeXOS, wireless controllers' },
+    { id: 'ruckus', name: 'Ruckus (CommScope)', description: 'SmartZone controllers, APs' },
+    { id: 'fortinet', name: 'Fortinet', description: 'FortiGate, FortiSwitch, FortiAP' },
+    { id: 'palo-alto', name: 'Palo Alto', description: 'NGFW, User-ID integration' },
+    { id: 'ubiquiti', name: 'Ubiquiti', description: 'UniFi ecosystem, Dream Machine' },
+    { id: 'mikrotik', name: 'MikroTik', description: 'RouterOS, wireless solutions' },
+    { id: 'meraki', name: 'Cisco Meraki', description: 'Cloud-managed infrastructure' },
+    { id: 'cambium', name: 'Cambium Networks', description: 'cnPilot APs, cnMaestro' }
+  ]
+
+  const cloudProviders = [
+    { id: 'aws', name: 'Amazon Web Services', description: 'EC2, VPC, Direct Connect' },
+    { id: 'azure', name: 'Microsoft Azure', description: 'Virtual Networks, ExpressRoute' },
+    { id: 'gcp', name: 'Google Cloud Platform', description: 'VPC, Cloud Interconnect' },
+    { id: 'multi-cloud', name: 'Multi-Cloud', description: 'Hybrid cloud deployment' }
   ]
 
   const connectivityOptions = [
-    { id: 'radsec', name: 'RADSec (RADIUS over TLS)', description: 'Secure RADIUS communication' },
-    { id: 'ipsec', name: 'IPSec VPN', description: 'Site-to-site VPN connectivity' },
+    { id: 'mpls', name: 'MPLS', description: 'Traditional MPLS networks' },
     { id: 'sd-wan', name: 'SD-WAN', description: 'Software-defined WAN' },
-    { id: 'mpls', name: 'MPLS', description: 'Multi-protocol label switching' },
-    { id: 'internet', name: 'Internet/Broadband', description: 'Direct internet connectivity' },
+    { id: 'internet', name: 'Internet VPN', description: 'IPSec over internet' },
+    { id: 'direct-connect', name: 'Direct Connect', description: 'Dedicated cloud connections' },
     { id: 'velocloud', name: 'VMware VeloCloud', description: 'VMware SD-WAN solution' },
     { id: 'silver-peak', name: 'Silver Peak', description: 'Aruba EdgeConnect SD-WAN' },
-    { id: 'viptela', name: 'Cisco Viptela', description: 'Cisco SD-WAN solution' },
+    { id: 'viptela', name: 'Cisco Viptela', description: 'Cisco SD-WAN platform' },
     { id: 'fortinet-sdwan', name: 'Fortinet SD-WAN', description: 'FortiGate SD-WAN' }
   ]
 
-  const handleExport = (format: string) => {
+  const exportDiagram = (format: 'png' | 'svg' | 'pdf') => {
+    // Export functionality would be implemented here
     console.log(`Exporting diagram as ${format}`)
-    // Implementation for export functionality
+    // This would capture the SVG and convert to the requested format
   }
 
-  const getRADSecProxyDiagram = () => {
-    return (
-      <div className="w-full">
-        <svg width="1000" height="600" viewBox="0 0 1000 600" className="border rounded-lg bg-gray-50 dark:bg-gray-900">
-          {/* Site Network */}
-          <g>
-            <rect x="50" y="200" width="200" height="200" fill="#E3F2FD" stroke="#1976D2" strokeWidth="2" rx="10" />
-            <text x="150" y="190" textAnchor="middle" className="font-semibold" fontSize="14" fill="#1976D2">Site Network</text>
-            
-            {/* Network Switch */}
-            <rect x="80" y="230" width="60" height="40" fill="#FF9800" stroke="#F57C00" strokeWidth="2" rx="5" />
-            <text x="110" y="255" textAnchor="middle" fontSize="10" fill="white">Switch</text>
-            
-            {/* Wireless AP */}
-            <rect x="80" y="290" width="60" height="40" fill="#4CAF50" stroke="#388E3C" strokeWidth="2" rx="5" />
-            <text x="110" y="315" textAnchor="middle" fontSize="10" fill="white">Wireless AP</text>
-            
-            {/* Devices */}
-            <circle cx="200" cy="250" r="15" fill="#2196F3" stroke="#1565C0" strokeWidth="2" />
-            <text x="200" y="255" textAnchor="middle" fontSize="8" fill="white">PC</text>
-            
-            <circle cx="200" cy="310" r="15" fill="#9C27B0" stroke="#7B1FA2" strokeWidth="2" />
-            <text x="200" y="315" textAnchor="middle" fontSize="8" fill="white">Mobile</text>
-          </g>
-
-          {/* RADSec Proxy */}
-          <g>
-            <rect x="350" y="250" width="120" height="100" fill="#00C8D7" stroke="#0097A7" strokeWidth="3" rx="10" />
-            <text x="410" y="240" textAnchor="middle" className="font-semibold" fontSize="14" fill="#00C8D7">RADSec Proxy</text>
-            <text x="410" y="285" textAnchor="middle" fontSize="12" fill="white">Local RADIUS</text>
-            <text x="410" y="305" textAnchor="middle" fontSize="12" fill="white">TLS Encryption</text>
-            <text x="410" y="325" textAnchor="middle" fontSize="12" fill="white">Certificate Auth</text>
-          </g>
-
-          {/* Internet/WAN */}
-          <g>
-            <ellipse cx="600" cy="300" rx="80" ry="40" fill="#FFC107" stroke="#FF8F00" strokeWidth="2" />
-            <text x="600" y="295" textAnchor="middle" className="font-semibold" fontSize="12" fill="#FF8F00">Internet/WAN</text>
-            <text x="600" y="310" textAnchor="middle" fontSize="10" fill="#FF8F00">Encrypted Traffic</text>
-          </g>
-
-          {/* Portnox Cloud */}
-          <g>
-            <rect x="750" y="200" width="200" height="200" fill="#E8F5E8" stroke="#4CAF50" strokeWidth="2" rx="10" />
-            <text x="850" y="190" textAnchor="middle" className="font-semibold" fontSize="14" fill="#4CAF50">Portnox Cloud</text>
-            
-            {/* Cloud RADIUS */}
-            <rect x="780" y="230" width="80" height="40" fill="#00C8D7" stroke="#0097A7" strokeWidth="2" rx="5" />
-            <text x="820" y="255" textAnchor="middle" fontSize="10" fill="white">Cloud RADIUS</text>
-            
-            {/* Policy Engine */}
-            <rect x="780" y="290" width="80" height="40" fill="#FF5722" stroke="#D84315" strokeWidth="2" rx="5" />
-            <text x="820" y="315" textAnchor="middle" fontSize="10" fill="white">Policy Engine</text>
-            
-            {/* Identity Sources */}
-            <rect x="870" y="230" width="60" height="40" fill="#9C27B0" stroke="#7B1FA2" strokeWidth="2" rx="5" />
-            <text x="900" y="255" textAnchor="middle" fontSize="9" fill="white">AD/Entra</text>
-            
-            <rect x="870" y="290" width="60" height="40" fill="#607D8B" stroke="#455A64" strokeWidth="2" rx="5" />
-            <text x="900" y="315" textAnchor="middle" fontSize="9" fill="white">Certificate</text>
-          </g>
-
-          {/* Connections */}
-          {/* Switch to RADSec Proxy */}
-          <line x1="140" y1="250" x2="350" y2="280" stroke="#1976D2" strokeWidth="3" markerEnd="url(#arrowhead)" />
-          <text x="245" y="260" textAnchor="middle" fontSize="10" fill="#1976D2">RADIUS</text>
-          
-          {/* AP to RADSec Proxy */}
-          <line x1="140" y1="310" x2="350" y2="320" stroke="#4CAF50" strokeWidth="3" markerEnd="url(#arrowhead)" />
-          <text x="245" y="320" textAnchor="middle" fontSize="10" fill="#4CAF50">RADIUS</text>
-          
-          {/* RADSec Proxy to Internet */}
-          <line x1="470" y1="300" x2="520" y2="300" stroke="#00C8D7" strokeWidth="4" markerEnd="url(#arrowhead)" />
-          <text x="495" y="290" textAnchor="middle" fontSize="10" fill="#00C8D7">RADSec/TLS</text>
-          
-          {/* Internet to Portnox Cloud */}
-          <line x1="680" y1="300" x2="750" y2="300" stroke="#00C8D7" strokeWidth="4" markerEnd="url(#arrowhead)" />
-          <text x="715" y="290" textAnchor="middle" fontSize="10" fill="#00C8D7">RADSec/TLS</text>
-
-          {/* Arrow marker definition */}
-          <defs>
-            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-              <polygon points="0 0, 10 3.5, 0 7" fill="#666" />
-            </marker>
-          </defs>
-
-          {/* Labels and annotations */}
-          <text x="500" y="50" textAnchor="middle" className="font-bold" fontSize="18" fill="#333">RADSec Proxy Architecture</text>
-          <text x="500" y="70" textAnchor="middle" fontSize="12" fill="#666">Secure RADIUS over TLS - No Load Balancer or Cache Required</text>
-          
-          {/* Key Benefits */}
-          <g>
-            <text x="50" y="450" className="font-semibold" fontSize="12" fill="#333">Key Benefits:</text>
-            <text x="50" y="470" fontSize="11" fill="#666">• Direct encrypted RADIUS communication</text>
-            <text x="50" y="485" fontSize="11" fill="#666">• Certificate-based authentication</text>
-            <text x="50" y="500" fontSize="11" fill="#666">• Simplified architecture without additional components</text>
-            <text x="50" y="515" fontSize="11" fill="#666">• High availability through cloud redundancy</text>
-          </g>
-        </svg>
-      </div>
-    )
-  }
+  const selectedViewData = architectureViews.find(view => view.id === selectedView)
+  const selectedVendorData = networkVendors.find(vendor => vendor.id === selectedVendor)
+  const selectedCloudData = cloudProviders.find(cloud => cloud.id === selectedCloudProvider)
+  const selectedConnectivityData = connectivityOptions.find(conn => conn.id === selectedConnectivity)
 
   return (
-    <div className="space-y-6">
-      {/* Controls */}
+    <div className="w-full space-y-6">
+      {/* Header Controls */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Network className="h-5 w-5" />
-            <span>Architecture Designer</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* View Selection */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {architectureViews.map((view) => (
-              <Card 
-                key={view.id}
-                className={`cursor-pointer transition-all hover:shadow-md ${
-                  selectedView === view.id ? 'ring-2 ring-blue-500 bg-blue-50' : ''
-                }`}
-                onClick={() => setSelectedView(view.id)}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <view.icon className="h-4 w-4 text-blue-600" />
-                    <span className="font-medium text-sm">{view.name}</span>
-                  </div>
-                  <p className="text-xs text-gray-600">{view.description}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {/* Configuration Options */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label>Network Vendor</Label>
-              <Select value={networkVendor} onValueChange={setNetworkVendor}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {networkVendors.map((vendor) => (
-                    <SelectItem key={vendor.toLowerCase()} value={vendor.toLowerCase()}>
-                      {vendor}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center space-x-2">
+                <Network className="h-5 w-5 text-blue-600" />
+                <span>Architecture Designer</span>
+              </CardTitle>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                Design and visualize your Portnox NAC deployment
+              </p>
             </div>
-
-            <div className="space-y-2">
-              <Label>Connectivity Type</Label>
-              <Select value={connectivityType} onValueChange={setConnectivityType}>
-                <SelectTrigger>
-                  <SelectValue />
+            <div className="flex space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => exportDiagram('png')}
+                className="flex items-center space-x-1"
+              >
+                <Download className="h-4 w-4" />
+                <span>Export PNG</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => exportDiagram('svg')}
+                className="flex items-center space-x-1"
+              >
+                <Download className="h-4 w-4" />
+                <span>Export SVG</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => exportDiagram('pdf')}
+                className="flex items-center space-x-1"
+              >
+                <Download className="h-4 w-4" />
+                <span>Export PDF</span>
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <Label htmlFor="architecture-view" className="text-sm font-medium">
+                Architecture View
+              </Label>
+              <Select value={selectedView} onValueChange={setSelectedView}>
+                <SelectTrigger id="architecture-view">
+                  <SelectValue placeholder="Select architecture view" />
                 </SelectTrigger>
                 <SelectContent>
-                  {connectivityOptions.map((option) => (
-                    <SelectItem key={option.id} value={option.id}>
-                      <div>
-                        <div className="font-medium">{option.name}</div>
-                        <div className="text-xs text-gray-500">{option.description}</div>
+                  {architectureViews.map((view) => (
+                    <SelectItem key={view.id} value={view.id}>
+                      <div className="flex items-center space-x-2">
+                        <view.icon className="h-4 w-4" />
+                        <span>{view.name}</span>
                       </div>
                     </SelectItem>
                   ))}
@@ -238,118 +153,299 @@ export default function ArchitectureDesigner() {
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label>Cloud Provider</Label>
-              <Select value={cloudProvider} onValueChange={setCloudProvider}>
-                <SelectTrigger>
-                  <SelectValue />
+            <div>
+              <Label htmlFor="network-vendor" className="text-sm font-medium">
+                Network Vendor
+              </Label>
+              <Select value={selectedVendor} onValueChange={setSelectedVendor}>
+                <SelectTrigger id="network-vendor">
+                  <SelectValue placeholder="Select network vendor" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="portnox">Portnox Cloud</SelectItem>
-                  <SelectItem value="aws">AWS</SelectItem>
-                  <SelectItem value="azure">Microsoft Azure</SelectItem>
-                  <SelectItem value="gcp">Google Cloud</SelectItem>
+                  {networkVendors.map((vendor) => (
+                    <SelectItem key={vendor.id} value={vendor.id}>
+                      {vendor.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="cloud-provider" className="text-sm font-medium">
+                Cloud Provider
+              </Label>
+              <Select value={selectedCloudProvider} onValueChange={setSelectedCloudProvider}>
+                <SelectTrigger id="cloud-provider">
+                  <SelectValue placeholder="Select cloud provider" />
+                </SelectTrigger>
+                <SelectContent>
+                  {cloudProviders.map((provider) => (
+                    <SelectItem key={provider.id} value={provider.id}>
+                      {provider.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="connectivity" className="text-sm font-medium">
+                Connectivity
+              </Label>
+              <Select value={selectedConnectivity} onValueChange={setSelectedConnectivity}>
+                <SelectTrigger id="connectivity">
+                  <SelectValue placeholder="Select connectivity type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {connectivityOptions.map((option) => (
+                    <SelectItem key={option.id} value={option.id}>
+                      {option.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
 
-          {/* Advanced Options */}
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="advanced-options"
-              checked={showAdvanced}
-              onCheckedChange={setShowAdvanced}
-            />
-            <Label htmlFor="advanced-options">Show Advanced Options</Label>
-          </div>
-
-          {showAdvanced && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="animations"
-                    checked={enableAnimations}
-                    onCheckedChange={setEnableAnimations}
-                  />
-                  <Label htmlFor="animations">Enable Animations</Label>
-                </div>
-              </div>
-              
-              {enableAnimations && (
-                <div className="space-y-2">
-                  <Label>Animation Speed: {animationSpeed[0]}x</Label>
-                  <Slider
-                    value={animationSpeed}
-                    onValueChange={setAnimationSpeed}
-                    max={3}
-                    min={0.5}
-                    step={0.5}
-                    className="w-full"
-                  />
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Export Options */}
-          <div className="flex items-center space-x-2">
-            <Button onClick={() => handleExport('png')} variant="outline" size="sm">
-              <Download className="h-4 w-4 mr-2" />
-              Export PNG
-            </Button>
-            <Button onClick={() => handleExport('svg')} variant="outline" size="sm">
-              <Download className="h-4 w-4 mr-2" />
-              Export SVG
-            </Button>
-            <Button onClick={() => handleExport('pdf')} variant="outline" size="sm">
-              <Download className="h-4 w-4 mr-2" />
-              Export PDF
-            </Button>
+          {/* Display selected options */}
+          <div className="flex flex-wrap gap-2 mt-4">
+            {selectedViewData && (
+              <Badge variant="outline" className="flex items-center space-x-1">
+                <selectedViewData.icon className="h-3 w-3" />
+                <span>{selectedViewData.name}</span>
+              </Badge>
+            )}
+            {selectedVendorData && (
+              <Badge variant="outline">{selectedVendorData.name}</Badge>
+            )}
+            {selectedCloudData && (
+              <Badge variant="outline">{selectedCloudData.name}</Badge>
+            )}
+            {selectedConnectivityData && (
+              <Badge variant="outline">{selectedConnectivityData.name}</Badge>
+            )}
           </div>
         </CardContent>
       </Card>
 
-      {/* Main Content */}
-      <Tabs defaultValue="diagram" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="diagram">Architecture Diagram</TabsTrigger>
-          <TabsTrigger value="policies">Policy Configuration</TabsTrigger>
-          <TabsTrigger value="scenarios">Onboarding Scenarios</TabsTrigger>
-          <TabsTrigger value="legend">Legend & Components</TabsTrigger>
-        </TabsList>
+      {/* Diagram Controls */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Settings className="h-4 w-4" />
+            <span>Diagram Controls</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="animation-speed" className="text-sm font-medium">
+                Animation Speed: {animationSpeed}x
+              </Label>
+              <Slider
+                id="animation-speed"
+                min={0.5}
+                max={3}
+                step={0.5}
+                value={[animationSpeed]}
+                onValueChange={(value) => setAnimationSpeed(value[0])}
+                className="w-full"
+              />
+            </div>
 
-        <TabsContent value="diagram" className="space-y-4">
-          {selectedView === 'radsec-proxy' ? (
-            <Card>
-              <CardContent className="p-6">
-                {getRADSecProxyDiagram()}
-              </CardContent>
-            </Card>
-          ) : (
-            <InteractiveDiagram
-              view={selectedView}
-              cloudProvider={cloudProvider}
-              networkVendor={networkVendor}
-              connectivityType={connectivityType}
-              animationSpeed={enableAnimations ? animationSpeed[0] : 0}
-            />
-          )}
-        </TabsContent>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="show-labels"
+                checked={showLabels}
+                onCheckedChange={setShowLabels}
+              />
+              <Label htmlFor="show-labels" className="text-sm font-medium">
+                Show Labels
+              </Label>
+            </div>
 
-        <TabsContent value="policies">
-          <PolicyEditor />
-        </TabsContent>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="show-connections"
+                checked={showConnections}
+                onCheckedChange={setShowConnections}
+              />
+              <Label htmlFor="show-connections" className="text-sm font-medium">
+                Show Connections
+              </Label>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-        <TabsContent value="scenarios">
-          <OnboardingScenarios />
-        </TabsContent>
+      {/* Main Diagram */}
+      <InteractiveDiagram
+        view={selectedView}
+        cloudProvider={selectedCloudProvider}
+        networkVendor={selectedVendor}
+        connectivityType={selectedConnectivity}
+        animationSpeed={animationSpeed}
+      />
 
-        <TabsContent value="legend">
-          <ArchitectureLegend />
-        </TabsContent>
-      </Tabs>
+      {/* Architecture Details */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Info className="h-4 w-4" />
+            <span>Architecture Details</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="overview" className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="components">Components</TabsTrigger>
+              <TabsTrigger value="security">Security</TabsTrigger>
+              <TabsTrigger value="deployment">Deployment</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="overview" className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-semibold mb-2">Selected Architecture</h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {selectedViewData?.description}
+                  </p>
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-2">Key Benefits</h4>
+                  <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                    <li>• Zero Trust network access control</li>
+                    <li>• Automated device onboarding</li>
+                    <li>• Policy-based network segmentation</li>
+                    <li>• Real-time threat detection</li>
+                  </ul>
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="components" className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card className="p-4">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Cloud className="h-4 w-4 text-blue-600" />
+                    <span className="font-semibold text-sm">Portnox Cloud</span>
+                  </div>
+                  <ul className="text-xs space-y-1 text-gray-600 dark:text-gray-400">
+                    <li>• Cloud RADIUS service</li>
+                    <li>• Policy engine</li>
+                    <li>• Device profiling</li>
+                    <li>• Analytics dashboard</li>
+                  </ul>
+                </Card>
+
+                <Card className="p-4">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Network className="h-4 w-4 text-green-600" />
+                    <span className="font-semibold text-sm">Network Infrastructure</span>
+                  </div>
+                  <ul className="text-xs space-y-1 text-gray-600 dark:text-gray-400">
+                    <li>• {selectedVendorData?.name} equipment</li>
+                    <li>• 802.1X authentication</li>
+                    <li>• Dynamic VLAN assignment</li>
+                    <li>• CoA support</li>
+                  </ul>
+                </Card>
+
+                <Card className="p-4">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Shield className="h-4 w-4 text-purple-600" />
+                    <span className="font-semibold text-sm">Security Features</span>
+                  </div>
+                  <ul className="text-xs space-y-1 text-gray-600 dark:text-gray-400">
+                    <li>• Certificate-based auth</li>
+                    <li>• Device compliance</li>
+                    <li>• Threat detection</li>
+                    <li>• Automated remediation</li>
+                  </ul>
+                </Card>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="security" className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-semibold mb-2 flex items-center space-x-2">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    <span>Security Controls</span>
+                  </h4>
+                  <ul className="text-sm space-y-1 text-gray-600 dark:text-gray-400">
+                    <li>• Multi-factor authentication</li>
+                    <li>• Device certificate validation</li>
+                    <li>• Network access policies</li>
+                    <li>• Real-time monitoring</li>
+                    <li>• Automated threat response</li>
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-2 flex items-center space-x-2">
+                    <AlertTriangle className="h-4 w-4 text-orange-600" />
+                    <span>Compliance Features</span>
+                  </h4>
+                  <ul className="text-sm space-y-1 text-gray-600 dark:text-gray-400">
+                    <li>• HIPAA compliance support</li>
+                    <li>• PCI DSS requirements</li>
+                    <li>• SOX audit trails</li>
+                    <li>• GDPR data protection</li>
+                    <li>• Custom compliance policies</li>
+                  </ul>
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="deployment" className="space-y-4">
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-semibold mb-2">Deployment Steps</h4>
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
+                      <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">1</div>
+                      <span className="text-sm">Configure Portnox Cloud tenant</span>
+                    </div>
+                    <div className="flex items-center space-x-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
+                      <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">2</div>
+                      <span className="text-sm">Deploy RADIUS proxy (if using RADSec)</span>
+                    </div>
+                    <div className="flex items-center space-x-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
+                      <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">3</div>
+                      <span className="text-sm">Configure network equipment</span>
+                    </div>
+                    <div className="flex items-center space-x-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
+                      <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">4</div>
+                      <span className="text-sm">Set up identity provider integration</span>
+                    </div>
+                    <div className="flex items-center space-x-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
+                      <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">5</div>
+                      <span className="text-sm">Configure policies and test</span>
+                    </div>
+                  </div>
+                </div>
+
+                {selectedView === 'radsec-proxy' && (
+                  <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                    <h5 className="font-semibold text-green-900 dark:text-green-100 mb-2">
+                      RADSec Proxy Deployment Notes
+                    </h5>
+                    <ul className="text-sm text-green-800 dark:text-green-200 space-y-1">
+                      <li>• No load balancer required - simplified architecture</li>
+                      <li>• No Redis cache needed - direct cloud connection</li>
+                      <li>• TLS encryption provides security in transit</li>
+                      <li>• Single proxy can handle multiple sites</li>
+                      <li>• Built-in high availability through cloud redundancy</li>
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   )
 }
