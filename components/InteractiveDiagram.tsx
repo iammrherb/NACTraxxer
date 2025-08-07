@@ -67,6 +67,8 @@ export default function InteractiveDiagram({
         return getIntuneDiagram()
       case 'onboarding':
         return getOnboardingDiagram()
+      case 'radsec-proxy':
+        return getRADSecProxyDiagram()
       case 'fortigate-tacacs':
         return getFortigateTacacsDiagram()
       case 'palo-tacacs':
@@ -110,6 +112,31 @@ export default function InteractiveDiagram({
       { from: 'ap', to: 'device2', type: 'wireless', animated: animationPhase === 0 },
       { from: 'cloud', to: 'ad', type: 'integration', animated: false },
       { from: 'cloud', to: 'intune', type: 'integration', animated: false }
+    ]
+  })
+
+  const getRADSecProxyDiagram = () => ({
+    title: 'RADSec Proxy Architecture - Simplified & Secure',
+    components: [
+      { id: 'device1', type: 'device', label: 'Corporate Device', x: 100, y: 250, color: '#2196F3' },
+      { id: 'device2', type: 'device', label: 'BYOD Device', x: 100, y: 350, color: '#9C27B0' },
+      { id: 'switch', type: 'network', label: 'Network Switch', x: 250, y: 250, color: '#FF9800' },
+      { id: 'ap', type: 'wireless', label: 'Wireless AP', x: 250, y: 350, color: '#4CAF50' },
+      { id: 'radsec-proxy', type: 'server', label: 'RADSec Proxy', x: 450, y: 300, color: '#00c8d7' },
+      { id: 'internet', type: 'cloud', label: 'Internet/WAN', x: 650, y: 300, color: '#FFC107' },
+      { id: 'portnox-cloud', type: 'cloud', label: 'Portnox Cloud', x: 850, y: 250, color: '#00c8d7' },
+      { id: 'radius-server', type: 'server', label: 'Cloud RADIUS', x: 850, y: 350, color: '#4CAF50' },
+      { id: 'policy-engine', type: 'engine', label: 'Policy Engine', x: 850, y: 450, color: '#FF5722' }
+    ],
+    connections: [
+      { from: 'device1', to: 'switch', type: 'wired', animated: animationPhase === 0, label: '802.1X' },
+      { from: 'device2', to: 'ap', type: 'wireless', animated: animationPhase === 1, label: 'Wi-Fi Auth' },
+      { from: 'switch', to: 'radsec-proxy', type: 'radius', animated: animationPhase === 2, label: 'RADIUS' },
+      { from: 'ap', to: 'radsec-proxy', type: 'radius', animated: animationPhase === 3, label: 'RADIUS' },
+      { from: 'radsec-proxy', to: 'internet', type: 'secure', animated: true, label: 'RADSec/TLS' },
+      { from: 'internet', to: 'portnox-cloud', type: 'secure', animated: true, label: 'Encrypted' },
+      { from: 'portnox-cloud', to: 'radius-server', type: 'internal', animated: false },
+      { from: 'portnox-cloud', to: 'policy-engine', type: 'internal', animated: false }
     ]
   })
 
@@ -406,6 +433,16 @@ export default function InteractiveDiagram({
         case 'portal': return '🌐'
         case 'ai': return '🤖'
         case 'backhaul': return '📶'
+        case 'engine': return '⚙️'
+        case 'policy': return '📋'
+        case 'compliance': return '✅'
+        case 'enforcement': return '🚫'
+        case 'user': return '👨‍💼'
+        case 'log': return '📊'
+        case 'service': return '🔧'
+        case 'datacenter': return '🏢'
+        case 'protocol': return '🔗'
+        case 'process': return '⚡'
         default: return '⚙️'
       }
     }
@@ -511,6 +548,22 @@ export default function InteractiveDiagram({
             )}
           </svg>
         </div>
+        
+        {/* RADSec specific information */}
+        {view === 'radsec-proxy' && (
+          <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+            <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
+              RADSec Architecture Benefits
+            </h4>
+            <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
+              <li>• <strong>Simplified Design:</strong> No load balancers or Redis cache required</li>
+              <li>• <strong>Direct Encryption:</strong> TLS encryption from proxy to cloud</li>
+              <li>• <strong>Certificate Security:</strong> Mutual TLS authentication</li>
+              <li>• <strong>High Availability:</strong> Built-in cloud redundancy</li>
+              <li>• <strong>Reduced Complexity:</strong> Fewer components to manage and maintain</li>
+            </ul>
+          </div>
+        )}
       </div>
     </Card>
   )

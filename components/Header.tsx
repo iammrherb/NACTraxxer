@@ -34,7 +34,7 @@ export default function Header() {
               <div className="flex items-center space-x-4">
                 <div className="bg-white rounded-lg p-2 shadow-md">
                   <img 
-                    src="https://www.portnox.com/wp-content/uploads/2023/06/portnox-logo-white.png" 
+                    src="https://www.portnox.com/wp-content/uploads/2021/03/Portnotx_Logo_Color-768x193.png" 
                     alt="Portnox Logo" 
                     className="h-10 w-auto filter hover:scale-105 transition-transform"
                   />
