@@ -11,7 +11,7 @@ interface InteractiveDiagramProps {
   networkVendor: string
   connectivityType: string
   animationSpeed: number
-  showDataFlow: boolean
+  showDataFlow?: boolean
 }
 
 interface DiagramNode {
@@ -39,19 +39,20 @@ interface DiagramConnection {
   bandwidth?: string
 }
 
-export default function InteractiveDiagram({ 
-  view, 
-  cloudProvider, 
-  networkVendor, 
-  connectivityType, 
+export default function InteractiveDiagram({
+  view,
+  cloudProvider,
+  networkVendor,
+  connectivityType,
   animationSpeed,
-  showDataFlow
+  showDataFlow = false
 }: InteractiveDiagramProps) {
   const svgRef = useRef<SVGSVGElement>(null)
   const [nodes, setNodes] = useState<DiagramNode[]>([])
   const [connections, setConnections] = useState<DiagramConnection[]>([])
   const [selectedNode, setSelectedNode] = useState<string | null>(null)
   const [hoveredNode, setHoveredNode] = useState<string | null>(null)
+  const [isAnimating, setIsAnimating] = useState(false)
 
   useEffect(() => {
     generateDiagram()

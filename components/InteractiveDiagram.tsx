@@ -12,6 +12,7 @@ interface InteractiveDiagramProps {
   networkVendor: string
   connectivityType: string
   animationSpeed: number
+  showDataFlow?: boolean
 }
 
 interface DiagramNode {
@@ -38,15 +39,16 @@ interface DiagramConnection {
   animated: boolean
 }
 
-export default function InteractiveDiagram({ 
-  view, 
-  cloudProvider, 
-  networkVendor, 
-  connectivityType, 
-  animationSpeed 
+export default function InteractiveDiagram({
+  view,
+  cloudProvider,
+  networkVendor,
+  connectivityType,
+  animationSpeed,
+  showDataFlow = false
 }: InteractiveDiagramProps) {
   const svgRef = useRef<SVGSVGElement>(null)
-  const [isAnimating, setIsAnimating] = useState(true)
+  const [isAnimating, setIsAnimating] = useState(false)
   const [zoom, setZoom] = useState(1)
   const [selectedNode, setSelectedNode] = useState<string | null>(null)
   const [hoveredNode, setHoveredNode] = useState<string | null>(null)
