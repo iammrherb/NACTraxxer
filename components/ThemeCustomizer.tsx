@@ -4,8 +4,9 @@ import { useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Palette, RotateCcw } from 'lucide-react'
+import { Palette, RotateCcw, Download, Upload } from 'lucide-react'
 
 interface ThemeCustomizerProps {
   open: boolean
@@ -13,50 +14,153 @@ interface ThemeCustomizerProps {
 }
 
 export default function ThemeCustomizer({ open, onOpenChange }: ThemeCustomizerProps) {
-  const [primaryColor, setPrimaryColor] = useState('#2563eb')
-  const [secondaryColor, setSecondaryColor] = useState('#64748b')
-  const [accentColor, setAccentColor] = useState('#0ea5e9')
-  const [successColor, setSuccessColor] = useState('#10b981')
-  const [warningColor, setWarningColor] = useState('#f59e0b')
-  const [errorColor, setErrorColor] = useState('#ef4444')
+  const [selectedPreset, setSelectedPreset] = useState('default')
+  const [customColors, setCustomColors] = useState({
+    primary: '#3b82f6',
+    secondary: '#64748b',
+    accent: '#f59e0b',
+    background: '#ffffff',
+    foreground: '#0f172a'
+  })
 
   const colorPresets = [
-    { name: 'Default Blue', primary: '#2563eb', secondary: '#64748b', accent: '#0ea5e9' },
-    { name: 'Purple', primary: '#7c3aed', secondary: '#64748b', accent: '#a855f7' },
-    { name: 'Green', primary: '#059669', secondary: '#64748b', accent: '#10b981' },
-    { name: 'Orange', primary: '#ea580c', secondary: '#64748b', accent: '#f97316' },
-    { name: 'Pink', primary: '#db2777', secondary: '#64748b', accent: '#ec4899' },
-    { name: 'Teal', primary: '#0d9488', secondary: '#64748b', accent: '#14b8a6' }
+    {
+      id: 'default',
+      name: 'Default Blue',
+      colors: {
+        primary: '#3b82f6',
+        secondary: '#64748b',
+        accent: '#f59e0b',
+        background: '#ffffff',
+        foreground: '#0f172a'
+      }
+    },
+    {
+      id: 'portnox',
+      name: 'Portnox Brand',
+      colors: {
+        primary: '#0066cc',
+        secondary: '#4a5568',
+        accent: '#ed8936',
+        background: '#f7fafc',
+        foreground: '#1a202c'
+      }
+    },
+    {
+      id: 'forest',
+      name: 'Forest Green',
+      colors: {
+        primary: '#059669',
+        secondary: '#6b7280',
+        accent: '#d97706',
+        background: '#f9fafb',
+        foreground: '#111827'
+      }
+    },
+    {
+      id: 'sunset',
+      name: 'Sunset Orange',
+      colors: {
+        primary: '#ea580c',
+        secondary: '#6b7280',
+        accent: '#7c3aed',
+        background: '#fefefe',
+        foreground: '#1f2937'
+      }
+    },
+    {
+      id: 'midnight',
+      name: 'Midnight Dark',
+      colors: {
+        primary: '#6366f1',
+        secondary: '#94a3b8',
+        accent: '#f59e0b',
+        background: '#0f172a',
+        foreground: '#f1f5f9'
+      }
+    },
+    {
+      id: 'corporate',
+      name: 'Corporate Gray',
+      colors: {
+        primary: '#374151',
+        secondary: '#9ca3af',
+        accent: '#3b82f6',
+        background: '#f9fafb',
+        foreground: '#111827'
+      }
+    }
   ]
 
-  const applyColors = () => {
+  const applyPreset = (presetId: string) => {
+    const preset = colorPresets.find(p => p.id === presetId)
+    if (preset) {
+      setSelectedPreset(presetId)
+      setCustomColors(preset.colors)
+      applyColorsToDocument(preset.colors)
+    }
+  }
+
+  const applyColorsToDocument = (colors: typeof customColors) => {
     const root = document.documentElement
-    root.style.setProperty('--primary', primaryColor)
-    root.style.setProperty('--secondary', secondaryColor)
-    root.style.setProperty('--accent', accentColor)
-    root.style.setProperty('--success', successColor)
-    root.style.setProperty('--warning', warningColor)
-    root.style.setProperty('--error', errorColor)
+    root.style.setProperty('--primary', colors.primary)
+    root.style.setProperty('--secondary', colors.secondary)
+    root.style.setProperty('--accent', colors.accent)
+    root.style.setProperty('--background', colors.background)
+    root.style.setProperty('--foreground', colors.foreground)
   }
 
-  const resetToDefaults = () => {
-    setPrimaryColor('#2563eb')
-    setSecondaryColor('#64748b')
-    setAccentColor('#0ea5e9')
-    setSuccessColor('#10b981')
-    setWarningColor('#f59e0b')
-    setErrorColor('#ef4444')
+  const handleColorChange = (colorKey: keyof typeof customColors, value: string) => {
+    const newColors = { ...customColors, [colorKey]: value }
+    setCustomColors(newColors)
+    applyColorsToDocument(newColors)
+    setSelectedPreset('custom')
   }
 
-  const applyPreset = (preset: typeof colorPresets[0]) => {
-    setPrimaryColor(preset.primary)
-    setSecondaryColor(preset.secondary)
-    setAccentColor(preset.accent)
+  const resetToDefault = () => {
+    applyPreset('default')
+  }
+
+  const exportTheme = () => {
+    const themeData = {
+      preset: selectedPreset,
+      colors: customColors,
+      timestamp: new Date().toISOString()
+    }
+    
+    const dataStr = JSON.stringify(themeData, null, 2)
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr)
+    const exportFileDefaultName = `theme-${selectedPreset}-${Date.now()}.json`
+    
+    const linkElement = document.createElement('a')
+    linkElement.setAttribute('href', dataUri)
+    linkElement.setAttribute('download', exportFileDefaultName)
+    linkElement.click()
+  }
+
+  const importTheme = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        try {
+          const themeData = JSON.parse(e.target?.result as string)
+          if (themeData.colors) {
+            setCustomColors(themeData.colors)
+            setSelectedPreset(themeData.preset || 'custom')
+            applyColorsToDocument(themeData.colors)
+          }
+        } catch (error) {
+          console.error('Invalid theme file:', error)
+        }
+      }
+      reader.readAsText(file)
+    }
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
             <Palette className="h-5 w-5" />
@@ -64,190 +168,152 @@ export default function ThemeCustomizer({ open, onOpenChange }: ThemeCustomizerP
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Color Presets */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Color Presets</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-3">
-                {colorPresets.map((preset) => (
-                  <Button
-                    key={preset.name}
-                    variant="outline"
-                    className="h-12 justify-start"
-                    onClick={() => applyPreset(preset)}
-                  >
-                    <div className="flex items-center space-x-3">
+        <Tabs defaultValue="presets" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="presets">Color Presets</TabsTrigger>
+            <TabsTrigger value="custom">Custom Colors</TabsTrigger>
+            <TabsTrigger value="preview">Live Preview</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="presets" className="space-y-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {colorPresets.map((preset) => (
+                <Card 
+                  key={preset.id}
+                  className={`cursor-pointer transition-all hover:shadow-md ${
+                    selectedPreset === preset.id ? 'ring-2 ring-blue-500' : ''
+                  }`}
+                  onClick={() => applyPreset(preset.id)}
+                >
+                  <CardContent className="p-4">
+                    <div className="space-y-2">
+                      <h4 className="font-medium">{preset.name}</h4>
                       <div className="flex space-x-1">
-                        <div 
-                          className="w-4 h-4 rounded-full border"
-                          style={{ backgroundColor: preset.primary }}
-                        />
-                        <div 
-                          className="w-4 h-4 rounded-full border"
-                          style={{ backgroundColor: preset.secondary }}
-                        />
-                        <div 
-                          className="w-4 h-4 rounded-full border"
-                          style={{ backgroundColor: preset.accent }}
-                        />
+                        {Object.values(preset.colors).map((color, index) => (
+                          <div
+                            key={index}
+                            className="w-6 h-6 rounded border"
+                            style={{ backgroundColor: color }}
+                          />
+                        ))}
                       </div>
-                      <span>{preset.name}</span>
                     </div>
-                  </Button>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
 
-          {/* Custom Colors */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Custom Colors</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="primary">Primary Color</Label>
+          <TabsContent value="custom" className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {Object.entries(customColors).map(([key, value]) => (
+                <div key={key} className="space-y-2">
+                  <Label htmlFor={key} className="capitalize">
+                    {key.replace(/([A-Z])/g, ' $1').trim()}
+                  </Label>
                   <div className="flex items-center space-x-2">
                     <input
                       type="color"
-                      id="primary"
-                      value={primaryColor}
-                      onChange={(e) => setPrimaryColor(e.target.value)}
-                      className="w-12 h-10 rounded border"
+                      id={key}
+                      value={value}
+                      onChange={(e) => handleColorChange(key as keyof typeof customColors, e.target.value)}
+                      className="w-12 h-10 rounded border cursor-pointer"
                     />
-                    <span className="text-sm font-mono">{primaryColor}</span>
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="secondary">Secondary Color</Label>
-                  <div className="flex items-center space-x-2">
                     <input
-                      type="color"
-                      id="secondary"
-                      value={secondaryColor}
-                      onChange={(e) => setSecondaryColor(e.target.value)}
-                      className="w-12 h-10 rounded border"
+                      type="text"
+                      value={value}
+                      onChange={(e) => handleColorChange(key as keyof typeof customColors, e.target.value)}
+                      className="flex-1 px-3 py-2 border rounded-md text-sm font-mono"
+                      placeholder="#000000"
                     />
-                    <span className="text-sm font-mono">{secondaryColor}</span>
                   </div>
                 </div>
-                <div>
-                  <Label htmlFor="accent">Accent Color</Label>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="color"
-                      id="accent"
-                      value={accentColor}
-                      onChange={(e) => setAccentColor(e.target.value)}
-                      className="w-12 h-10 rounded border"
-                    />
-                    <span className="text-sm font-mono">{accentColor}</span>
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="success">Success Color</Label>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="color"
-                      id="success"
-                      value={successColor}
-                      onChange={(e) => setSuccessColor(e.target.value)}
-                      className="w-12 h-10 rounded border"
-                    />
-                    <span className="text-sm font-mono">{successColor}</span>
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="warning">Warning Color</Label>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="color"
-                      id="warning"
-                      value={warningColor}
-                      onChange={(e) => setWarningColor(e.target.value)}
-                      className="w-12 h-10 rounded border"
-                    />
-                    <span className="text-sm font-mono">{warningColor}</span>
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="error">Error Color</Label>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="color"
-                      id="error"
-                      value={errorColor}
-                      onChange={(e) => setErrorColor(e.target.value)}
-                      className="w-12 h-10 rounded border"
-                    />
-                    <span className="text-sm font-mono">{errorColor}</span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              ))}
+            </div>
+          </TabsContent>
 
-          {/* Preview */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Preview</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex space-x-2">
-                  <Button style={{ backgroundColor: primaryColor, color: 'white' }}>
-                    Primary Button
-                  </Button>
-                  <Button variant="outline" style={{ borderColor: secondaryColor, color: secondaryColor }}>
-                    Secondary Button
-                  </Button>
-                  <Button style={{ backgroundColor: accentColor, color: 'white' }}>
-                    Accent Button
-                  </Button>
-                </div>
-                <div className="flex space-x-2">
-                  <div 
-                    className="px-3 py-1 rounded text-white text-sm"
-                    style={{ backgroundColor: successColor }}
-                  >
-                    Success
+          <TabsContent value="preview" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Live Preview</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-4 border rounded-lg" style={{ 
+                  backgroundColor: customColors.background,
+                  color: customColors.foreground 
+                }}>
+                  <h3 className="text-lg font-semibold mb-2">Sample Content</h3>
+                  <p className="mb-4">This is how your theme will look in the application.</p>
+                  
+                  <div className="flex space-x-2 mb-4">
+                    <button 
+                      className="px-4 py-2 rounded text-white"
+                      style={{ backgroundColor: customColors.primary }}
+                    >
+                      Primary Button
+                    </button>
+                    <button 
+                      className="px-4 py-2 rounded text-white"
+                      style={{ backgroundColor: customColors.secondary }}
+                    >
+                      Secondary Button
+                    </button>
+                    <button 
+                      className="px-4 py-2 rounded text-white"
+                      style={{ backgroundColor: customColors.accent }}
+                    >
+                      Accent Button
+                    </button>
                   </div>
-                  <div 
-                    className="px-3 py-1 rounded text-white text-sm"
-                    style={{ backgroundColor: warningColor }}
-                  >
-                    Warning
-                  </div>
-                  <div 
-                    className="px-3 py-1 rounded text-white text-sm"
-                    style={{ backgroundColor: errorColor }}
-                  >
-                    Error
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
 
-          {/* Actions */}
-          <div className="flex justify-between">
-            <Button variant="outline" onClick={resetToDefaults}>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="p-2 rounded text-center text-white" style={{ backgroundColor: customColors.primary }}>
+                      Primary
+                    </div>
+                    <div className="p-2 rounded text-center text-white" style={{ backgroundColor: customColors.secondary }}>
+                      Secondary
+                    </div>
+                    <div className="p-2 rounded text-center text-white" style={{ backgroundColor: customColors.accent }}>
+                      Accent
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        <div className="flex justify-between pt-4 border-t">
+          <div className="flex space-x-2">
+            <Button variant="outline" onClick={resetToDefault}>
               <RotateCcw className="h-4 w-4 mr-2" />
-              Reset to Defaults
+              Reset
             </Button>
-            <div className="space-x-2">
-              <Button variant="outline" onClick={() => onOpenChange(false)}>
-                Cancel
-              </Button>
-              <Button onClick={applyColors}>
-                Apply Changes
-              </Button>
+            <Button variant="outline" onClick={exportTheme}>
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
+            <div className="relative">
+              <input
+                type="file"
+                id="theme-import"
+                accept=".json"
+                onChange={importTheme}
+                className="hidden"
+              />
+              <label htmlFor="theme-import">
+                <Button variant="outline" asChild>
+                  <span>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Import
+                  </span>
+                </Button>
+              </label>
             </div>
           </div>
+          <Button onClick={() => onOpenChange(false)}>
+            Done
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

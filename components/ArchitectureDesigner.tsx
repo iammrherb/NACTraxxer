@@ -2,129 +2,67 @@
 
 import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Label } from '@/components/ui/label'
+import { Slider } from '@/components/ui/slider'
 import { Badge } from '@/components/ui/badge'
-import InteractiveDiagram from './InteractiveDiagram'
-import ArchitectureLegend from './ArchitectureLegend'
-import PolicyEditor from './PolicyEditor'
-import OnboardingScenarios from './OnboardingScenarios'
-import { Network, Shield, Users, Settings, Download, Save } from 'lucide-react'
+import { Network, Cloud, Settings, Eye, Download, Save } from 'lucide-react'
+import InteractiveDiagram from '@/components/InteractiveDiagram'
+import ArchitectureLegend from '@/components/ArchitectureLegend'
+import PolicyEditor from '@/components/PolicyEditor'
+import OnboardingScenarios from '@/components/OnboardingScenarios'
 
 export default function ArchitectureDesigner() {
-  const [selectedView, setSelectedView] = useState('overview')
-  const [selectedCloudProvider, setSelectedCloudProvider] = useState('azure')
-  const [selectedNetworkVendor, setSelectedNetworkVendor] = useState('cisco')
-  const [selectedConnectivity, setSelectedConnectivity] = useState('hybrid')
+  const [activeView, setActiveView] = useState('complete')
+  const [cloudProvider, setCloudProvider] = useState('azure')
+  const [networkVendor, setNetworkVendor] = useState('cisco')
+  const [connectivityType, setConnectivityType] = useState('expressroute')
+  const [animationSpeed, setAnimationSpeed] = useState([1])
 
   const architectureViews = [
-    { id: 'overview', name: 'Network Overview', icon: Network },
-    { id: 'security', name: 'Security Zones', icon: Shield },
-    { id: 'users', name: 'User Access', icon: Users },
-    { id: 'policies', name: 'Policy Flow', icon: Settings }
+    { id: 'complete', name: 'Complete Architecture', description: 'Full end-to-end architecture view' },
+    { id: 'auth-flow', name: 'Authentication Flow', description: 'Step-by-step authentication process' },
+    { id: 'pki', name: 'PKI Infrastructure', description: 'Certificate management and PKI components' },
+    { id: 'policies', name: 'Policy Framework', description: 'Network access policy structure' },
+    { id: 'connectivity', name: 'Connectivity Options', description: 'Different connectivity approaches' },
+    { id: 'intune', name: 'Intune Integration', description: 'Microsoft Intune certificate deployment' },
+    { id: 'onboarding', name: 'Device Onboarding', description: 'Device onboarding workflows' }
   ]
 
   const cloudProviders = [
-    { id: 'azure', name: 'Microsoft Azure', logo: '/placeholder.svg?height=32&width=32&text=Azure' },
-    { id: 'aws', name: 'Amazon AWS', logo: '/placeholder.svg?height=32&width=32&text=AWS' },
-    { id: 'gcp', name: 'Google Cloud', logo: '/placeholder.svg?height=32&width=32&text=GCP' },
-    { id: 'hybrid', name: 'Multi-Cloud', logo: '/placeholder.svg?height=32&width=32&text=Multi' }
+    { id: 'azure', name: 'Microsoft Azure', color: '#0078d4' },
+    { id: 'aws', name: 'Amazon AWS', color: '#ff9900' },
+    { id: 'gcp', name: 'Google Cloud', color: '#4285f4' },
+    { id: 'onprem', name: 'On-Premises', color: '#6c757d' }
   ]
 
   const networkVendors = [
-    { id: 'cisco', name: 'Cisco', logo: '/placeholder.svg?height=32&width=32&text=Cisco' },
-    { id: 'juniper', name: 'Juniper', logo: '/placeholder.svg?height=32&width=32&text=Juniper' },
-    { id: 'aruba', name: 'Aruba', logo: '/placeholder.svg?height=32&width=32&text=Aruba' },
-    { id: 'mixed', name: 'Mixed Vendor', logo: '/placeholder.svg?height=32&width=32&text=Mixed' }
+    { id: 'cisco', name: 'Cisco' },
+    { id: 'aruba', name: 'HPE Aruba' },
+    { id: 'juniper', name: 'Juniper' },
+    { id: 'extreme', name: 'Extreme Networks' }
   ]
 
   const connectivityTypes = [
-    { id: 'onprem', name: 'On-Premises Only', description: 'Traditional on-site infrastructure' },
-    { id: 'cloud', name: 'Cloud-First', description: 'Cloud-native deployment' },
-    { id: 'hybrid', name: 'Hybrid Cloud', description: 'Mixed on-premises and cloud' },
-    { id: 'edge', name: 'Edge Computing', description: 'Distributed edge locations' }
-  ]
-
-  return (
-    { id: 'edge', name: 'Edge Computing', description: 'Distributed edge locations' }
+    { id: 'expressroute', name: 'Azure ExpressRoute' },
+    { id: 'directconnect', name: 'AWS Direct Connect' },
+    { id: 'sdwan', name: 'SD-WAN' },
+    { id: 'mpls', name: 'MPLS' },
+    { id: 'vpn', name: 'Site-to-Site VPN' }
   ]
 
   return (
     <div className="space-y-6">
-      {/* Configuration Panel */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Network className="h-5 w-5" />
-            <span>Architecture Configuration</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Cloud Provider Selection */}
-            <div>
-              <h4 className="font-semibold mb-3">Cloud Provider</h4>
-              <div className="space-y-2">
-                {cloudProviders.map((provider) => (
-                  <Button
-                    key={provider.id}
-                    variant={selectedCloudProvider === provider.id ? "default" : "outline"}
-                    className="w-full justify-start"
-                    onClick={() => setSelectedCloudProvider(provider.id)}
-                  >
-                    <img src={provider.logo || "/placeholder.svg"} alt={provider.name} className="w-6 h-6 mr-2" />
-                    {provider.name}
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            {/* Network Vendor Selection */}
-            <div>
-              <h4 className="font-semibold mb-3">Network Vendor</h4>
-              <div className="space-y-2">
-                {networkVendors.map((vendor) => (
-                  <Button
-                    key={vendor.id}
-                    variant={selectedNetworkVendor === vendor.id ? "default" : "outline"}
-                    className="w-full justify-start"
-                    onClick={() => setSelectedNetworkVendor(vendor.id)}
-                  >
-                    <img src={vendor.logo || "/placeholder.svg"} alt={vendor.name} className="w-6 h-6 mr-2" />
-                    {vendor.name}
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            {/* Connectivity Type Selection */}
-            <div>
-              <h4 className="font-semibold mb-3">Connectivity Type</h4>
-              <div className="space-y-2">
-                {connectivityTypes.map((type) => (
-                  <Button
-                    key={type.id}
-                    variant={selectedConnectivity === type.id ? "default" : "outline"}
-                    className="w-full justify-start h-auto p-3"
-                    onClick={() => setSelectedConnectivity(type.id)}
-                  >
-                    <div className="text-left">
-                      <div className="font-medium">{type.name}</div>
-                      <div className="text-xs text-gray-500">{type.description}</div>
-                    </div>
-                  </Button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Architecture Views */}
+      {/* Header */}
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
-            <CardTitle>Zero Trust NAC Architecture</CardTitle>
+            <CardTitle className="flex items-center space-x-2">
+              <Network className="h-5 w-5" />
+              <span>Zero Trust NAC Architecture Designer</span>
+            </CardTitle>
             <div className="flex space-x-2">
               <Button variant="outline" size="sm">
                 <Save className="h-4 w-4 mr-2" />
@@ -137,75 +75,165 @@ export default function ArchitectureDesigner() {
             </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <Tabs value={selectedView} onValueChange={setSelectedView} className="space-y-4">
-            <TabsList className="grid w-full grid-cols-4">
-              {architectureViews.map((view) => (
-                <TabsTrigger key={view.id} value={view.id} className="flex items-center space-x-2">
-                  <view.icon className="h-4 w-4" />
-                  <span className="hidden sm:inline">{view.name}</span>
-                </TabsTrigger>
-              ))}
-            </TabsList>
-
-            <TabsContent value="overview" className="space-y-4">
-              <div className="flex items-center space-x-2 mb-4">
-                <Badge variant="outline">Cloud: {cloudProviders.find(p => p.id === selectedCloudProvider)?.name}</Badge>
-                <Badge variant="outline">Network: {networkVendors.find(v => v.id === selectedNetworkVendor)?.name}</Badge>
-                <Badge variant="outline">Type: {connectivityTypes.find(t => t.id === selectedConnectivity)?.name}</Badge>
-              </div>
-              <InteractiveDiagram 
-                view="overview"
-                cloudProvider={selectedCloudProvider}
-                networkVendor={selectedNetworkVendor}
-                connectivityType={selectedConnectivity}
-              />
-            </TabsContent>
-
-            <TabsContent value="security" className="space-y-4">
-              <InteractiveDiagram 
-                view="security"
-                cloudProvider={selectedCloudProvider}
-                networkVendor={selectedNetworkVendor}
-                connectivityType={selectedConnectivity}
-              />
-            </TabsContent>
-
-            <TabsContent value="users" className="space-y-4">
-              <InteractiveDiagram 
-                view="users"
-                cloudProvider={selectedCloudProvider}
-                networkVendor={selectedNetworkVendor}
-                connectivityType={selectedConnectivity}
-              />
-            </TabsContent>
-
-            <TabsContent value="policies" className="space-y-4">
-              <PolicyEditor />
-            </TabsContent>
-          </Tabs>
-        </CardContent>
       </Card>
 
-      {/* Additional Components */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Architecture Legend</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ArchitectureLegend />
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Configuration Panel */}
+        <div className="lg:col-span-1 space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2 text-lg">
+                <Settings className="h-4 w-4" />
+                <span>Configuration</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="view-select">Architecture View</Label>
+                <Select value={activeView} onValueChange={setActiveView}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {architectureViews.map((view) => (
+                      <SelectItem key={view.id} value={view.id}>
+                        {view.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-gray-500 mt-1">
+                  {architectureViews.find(v => v.id === activeView)?.description}
+                </p>
+              </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Onboarding Scenarios</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <OnboardingScenarios />
-          </CardContent>
-        </Card>
+              <div>
+                <Label htmlFor="cloud-provider">Cloud Provider</Label>
+                <Select value={cloudProvider} onValueChange={setCloudProvider}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {cloudProviders.map((provider) => (
+                      <SelectItem key={provider.id} value={provider.id}>
+                        <div className="flex items-center space-x-2">
+                          <div 
+                            className="w-3 h-3 rounded-full" 
+                            style={{ backgroundColor: provider.color }}
+                          />
+                          <span>{provider.name}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="network-vendor">Network Vendor</Label>
+                <Select value={networkVendor} onValueChange={setNetworkVendor}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {networkVendors.map((vendor) => (
+                      <SelectItem key={vendor.id} value={vendor.id}>
+                        {vendor.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="connectivity">Connectivity Type</Label>
+                <Select value={connectivityType} onValueChange={setConnectivityType}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {connectivityTypes.map((type) => (
+                      <SelectItem key={type.id} value={type.id}>
+                        {type.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="animation-speed">Animation Speed</Label>
+                <div className="px-2">
+                  <Slider
+                    value={animationSpeed}
+                    onValueChange={setAnimationSpeed}
+                    max={3}
+                    min={0}
+                    step={0.5}
+                    className="w-full"
+                  />
+                </div>
+                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                  <span>Off</span>
+                  <span>Fast</span>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t">
+                <h4 className="font-medium mb-2">Current Selection</h4>
+                <div className="space-y-1">
+                  <Badge variant="outline" className="w-full justify-start">
+                    <Cloud className="h-3 w-3 mr-1" />
+                    {cloudProviders.find(p => p.id === cloudProvider)?.name}
+                  </Badge>
+                  <Badge variant="outline" className="w-full justify-start">
+                    <Network className="h-3 w-3 mr-1" />
+                    {networkVendors.find(v => v.id === networkVendor)?.name}
+                  </Badge>
+                  <Badge variant="outline" className="w-full justify-start">
+                    <Eye className="h-3 w-3 mr-1" />
+                    {architectureViews.find(v => v.id === activeView)?.name}
+                  </Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <ArchitectureLegend view={activeView} />
+        </div>
+
+        {/* Main Content */}
+        <div className="lg:col-span-3">
+          <Tabs defaultValue="diagram" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="diagram">Interactive Diagram</TabsTrigger>
+              <TabsTrigger value="policies">Policy Editor</TabsTrigger>
+              <TabsTrigger value="onboarding">Onboarding Flows</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="diagram" className="mt-4">
+              <Card>
+                <CardContent className="p-0">
+                  <InteractiveDiagram
+                    view={activeView}
+                    cloudProvider={cloudProvider}
+                    networkVendor={networkVendor}
+                    connectivityType={connectivityType}
+                    animationSpeed={animationSpeed[0]}
+                  />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="policies" className="mt-4">
+              <PolicyEditor />
+            </TabsContent>
+
+            <TabsContent value="onboarding" className="mt-4">
+              <OnboardingScenarios />
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
     </div>
   )
