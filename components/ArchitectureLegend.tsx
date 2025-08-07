@@ -20,17 +20,35 @@ interface ArchitectureLegendProps {
   config?: ArchitectureConfig
 }
 
-export default function ArchitectureLegend({ config = {} }: ArchitectureLegendProps) {
-  // Provide default values to prevent undefined errors
-  const safeConfig = {
-    cloudProvider: config?.cloudProvider || 'azure',
-    networkVendor: config?.networkVendor || 'cisco',
-    authMethod: config?.authMethod || 'radius',
-    connectivity: config?.connectivity || 'hybrid',
-    mfaEnabled: config?.mfaEnabled || false,
-    guestAccess: config?.guestAccess || false,
-    byodSupport: config?.byodSupport || false,
-    complianceMode: config?.complianceMode || 'standard'
+export default function ArchitectureLegend({ config }: ArchitectureLegendProps) {
+  // Safely extract config values with defaults
+  const cloudProvider = config?.cloudProvider || 'azure'
+  const networkVendor = config?.networkVendor || 'cisco'
+  const authMethod = config?.authMethod || 'radius'
+  const connectivity = config?.connectivity || 'hybrid'
+  const mfaEnabled = config?.mfaEnabled || false
+  const guestAccess = config?.guestAccess || false
+  const byodSupport = config?.byodSupport || false
+
+  // Safe string formatting functions
+  const formatCloudProvider = (provider: string) => {
+    if (!provider || typeof provider !== 'string') return 'Azure'
+    return provider.charAt(0).toUpperCase() + provider.slice(1)
+  }
+
+  const formatNetworkVendor = (vendor: string) => {
+    if (!vendor || typeof vendor !== 'string') return 'Cisco'
+    return vendor.charAt(0).toUpperCase() + vendor.slice(1)
+  }
+
+  const formatAuthMethod = (method: string) => {
+    if (!method || typeof method !== 'string') return 'RADIUS'
+    return method.toUpperCase()
+  }
+
+  const formatConnectivity = (conn: string) => {
+    if (!conn || typeof conn !== 'string') return 'Hybrid'
+    return conn.charAt(0).toUpperCase() + conn.slice(1)
   }
 
   const componentTypes = [
@@ -190,18 +208,6 @@ export default function ArchitectureLegend({ config = {} }: ArchitectureLegendPr
     }
   ]
 
-  // Get current configuration summary
-  const getConfigSummary = () => {
-    return {
-      cloudProvider: safeConfig.cloudProvider.charAt(0).toUpperCase() + safeConfig.cloudProvider.slice(1),
-      networkVendor: safeConfig.networkVendor.charAt(0).toUpperCase() + safeConfig.networkVendor.slice(1),
-      authMethod: safeConfig.authMethod.toUpperCase(),
-      connectivity: safeConfig.connectivity.charAt(0).toUpperCase() + safeConfig.connectivity.slice(1)
-    }
-  }
-
-  const configSummary = getConfigSummary()
-
   return (
     <div className="space-y-6">
       {/* Current Configuration */}
@@ -217,25 +223,25 @@ export default function ArchitectureLegend({ config = {} }: ArchitectureLegendPr
             <div className="text-center">
               <div className="text-sm text-gray-500">Cloud Provider</div>
               <Badge variant="outline" className="mt-1">
-                {configSummary.cloudProvider}
+                {formatCloudProvider(cloudProvider)}
               </Badge>
             </div>
             <div className="text-center">
               <div className="text-sm text-gray-500">Network Vendor</div>
               <Badge variant="outline" className="mt-1">
-                {configSummary.networkVendor}
+                {formatNetworkVendor(networkVendor)}
               </Badge>
             </div>
             <div className="text-center">
               <div className="text-sm text-gray-500">Authentication</div>
               <Badge variant="outline" className="mt-1">
-                {configSummary.authMethod}
+                {formatAuthMethod(authMethod)}
               </Badge>
             </div>
             <div className="text-center">
               <div className="text-sm text-gray-500">Connectivity</div>
               <Badge variant="outline" className="mt-1">
-                {configSummary.connectivity}
+                {formatConnectivity(connectivity)}
               </Badge>
             </div>
           </div>
@@ -243,19 +249,19 @@ export default function ArchitectureLegend({ config = {} }: ArchitectureLegendPr
           <Separator className="my-4" />
           
           <div className="flex flex-wrap gap-2">
-            {safeConfig.mfaEnabled && (
+            {mfaEnabled && (
               <Badge variant="secondary">
                 <Shield className="h-3 w-3 mr-1" />
                 MFA Enabled
               </Badge>
             )}
-            {safeConfig.guestAccess && (
+            {guestAccess && (
               <Badge variant="secondary">
                 <Users className="h-3 w-3 mr-1" />
                 Guest Access
               </Badge>
             )}
-            {safeConfig.byodSupport && (
+            {byodSupport && (
               <Badge variant="secondary">
                 <Smartphone className="h-3 w-3 mr-1" />
                 BYOD Support
