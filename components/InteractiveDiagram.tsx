@@ -1,10 +1,10 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Play, Pause, RotateCcw, ZoomIn, ZoomOut } from "lucide-react"
+import { Play, Pause, RotateCcw, ZoomIn, ZoomOut, ExternalLink } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 
 interface InteractiveDiagramProps {
@@ -30,13 +30,26 @@ interface DiagramNode {
   connections: string[]
 }
 
+type EdgeType = "radius" | "https" | "ldap" | "syslog" | "tacacs" | "data"
+
+type ReferenceUrl = { label: string; href: string }
+
+interface EdgeMeta {
+  ports?: string
+  ciphers?: string
+  certValidity?: string
+  referenceUrls?: ReferenceUrl[]
+  latencyMs?: number // calculated approx at render time if not provided
+}
+
 interface DiagramConnection {
   id: string
   from: string
   to: string
   label: string
-  type: "radius" | "https" | "ldap" | "syslog" | "tacacs" | "data"
+  type: EdgeType
   animated: boolean
+  meta?: EdgeMeta
 }
 
 export default function InteractiveDiagram({
@@ -196,8 +209,22 @@ export default function InteractiveDiagram({
     ]
 
     const connections: DiagramConnection[] = [
-      { id: "dev-switch", from: "devices", to: "switch", label: "802.1X", type: "radius", animated: true },
-      { id: "dev-wireless", from: "devices", to: "wireless", label: "802.1X", type: "radius", animated: true },
+      {
+        id: "dev-switch",
+        from: "devices",
+        to: "switch",
+        label: "802.1X (EAP-TLS)",
+        type: "radius",
+        animated: true,
+      },
+      {
+        id: "dev-wireless",
+        from: "devices",
+        to: "wireless",
+        label: "802.1X (EAP-TLS)",
+        type: "radius",
+        animated: true,
+      },
       { id: "switch-portnox", from: "switch", to: "portnox-cloud", label: "RADIUS", type: "radius", animated: true },
       {
         id: "wireless-portnox",
@@ -414,13 +441,12 @@ export default function InteractiveDiagram({
     const nodes: DiagramNode[] = [
       {
         id: "policy-engine",
-        label: "Policy Engine",
+        label: "Portnox Policy Engine",
         type: "policy",
         x: 400,
         y: 50,
         width: 400,
         height: 100,
-        label: "Portnox Policy Engine",
         description: "Centralized policy management and enforcement",
         icon: "⚙️",
         color: "#e3f2fd",
@@ -434,7 +460,6 @@ export default function InteractiveDiagram({
         y: 200,
         width: 200,
         height: 120,
-        label: "User Policies",
         description: "User-based access control policies",
         icon: "👤",
         color: "#d4edda",
@@ -448,7 +473,6 @@ export default function InteractiveDiagram({
         y: 200,
         width: 200,
         height: 120,
-        label: "Device Policies",
         description: "Device compliance and security policies",
         icon: "💻",
         color: "#cce5ff",
@@ -462,7 +486,6 @@ export default function InteractiveDiagram({
         y: 200,
         width: 200,
         height: 120,
-        label: "Network Policies",
         description: "Network segmentation and access policies",
         icon: "🌐",
         color: "#fff3cd",
@@ -1130,59 +1153,9 @@ export default function InteractiveDiagram({
     return { nodes, connections }
   }
 
-  const { nodes, connections } = getDiagramData()
+  // Helpers
 
-  // Animation control
-  useEffect(() => {
-    if (!svgRef.current) return
-
-    const svg = svgRef.current
-    const animatedPaths = svg.querySelectorAll(".animated-path")
-
-    if (isAnimating) {
-      animatedPaths.forEach((path) => {
-        const element = path as SVGPathElement
-        element.style.animationDuration = `${2 / animationSpeed}s`
-        element.style.animationPlayState = "running"
-      })
-    } else {
-      animatedPaths.forEach((path) => {
-        const element = path as SVGPathElement
-        element.style.animationPlayState = "paused"
-      })
-    }
-  }, [isAnimating, animationSpeed])
-
-  const toggleAnimation = () => {
-    setIsAnimating(!isAnimating)
-  }
-
-  const resetView = () => {
-    setZoom(1)
-    setSelectedNode(null)
-  }
-
-  const handleZoomIn = () => {
-    setZoom(Math.min(zoom * 1.2, 3))
-  }
-
-  const handleZoomOut = () => {
-    setZoom(Math.max(zoom / 1.2, 0.5))
-  }
-
-  const getConnectionPath = (from: DiagramNode, to: DiagramNode) => {
-    const fromX = from.x + from.width / 2
-    const fromY = from.y + from.height / 2
-    const toX = to.x + to.width / 2
-    const toY = to.y + to.height / 2
-
-    const midX = (fromX + toX) / 2
-    const midY = (fromY + toY) / 2
-
-    return `M ${fromX} ${fromY} Q ${midX} ${midY - 20} ${toX} ${toY}`
-  }
-
-  const getConnectionColor = (type: string) => {
+  const getConnectionColor = (type: EdgeType) => {
     switch (type) {
       case "radius":
         return "#00c8d7"
@@ -1195,7 +1168,6 @@ export default function InteractiveDiagram({
       case "tacacs":
         return "#DC2626"
       case "data":
-        return "#6B7280"
       default:
         return "#6B7280"
     }
@@ -1213,6 +1185,184 @@ export default function InteractiveDiagram({
     }
     return logos[vendor] || "⚪"
   }
+
+  const getConnectionPath = (from: DiagramNode, to: DiagramNode) => {
+    const fromX = from.x + from.width / 2
+    const fromY = from.y + from.height / 2
+    const toX = to.x + to.width / 2
+    const toY = to.y + to.height / 2
+    const midX = (fromX + toX) / 2
+    const midY = (fromY + toY) / 2
+    return `M ${fromX} ${fromY} Q ${midX} ${midY - 20} ${toX} ${toY}`
+  }
+
+  const distanceBetweenCenters = (a: DiagramNode, b: DiagramNode) => {
+    const ax = a.x + a.width / 2
+    const ay = a.y + a.height / 2
+    const bx = b.x + b.width / 2
+    const by = b.y + b.height / 2
+    const dx = ax - bx
+    const dy = ay - by
+    return Math.sqrt(dx * dx + dy * dy)
+  }
+
+  const estimateLatencyMs = (from: DiagramNode, to: DiagramNode, type: EdgeType) => {
+    const d = distanceBetweenCenters(from, to)
+    // base latency roughly proportional to distance; tweak by protocol
+    let base = Math.max(2, Math.round(d / 15))
+    if (type === "https") base += 8 // extra TLS handshake/round trips
+    if (type === "ldap") base += 5
+    if (type === "tacacs") base += 4
+    if (type === "syslog") base += 1
+    return base
+  }
+
+  const defaultReferences: ReferenceUrl[] = [
+    { label: "Portnox Zero Trust", href: "https://docs.portnox.com/topics/zero_trust" },
+    { label: "Microsoft Zero Trust", href: "https://docs.microsoft.com/en-us/security/zero-trust/" },
+  ]
+
+  const buildEdgeMeta = (conn: DiagramConnection, from: DiagramNode, to: DiagramNode): EdgeMeta => {
+    // If meta provided, enrich only missing fields
+    const meta: EdgeMeta = { ...(conn.meta || {}) }
+
+    // Ports
+    if (!meta.ports) {
+      switch (conn.type) {
+        case "radius": {
+          // If this looks like CoA, override ports
+          const isCoA = /coa|session|reauth/i.test(conn.label)
+          meta.ports = isCoA ? "UDP 3799 (CoA)" : "UDP 1812 (Auth), 1813 (Acct)"
+          break
+        }
+        case "https":
+          meta.ports = "TCP 443"
+          break
+        case "ldap":
+          meta.ports = "TCP 389 (STARTTLS) / 636 (LDAPS)"
+          break
+        case "tacacs":
+          meta.ports = "TCP 49"
+          break
+        case "syslog":
+          meta.ports = "UDP 514 / TCP 6514 (TLS)"
+          break
+        case "data":
+        default:
+          meta.ports = "—"
+      }
+    }
+
+    // Ciphers
+    if (!meta.ciphers) {
+      switch (conn.type) {
+        case "https":
+          meta.ciphers = "TLS 1.2/1.3 (AES-GCM)"
+          break
+        case "ldap":
+          meta.ciphers = "STARTTLS/LDAPS (TLS 1.2/1.3)"
+          break
+        case "radius": {
+          const isEAPTLS = /eap-tls/i.test(conn.label)
+          meta.ciphers = isEAPTLS ? "EAP‑TLS (TLS 1.2/1.3)" : "EAP methods per policy"
+          break
+        }
+        case "tacacs":
+          meta.ciphers = "TACACS+ per-session encryption"
+          break
+        case "syslog":
+          meta.ciphers = "TCP 6514 (TLS) or UDP 514 (no TLS)"
+          break
+        case "data":
+        default:
+          meta.ciphers = "—"
+      }
+    }
+
+    // Certificate validity
+    if (!meta.certValidity) {
+      switch (conn.type) {
+        case "https":
+          meta.certValidity = "Server cert e.g., 398 days"
+          break
+        case "radius": {
+          const isEAPTLS = /eap-tls/i.test(conn.label)
+          meta.certValidity = isEAPTLS ? "Client: 365d, Server: 398d (example)" : "Server: 398d (example)"
+          break
+        }
+        case "ldap":
+          meta.certValidity = "If LDAPS/STARTTLS: Server cert per CA policy"
+          break
+        default:
+          meta.certValidity = "N/A"
+      }
+    }
+
+    // Reference URLs
+    if (!meta.referenceUrls) {
+      const refs: ReferenceUrl[] = [...defaultReferences]
+      // Special case: CoA
+      if (conn.type === "radius" && /coa|session|reauth/i.test(conn.label)) {
+        refs.unshift({ label: "Portnox RADIUS CoA", href: "https://docs.portnox.com/topics/radius_coa" })
+      }
+      meta.referenceUrls = refs
+    }
+
+    // Latency
+    if (meta.latencyMs == null) {
+      meta.latencyMs = estimateLatencyMs(from, to, conn.type)
+    }
+
+    return meta
+  }
+
+  const { nodes, connections } = getDiagramData()
+
+  // Enriched connections with metadata and midpoint for labels
+  const enrichedConnections = useMemo(() => {
+    return connections
+      .map((conn) => {
+        const fromNode = nodes.find((n) => n.id === conn.from)
+        const toNode = nodes.find((n) => n.id === conn.to)
+        if (!fromNode || !toNode) return null
+        const meta = buildEdgeMeta(conn, fromNode, toNode)
+        return { ...conn, meta, fromNode, toNode }
+      })
+      .filter(Boolean) as Array<
+      DiagramConnection & {
+        meta: EdgeMeta
+        fromNode: DiagramNode
+        toNode: DiagramNode
+      }
+    >
+  }, [connections, nodes])
+
+  // Animation control
+  useEffect(() => {
+    if (!svgRef.current) return
+    const svg = svgRef.current
+    const animatedPaths = svg.querySelectorAll(".animated-path")
+    if (isAnimating) {
+      animatedPaths.forEach((path) => {
+        const element = path as SVGPathElement
+        element.style.animationDuration = `${2 / Math.max(animationSpeed, 0.1)}s`
+        element.style.animationPlayState = "running"
+      })
+    } else {
+      animatedPaths.forEach((path) => {
+        const element = path as SVGPathElement
+        element.style.animationPlayState = "paused"
+      })
+    }
+  }, [isAnimating, animationSpeed])
+
+  const toggleAnimation = () => setIsAnimating((v) => !v)
+  const resetView = () => {
+    setZoom(1)
+    setSelectedNode(null)
+  }
+  const handleZoomIn = () => setZoom((z) => Math.min(z * 1.2, 3))
+  const handleZoomOut = () => setZoom((z) => Math.max(z / 1.2, 0.5))
 
   return (
     <div className="architecture-diagram relative">
@@ -1274,38 +1424,110 @@ export default function InteractiveDiagram({
                   }
                 `}
               </style>
+              {/* Arrow marker for connections */}
+              <marker
+                id="arrow"
+                viewBox="0 0 10 10"
+                refX="9"
+                refY="5"
+                markerWidth="6"
+                markerHeight="6"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#6B7280" />
+              </marker>
             </defs>
 
-            {/* Connections */}
-            {connections.map((conn, index) => {
-              const fromNode = nodes.find((n) => n.id === conn.from)
-              const toNode = nodes.find((n) => n.id === conn.to)
-
-              if (!fromNode || !toNode) return null
+            {/* Connections with interactive help */}
+            {enrichedConnections.map((conn) => {
+              const { fromNode, toNode, meta } = conn
+              const d = getConnectionPath(fromNode, toNode)
+              const stroke = getConnectionColor(conn.type)
+              const midX = (fromNode.x + fromNode.width / 2 + toNode.x + toNode.width / 2) / 2
+              const midY = (fromNode.y + fromNode.height / 2 + toNode.y + toNode.height / 2) / 2 - 10
 
               return (
-                <g key={`connection-${index}`}>
-                  <path
-                    d={getConnectionPath(fromNode, toNode)}
-                    stroke={getConnectionColor(conn.type)}
-                    strokeWidth="2"
-                    fill="none"
-                    className={conn.animated ? "animated-path" : ""}
-                    style={{
-                      animationDuration: `${2 / animationSpeed}s`,
-                    }}
-                  />
-                  <text
-                    x={(fromNode.x + fromNode.width / 2 + toNode.x + toNode.width / 2) / 2}
-                    y={(fromNode.y + fromNode.height / 2 + toNode.y + toNode.height / 2) / 2 - 10}
-                    textAnchor="middle"
-                    fontSize="10"
-                    fill="#374151"
-                    className="font-medium"
-                  >
-                    {conn.label}
-                  </text>
-                </g>
+                <TooltipProvider key={`connection-${conn.id}`}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <g className="cursor-pointer" aria-label={`${conn.label} — ${meta.ports}, ~${meta.latencyMs}ms`}>
+                        {/* Larger invisible hit area for easy hover */}
+                        <path
+                          d={d}
+                          stroke="transparent"
+                          strokeWidth="12"
+                          fill="none"
+                          style={{ pointerEvents: "stroke" }}
+                        />
+                        {/* Visible path */}
+                        <path
+                          d={d}
+                          stroke={stroke}
+                          strokeWidth="2"
+                          fill="none"
+                          className={conn.animated ? "animated-path" : ""}
+                          style={{
+                            animationDuration: `${2 / Math.max(animationSpeed, 0.1)}s`,
+                          }}
+                          markerEnd="url(#arrow)"
+                        />
+                        {/* Label */}
+                        <text
+                          x={midX}
+                          y={midY}
+                          textAnchor="middle"
+                          fontSize="10"
+                          fill="#374151"
+                          className="font-medium select-none"
+                        >
+                          {conn.label}
+                        </text>
+                      </g>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-sm">
+                      <div className="text-xs space-y-1">
+                        <div className="font-semibold">{conn.label}</div>
+                        <div className="grid grid-cols-3 gap-x-2 gap-y-1 mt-1">
+                          <div className="text-[10px] uppercase text-muted-foreground">Protocol</div>
+                          <div className="col-span-2">{conn.type.toUpperCase()}</div>
+
+                          <div className="text-[10px] uppercase text-muted-foreground">Ports</div>
+                          <div className="col-span-2">{meta.ports}</div>
+
+                          <div className="text-[10px] uppercase text-muted-foreground">Ciphers</div>
+                          <div className="col-span-2">{meta.ciphers}</div>
+
+                          <div className="text-[10px] uppercase text-muted-foreground">Cert Validity</div>
+                          <div className="col-span-2">{meta.certValidity}</div>
+
+                          <div className="text-[10px] uppercase text-muted-foreground">Latency</div>
+                          <div className="col-span-2">{meta.latencyMs} ms (approx)</div>
+                        </div>
+
+                        {meta.referenceUrls && meta.referenceUrls.length > 0 && (
+                          <div className="pt-2 border-t mt-2">
+                            <div className="text-[10px] uppercase text-muted-foreground mb-1">References</div>
+                            <ul className="space-y-1">
+                              {meta.referenceUrls.map((r) => (
+                                <li key={r.href}>
+                                  <a
+                                    href={r.href}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:underline"
+                                  >
+                                    {r.label}
+                                    <ExternalLink className="w-3 h-3" />
+                                  </a>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )
             })}
 
@@ -1420,7 +1642,7 @@ export default function InteractiveDiagram({
                     </div>
                   )}
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => setSelectedNode(null)}>
+                <Button variant="ghost" size="sm" onClick={() => setSelectedNode(null)} aria-label="Close details">
                   ×
                 </Button>
               </div>
