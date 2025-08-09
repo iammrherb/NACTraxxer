@@ -38,6 +38,11 @@ type ViewId =
   | "device-onboarding"
   | "fortigate-tacacs"
   | "paloalto-tacacs"
+  | "cisco-tacacs"
+  | "aruba-tacacs"
+  | "juniper-tacacs"
+  | "meraki-wireless"
+  | "mist-wireless"
 
 type EdgeKind = "radius" | "https" | "ldap" | "syslog" | "tacacs" | "data"
 
@@ -81,6 +86,8 @@ const vendorLogo = (v: string) => {
       return asset("paloalto")
     case "meraki":
       return asset("meraki")
+    case "mist":
+      return asset("mist")
     case "ubiquiti":
       return asset("ubiquiti")
     case "mikrotik":
@@ -245,7 +252,7 @@ function PortnoxEdge(
     meta?: Meta
   }>,
 ) {
-  const { sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data, id } = props
+  const { sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data } = props
   const [path, labelX, labelY] = getSmoothStepPath({
     sourceX,
     sourceY,
@@ -667,11 +674,13 @@ function buildGraph(view: ViewId, vendor: string, connectivity: string, identity
       N("fg", "FortiGate", "firewall", { description: "Device admin", imageUrl: vendorLogo("fortinet") }),
       N("tacacs", "Portnox TACACS+", "nac", { description: "AAA for admin", imageUrl: productLogo("portnox") }),
       N("ad", "Active Directory", "identity", { description: "RBAC groups", imageUrl: idpLogo("active-directory") }),
+      N("siem", "SIEM / Syslog", "syslog", { description: "Cmd/accounting", imageUrl: asset("siem") }),
     )
     edges.push(
       E("adm-fg", "admin", "fg", "SSH/HTTPS", "https"),
       E("fg-tacacs", "fg", "tacacs", "TACACS+", "tacacs"),
       E("tacacs-ad", "tacacs", "ad", "LDAP/LDAPS", "ldap"),
+      E("tacacs-siem", "tacacs", "siem", "Command Accounting", "syslog"),
     )
   } else if (view === "paloalto-tacacs") {
     nodes.push(
@@ -680,6 +689,7 @@ function buildGraph(view: ViewId, vendor: string, connectivity: string, identity
       N("panorama", "Panorama", "management", { description: "Central management", imageUrl: productLogo("panorama") }),
       N("tacacs", "Portnox TACACS+", "nac", { description: "AAA for admin", imageUrl: productLogo("portnox") }),
       N("ad", "Active Directory", "identity", { description: "RBAC groups", imageUrl: idpLogo("active-directory") }),
+      N("siem", "SIEM / Syslog", "syslog", { description: "Cmd/accounting", imageUrl: asset("siem") }),
     )
     edges.push(
       E("adm-pan", "admin", "pan", "SSH/HTTPS", "https"),
@@ -687,6 +697,102 @@ function buildGraph(view: ViewId, vendor: string, connectivity: string, identity
       E("pan-tacacs", "pan", "tacacs", "TACACS+", "tacacs"),
       E("pano-tacacs", "panorama", "tacacs", "TACACS+", "tacacs"),
       E("tacacs-ad", "tacacs", "ad", "LDAP/LDAPS", "ldap"),
+      E("tacacs-siem", "tacacs", "siem", "Command Accounting", "syslog"),
+    )
+  } else if (view === "cisco-tacacs") {
+    nodes.push(
+      N("admin", "Network Admin", "endpoint", { description: "SSH/HTTPS to IOS-XE/NX-OS", imageUrl: asset("admin") }),
+      N("cisco", "Cisco Devices", "network", { description: "Switches/Routers/WLC", imageUrl: vendorLogo("cisco") }),
+      N("tacacs", "Portnox TACACS+", "nac", { description: "AAA for admin", imageUrl: productLogo("portnox") }),
+      N("ad", "Active Directory", "identity", { description: "RBAC groups", imageUrl: idpLogo("active-directory") }),
+      N("siem", "SIEM / Syslog", "syslog", { description: "Cmd/accounting", imageUrl: asset("siem") }),
+    )
+    edges.push(
+      E("adm-dev", "admin", "cisco", "SSH/HTTPS", "https"),
+      E("dev-tac", "cisco", "tacacs", "TACACS+", "tacacs"),
+      E("tac-ad", "tacacs", "ad", "LDAP/LDAPS", "ldap"),
+      E("tac-siem", "tacacs", "siem", "Command Accounting", "syslog"),
+    )
+  } else if (view === "aruba-tacacs") {
+    nodes.push(
+      N("admin", "Network Admin", "endpoint", { description: "SSH/HTTPS to AOS-CX/MC", imageUrl: asset("admin") }),
+      N("aruba", "Aruba Devices", "network", {
+        description: "CX Switches / Mobility Ctrl",
+        imageUrl: vendorLogo("aruba"),
+      }),
+      N("tacacs", "Portnox TACACS+", "nac", { description: "AAA for admin", imageUrl: productLogo("portnox") }),
+      N("ad", "Active Directory", "identity", { description: "RBAC groups", imageUrl: idpLogo("active-directory") }),
+      N("siem", "SIEM / Syslog", "syslog", { description: "Cmd/accounting", imageUrl: asset("siem") }),
+    )
+    edges.push(
+      E("adm-dev", "admin", "aruba", "SSH/HTTPS", "https"),
+      E("dev-tac", "aruba", "tacacs", "TACACS+", "tacacs"),
+      E("tac-ad", "tacacs", "ad", "LDAP/LDAPS", "ldap"),
+      E("tac-siem", "tacacs", "siem", "Command Accounting", "syslog"),
+    )
+  } else if (view === "juniper-tacacs") {
+    nodes.push(
+      N("admin", "Network Admin", "endpoint", { description: "SSH/HTTPS to Junos", imageUrl: asset("admin") }),
+      N("junos", "Juniper Devices", "network", { description: "EX/QFX/SRX", imageUrl: vendorLogo("juniper") }),
+      N("tacacs", "Portnox TACACS+", "nac", { description: "AAA for admin", imageUrl: productLogo("portnox") }),
+      N("ad", "Active Directory", "identity", { description: "RBAC groups", imageUrl: idpLogo("active-directory") }),
+      N("siem", "SIEM / Syslog", "syslog", { description: "Cmd/accounting", imageUrl: asset("siem") }),
+    )
+    edges.push(
+      E("adm-dev", "admin", "junos", "SSH/HTTPS", "https"),
+      E("dev-tac", "junos", "tacacs", "TACACS+", "tacacs"),
+      E("tac-ad", "tacacs", "ad", "LDAP/LDAPS", "ldap"),
+      E("tac-siem", "tacacs", "siem", "Command Accounting", "syslog"),
+    )
+  } else if (view === "meraki-wireless") {
+    nodes.push(
+      N("client", "Client (Supplicant)", "endpoint", { description: "EAP‑TLS", imageUrl: asset("endpoint-laptop") }),
+      N("mr", "Meraki MR AP", "wireless", { description: "802.1X Authenticator", imageUrl: vendorLogo("meraki") }),
+      N("dash", "Meraki Dashboard", "cloud", { description: "Policy / Templates", imageUrl: vendorLogo("meraki") }),
+      N("portnox", "Portnox RADIUS", "nac", { description: "EAP‑TLS AAA", imageUrl: productLogo("portnox") }),
+      N("idp", identity === "active-directory" ? "Active Directory" : "Entra ID", "identity", {
+        description: "User identity",
+        imageUrl: idpLogo(identity),
+      }),
+      N("siem", "SIEM / Syslog", "syslog", { description: "Acct & events", imageUrl: asset("siem") }),
+    )
+    edges.push(
+      E("cl-mr", "client", "mr", "EAPOL/EAP", "radius"),
+      E("mr-pnx", "mr", "portnox", "RADIUS (Auth/Acct)", "radius"),
+      E(
+        "pnx-idp",
+        "portnox",
+        "idp",
+        identity === "active-directory" ? "LDAPS" : "SAML/OIDC",
+        identity === "active-directory" ? "ldap" : "https",
+      ),
+      E("dash-mr", "dash", "mr", "Config/Policy", "https"),
+      E("pnx-siem", "portnox", "siem", "Syslog/Acct", "syslog"),
+    )
+  } else if (view === "mist-wireless") {
+    nodes.push(
+      N("client", "Client (Supplicant)", "endpoint", { description: "EAP‑TLS", imageUrl: asset("endpoint-laptop") }),
+      N("ap", "Mist AP", "wireless", { description: "802.1X Authenticator", imageUrl: vendorLogo("mist") }),
+      N("mist", "Mist Cloud", "cloud", { description: "WLAN / Policy", imageUrl: vendorLogo("mist") }),
+      N("portnox", "Portnox RADIUS", "nac", { description: "EAP‑TLS AAA", imageUrl: productLogo("portnox") }),
+      N("idp", identity === "active-directory" ? "Active Directory" : "Entra ID", "identity", {
+        description: "User identity",
+        imageUrl: idpLogo(identity),
+      }),
+      N("siem", "SIEM / Syslog", "syslog", { description: "Acct & events", imageUrl: asset("siem") }),
+    )
+    edges.push(
+      E("cl-ap", "client", "ap", "EAPOL/EAP", "radius"),
+      E("ap-pnx", "ap", "portnox", "RADIUS (Auth/Acct)", "radius"),
+      E(
+        "pnx-idp",
+        "portnox",
+        "idp",
+        identity === "active-directory" ? "LDAPS" : "SAML/OIDC",
+        identity === "active-directory" ? "ldap" : "https",
+      ),
+      E("mist-ap", "mist", "ap", "Config/Policy", "https"),
+      E("pnx-siem", "portnox", "siem", "Syslog/Acct", "syslog"),
     )
   } else {
     nodes.push(N("portnox", "Portnox Cloud", "nac", { description: "Cloud NAC", imageUrl: productLogo("portnox") }))
