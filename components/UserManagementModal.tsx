@@ -1,20 +1,13 @@
-'use client'
+"use client"
 
-import { useState, useEffect } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Plus, Trash2, User, Mail } from 'lucide-react'
-
-interface User {
-  id: string
-  name: string
-  email: string
-  role: string
-}
+import { useState, useEffect } from "react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Trash2, Mail } from "lucide-react"
 
 interface UserManagementModalProps {
   open: boolean
@@ -22,19 +15,19 @@ interface UserManagementModalProps {
 }
 
 export default function UserManagementModal({ open, onOpenChange }: UserManagementModalProps) {
-  const [projectManagers, setProjectManagers] = useState<User[]>([])
-  const [technicalOwners, setTechnicalOwners] = useState<User[]>([])
-  const [newPMName, setNewPMName] = useState('')
-  const [newPMEmail, setNewPMEmail] = useState('')
-  const [newTOName, setNewTOName] = useState('')
-  const [newTOEmail, setNewTOEmail] = useState('')
-  const [newTORole, setNewTORole] = useState('')
+  const [projectManagers, setProjectManagers] = useState<any[]>([])
+  const [technicalOwners, setTechnicalOwners] = useState<any[]>([])
+  const [newPMName, setNewPMName] = useState("")
+  const [newPMEmail, setNewPMEmail] = useState("")
+  const [newTOName, setNewTOName] = useState("")
+  const [newTOEmail, setNewTOEmail] = useState("")
+  const [newTORole, setNewTORole] = useState("")
 
   // Load users from localStorage on component mount
   useEffect(() => {
-    const savedPMs = localStorage.getItem('portnox-project-managers')
-    const savedTOs = localStorage.getItem('portnox-technical-owners')
-    
+    const savedPMs = localStorage.getItem("portnox-project-managers")
+    const savedTOs = localStorage.getItem("portnox-technical-owners")
+
     if (savedPMs) {
       setProjectManagers(JSON.parse(savedPMs))
     }
@@ -45,52 +38,56 @@ export default function UserManagementModal({ open, onOpenChange }: UserManageme
 
   // Save users to localStorage whenever they change
   useEffect(() => {
-    localStorage.setItem('portnox-project-managers', JSON.stringify(projectManagers))
+    localStorage.setItem("portnox-project-managers", JSON.stringify(projectManagers))
   }, [projectManagers])
 
   useEffect(() => {
-    localStorage.setItem('portnox-technical-owners', JSON.stringify(technicalOwners))
+    localStorage.setItem("portnox-technical-owners", JSON.stringify(technicalOwners))
   }, [technicalOwners])
 
   const addProjectManager = () => {
     if (newPMName && newPMEmail) {
-      const newPM: User = {
+      const newPM = {
         id: Date.now().toString(),
         name: newPMName,
         email: newPMEmail,
-        role: 'Project Manager'
+        role: "Project Manager",
       }
       setProjectManagers([...projectManagers, newPM])
-      setNewPMName('')
-      setNewPMEmail('')
+      setNewPMName("")
+      setNewPMEmail("")
     }
   }
 
   const addTechnicalOwner = () => {
     if (newTOName && newTOEmail && newTORole) {
-      const newTO: User = {
+      const newTO = {
         id: Date.now().toString(),
         name: newTOName,
         email: newTOEmail,
-        role: newTORole
+        role: newTORole,
       }
       setTechnicalOwners([...technicalOwners, newTO])
-      setNewTOName('')
-      setNewTOEmail('')
-      setNewTORole('')
+      setNewTOName("")
+      setNewTOEmail("")
+      setNewTORole("")
     }
   }
 
   const removeProjectManager = (id: string) => {
-    setProjectManagers(projectManagers.filter(pm => pm.id !== id))
+    setProjectManagers(projectManagers.filter((pm) => pm.id !== id))
   }
 
   const removeTechnicalOwner = (id: string) => {
-    setTechnicalOwners(technicalOwners.filter(to => to.id !== id))
+    setTechnicalOwners(technicalOwners.filter((to) => to.id !== id))
   }
 
   const getUserInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase()
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
   }
 
   return (
@@ -98,7 +95,7 @@ export default function UserManagementModal({ open, onOpenChange }: UserManageme
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
-            <User className="h-6 w-6 text-blue-600" />
+            <Mail className="h-6 w-6 text-blue-600" />
             <span>User Management</span>
           </DialogTitle>
         </DialogHeader>
@@ -115,7 +112,10 @@ export default function UserManagementModal({ open, onOpenChange }: UserManageme
                 {projectManagers.length > 0 ? (
                   <div className="space-y-3">
                     {projectManagers.map((pm) => (
-                      <div key={pm.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      <div
+                        key={pm.id}
+                        className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                      >
                         <div className="flex items-center space-x-3">
                           <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-semibold">
                             {getUserInitials(pm.name)}
@@ -144,7 +144,7 @@ export default function UserManagementModal({ open, onOpenChange }: UserManageme
                   </div>
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
-                    <User className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <Mail className="h-12 w-12 mx-auto mb-2 opacity-50" />
                     <p>No project managers added yet</p>
                   </div>
                 )}
@@ -167,7 +167,7 @@ export default function UserManagementModal({ open, onOpenChange }: UserManageme
                       className="flex-1"
                     />
                     <Button onClick={addProjectManager} disabled={!newPMName || !newPMEmail}>
-                      <Plus className="h-4 w-4 mr-2" />
+                      <Mail className="h-4 w-4 mr-2" />
                       Add
                     </Button>
                   </div>
@@ -187,7 +187,10 @@ export default function UserManagementModal({ open, onOpenChange }: UserManageme
                 {technicalOwners.length > 0 ? (
                   <div className="space-y-3">
                     {technicalOwners.map((to) => (
-                      <div key={to.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      <div
+                        key={to.id}
+                        className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                      >
                         <div className="flex items-center space-x-3">
                           <div className="w-10 h-10 bg-green-600 text-white rounded-full flex items-center justify-center font-semibold">
                             {getUserInitials(to.name)}
@@ -216,7 +219,7 @@ export default function UserManagementModal({ open, onOpenChange }: UserManageme
                   </div>
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
-                    <User className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <Mail className="h-12 w-12 mx-auto mb-2 opacity-50" />
                     <p>No technical owners added yet</p>
                   </div>
                 )}
@@ -251,7 +254,7 @@ export default function UserManagementModal({ open, onOpenChange }: UserManageme
                       </SelectContent>
                     </Select>
                     <Button onClick={addTechnicalOwner} disabled={!newTOName || !newTOEmail || !newTORole}>
-                      <Plus className="h-4 w-4 mr-2" />
+                      <Mail className="h-4 w-4 mr-2" />
                       Add
                     </Button>
                   </div>
@@ -262,9 +265,7 @@ export default function UserManagementModal({ open, onOpenChange }: UserManageme
         </div>
 
         <div className="flex justify-end pt-4 border-t">
-          <Button onClick={() => onOpenChange(false)}>
-            Done
-          </Button>
+          <Button onClick={() => onOpenChange(false)}>Done</Button>
         </div>
       </DialogContent>
     </Dialog>
