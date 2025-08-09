@@ -10,34 +10,31 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Switch } from '@/components/ui/switch'
-import { Shield, Users, Smartphone, Network, Plus, Edit, Trash2, Copy, Save, Download, Upload, AlertTriangle, CheckCircle, Clock } from 'lucide-react'
+import { Separator } from '@/components/ui/separator'
+import { Plus, Trash2, Edit, Save, X, Shield, Users, Network, Clock, AlertTriangle } from 'lucide-react'
 
 interface Policy {
   id: string
   name: string
-  type: 'user' | 'device' | 'network' | 'application'
-  status: 'active' | 'inactive' | 'draft'
+  type: 'user' | 'device' | 'network' | 'time' | 'risk'
   priority: number
+  enabled: boolean
   conditions: PolicyCondition[]
   actions: PolicyAction[]
   description: string
-  createdAt: string
-  updatedAt: string
 }
 
 interface PolicyCondition {
   id: string
-  type: 'user_group' | 'device_type' | 'location' | 'time' | 'compliance' | 'certificate'
-  operator: 'equals' | 'not_equals' | 'contains' | 'in' | 'not_in'
+  field: string
+  operator: string
   value: string
-  description: string
 }
 
 interface PolicyAction {
   id: string
-  type: 'allow' | 'deny' | 'quarantine' | 'redirect' | 'notify'
-  parameters: { [key: string]: string }
-  description: string
+  type: string
+  value: string
 }
 
 export default function PolicyEditor() {
@@ -46,218 +43,185 @@ export default function PolicyEditor() {
       id: '1',
       name: 'Corporate Device Access',
       type: 'device',
-      status: 'active',
       priority: 1,
+      enabled: true,
       conditions: [
-        {
-          id: '1',
-          type: 'device_type',
-          operator: 'in',
-          value: 'Windows,macOS,iOS,Android',
-          description: 'Corporate managed devices'
-        },
-        {
-          id: '2',
-          type: 'compliance',
-          operator: 'equals',
-          value: 'compliant',
-          description: 'Device must be compliant'
-        }
+        { id: '1', field: 'device.compliance', operator: 'equals', value: 'compliant' },
+        { id: '2', field: 'certificate.valid', operator: 'equals', value: 'true' }
       ],
       actions: [
-        {
-          id: '1',
-          type: 'allow',
-          parameters: { vlan: '100', bandwidth: 'unlimited' },
-          description: 'Full network access'
-        }
+        { id: '1', type: 'vlan', value: '100' },
+        { id: '2', type: 'bandwidth', value: 'unlimited' }
       ],
-      description: 'Allow full access for compliant corporate devices',
-      createdAt: '2024-01-15T10:00:00Z',
-      updatedAt: '2024-01-20T14:30:00Z'
+      description: 'Allow full access for compliant corporate devices with valid certificates'
     },
     {
       id: '2',
-      name: 'Guest Device Quarantine',
-      type: 'device',
-      status: 'active',
+      name: 'Guest User Access',
+      type: 'user',
       priority: 2,
+      enabled: true,
       conditions: [
-        {
-          id: '3',
-          type: 'user_group',
-          operator: 'equals',
-          value: 'Guests',
-          description: 'Guest users'
-        }
+        { id: '3', field: 'user.group', operator: 'equals', value: 'Guests' },
+        { id: '4', field: 'time.business_hours', operator: 'equals', value: 'true' }
       ],
       actions: [
-        {
-          id: '2',
-          type: 'quarantine',
-          parameters: { vlan: '200', bandwidth: '10Mbps' },
-          description: 'Limited guest access'
-        }
+        { id: '3', type: 'vlan', value: '200' },
+        { id: '4', type: 'bandwidth', value: '10Mbps' },
+        { id: '5', type: 'duration', value: '8hours' }
       ],
-      description: 'Quarantine guest devices with limited access',
-      createdAt: '2024-01-10T09:00:00Z',
-      updatedAt: '2024-01-18T11:15:00Z'
+      description: 'Limited access for guest users during business hours'
     }
   ])
 
   const [selectedPolicy, setSelectedPolicy] = useState<Policy | null>(null)
   const [isEditing, setIsEditing] = useState(false)
-  const [activeTab, setActiveTab] = useState('policies')
+  const [editingPolicy, setEditingPolicy] = useState<Policy | null>(null)
 
-  const policyTemplates = [
-    {
-      id: 'corporate-byod',
-      name: 'Corporate BYOD Policy',
-      description: 'Standard policy for bring-your-own-device scenarios',
-      type: 'device' as const,
-      conditions: [
-        { type: 'user_group', operator: 'in', value: 'Employees,Contractors', description: 'Authorized users' },
-        { type: 'certificate', operator: 'equals', value: 'valid', description: 'Valid certificate required' }
-      ],
-      actions: [
-        { type: 'allow', parameters: { vlan: '150', bandwidth: '50Mbps' }, description: 'Limited corporate access' }
-      ]
-    },
-    {
-      id: 'iot-devices',
-      name: 'IoT Device Policy',
-      description: 'Policy for Internet of Things devices',
-      type: 'device' as const,
-      conditions: [
-        { type: 'device_type', operator: 'in', value: 'IoT,Sensor,Camera', description: 'IoT device types' },
-        { type: 'location', operator: 'in', value: 'Building-A,Building-B', description: 'Authorized locations' }
-      ],
-      actions: [
-        { type: 'allow', parameters: { vlan: '300', bandwidth: '5Mbps' }, description: 'IoT network access' }
-      ]
-    },
-    {
-      id: 'time-based',
-      name: 'Time-Based Access Policy',
-      description: 'Access control based on time of day',
-      type: 'user' as const,
-      conditions: [
-        { type: 'time', operator: 'in', value: '08:00-18:00', description: 'Business hours only' },
-        { type: 'user_group', operator: 'equals', value: 'Employees', description: 'Employee access' }
-      ],
-      actions: [
-        { type: 'allow', parameters: { vlan: '100' }, description: 'Full access during business hours' }
-      ]
-    }
+  const policyTypes = [
+    { id: 'user', label: 'User-Based', icon: <Users className="w-4 h-4" />, color: 'bg-green-100 text-green-800' },
+    { id: 'device', label: 'Device-Based', icon: <Shield className="w-4 h-4" />, color: 'bg-blue-100 text-blue-800' },
+    { id: 'network', label: 'Network-Based', icon: <Network className="w-4 h-4" />, color: 'bg-yellow-100 text-yellow-800' },
+    { id: 'time', label: 'Time-Based', icon: <Clock className="w-4 h-4" />, color: 'bg-purple-100 text-purple-800' },
+    { id: 'risk', label: 'Risk-Based', icon: <AlertTriangle className="w-4 h-4" />, color: 'bg-red-100 text-red-800' }
   ]
 
-  const conditionTypes = [
-    { value: 'user_group', label: 'User Group', icon: <Users className="w-4 h-4" /> },
-    { value: 'device_type', label: 'Device Type', icon: <Smartphone className="w-4 h-4" /> },
-    { value: 'location', label: 'Location', icon: <Network className="w-4 h-4" /> },
-    { value: 'time', label: 'Time', icon: <Clock className="w-4 h-4" /> },
-    { value: 'compliance', label: 'Compliance', icon: <CheckCircle className="w-4 h-4" /> },
-    { value: 'certificate', label: 'Certificate', icon: <Shield className="w-4 h-4" /> }
-  ]
+  const conditionFields = {
+    user: ['user.group', 'user.department', 'user.role', 'user.location'],
+    device: ['device.type', 'device.os', 'device.compliance', 'certificate.valid', 'device.managed'],
+    network: ['network.location', 'network.vlan', 'network.subnet', 'network.ssid'],
+    time: ['time.business_hours', 'time.day_of_week', 'time.date_range', 'time.maintenance_window'],
+    risk: ['risk.score', 'threat.detected', 'behavior.anomaly', 'geo.location']
+  }
 
-  const actionTypes = [
-    { value: 'allow', label: 'Allow', color: 'bg-green-500' },
-    { value: 'deny', label: 'Deny', color: 'bg-red-500' },
-    { value: 'quarantine', label: 'Quarantine', color: 'bg-yellow-500' },
-    { value: 'redirect', label: 'Redirect', color: 'bg-blue-500' },
-    { value: 'notify', label: 'Notify', color: 'bg-purple-500' }
-  ]
+  const operators = ['equals', 'not_equals', 'contains', 'not_contains', 'greater_than', 'less_than', 'in_range']
 
-  const createPolicyFromTemplate = (template: typeof policyTemplates[0]) => {
+  const actionTypes = ['vlan', 'bandwidth', 'duration', 'quarantine', 'redirect', 'block', 'allow', 'log']
+
+  const createNewPolicy = () => {
     const newPolicy: Policy = {
       id: Date.now().toString(),
-      name: template.name,
-      type: template.type,
-      status: 'draft',
+      name: 'New Policy',
+      type: 'user',
       priority: policies.length + 1,
-      conditions: template.conditions.map((cond, index) => ({
-        id: `${Date.now()}-${index}`,
-        type: cond.type as PolicyCondition['type'],
-        operator: cond.operator as PolicyCondition['operator'],
-        value: cond.value,
-        description: cond.description
-      })),
-      actions: template.actions.map((action, index) => ({
-        id: `${Date.now()}-${index}`,
-        type: action.type as PolicyAction['type'],
-        parameters: action.parameters,
-        description: action.description
-      })),
-      description: template.description,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      enabled: true,
+      conditions: [],
+      actions: [],
+      description: ''
     }
-
-    setPolicies([...policies, newPolicy])
-    setSelectedPolicy(newPolicy)
+    setEditingPolicy(newPolicy)
     setIsEditing(true)
   }
 
-  const duplicatePolicy = (policy: Policy) => {
-    const newPolicy: Policy = {
-      ...policy,
-      id: Date.now().toString(),
-      name: `${policy.name} (Copy)`,
-      status: 'draft',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+  const editPolicy = (policy: Policy) => {
+    setEditingPolicy({ ...policy })
+    setIsEditing(true)
+  }
+
+  const savePolicy = () => {
+    if (!editingPolicy) return
+
+    if (policies.find(p => p.id === editingPolicy.id)) {
+      setPolicies(policies.map(p => p.id === editingPolicy.id ? editingPolicy : p))
+    } else {
+      setPolicies([...policies, editingPolicy])
     }
 
-    setPolicies([...policies, newPolicy])
+    setIsEditing(false)
+    setEditingPolicy(null)
+  }
+
+  const cancelEdit = () => {
+    setIsEditing(false)
+    setEditingPolicy(null)
   }
 
   const deletePolicy = (policyId: string) => {
     setPolicies(policies.filter(p => p.id !== policyId))
     if (selectedPolicy?.id === policyId) {
       setSelectedPolicy(null)
-      setIsEditing(false)
     }
   }
 
-  const togglePolicyStatus = (policyId: string) => {
+  const togglePolicyEnabled = (policyId: string) => {
     setPolicies(policies.map(p => 
-      p.id === policyId 
-        ? { ...p, status: p.status === 'active' ? 'inactive' : 'active', updatedAt: new Date().toISOString() }
-        : p
+      p.id === policyId ? { ...p, enabled: !p.enabled } : p
     ))
   }
 
-  const exportPolicies = () => {
-    const exportData = {
-      policies,
-      exportedAt: new Date().toISOString(),
-      version: '1.0'
+  const addCondition = () => {
+    if (!editingPolicy) return
+    
+    const newCondition: PolicyCondition = {
+      id: Date.now().toString(),
+      field: conditionFields[editingPolicy.type][0],
+      operator: 'equals',
+      value: ''
     }
-
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { 
-      type: 'application/json' 
+    
+    setEditingPolicy({
+      ...editingPolicy,
+      conditions: [...editingPolicy.conditions, newCondition]
     })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `portnox-policies-${Date.now()}.json`
-    link.click()
-    URL.revokeObjectURL(url)
   }
 
-  const getStatusColor = (status: Policy['status']) => {
-    switch (status) {
-      case 'active': return 'bg-green-500'
-      case 'inactive': return 'bg-gray-500'
-      case 'draft': return 'bg-yellow-500'
-      default: return 'bg-gray-500'
+  const updateCondition = (conditionId: string, field: keyof PolicyCondition, value: string) => {
+    if (!editingPolicy) return
+    
+    setEditingPolicy({
+      ...editingPolicy,
+      conditions: editingPolicy.conditions.map(c =>
+        c.id === conditionId ? { ...c, [field]: value } : c
+      )
+    })
+  }
+
+  const removeCondition = (conditionId: string) => {
+    if (!editingPolicy) return
+    
+    setEditingPolicy({
+      ...editingPolicy,
+      conditions: editingPolicy.conditions.filter(c => c.id !== conditionId)
+    })
+  }
+
+  const addAction = () => {
+    if (!editingPolicy) return
+    
+    const newAction: PolicyAction = {
+      id: Date.now().toString(),
+      type: 'vlan',
+      value: ''
     }
+    
+    setEditingPolicy({
+      ...editingPolicy,
+      actions: [...editingPolicy.actions, newAction]
+    })
   }
 
-  const getPriorityColor = (priority: number) => {
-    if (priority <= 3) return 'text-red-600'
-    if (priority <= 6) return 'text-yellow-600'
-    return 'text-green-600'
+  const updateAction = (actionId: string, field: keyof PolicyAction, value: string) => {
+    if (!editingPolicy) return
+    
+    setEditingPolicy({
+      ...editingPolicy,
+      actions: editingPolicy.actions.map(a =>
+        a.id === actionId ? { ...a, [field]: value } : a
+      )
+    })
+  }
+
+  const removeAction = (actionId: string) => {
+    if (!editingPolicy) return
+    
+    setEditingPolicy({
+      ...editingPolicy,
+      actions: editingPolicy.actions.filter(a => a.id !== actionId)
+    })
+  }
+
+  const getPolicyTypeInfo = (type: string) => {
+    return policyTypes.find(pt => pt.id === type) || policyTypes[0]
   }
 
   return (
@@ -266,377 +230,316 @@ export default function PolicyEditor() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center space-x-2">
-              <Shield className="h-6 w-6 text-blue-600" />
-              <span>Policy Management</span>
+              <Shield className="h-6 w-6 text-[#00c8d7]" />
+              <span>Network Access Policy Editor</span>
             </CardTitle>
-            <div className="flex space-x-2">
-              <Button variant="outline" size="sm" onClick={exportPolicies}>
-                <Download className="w-4 h-4 mr-1" />
-                Export
-              </Button>
-              <Button variant="outline" size="sm">
-                <Upload className="w-4 h-4 mr-1" />
-                Import
-              </Button>
-            </div>
+            <Button onClick={createNewPolicy} className="bg-[#00c8d7] hover:bg-[#0099cc]">
+              <Plus className="w-4 h-4 mr-2" />
+              New Policy
+            </Button>
           </div>
         </CardHeader>
-      </Card>
+        <CardContent>
+          <Tabs defaultValue="policies" className="space-y-4">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="policies">Policy List</TabsTrigger>
+              <TabsTrigger value="editor">Policy Editor</TabsTrigger>
+              <TabsTrigger value="templates">Templates</TabsTrigger>
+            </TabsList>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="policies">Active Policies</TabsTrigger>
-          <TabsTrigger value="templates">Policy Templates</TabsTrigger>
-          <TabsTrigger value="editor">Policy Editor</TabsTrigger>
-        </TabsList>
+            <TabsContent value="policies" className="space-y-4">
+              <div className="grid gap-4">
+                {policies.map((policy) => {
+                  const typeInfo = getPolicyTypeInfo(policy.type)
+                  return (
+                    <Card key={policy.id} className={`cursor-pointer transition-all ${selectedPolicy?.id === policy.id ? 'ring-2 ring-[#00c8d7]' : ''}`}>
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-4" onClick={() => setSelectedPolicy(policy)}>
+                            <div className={`p-2 rounded-lg ${typeInfo.color}`}>
+                              {typeInfo.icon}
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-2">
+                                <h3 className="font-semibold">{policy.name}</h3>
+                                <Badge variant="outline" className="text-xs">
+                                  Priority {policy.priority}
+                                </Badge>
+                                <Badge variant={policy.enabled ? 'default' : 'secondary'} className="text-xs">
+                                  {policy.enabled ? 'Enabled' : 'Disabled'}
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                {policy.description}
+                              </p>
+                              <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
+                                <span>{policy.conditions.length} conditions</span>
+                                <span>{policy.actions.length} actions</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Switch
+                              checked={policy.enabled}
+                              onCheckedChange={() => togglePolicyEnabled(policy.id)}
+                            />
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => editPolicy(policy)}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => deletePolicy(policy.id)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+              </div>
+            </TabsContent>
 
-        <TabsContent value="policies" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Policy List</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {policies.map((policy) => (
-                  <div key={policy.id} className="border rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center space-x-3">
-                        <div className={`w-3 h-3 rounded-full ${getStatusColor(policy.status)}`} />
-                        <h3 className="font-semibold">{policy.name}</h3>
-                        <Badge variant="outline" className={getPriorityColor(policy.priority)}>
-                          Priority {policy.priority}
-                        </Badge>
-                        <Badge variant="secondary">
-                          {policy.type.charAt(0).toUpperCase() + policy.type.slice(1)}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Switch
-                          checked={policy.status === 'active'}
-                          onCheckedChange={() => togglePolicyStatus(policy.id)}
-                        />
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedPolicy(policy)
-                            setIsEditing(true)
-                            setActiveTab('editor')
-                          }}
-                        >
-                          <Edit className="w-4 h-4" />
+            <TabsContent value="editor" className="space-y-4">
+              {isEditing && editingPolicy ? (
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle>
+                        {policies.find(p => p.id === editingPolicy.id) ? 'Edit Policy' : 'Create New Policy'}
+                      </CardTitle>
+                      <div className="flex space-x-2">
+                        <Button onClick={savePolicy} className="bg-[#00c8d7] hover:bg-[#0099cc]">
+                          <Save className="w-4 h-4 mr-2" />
+                          Save
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => duplicatePolicy(policy)}
-                        >
-                          <Copy className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => deletePolicy(policy.id)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="w-4 h-4" />
+                        <Button variant="outline" onClick={cancelEdit}>
+                          <X className="w-4 h-4 mr-2" />
+                          Cancel
                         </Button>
                       </div>
                     </div>
-                    
-                    <p className="text-gray-600 mb-3">{policy.description}</p>
-                    
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {/* Basic Information */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <h4 className="font-medium mb-2">Conditions ({policy.conditions.length})</h4>
-                        <div className="space-y-1">
-                          {policy.conditions.slice(0, 2).map((condition) => (
-                            <div key={condition.id} className="text-sm text-gray-600">
-                              • {condition.description}
-                            </div>
-                          ))}
-                          {policy.conditions.length > 2 && (
-                            <div className="text-sm text-gray-500">
-                              +{policy.conditions.length - 2} more conditions
-                            </div>
-                          )}
-                        </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="policy-name">Policy Name</Label>
+                        <Input
+                          id="policy-name"
+                          value={editingPolicy.name}
+                          onChange={(e) => setEditingPolicy({ ...editingPolicy, name: e.target.value })}
+                        />
                       </div>
-                      
-                      <div>
-                        <h4 className="font-medium mb-2">Actions ({policy.actions.length})</h4>
-                        <div className="space-y-1">
-                          {policy.actions.map((action) => (
-                            <div key={action.id} className="flex items-center space-x-2">
-                              <div className={`w-2 h-2 rounded-full ${actionTypes.find(a => a.value === action.type)?.color}`} />
-                              <span className="text-sm text-gray-600">{action.description}</span>
-                            </div>
-                          ))}
-                        </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="policy-type">Policy Type</Label>
+                        <Select
+                          value={editingPolicy.type}
+                          onValueChange={(value) => setEditingPolicy({ ...editingPolicy, type: value as Policy['type'] })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {policyTypes.map((type) => (
+                              <SelectItem key={type.id} value={type.id}>
+                                <div className="flex items-center space-x-2">
+                                  {type.icon}
+                                  <span>{type.label}</span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
-                    
-                    <div className="mt-3 text-xs text-gray-500">
-                      Updated: {new Date(policy.updatedAt).toLocaleDateString()}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
-        <TabsContent value="templates" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Policy Templates</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {policyTemplates.map((template) => (
-                  <div key={template.id} className="border rounded-lg p-4">
-                    <h3 className="font-semibold mb-2">{template.name}</h3>
-                    <p className="text-gray-600 text-sm mb-4">{template.description}</p>
-                    
-                    <div className="space-y-2 mb-4">
-                      <div className="text-xs font-medium text-gray-700">Conditions:</div>
-                      {template.conditions.map((condition, index) => (
-                        <div key={index} className="text-xs text-gray-600">
-                          • {condition.description}
-                        </div>
-                      ))}
-                    </div>
-                    
-                    <Button
-                      size="sm"
-                      onClick={() => createPolicyFromTemplate(template)}
-                      className="w-full"
-                    >
-                      <Plus className="w-4 h-4 mr-1" />
-                      Use Template
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="editor" className="space-y-4">
-          {selectedPolicy ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>
-                  {isEditing ? 'Edit Policy' : 'View Policy'}: {selectedPolicy.name}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  {/* Basic Information */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="policy-name">Policy Name</Label>
-                      <Input
-                        id="policy-name"
-                        value={selectedPolicy.name}
-                        disabled={!isEditing}
+                      <Label htmlFor="policy-description">Description</Label>
+                      <Textarea
+                        id="policy-description"
+                        value={editingPolicy.description}
+                        onChange={(e) => setEditingPolicy({ ...editingPolicy, description: e.target.value })}
+                        placeholder="Describe what this policy does..."
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="policy-type">Policy Type</Label>
-                      <Select value={selectedPolicy.type} disabled={!isEditing}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="user">User Policy</SelectItem>
-                          <SelectItem value="device">Device Policy</SelectItem>
-                          <SelectItem value="network">Network Policy</SelectItem>
-                          <SelectItem value="application">Application Policy</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="policy-description">Description</Label>
-                    <Textarea
-                      id="policy-description"
-                      value={selectedPolicy.description}
-                      disabled={!isEditing}
-                      rows={3}
-                    />
-                  </div>
+                    <Separator />
 
-                  {/* Conditions */}
-                  <div>
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold">Conditions</h3>
-                      {isEditing && (
-                        <Button size="sm" variant="outline">
-                          <Plus className="w-4 h-4 mr-1" />
+                    {/* Conditions */}
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold">Conditions</h3>
+                        <Button onClick={addCondition} variant="outline" size="sm">
+                          <Plus className="w-4 h-4 mr-2" />
                           Add Condition
                         </Button>
-                      )}
-                    </div>
-                    <div className="space-y-3">
-                      {selectedPolicy.conditions.map((condition) => (
-                        <div key={condition.id} className="border rounded-lg p-4">
-                          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                            <div>
-                              <Label>Type</Label>
-                              <Select value={condition.type} disabled={!isEditing}>
+                      </div>
+                      
+                      {editingPolicy.conditions.map((condition, index) => (
+                        <Card key={condition.id} className="p-4">
+                          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                            <div className="space-y-2">
+                              <Label>Field</Label>
+                              <Select
+                                value={condition.field}
+                                onValueChange={(value) => updateCondition(condition.id, 'field', value)}
+                              >
                                 <SelectTrigger>
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {conditionTypes.map((type) => (
-                                    <SelectItem key={type.value} value={type.value}>
-                                      <div className="flex items-center space-x-2">
-                                        {type.icon}
-                                        <span>{type.label}</span>
-                                      </div>
+                                  {conditionFields[editingPolicy.type].map((field) => (
+                                    <SelectItem key={field} value={field}>
+                                      {field}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
                               </Select>
                             </div>
-                            <div>
+                            
+                            <div className="space-y-2">
                               <Label>Operator</Label>
-                              <Select value={condition.operator} disabled={!isEditing}>
+                              <Select
+                                value={condition.operator}
+                                onValueChange={(value) => updateCondition(condition.id, 'operator', value)}
+                              >
                                 <SelectTrigger>
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="equals">Equals</SelectItem>
-                                  <SelectItem value="not_equals">Not Equals</SelectItem>
-                                  <SelectItem value="contains">Contains</SelectItem>
-                                  <SelectItem value="in">In</SelectItem>
-                                  <SelectItem value="not_in">Not In</SelectItem>
+                                  {operators.map((operator) => (
+                                    <SelectItem key={operator} value={operator}>
+                                      {operator.replace('_', ' ')}
+                                    </SelectItem>
+                                  ))}
                                 </SelectContent>
                               </Select>
                             </div>
-                            <div>
+                            
+                            <div className="space-y-2">
                               <Label>Value</Label>
-                              <Input value={condition.value} disabled={!isEditing} />
+                              <Input
+                                value={condition.value}
+                                onChange={(e) => updateCondition(condition.id, 'value', e.target.value)}
+                                placeholder="Enter value..."
+                              />
                             </div>
-                            <div className="flex items-end">
-                              {isEditing && (
-                                <Button variant="ghost" size="sm" className="text-red-600">
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              )}
-                            </div>
+                            
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => removeCondition(condition.id)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
                           </div>
-                          <div className="mt-2">
-                            <Label>Description</Label>
-                            <Input value={condition.description} disabled={!isEditing} />
-                          </div>
-                        </div>
+                        </Card>
                       ))}
                     </div>
-                  </div>
 
-                  {/* Actions */}
-                  <div>
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold">Actions</h3>
-                      {isEditing && (
-                        <Button size="sm" variant="outline">
-                          <Plus className="w-4 h-4 mr-1" />
+                    <Separator />
+
+                    {/* Actions */}
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold">Actions</h3>
+                        <Button onClick={addAction} variant="outline" size="sm">
+                          <Plus className="w-4 h-4 mr-2" />
                           Add Action
                         </Button>
-                      )}
-                    </div>
-                    <div className="space-y-3">
-                      {selectedPolicy.actions.map((action) => (
-                        <div key={action.id} className="border rounded-lg p-4">
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
+                      </div>
+                      
+                      {editingPolicy.actions.map((action) => (
+                        <Card key={action.id} className="p-4">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                            <div className="space-y-2">
                               <Label>Action Type</Label>
-                              <Select value={action.type} disabled={!isEditing}>
+                              <Select
+                                value={action.type}
+                                onValueChange={(value) => updateAction(action.id, 'type', value)}
+                              >
                                 <SelectTrigger>
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
                                   {actionTypes.map((type) => (
-                                    <SelectItem key={type.value} value={type.value}>
-                                      <div className="flex items-center space-x-2">
-                                        <div className={`w-3 h-3 rounded-full ${type.color}`} />
-                                        <span>{type.label}</span>
-                                      </div>
+                                    <SelectItem key={type} value={type}>
+                                      {type.charAt(0).toUpperCase() + type.slice(1)}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
                               </Select>
                             </div>
-                            <div>
-                              <Label>Parameters</Label>
-                              <Input 
-                                value={JSON.stringify(action.parameters)} 
-                                disabled={!isEditing} 
-                                placeholder="JSON parameters"
+                            
+                            <div className="space-y-2">
+                              <Label>Value</Label>
+                              <Input
+                                value={action.value}
+                                onChange={(e) => updateAction(action.id, 'value', e.target.value)}
+                                placeholder="Enter action value..."
                               />
                             </div>
-                            <div className="flex items-end">
-                              {isEditing && (
-                                <Button variant="ghost" size="sm" className="text-red-600">
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              )}
-                            </div>
+                            
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => removeAction(action.id)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
                           </div>
-                          <div className="mt-2">
-                            <Label>Description</Label>
-                            <Input value={action.description} disabled={!isEditing} />
-                          </div>
-                        </div>
+                        </Card>
                       ))}
                     </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex justify-between">
-                    <div className="flex space-x-2">
-                      {!isEditing ? (
-                        <Button onClick={() => setIsEditing(true)}>
-                          <Edit className="w-4 h-4 mr-1" />
-                          Edit Policy
-                        </Button>
-                      ) : (
-                        <>
-                          <Button>
-                            <Save className="w-4 h-4 mr-1" />
-                            Save Changes
-                          </Button>
-                          <Button variant="outline" onClick={() => setIsEditing(false)}>
-                            Cancel
-                          </Button>
-                        </>
-                      )}
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card>
+                  <CardContent className="flex items-center justify-center h-64">
+                    <div className="text-center">
+                      <Shield className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-600 dark:text-gray-400">
+                        Select a policy to edit or create a new one
+                      </p>
                     </div>
-                    <Button variant="outline" onClick={() => duplicatePolicy(selectedPolicy)}>
-                      <Copy className="w-4 h-4 mr-1" />
-                      Duplicate
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <Card>
-              <CardContent className="text-center py-12">
-                <AlertTriangle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-600 mb-2">No Policy Selected</h3>
-                <p className="text-gray-500 mb-4">Select a policy from the Active Policies tab or create one from a template</p>
-                <Button onClick={() => setActiveTab('policies')}>
-                  View Policies
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-      </Tabs>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+
+            <TabsContent value="templates" className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {policyTypes.map((type) => (
+                  <Card key={type.id} className="cursor-pointer hover:shadow-md transition-shadow">
+                    <CardContent className="p-4">
+                      <div className={`p-3 rounded-lg ${type.color} mb-3`}>
+                        {type.icon}
+                      </div>
+                      <h3 className="font-semibold mb-2">{type.label} Template</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                        Pre-configured template for {type.label.toLowerCase()} policies
+                      </p>
+                      <Button variant="outline" size="sm" className="w-full">
+                        Use Template
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   )
 }

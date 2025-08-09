@@ -1,1103 +1,1327 @@
 "use client"
 
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react"
+import type React from "react"
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Play, Pause, RotateCcw, ZoomIn, ZoomOut, StepForward, StepBack } from "lucide-react"
-import { useSites, type Site } from "@/hooks/use-sites"
-import { useThemeSettings } from "@/lib/theme"
+import { Play, Pause, RotateCcw, ZoomIn, ZoomOut, ExternalLink } from "lucide-react"
 
-// Diagram types
-export type DiagramNode = {
+type ViewId =
+  | "zero-trust-nac"
+  | "802.1x-auth"
+  | "pki-infrastructure"
+  | "multi-cloud"
+  | "intune-integration"
+  | "device-onboarding"
+  | "fortigate-tacacs"
+  | "paloalto-tacacs"
+
+type EdgeType = "radius" | "https" | "ldap" | "syslog" | "tacacs" | "data"
+
+interface InteractiveDiagramProps {
+  view: string
+  vendor: string
+  connectivity: string
+  identity: string
+  deployment: string
+}
+
+interface DiagramNode {
   id: string
   label: string
-  kind:
+  type:
     | "endpoint"
     | "network"
-    | "proxy"
+    | "wireless"
     | "nac"
     | "identity"
     | "mdm"
-    | "pki"
     | "policy"
     | "firewall"
+    | "proxy"
+    | "pki"
+    | "certificate"
     | "portal"
-    | "compliance"
+    | "workflow"
+    | "syslog"
+    | "management"
     | "location"
-    | "cluster"
-    | "vlan"
+    | "connectivity"
+    | "cloud"
+    | "user"
   x: number
   y: number
-  w: number
-  h: number
-  fill: string
-  icon?: string
-  logo?: string // image path for vendor/cloud
+  width: number
+  height: number
+  color: string
   vendor?: string
+  imageUrl?: string
   description?: string
-  meta?: Record<string, string | number | boolean>
 }
 
-export type DiagramEdge = {
+type ReferenceUrl = { label: string; href: string }
+
+interface EdgeMeta {
+  ports?: string
+  ciphers?: string
+  certValidity?: string
+  referenceUrls?: ReferenceUrl[]
+  latencyMs?: number
+}
+
+interface DiagramConnection {
   id: string
   from: string
   to: string
   label: string
-  protocol: keyof ReturnType<typeof useThemeSettings>["theme"]["protocolColors"] | string
-  animated?: boolean
-  sequence?: number // for workflow steps
-  dashed?: boolean
+  type: EdgeType
+  animated: boolean
+  meta?: EdgeMeta
 }
 
-export type InteractiveDiagramHandle = {
-  exportSVG: (filename?: string) => void
-  exportPNG: (filename?: string) => Promise<void>
-}
-
-type Props = {
-  view: "multi-site" | "complete" | "auth-flow" | "pki" | "policies" | "tacacs-admin" | "onboarding"
-  animationSpeed: number
-  showDataFlow: boolean
-  activeSiteId: string
-}
-
-const GRID = { cellW: 180, cellH: 120, gapX: 40, gapY: 40 }
-
-function useZoom(initial = 1) {
-  const [zoom, setZoom] = useState(initial)
-  const zoomIn = () => setZoom((z) => Math.min(z * 1.2, 3))
-  const zoomOut = () => setZoom((z) => Math.max(z / 1.2, 0.5))
-  const reset = () => setZoom(1)
-  return { zoom, zoomIn, zoomOut, reset }
-}
-
-function clusterRect(siteIdx: number, cols: number, sitesLen: number) {
-  // Place site clusters in grid
-  const col = siteIdx % cols
-  const row = Math.floor(siteIdx / cols)
-  const x = 40 + col * (GRID.cellW * 4 + GRID.gapX * 3 + 100)
-  const y = 40 + row * (GRID.cellH * 3 + GRID.gapY * 2 + 100)
-  return { x, y, w: GRID.cellW * 4 + GRID.gapX * 3 + 60, h: GRID.cellH * 3 + GRID.gapY * 2 + 60 }
-}
-
-function iconFor(kind: DiagramNode["kind"]): string {
-  switch (kind) {
-    case "endpoint":
-      return "💻"
-    case "network":
-      return "🔌"
-    case "proxy":
-      return "🔄"
-    case "nac":
-      return "🛡️"
-    case "identity":
-      return "👤"
-    case "mdm":
-      return "📱"
-    case "pki":
-      return "🔐"
-    case "policy":
-      return "⚙️"
-    case "firewall":
-      return "🔥"
-    case "portal":
-      return "🌐"
-    case "compliance":
-      return "✅"
-    case "location":
-      return "🏢"
-    case "vlan":
-      return "🧩"
-    default:
-      return "🧱"
-  }
-}
-
-function logoForVendor(v?: string): string | undefined {
-  if (!v) return
-  const map: Record<string, string> = {
-    cisco: "/logos/cisco.png",
-    aruba: "/logos/aruba.png",
-    juniper: "/logos/juniper.png",
-    extreme: "/logos/extreme.png",
-    ruckus: "/logos/ruckus.png",
-    fortinet: "/logos/fortinet.png",
-    paloalto: "/logos/paloalto.png",
-    "azure-ad": "/logos/azure.png",
-    azure: "/logos/azure.png",
-    aws: "/logos/aws.png",
-    gcp: "/logos/gcp.png",
-    intune: "/logos/intune.png",
-    portnox: "/logos/portnox.png",
-  }
-  return map[v]
-}
-
-function cloudColor(cloud: Site["cloudPreference"]) {
-  switch (cloud) {
-    case "aws":
-      return "#f59e0b"
-    case "azure":
-      return "#2563eb"
-    case "gcp":
-      return "#ea4335"
-    case "onprem":
-      return "#4b5563"
-    default:
-      return "#6b7280"
-  }
-}
-
-function buildMultiSite(sites: Site[]) {
-  // returns nodes/edges for a multi-site overview with RADSec placement
-  const nodes: DiagramNode[] = []
-  const edges: DiagramEdge[] = []
-  const cols = Math.min(2, Math.max(1, Math.ceil(Math.sqrt(sites.length))))
-  const rows = Math.ceil(sites.length / cols)
-
-  sites.forEach((site, i) => {
-    const cluster = clusterRect(i, cols, sites.length)
-    const clusterId = `cluster-${site.id}`
-    nodes.push({
-      id: clusterId,
-      label: `${site.name} (${site.region})`,
-      kind: "cluster",
-      x: cluster.x,
-      y: cluster.y,
-      w: cluster.w,
-      h: cluster.h,
-      fill: "#ffffff",
-      icon: "🗺️",
-      description: "Site cluster",
-      meta: { users: site.users, country: site.country, status: site.status, completion: site.completionPercent },
-    })
-
-    // Layout columns within cluster: Endpoints | Access | Proxy | Cloud/NAC
-    const baseX = cluster.x + 30
-    const baseY = cluster.y + 30
-
-    const endpointId = `ep-${site.id}`
-    nodes.push({
-      id: endpointId,
-      label: "Endpoints",
-      kind: "endpoint",
-      x: baseX,
-      y: baseY + GRID.cellH,
-      w: GRID.cellW,
-      h: GRID.cellH,
-      fill: "#4f46e5",
-      icon: iconFor("endpoint"),
-      description: "Windows, macOS, Linux, iOS, Android, and IoT",
-      meta: site.deviceMix as any,
-    })
-
-    const wiredId = `wired-${site.id}`
-    const wifiId = `wifi-${site.id}`
-
-    nodes.push({
-      id: wiredId,
-      label: `${site.wiredVendor.toUpperCase()} Switch`,
-      kind: "network",
-      x: baseX + GRID.cellW + GRID.gapX,
-      y: baseY,
-      w: GRID.cellW,
-      h: GRID.cellH,
-      fill: "#10b981",
-      vendor: site.wiredVendor,
-      logo: logoForVendor(site.wiredVendor),
-      icon: iconFor("network"),
-      description: "Access switch with 802.1X",
-      meta: { role: "authenticator" },
-    })
-    nodes.push({
-      id: wifiId,
-      label: `${site.wirelessVendor.toUpperCase()} Wireless`,
-      kind: "network",
-      x: baseX + GRID.cellW + GRID.gapX,
-      y: baseY + GRID.cellH + GRID.gapY,
-      w: GRID.cellW,
-      h: GRID.cellH,
-      fill: "#10b981",
-      vendor: site.wirelessVendor,
-      logo: logoForVendor(site.wirelessVendor),
-      icon: iconFor("network"),
-      description: "Wireless AP/controller with 802.1X",
-      meta: { role: "authenticator" },
-    })
-
-    const proxyId = `radsec-${site.id}`
-    const proxyLocation = site.radsecDeployment
-    const proxyVendor = proxyLocation === "onprem" ? "portnox" : proxyLocation
-    nodes.push({
-      id: proxyId,
-      label: `RADSec Proxy (${proxyLocation.toUpperCase()})`,
-      kind: "proxy",
-      x: baseX + (GRID.cellW + GRID.gapX) * 2,
-      y: baseY + GRID.cellH / 2,
-      w: GRID.cellW,
-      h: GRID.cellH,
-      fill: "#06b6d4",
-      logo: logoForVendor(proxyVendor),
-      icon: iconFor("proxy"),
-      description: "Secure RADIUS over TLS (RADSec) proxy",
-      meta: { deployment: proxyLocation },
-    })
-
-    const cloudId = `cloud-${site.id}`
-    nodes.push({
-      id: cloudId,
-      label: `${site.cloudPreference.toUpperCase()} Cloud`,
-      kind: "location",
-      x: baseX + (GRID.cellW + GRID.gapX) * 3,
-      y: baseY,
-      w: GRID.cellW,
-      h: GRID.cellH,
-      fill: cloudColor(site.cloudPreference),
-      logo: logoForVendor(site.cloudPreference),
-      icon: iconFor("location"),
-      description: "Cloud region hosting services",
-    })
-
-    const nacId = `portnox-${site.id}`
-    nodes.push({
-      id: nacId,
-      label: "Portnox Cloud RADIUS",
-      kind: "nac",
-      x: baseX + (GRID.cellW + GRID.gapX) * 3,
-      y: baseY + GRID.cellH + GRID.gapY,
-      w: GRID.cellW,
-      h: GRID.cellH,
-      fill: "#00c8d7",
-      logo: "/logos/portnox.png",
-      icon: iconFor("nac"),
-      description: "Cloud NAC and policy engine",
-    })
-
-    const idpId = `idp-${site.id}`
-    nodes.push({
-      id: idpId,
-      label: site.idp === "azure-ad" ? "Microsoft Entra ID" : site.idp.toUpperCase(),
-      kind: "identity",
-      x: baseX + (GRID.cellW + GRID.gapX) * 4,
-      y: baseY,
-      w: GRID.cellW,
-      h: GRID.cellH,
-      fill: "#2563eb",
-      logo: logoForVendor("azure"),
-      icon: iconFor("identity"),
-      description: "Identity provider and group claims",
-    })
-
-    const mdmId = `mdm-${site.id}`
-    nodes.push({
-      id: mdmId,
-      label: site.mdm.map((m) => m.toUpperCase()).join(" + "),
-      kind: "mdm",
-      x: baseX + (GRID.cellW + GRID.gapX) * 4,
-      y: baseY + GRID.cellH + GRID.gapY,
-      w: GRID.cellW,
-      h: GRID.cellH,
-      fill: "#0891b2",
-      logo: site.mdm.includes("intune") ? "/logos/intune.png" : undefined,
-      icon: iconFor("mdm"),
-      description: "Device management and compliance signals",
-    })
-
-    // Edges
-    edges.push({
-      id: `e-${endpointId}-${wiredId}`,
-      from: endpointId,
-      to: wiredId,
-      label: "802.1X (EAP)",
-      protocol: "radius",
-      animated: true,
-    })
-    edges.push({
-      id: `e-${endpointId}-${wifiId}`,
-      from: endpointId,
-      to: wifiId,
-      label: "802.1X (EAP)",
-      protocol: "radius",
-      animated: true,
-    })
-    edges.push({
-      id: `e-${wiredId}-${proxyId}`,
-      from: wiredId,
-      to: proxyId,
-      label: "RADIUS",
-      protocol: "radius",
-      animated: true,
-    })
-    edges.push({
-      id: `e-${wifiId}-${proxyId}`,
-      from: wifiId,
-      to: proxyId,
-      label: "RADIUS",
-      protocol: "radius",
-      animated: true,
-    })
-    edges.push({
-      id: `e-${proxyId}-${nacId}`,
-      from: proxyId,
-      to: nacId,
-      label: "RADSec (TLS)",
-      protocol: "radsec",
-      animated: true,
-    })
-    edges.push({
-      id: `e-${nacId}-${idpId}`,
-      from: nacId,
-      to: idpId,
-      label: "AuthN/Claims",
-      protocol: "ldap",
-      animated: true,
-    })
-    edges.push({
-      id: `e-${nacId}-${mdmId}`,
-      from: nacId,
-      to: mdmId,
-      label: "Compliance API",
-      protocol: "https",
-      animated: true,
-    })
-  })
-
-  // Global Portnox Cloud in corner (legend-like anchor)
-  nodes.push({
-    id: "global-portnox",
-    label: "Portnox Cloud",
-    kind: "nac",
-    x: 40,
-    y: rows * (GRID.cellH * 3 + GRID.gapY * 2 + 100) + 40,
-    w: 180,
-    h: 80,
-    fill: "#00c8d7",
-    logo: "/logos/portnox.png",
-    description: "Global NAC services",
-  })
-
-  return { nodes, edges }
-}
-
-function buildComplete(site: Site) {
-  const { nodes, edges } = buildMultiSite([site])
-  // Also include VLAN policy nodes and firewall
-  const vlanId = `vlan-${site.id}`
-  nodes.push({
-    id: vlanId,
-    label: "VLAN Assignment",
-    kind: "vlan",
-    x: nodes.find((n) => n.id.startsWith("portnox-"))!.x,
-    y: nodes.find((n) => n.id.startsWith("portnox-"))!.y + 120,
-    w: 180,
-    h: 80,
-    fill: "#f59e0b",
-    icon: iconFor("vlan"),
-    description: "Dynamic VLAN/ACL assignment based on policy",
-  })
-  edges.push({
-    id: `policy-${site.id}`,
-    from: nodes.find((n) => n.id.startsWith("portnox-"))!.id,
-    to: vlanId,
-    label: "Policy Decision",
-    protocol: "data",
-    animated: true,
-  })
-  const wired = nodes.find((n) => n.id.startsWith("wired-"))!
-  const wifi = nodes.find((n) => n.id.startsWith("wifi-"))!
-  edges.push({
-    id: `coa-wired-${site.id}`,
-    from: vlanId,
-    to: wired.id,
-    label: "CoA (Reauth/Port-Bounce)",
-    protocol: "coa",
-    dashed: true,
-    animated: true,
-  })
-  edges.push({
-    id: `coa-wifi-${site.id}`,
-    from: vlanId,
-    to: wifi.id,
-    label: "CoA (Disconnect)",
-    protocol: "coa",
-    dashed: true,
-    animated: true,
-  })
-  return { nodes, edges }
-}
-
-function buildAuthFlow(site: Site) {
-  // Step-by-step 1..N with CoA step at end
-  const base = buildComplete(site)
-  const steps = ["ep->auth", "auth->proxy", "proxy->nac", "nac->idp", "nac->mdm", "nac->policy", "policy->coa"]
-  let seq = 1
-  base.edges.forEach((e) => {
-    e.sequence = undefined
-  })
-  // mark sequences on specific edges
-  function mark(fromPrefix: string, toPrefix: string) {
-    const edge = base.edges.find((e) => e.from.startsWith(fromPrefix) && e.to.startsWith(toPrefix))
-    if (edge) edge.sequence = seq++
-  }
-  mark("ep-", "wired-") // 1
-  mark("ep-", "wifi-") // or 1 (parallel)
-  mark("wired-", "radsec-") // 2
-  mark("wifi-", "radsec-") // 2
-  mark("radsec-", "portnox-") // 3
-  mark("portnox-", "idp-") // 4
-  mark("portnox-", "mdm-") // 5
-  mark("portnox-", "vlan-") // 6
-  // CoA edges
-  base.edges
-    .filter((e) => e.protocol === "coa")
-    .forEach((e) => {
-      e.sequence = seq++
-    })
-  return base
-}
-
-function buildPolicies(site: Site) {
-  const { nodes, edges } = buildComplete(site)
-  // Emphasize policy engine
-  const nac = nodes.find((n) => n.id.startsWith("portnox-"))!
-  const pol = {
-    id: `policy-${site.id}`,
-    label: "Policy Engine",
-    kind: "policy" as const,
-    x: nac.x + 220,
-    y: nac.y + 120,
-    w: 200,
-    h: 100,
-    fill: "#ef4444",
-    icon: iconFor("policy"),
-    description: "Evaluates user, device, posture, and location",
-  }
-  nodes.push(pol)
-  edges.push({
-    id: `nac-pol-${site.id}`,
-    from: nac.id,
-    to: pol.id,
-    label: "Policy Context",
-    protocol: "data",
-    animated: true,
-  })
-  const vlan = nodes.find((n) => n.id.startsWith("vlan-"))!
-  edges.push({
-    id: `pol-vlan-${site.id}`,
-    from: pol.id,
-    to: vlan.id,
-    label: "Result (VLAN/ACL/SGT)",
-    protocol: "data",
-    animated: true,
-  })
-  return { nodes, edges }
-}
-
-function buildTacacsAdmin(site: Site) {
-  const nodes: DiagramNode[] = []
-  const edges: DiagramEdge[] = []
-  const baseX = 60
-  const baseY = 80
-  const adminId = `admin-${site.id}`
-  nodes.push({
-    id: adminId,
-    label: "Network Admin",
-    kind: "endpoint",
-    x: baseX,
-    y: baseY + 40,
-    w: 160,
-    h: 80,
-    fill: "#4f46e5",
-    icon: "👨‍💼",
-    description: "Admin authenticates to device",
-  })
-  const deviceId = `device-${site.id}`
-  nodes.push({
-    id: deviceId,
-    label: `${site.wiredVendor.toUpperCase()} Switch`,
-    kind: "network",
-    x: baseX + 220,
-    y: baseY,
-    w: 200,
-    h: 80,
-    fill: "#10b981",
-    logo: logoForVendor(site.wiredVendor),
-    icon: "🧰",
-    description: "Network device under admin control",
-  })
-  const tacacsId = `tacacs-${site.id}`
-  nodes.push({
-    id: tacacsId,
-    label: "Portnox TACACS+",
-    kind: "nac",
-    x: baseX + 460,
-    y: baseY,
-    w: 220,
-    h: 80,
-    fill: "#00c8d7",
-    logo: "/logos/portnox.png",
-    icon: "🛡️",
-    description: "Admin authentication and authorization",
-  })
-  const idpId = `idp-${site.id}`
-  nodes.push({
-    id: idpId,
-    label: "Directory (AD/Entra)",
-    kind: "identity",
-    x: baseX + 720,
-    y: baseY,
-    w: 200,
-    h: 80,
-    fill: "#2563eb",
-    logo: "/logos/azure.png",
-    icon: "🏢",
-    description: "User group membership",
-  })
-
-  edges.push({
-    id: `a1-${site.id}`,
-    from: adminId,
-    to: deviceId,
-    label: "SSH/HTTPS",
-    protocol: "https",
-    animated: true,
-  })
-  edges.push({
-    id: `a2-${site.id}`,
-    from: deviceId,
-    to: tacacsId,
-    label: "TACACS+",
-    protocol: "tacacs",
-    animated: true,
-  })
-  edges.push({ id: `a3-${site.id}`, from: tacacsId, to: idpId, label: "AuthN/AuthZ", protocol: "ldap", animated: true })
-  return { nodes, edges }
-}
-
-function buildPki(site: Site) {
-  const nodes: DiagramNode[] = []
-  const edges: DiagramEdge[] = []
-  const x = 80
-  const y = 40
-  const root = {
-    id: `root-${site.id}`,
-    label: "Root CA",
-    kind: "pki",
-    x: x + 260,
-    y: y,
-    w: 160,
-    h: 80,
-    fill: "#ef4444",
-    icon: "🔐",
-    description: "Offline root",
-  }
-  const issuing = {
-    id: `issuing-${site.id}`,
-    label: "Issuing CA",
-    kind: "pki",
-    x: x + 260,
-    y: y + 120,
-    w: 160,
-    h: 80,
-    fill: "#f97316",
-    icon: "📜",
-    description: "Issues certs",
-  }
-  const radius = {
-    id: `radiuscert-${site.id}`,
-    label: "RADIUS Cert",
-    kind: "pki",
-    x: x + 80,
-    y: y + 240,
-    w: 160,
-    h: 80,
-    fill: "#00c8d7",
-    icon: "🛡️",
-    description: "Server cert",
-  }
-  const device = {
-    id: `devcert-${site.id}`,
-    label: "Device Certs",
-    kind: "pki",
-    x: x + 440,
-    y: y + 240,
-    w: 160,
-    h: 80,
-    fill: "#4f46e5",
-    icon: "💻",
-    description: "Client certs",
-  }
-  const crl = {
-    id: `crl-${site.id}`,
-    label: "CRL/OCSP",
-    kind: "pki",
-    x: x + 260,
-    y: y + 240,
-    w: 160,
-    h: 80,
-    fill: "#7c3aed",
-    icon: "📋",
-    description: "Revocation info",
-  }
-  nodes.push(root, issuing, radius, device, crl)
-  edges.push({ id: `p1-${site.id}`, from: root.id, to: issuing.id, label: "Signs", protocol: "data", animated: true })
-  edges.push({
-    id: `p2-${site.id}`,
-    from: issuing.id,
-    to: radius.id,
-    label: "Issues",
-    protocol: "data",
-    animated: true,
-  })
-  edges.push({
-    id: `p3-${site.id}`,
-    from: issuing.id,
-    to: device.id,
-    label: "Issues",
-    protocol: "data",
-    animated: true,
-  })
-  edges.push({
-    id: `p4-${site.id}`,
-    from: issuing.id,
-    to: crl.id,
-    label: "Publishes",
-    protocol: "data",
-    animated: true,
-  })
-  return { nodes, edges }
-}
-
-function buildOnboarding(site: Site) {
-  const nodes: DiagramNode[] = []
-  const edges: DiagramEdge[] = []
-  const baseX = 60
-  const baseY = 60
-  const portal = {
-    id: `portal-${site.id}`,
-    label: "Captive Portal",
-    kind: "portal",
-    x: baseX + 280,
-    y: baseY,
-    w: 220,
-    h: 80,
-    fill: "#7c3aed",
-    icon: "🌐",
-    description: "Guest/BYOD/IoT onboarding",
-  }
-  const corp = {
-    id: `corp-${site.id}`,
-    label: "Corporate",
-    kind: "policy",
-    x: baseX,
-    y: baseY + 140,
-    w: 200,
-    h: 100,
-    fill: "#10b981",
-    icon: "🏢",
-    description: "Zero-touch with MDM and cert",
-  }
-  const byod = {
-    id: `byod-${site.id}`,
-    label: "BYOD",
-    kind: "policy",
-    x: baseX + 240,
-    y: baseY + 140,
-    w: 200,
-    h: 100,
-    fill: "#38bdf8",
-    icon: "📱",
-    description: "Self-service profile",
-  }
-  const guest = {
-    id: `guest-${site.id}`,
-    label: "Guest",
-    kind: "policy",
-    x: baseX + 480,
-    y: baseY + 140,
-    w: 200,
-    h: 100,
-    fill: "#f59e0b",
-    icon: "🔑",
-    description: "Sponsored time-bound access",
-  }
-  const iot = {
-    id: `iot-${site.id}`,
-    label: "IoT",
-    kind: "policy",
-    x: baseX + 720,
-    y: baseY + 140,
-    w: 200,
-    h: 100,
-    fill: "#a3e635",
-    icon: "💡",
-    description: "MAC-based, static auth, segment",
-  }
-  nodes.push(portal as any, corp as any, byod as any, guest as any, iot as any)
-  edges.push({
-    id: `o1-${site.id}`,
-    from: portal.id,
-    to: corp.id,
-    label: "Enrollment",
-    protocol: "https",
-    animated: true,
-  })
-  edges.push({ id: `o2-${site.id}`, from: portal.id, to: byod.id, label: "Profile", protocol: "https", animated: true })
-  edges.push({
-    id: `o3-${site.id}`,
-    from: portal.id,
-    to: guest.id,
-    label: "Sponsor",
-    protocol: "https",
-    animated: true,
-  })
-  edges.push({ id: `o4-${site.id}`, from: portal.id, to: iot.id, label: "Register", protocol: "https", animated: true })
-  return { nodes, edges }
-}
-
-const InteractiveDiagram = forwardRef<InteractiveDiagramHandle, Props>(function InteractiveDiagram(
-  { view, animationSpeed, showDataFlow, activeSiteId }: Props,
-  ref,
-) {
-  const { sites } = useSites()
-  const site = useMemo(() => sites.find((s) => s.id === activeSiteId) ?? sites[0], [sites, activeSiteId])
-  const { theme } = useThemeSettings()
+export default function InteractiveDiagram({
+  view,
+  vendor,
+  connectivity,
+  identity,
+  deployment,
+}: InteractiveDiagramProps) {
   const svgRef = useRef<SVGSVGElement>(null)
-  const { zoom, zoomIn, zoomOut, reset } = useZoom(1)
+  const [zoom, setZoom] = useState(1)
   const [isAnimating, setIsAnimating] = useState(true)
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
-  const [workflowStep, setWorkflowStep] = useState(0)
+  const [draggingId, setDraggingId] = useState<string | null>(null)
+  const [dragOffset, setDragOffset] = useState<{ dx: number; dy: number } | null>(null)
 
-  const { nodes, edges } = useMemo(() => {
-    if (view === "multi-site") return buildMultiSite(sites)
-    if (!site) return { nodes: [], edges: [] }
-    switch (view) {
-      case "complete":
-        return buildComplete(site)
-      case "auth-flow":
-        return buildAuthFlow(site)
-      case "pki":
-        return buildPki(site)
-      case "policies":
-        return buildPolicies(site)
-      case "tacacs-admin":
-        return buildTacacsAdmin(site)
-      case "onboarding":
-        return buildOnboarding(site)
+  // Store nodes/connections in state so we can drag nodes around
+  const [nodes, setNodes] = useState<DiagramNode[]>([])
+  const [connections, setConnections] = useState<DiagramConnection[]>([])
+
+  // Colors per protocol for legend consistency
+  const getConnectionColor = (type: EdgeType) => {
+    switch (type) {
+      case "radius":
+        return "#00c8d7" // Portnox primary accent
+      case "https":
+        return "#059669"
+      case "ldap":
+        return "#0078D4"
+      case "syslog":
+        return "#7C3AED"
+      case "tacacs":
+        return "#DC2626"
+      case "data":
       default:
-        return { nodes: [], edges: [] }
+        return "#6B7280"
     }
-  }, [sites, site, view])
+  }
 
+  // Placeholder stencil images (vendor logos, clouds, devices)
+  // Using placeholder.svg with a descriptive query to generate themed blocks
+  const stencil = (query: string, width = 32, height = 32) =>
+    `/placeholder.svg?height=${height}&width=${width}&query=${encodeURIComponent(query)}`
+
+  const vendorStencil = (v: string) => {
+    switch (v) {
+      case "cisco":
+        return stencil("Cisco logo blue")
+      case "aruba":
+        return stencil("Aruba HPE logo orange")
+      case "juniper":
+        return stencil("Juniper logo green")
+      case "extreme":
+        return stencil("Extreme Networks logo purple")
+      case "fortinet":
+        return stencil("Fortinet logo red")
+      case "paloalto":
+        return stencil("Palo Alto Networks logo orange")
+      case "meraki":
+        return stencil("Cisco Meraki logo green")
+      case "ubiquiti":
+        return stencil("Ubiquiti UniFi logo")
+      case "mikrotik":
+        return stencil("MikroTik logo")
+      case "cambium":
+        return stencil("Cambium Networks logo")
+      case "ruckus":
+        return stencil("Ruckus CommScope logo")
+      default:
+        return stencil("Network vendor logo")
+    }
+  }
+
+  const cloudStencil = (provider: string) => {
+    switch (provider) {
+      case "aws":
+        return stencil("AWS logo orange")
+      case "azure":
+        return stencil("Azure logo blue")
+      case "gcp":
+        return stencil("GCP logo multicolor")
+      default:
+        return stencil("Cloud icon")
+    }
+  }
+
+  const idpStencil = (idp: string) => {
+    switch (idp) {
+      case "azure-ad":
+        return stencil("Entra ID Azure AD logo")
+      case "active-directory":
+        return stencil("Active Directory logo")
+      case "okta":
+        return stencil("Okta logo")
+      case "ping":
+        return stencil("Ping Identity logo")
+      default:
+        return stencil("Identity provider logo")
+    }
+  }
+
+  const mdmStencil = (name: string) => {
+    if (/intune/i.test(name)) return stencil("Microsoft Intune logo")
+    if (/jamf/i.test(name)) return stencil("Jamf logo")
+    if (/kandji/i.test(name)) return stencil("Kandji logo")
+    return stencil("MDM platform logo")
+  }
+
+  // Build initial diagrams for each view
+  const buildInitial = useCallback(
+    (v: ViewId) => {
+      const nodes: DiagramNode[] = []
+      const edges: DiagramConnection[] = []
+
+      if (v === "zero-trust-nac") {
+        nodes.push(
+          {
+            id: "endpoints",
+            label: "Corporate Endpoints",
+            type: "endpoint",
+            x: 60,
+            y: 200,
+            width: 140,
+            height: 90,
+            color: "#e0e7ff",
+            imageUrl: stencil("Laptop and phone devices"),
+            description: "Windows, macOS, iOS, Android, IoT",
+          },
+          {
+            id: "switch",
+            label: `${vendor.charAt(0).toUpperCase() + vendor.slice(1)} Switch`,
+            type: "network",
+            x: 260,
+            y: 140,
+            width: 150,
+            height: 90,
+            color: "#d1fae5",
+            vendor,
+            imageUrl: vendorStencil(vendor),
+            description: "802.1X Authenticator (Wired)",
+          },
+          {
+            id: "ap",
+            label: `${vendor.charAt(0).toUpperCase() + vendor.slice(1)} Wireless`,
+            type: "wireless",
+            x: 260,
+            y: 260,
+            width: 150,
+            height: 90,
+            color: "#d1fae5",
+            vendor,
+            imageUrl: vendorStencil(vendor),
+            description: "802.1X Authenticator (Wireless)",
+          },
+          {
+            id: "proxy",
+            label: connectivity === "radsec" || connectivity === "hybrid" ? "RADSec Proxy" : "Direct RADIUS",
+            type: "proxy",
+            x: 450,
+            y: 140,
+            width: 150,
+            height: 90,
+            color: "#ede9fe",
+            imageUrl: stencil("RADSec proxy"),
+            description: "Secure RADIUS transport",
+          },
+          {
+            id: "portnox",
+            label: "Portnox Cloud RADIUS",
+            type: "nac",
+            x: 640,
+            y: 200,
+            width: 170,
+            height: 90,
+            color: "#ccfbf1",
+            imageUrl: stencil("Portnox logo"),
+            description: "Policy decision and AAA",
+          },
+          {
+            id: "idp",
+            label: identity === "azure-ad" ? "Azure AD" : "Identity Provider",
+            type: "identity",
+            x: 850,
+            y: 140,
+            width: 140,
+            height: 90,
+            color: "#e0f2fe",
+            imageUrl: idpStencil(identity),
+            description: "User identity and SSO",
+          },
+          {
+            id: "mdm",
+            label: "MDM (Intune/Jamf/Kandji)",
+            type: "mdm",
+            x: 850,
+            y: 260,
+            width: 180,
+            height: 90,
+            color: "#fef3c7",
+            imageUrl: mdmStencil("Intune"),
+            description: "Compliance & certificates",
+          },
+          {
+            id: "firewall",
+            label: "Next-Gen Firewall",
+            type: "firewall",
+            x: 640,
+            y: 320,
+            width: 170,
+            height: 90,
+            color: "#fee2e2",
+            imageUrl: stencil("Firewall icon"),
+            description: "Segmentation and policy",
+          },
+        )
+
+        const viaProxy = connectivity === "radsec" || connectivity === "hybrid"
+        edges.push(
+          {
+            id: "ep-switch",
+            from: "endpoints",
+            to: "switch",
+            label: "802.1X (EAP‑TLS)",
+            type: "radius",
+            animated: true,
+          },
+          {
+            id: "ep-ap",
+            from: "endpoints",
+            to: "ap",
+            label: "802.1X (EAP‑TLS)",
+            type: "radius",
+            animated: true,
+          },
+          {
+            id: "switch-proxy-or-portnox",
+            from: "switch",
+            to: viaProxy ? "proxy" : "portnox",
+            label: viaProxy ? "RADIUS → RADSec" : "RADIUS",
+            type: "radius",
+            animated: true,
+          },
+          {
+            id: "ap-proxy-or-portnox",
+            from: "ap",
+            to: viaProxy ? "proxy" : "portnox",
+            label: viaProxy ? "RADIUS → RADSec" : "RADIUS",
+            type: "radius",
+            animated: true,
+          },
+          ...(viaProxy
+            ? [
+                {
+                  id: "proxy-portnox",
+                  from: "proxy",
+                  to: "portnox",
+                  label: "RADSec",
+                  type: "radius",
+                  animated: true,
+                } as DiagramConnection,
+              ]
+            : []),
+          {
+            id: "portnox-idp",
+            from: "portnox",
+            to: "idp",
+            label: identity === "active-directory" ? "LDAP/LDAPS" : "SAML/OIDC",
+            type: identity === "active-directory" ? "ldap" : "https",
+            animated: true,
+          },
+          {
+            id: "mdm-portnox",
+            from: "mdm",
+            to: "portnox",
+            label: "Compliance API",
+            type: "https",
+            animated: true,
+          },
+          {
+            id: "portnox-fw",
+            from: "portnox",
+            to: "firewall",
+            label: "User-ID/FSSO/Syslog",
+            type: "syslog",
+            animated: true,
+          },
+        )
+      }
+
+      if (v === "802.1x-auth") {
+        nodes.push(
+          {
+            id: "device",
+            label: "Device",
+            type: "endpoint",
+            x: 80,
+            y: 220,
+            width: 120,
+            height: 80,
+            color: "#e0e7ff",
+            imageUrl: stencil("Laptop device"),
+            description: "Supplicant with user/machine cert",
+          },
+          {
+            id: "authenticator",
+            label: "Authenticator (Switch/AP)",
+            type: "network",
+            x: 260,
+            y: 220,
+            width: 180,
+            height: 80,
+            color: "#d1fae5",
+            imageUrl: vendorStencil(vendor),
+            description: "802.1X authenticator",
+          },
+          {
+            id: "portnox",
+            label: "Portnox RADIUS",
+            type: "nac",
+            x: 500,
+            y: 220,
+            width: 150,
+            height: 80,
+            color: "#ccfbf1",
+            imageUrl: stencil("Portnox logo"),
+            description: "EAP‑TLS termination",
+          },
+          {
+            id: "idp",
+            label: identity === "active-directory" ? "Active Directory" : "Entra ID",
+            type: "identity",
+            x: 700,
+            y: 150,
+            width: 160,
+            height: 80,
+            color: "#e0f2fe",
+            imageUrl: idpStencil(identity),
+            description: "User identity",
+          },
+          {
+            id: "pdp",
+            label: "Policy Engine",
+            type: "policy",
+            x: 700,
+            y: 290,
+            width: 160,
+            height: 80,
+            color: "#fee2e2",
+            imageUrl: stencil("Policy gear"),
+            description: "Policy evaluation",
+          },
+        )
+        const viaProxy = connectivity === "radsec"
+        nodes.push(
+          ...(viaProxy
+            ? [
+                {
+                  id: "proxy",
+                  label: "RADSec Proxy",
+                  type: "proxy",
+                  x: 390,
+                  y: 140,
+                  width: 140,
+                  height: 80,
+                  color: "#ede9fe",
+                  imageUrl: stencil("RADSec proxy purple"),
+                  description: "Secure RADIUS transport",
+                },
+              ]
+            : []),
+        )
+
+        const coaLabel = "CoA (Session-Update)"
+        const edgeAuthTo = viaProxy ? "proxy" : "portnox"
+        const edgesBase: DiagramConnection[] = [
+          {
+            id: "dev-auth",
+            from: "device",
+            to: "authenticator",
+            label: "EAPOL/EAP",
+            type: "radius",
+            animated: true,
+          },
+          { id: "auth-radius", from: "authenticator", to: edgeAuthTo, label: "RADIUS", type: "radius", animated: true },
+          ...(viaProxy
+            ? [
+                {
+                  id: "proxy-portnox",
+                  from: "proxy",
+                  to: "portnox",
+                  label: "RADSec",
+                  type: "radius",
+                  animated: true,
+                } as DiagramConnection,
+              ]
+            : []),
+          {
+            id: "portnox-idp",
+            from: "portnox",
+            to: "idp",
+            label: identity === "active-directory" ? "LDAPS" : "SAML/OIDC",
+            type: identity === "active-directory" ? "ldap" : "https",
+            animated: true,
+          },
+          { id: "portnox-pdp", from: "portnox", to: "pdp", label: "Policy", type: "data", animated: true },
+          {
+            id: "coa",
+            from: "portnox",
+            to: "authenticator",
+            label: coaLabel,
+            type: "radius",
+            animated: true,
+            meta: { ports: "UDP 3799 (CoA)" },
+          },
+        ]
+        edges.push(...edgesBase)
+      }
+
+      if (v === "pki-infrastructure") {
+        nodes.push(
+          {
+            id: "root",
+            label: "Root CA",
+            type: "pki",
+            x: 420,
+            y: 60,
+            width: 140,
+            height: 70,
+            color: "#fee2e2",
+            imageUrl: stencil("Certificate shield"),
+            description: "Offline root CA",
+          },
+          {
+            id: "issuing",
+            label: "Issuing CA",
+            type: "pki",
+            x: 420,
+            y: 160,
+            width: 160,
+            height: 70,
+            color: "#fde68a",
+            imageUrl: stencil("Issuing CA cert"),
+            description: "SCEP, device/user certs",
+          },
+          {
+            id: "radius-cert",
+            label: "RADIUS Server Cert",
+            type: "certificate",
+            x: 260,
+            y: 260,
+            width: 160,
+            height: 70,
+            color: "#ccfbf1",
+            imageUrl: stencil("Server certificate"),
+            description: "TLS server authentication",
+          },
+          {
+            id: "device-certs",
+            label: "Device/User Certs",
+            type: "certificate",
+            x: 580,
+            y: 260,
+            width: 160,
+            height: 70,
+            color: "#e0e7ff",
+            imageUrl: stencil("Client certificate"),
+            description: "EAP‑TLS client auth",
+          },
+          {
+            id: "crl-ocsp",
+            label: "CRL / OCSP",
+            type: "pki",
+            x: 420,
+            y: 360,
+            width: 160,
+            height: 70,
+            color: "#e0f2fe",
+            imageUrl: stencil("CRL OCSP"),
+            description: "Revocation checking",
+          },
+        )
+        edges.push(
+          { id: "root-issuing", from: "root", to: "issuing", label: "Signs", type: "data", animated: true },
+          { id: "issuing-radius", from: "issuing", to: "radius-cert", label: "Issues", type: "data", animated: true },
+          { id: "issuing-device", from: "issuing", to: "device-certs", label: "Issues", type: "data", animated: true },
+          { id: "issuing-crl", from: "issuing", to: "crl-ocsp", label: "Publishes", type: "https", animated: true },
+        )
+      }
+
+      if (v === "multi-cloud") {
+        const provider = deployment === "cloud" ? (identity === "azure-ad" ? "azure" : "aws") : "gcp"
+        nodes.push(
+          {
+            id: "branch",
+            label: "Branch Site",
+            type: "location",
+            x: 80,
+            y: 220,
+            width: 140,
+            height: 90,
+            color: "#e0e7ff",
+            imageUrl: stencil("Office building"),
+            description: "Remote branch",
+          },
+          {
+            id: "edge",
+            label: "Edge/SD‑WAN",
+            type: "connectivity",
+            x: 260,
+            y: 220,
+            width: 140,
+            height: 90,
+            color: "#d1fae5",
+            imageUrl: stencil("SD‑WAN edge"),
+            description: "Connectivity hub",
+          },
+          {
+            id: "cloud",
+            label: `${provider.toUpperCase()} Cloud`,
+            type: "cloud",
+            x: 440,
+            y: 140,
+            width: 160,
+            height: 90,
+            color: "#e0f2fe",
+            imageUrl: cloudStencil(provider),
+            description: "Selected cloud provider",
+          },
+          {
+            id: "portnox",
+            label: "Portnox Cloud",
+            type: "nac",
+            x: 640,
+            y: 220,
+            width: 170,
+            height: 90,
+            color: "#ccfbf1",
+            imageUrl: stencil("Portnox logo"),
+            description: "Cloud NAC platform",
+          },
+        )
+        edges.push(
+          { id: "branch-edge", from: "branch", to: "edge", label: "IPSec/SD‑WAN", type: "data", animated: true },
+          { id: "edge-cloud", from: "edge", to: "cloud", label: "Private Link", type: "https", animated: true },
+          { id: "cloud-portnox", from: "cloud", to: "portnox", label: "API/RADIUS", type: "https", animated: true },
+        )
+      }
+
+      if (v === "intune-integration") {
+        nodes.push(
+          {
+            id: "devices",
+            label: "Managed Devices",
+            type: "endpoint",
+            x: 80,
+            y: 220,
+            width: 140,
+            height: 90,
+            color: "#e0e7ff",
+            imageUrl: stencil("Managed devices"),
+            description: "Intune-managed endpoints",
+          },
+          {
+            id: "intune",
+            label: "Microsoft Intune",
+            type: "mdm",
+            x: 280,
+            y: 220,
+            width: 170,
+            height: 90,
+            color: "#e0f2fe",
+            imageUrl: mdmStencil("Intune"),
+            description: "MDM policies, SCEP",
+          },
+          {
+            id: "entra",
+            label: "Entra ID",
+            type: "identity",
+            x: 500,
+            y: 160,
+            width: 160,
+            height: 90,
+            color: "#dbeafe",
+            imageUrl: idpStencil("azure-ad"),
+            description: "User identity",
+          },
+          {
+            id: "portnox",
+            label: "Portnox Cloud",
+            type: "nac",
+            x: 500,
+            y: 300,
+            width: 170,
+            height: 90,
+            color: "#ccfbf1",
+            imageUrl: stencil("Portnox logo"),
+            description: "Compliance and AAA",
+          },
+          {
+            id: "compliance",
+            label: "Compliance Engine",
+            type: "policy",
+            x: 720,
+            y: 220,
+            width: 180,
+            height: 90,
+            color: "#fee2e2",
+            imageUrl: stencil("Compliance check"),
+            description: "Risk assessment",
+          },
+        )
+        edges.push(
+          { id: "dev-intune", from: "devices", to: "intune", label: "MDM Enrollment", type: "https", animated: true },
+          {
+            id: "intune-portnox",
+            from: "intune",
+            to: "portnox",
+            label: "Compliance API",
+            type: "https",
+            animated: true,
+          },
+          { id: "entra-portnox", from: "entra", to: "portnox", label: "Auth/SAML/OIDC", type: "https", animated: true },
+          { id: "portnox-comp", from: "portnox", to: "compliance", label: "Policy Eval", type: "data", animated: true },
+        )
+      }
+
+      if (v === "device-onboarding") {
+        nodes.push(
+          {
+            id: "portal",
+            label: "Onboarding Portal",
+            type: "portal",
+            x: 420,
+            y: 60,
+            width: 200,
+            height: 90,
+            color: "#e0f2fe",
+            imageUrl: stencil("Portal web"),
+            description: "Self-service onboarding",
+          },
+          {
+            id: "corp",
+            label: "Corporate (EAP‑TLS)",
+            type: "workflow",
+            x: 80,
+            y: 220,
+            width: 220,
+            height: 120,
+            color: "#d1fae5",
+            imageUrl: stencil("Corporate workflow"),
+            description: "User/machine certs",
+          },
+          {
+            id: "byod",
+            label: "BYOD / Mobile",
+            type: "workflow",
+            x: 340,
+            y: 220,
+            width: 220,
+            height: 120,
+            color: "#fde68a",
+            imageUrl: stencil("BYOD workflow"),
+            description: "Captive portal / PSK",
+          },
+          {
+            id: "guest",
+            label: "Guest Access",
+            type: "workflow",
+            x: 600,
+            y: 220,
+            width: 220,
+            height: 120,
+            color: "#e9d5ff",
+            imageUrl: stencil("Guest access"),
+            description: "Sponsored guest",
+          },
+          {
+            id: "iot",
+            label: "IoT & Profiling",
+            type: "workflow",
+            x: 860,
+            y: 220,
+            width: 220,
+            height: 120,
+            color: "#fee2e2",
+            imageUrl: stencil("IoT profiling"),
+            description: "Profiling & MAB",
+          },
+        )
+        edges.push(
+          { id: "portal-corp", from: "portal", to: "corp", label: "Initiates", type: "data", animated: true },
+          { id: "portal-byod", from: "portal", to: "byod", label: "Initiates", type: "data", animated: true },
+          { id: "portal-guest", from: "portal", to: "guest", label: "Initiates", type: "data", animated: true },
+          { id: "portal-iot", from: "portal", to: "iot", label: "Initiates", type: "data", animated: true },
+        )
+      }
+
+      if (v === "fortigate-tacacs") {
+        nodes.push(
+          {
+            id: "admin",
+            label: "Network Admin",
+            type: "user",
+            x: 80,
+            y: 220,
+            width: 140,
+            height: 90,
+            color: "#e0e7ff",
+            imageUrl: stencil("Admin user"),
+            description: "SSH/HTTPS to device",
+          },
+          {
+            id: "fortigate",
+            label: "FortiGate",
+            type: "firewall",
+            x: 280,
+            y: 220,
+            width: 150,
+            height: 90,
+            color: "#fee2e2",
+            vendor: "fortinet",
+            imageUrl: vendorStencil("fortinet"),
+            description: "Device admin",
+          },
+          {
+            id: "tacacs",
+            label: "Portnox TACACS+",
+            type: "nac",
+            x: 500,
+            y: 220,
+            width: 170,
+            height: 90,
+            color: "#ccfbf1",
+            imageUrl: stencil("Portnox logo"),
+            description: "AAA for admin",
+          },
+          {
+            id: "ad",
+            label: "Active Directory",
+            type: "identity",
+            x: 720,
+            y: 220,
+            width: 170,
+            height: 90,
+            color: "#dbeafe",
+            imageUrl: idpStencil("active-directory"),
+            description: "RBAC groups",
+          },
+        )
+        edges.push(
+          { id: "admin-fw", from: "admin", to: "fortigate", label: "SSH/HTTPS", type: "https", animated: true },
+          { id: "fw-tacacs", from: "fortigate", to: "tacacs", label: "TACACS+", type: "tacacs", animated: true },
+          { id: "tacacs-ad", from: "tacacs", to: "ad", label: "LDAP/LDAPS", type: "ldap", animated: true },
+        )
+      }
+
+      if (v === "paloalto-tacacs") {
+        nodes.push(
+          {
+            id: "admin",
+            label: "Network Admin",
+            type: "user",
+            x: 80,
+            y: 220,
+            width: 140,
+            height: 90,
+            color: "#e0e7ff",
+            imageUrl: stencil("Admin user"),
+            description: "SSH/HTTPS to device",
+          },
+          {
+            id: "pan",
+            label: "Palo Alto NGFW",
+            type: "firewall",
+            x: 280,
+            y: 220,
+            width: 170,
+            height: 90,
+            color: "#fee2e2",
+            vendor: "paloalto",
+            imageUrl: vendorStencil("paloalto"),
+            description: "Device admin",
+          },
+          {
+            id: "panorama",
+            label: "Panorama",
+            type: "management",
+            x: 280,
+            y: 100,
+            width: 170,
+            height: 90,
+            color: "#fde68a",
+            vendor: "paloalto",
+            imageUrl: vendorStencil("paloalto"),
+            description: "Central management",
+          },
+          {
+            id: "tacacs",
+            label: "Portnox TACACS+",
+            type: "nac",
+            x: 520,
+            y: 220,
+            width: 170,
+            height: 90,
+            color: "#ccfbf1",
+            imageUrl: stencil("Portnox logo"),
+            description: "AAA for admin",
+          },
+          {
+            id: "ad",
+            label: "Active Directory",
+            type: "identity",
+            x: 740,
+            y: 220,
+            width: 170,
+            height: 90,
+            color: "#dbeafe",
+            imageUrl: idpStencil("active-directory"),
+            description: "RBAC groups",
+          },
+        )
+        edges.push(
+          { id: "admin-pan", from: "admin", to: "pan", label: "SSH/HTTPS", type: "https", animated: true },
+          { id: "pan-panorama", from: "pan", to: "panorama", label: "Mgmt", type: "https", animated: true },
+          { id: "pan-tacacs", from: "pan", to: "tacacs", label: "TACACS+", type: "tacacs", animated: true },
+          { id: "panorama-tacacs", from: "panorama", to: "tacacs", label: "TACACS+", type: "tacacs", animated: true },
+          { id: "tacacs-ad", from: "tacacs", to: "ad", label: "LDAP/LDAPS", type: "ldap", animated: true },
+        )
+      }
+
+      return { nodes, edges }
+    },
+    [connectivity, deployment, identity, vendor],
+  )
+
+  // Latency estimate based on node center distance with protocol adjustment
+  const estimateLatencyMs = (a: DiagramNode, b: DiagramNode, type: EdgeType) => {
+    const ax = a.x + a.width / 2
+    const ay = a.y + a.height / 2
+    const bx = b.x + b.width / 2
+    const by = b.y + b.height / 2
+    const d = Math.hypot(ax - bx, ay - by)
+    let ms = Math.max(2, Math.round(d / 18))
+    if (type === "https") ms += 8
+    if (type === "ldap") ms += 5
+    if (type === "tacacs") ms += 4
+    if (type === "syslog") ms += 1
+    return ms
+  }
+
+  const defaultReferences: ReferenceUrl[] = [
+    { label: "Portnox Zero Trust", href: "https://docs.portnox.com/topics/zero_trust" },
+    { label: "Microsoft Zero Trust", href: "https://docs.microsoft.com/en-us/security/zero-trust/" },
+  ]
+
+  const buildEdgeMeta = (edge: DiagramConnection, from: DiagramNode, to: DiagramNode): EdgeMeta => {
+    const meta: EdgeMeta = { ...(edge.meta || {}) }
+
+    if (!meta.ports) {
+      switch (edge.type) {
+        case "radius": {
+          const isCoA = /coa|session|reauth/i.test(edge.label)
+          meta.ports = isCoA ? "UDP 3799 (CoA)" : "UDP 1812 (Auth), 1813 (Acct)"
+          break
+        }
+        case "https":
+          meta.ports = "TCP 443"
+          break
+        case "ldap":
+          meta.ports = "TCP 389 (STARTTLS) / 636 (LDAPS)"
+          break
+        case "tacacs":
+          meta.ports = "TCP 49"
+          break
+        case "syslog":
+          meta.ports = "UDP 514 / TCP 6514 (TLS)"
+          break
+        case "data":
+        default:
+          meta.ports = "—"
+      }
+    }
+
+    if (!meta.ciphers) {
+      switch (edge.type) {
+        case "https":
+          meta.ciphers = "TLS 1.2/1.3 (AES-GCM)"
+          break
+        case "ldap":
+          meta.ciphers = "STARTTLS/LDAPS (TLS 1.2/1.3)"
+          break
+        case "radius": {
+          const isEAPTLS = /eap[-\s]?tls/i.test(edge.label)
+          meta.ciphers = isEAPTLS ? "EAP‑TLS (TLS 1.2/1.3)" : "EAP methods per policy"
+          break
+        }
+        case "tacacs":
+          meta.ciphers = "TACACS+ per-session encryption"
+          break
+        case "syslog":
+          meta.ciphers = "TLS over 6514 (if TCP) or none (UDP 514)"
+          break
+        case "data":
+        default:
+          meta.ciphers = "—"
+      }
+    }
+
+    if (!meta.certValidity) {
+      switch (edge.type) {
+        case "https":
+          meta.certValidity = "Server cert e.g., 398 days"
+          break
+        case "radius": {
+          const isEAPTLS = /eap[-\s]?tls/i.test(edge.label)
+          meta.certValidity = isEAPTLS ? "Client: 365d, Server: 398d (example)" : "Server: 398d (example)"
+          break
+        }
+        case "ldap":
+          meta.certValidity = "If LDAPS/STARTTLS: server cert per CA policy"
+          break
+        default:
+          meta.certValidity = "N/A"
+      }
+    }
+
+    if (!meta.referenceUrls) {
+      const refs: ReferenceUrl[] = [...defaultReferences]
+      if (edge.type === "radius" && /coa/i.test(edge.label)) {
+        refs.unshift({ label: "RADIUS CoA", href: "https://docs.portnox.com/topics/radius_coa" })
+      }
+      meta.referenceUrls = refs
+    }
+
+    if (meta.latencyMs == null) {
+      meta.latencyMs = estimateLatencyMs(from, to, edge.type)
+    }
+
+    return meta
+  }
+
+  // Rebuild the diagram whenever the selected view or controls change
+  useEffect(() => {
+    const v = (view as ViewId) || "zero-trust-nac"
+    const { nodes, edges } = buildInitial(v)
+    setNodes(nodes)
+    setConnections(edges)
+  }, [view, vendor, connectivity, identity, deployment, buildInitial])
+
+  // Dragging handlers
+  const onMouseDownNode = (e: React.MouseEvent<SVGGElement>, node: DiagramNode) => {
+    e.preventDefault()
+    const svg = svgRef.current
+    if (!svg) return
+    // Get mouse position relative to SVG
+    const pt = svg.createSVGPoint()
+    pt.x = e.clientX
+    pt.y = e.clientY
+    const ctm = svg.getScreenCTM()
+    const { x, y } = pt.matrixTransform(ctm?.inverse())
+    setDraggingId(node.id)
+    setDragOffset({ dx: x - node.x, dy: y - node.y })
+  }
+
+  const onMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    if (!draggingId || !dragOffset) return
+    const svg = svgRef.current
+    if (!svg) return
+    const pt = svg.createSVGPoint()
+    pt.x = e.clientX
+    pt.y = e.clientY
+    const ctm = svg.getScreenCTM()
+    const { x, y } = pt.matrixTransform(ctm?.inverse())
+    setNodes((prev) =>
+      prev.map((n) =>
+        n.id === draggingId
+          ? {
+              ...n,
+              x: x - dragOffset.dx,
+              y: y - dragOffset.dy,
+            }
+          : n,
+      ),
+    )
+  }
+
+  const onMouseUp = () => {
+    if (draggingId) {
+      setDraggingId(null)
+      setDragOffset(null)
+    }
+  }
+
+  // Paths and enriched edges
+  const enrichedEdges = useMemo(() => {
+    return connections
+      .map((edge) => {
+        const from = nodes.find((n) => n.id === edge.from)
+        const to = nodes.find((n) => n.id === edge.to)
+        if (!from || !to) return null
+        const meta = buildEdgeMeta(edge, from, to)
+        const fromX = from.x + from.width / 2
+        const fromY = from.y + from.height / 2
+        const toX = to.x + to.width / 2
+        const toY = to.y + to.height / 2
+        const midX = (fromX + toX) / 2
+        const midY = (fromY + toY) / 2 - 10
+        const d = `M ${fromX} ${fromY} Q ${(fromX + toX) / 2} ${(fromY + toY) / 2 - 30} ${toX} ${toY}`
+        return {
+          ...edge,
+          from,
+          to,
+          meta,
+          d,
+          midX,
+          midY,
+        }
+      })
+      .filter(Boolean) as Array<
+      DiagramConnection & {
+        from: DiagramNode
+        to: DiagramNode
+        meta: EdgeMeta
+        d: string
+        midX: number
+        midY: number
+      }
+    >
+  }, [connections, nodes])
+
+  // Animation control (CSS animation tempo)
   useEffect(() => {
     const svg = svgRef.current
     if (!svg) return
-    const animatedPaths = svg.querySelectorAll<SVGPathElement>(".animated-path")
-    animatedPaths.forEach((el) => {
-      el.style.animationDuration = `${Math.max(0.2, 2 / animationSpeed)}s`
-      el.style.animationPlayState = isAnimating && showDataFlow ? "running" : "paused"
+    const paths = svg.querySelectorAll<SVGPathElement>(".animated-path")
+    paths.forEach((p) => {
+      p.style.animationPlayState = isAnimating ? "running" : "paused"
     })
-  }, [isAnimating, showDataFlow, animationSpeed, nodes, edges])
+  }, [isAnimating])
 
-  const protocolColor = (proto: string) => theme.protocolColors[proto] || "#6b7280"
-
-  const getPath = (from: DiagramNode, to: DiagramNode) => {
-    const fromX = from.x + from.w
-    const fromY = from.y + from.h / 2
-    const toX = to.x
-    const toY = to.y + to.h / 2
-    const midX = (fromX + toX) / 2
-    // Orthogonal-ish cubic curve to reduce overlap
-    return `M ${fromX} ${fromY} C ${midX} ${fromY}, ${midX} ${toY}, ${toX} ${toY}`
+  const resetView = () => {
+    const v = (view as ViewId) || "zero-trust-nac"
+    const { nodes, edges } = buildInitial(v)
+    setNodes(nodes)
+    setConnections(edges)
+    setZoom(1)
   }
-
-  function exportSVG(filename = "diagram.svg") {
-    if (!svgRef.current) return
-    const clone = svgRef.current.cloneNode(true) as SVGSVGElement
-    const serializer = new XMLSerializer()
-    const source = serializer.serializeToString(clone)
-    const blob = new Blob([source], { type: "image/svg+xml;charset=utf-8" })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = filename
-    document.body.appendChild(a)
-    a.click()
-    a.remove()
-    URL.revokeObjectURL(url)
-  }
-
-  async function exportPNG(filename = "diagram.png") {
-    if (!svgRef.current) return
-    const serializer = new XMLSerializer()
-    const source = serializer.serializeToString(svgRef.current)
-    const svgBlob = new Blob([source], { type: "image/svg+xml;charset=utf-8" })
-    const url = URL.createObjectURL(svgBlob)
-
-    const img = new Image()
-    img.crossOrigin = "anonymous"
-    const canvas = document.createElement("canvas")
-    const rect = svgRef.current.getBoundingClientRect()
-    canvas.width = Math.max(1200, Math.floor(rect.width * window.devicePixelRatio))
-    canvas.height = Math.max(800, Math.floor(rect.height * window.devicePixelRatio))
-    const ctx = canvas.getContext("2d")!
-    await new Promise<void>((res, rej) => {
-      img.onload = () => {
-        ctx.fillStyle = "#ffffff"
-        ctx.fillRect(0, 0, canvas.width, canvas.height)
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
-        URL.revokeObjectURL(url)
-        res()
-      }
-      img.onerror = rej
-      img.src = url
-    })
-
-    canvas.toBlob((blob) => {
-      if (!blob) return
-      const a = document.createElement("a")
-      a.href = URL.createObjectURL(blob)
-      a.download = filename
-      document.body.appendChild(a)
-      a.click()
-      a.remove()
-    })
-  }
-
-  useImperativeHandle(ref, () => ({ exportSVG, exportPNG }), [])
-
-  const maxX = Math.max(...nodes.map((n) => n.x + n.w), 1200)
-  const maxY = Math.max(...nodes.map((n) => n.y + n.h), 700)
-
-  // Workflow step bounds
-  const maxStep = Math.max(0, ...edges.map((e) => e.sequence || 0))
 
   return (
     <div className="relative">
       {/* Controls */}
-      <div className="absolute top-3 right-3 z-10 flex items-center gap-2">
-        {view === "auth-flow" && (
-          <>
-            <Button variant="outline" size="sm" onClick={() => setWorkflowStep((s) => Math.max(0, s - 1))}>
-              <StepBack className="w-4 h-4" />
-            </Button>
-            <Badge variant="outline">
-              Step {workflowStep}/{maxStep || 1}
-            </Badge>
-            <Button variant="outline" size="sm" onClick={() => setWorkflowStep((s) => Math.min(maxStep, s + 1))}>
-              <StepForward className="w-4 h-4" />
-            </Button>
-          </>
-        )}
-        <Button variant="outline" size="sm" onClick={() => setIsAnimating((v) => !v)}>
+      <div className="absolute top-4 right-4 z-10 flex gap-2">
+        <Button variant="outline" size="sm" onClick={() => setIsAnimating((s) => !s)}>
           {isAnimating ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
         </Button>
-        <Button variant="outline" size="sm" onClick={reset}>
+        <Button variant="outline" size="sm" onClick={resetView}>
           <RotateCcw className="w-4 h-4" />
         </Button>
-        <Button variant="outline" size="sm" onClick={zoomIn}>
+        <Button variant="outline" size="sm" onClick={() => setZoom((z) => Math.min(3, z * 1.2))}>
           <ZoomIn className="w-4 h-4" />
         </Button>
-        <Button variant="outline" size="sm" onClick={zoomOut}>
+        <Button variant="outline" size="sm" onClick={() => setZoom((z) => Math.max(0.5, z / 1.2))}>
           <ZoomOut className="w-4 h-4" />
         </Button>
       </div>
 
       {/* Zoom indicator */}
-      <div className="absolute top-3 left-3 z-10">
-        <Badge variant="outline" className="bg-white/90 backdrop-blur">
-          {Math.round(zoom * 100)}%
-        </Badge>
+      <div className="absolute top-4 left-4 z-10">
+        <Badge variant="outline">{Math.round(zoom * 100)}%</Badge>
       </div>
 
-      {/* Canvas */}
-      <div
-        className="w-full overflow-hidden border rounded-lg bg-white shadow-sm"
-        style={{ background: "var(--pn-bg)" }}
-      >
+      {/* SVG Canvas */}
+      <div className="w-full rounded-lg border bg-white">
         <svg
           ref={svgRef}
           width="100%"
-          height="100%"
-          viewBox={`0 0 ${maxX + 100} ${maxY + 100}`}
-          className="w-full min-h-[650px]"
-          style={{ transform: `scale(${zoom})`, transformOrigin: "0 0" }}
+          height="600"
+          viewBox="0 0 1100 520"
+          className="w-full h-[600px]"
+          onMouseMove={onMouseMove}
+          onMouseUp={onMouseUp}
+          style={{ transform: `scale(${zoom})`, transformOrigin: "center center" }}
         >
           <defs>
-            <marker
-              id="arrow"
-              markerWidth="10"
-              markerHeight="10"
-              refX="9"
-              refY="3"
-              orient="auto"
-              markerUnits="strokeWidth"
-            >
-              <path d="M0,0 L0,6 L9,3 z" fill="#64748b" />
-            </marker>
             <style>
               {`
                 .animated-path {
-                  stroke-dasharray: 10 6;
+                  stroke-dasharray: 10 5;
                   animation: dash 2s linear infinite;
                 }
                 @keyframes dash {
-                  to { stroke-dashoffset: -16; }
+                  to { stroke-dashoffset: -15; }
                 }
-                .node {
-                  transition: transform 0.15s ease, filter 0.15s ease;
-                }
-                .node.hovered {
-                  filter: drop-shadow(0 6px 14px rgba(0,0,0,0.18));
-                  transform: translateY(-2px);
-                }
-                .cluster {
-                  fill: #ffffffcc;
-                  stroke: #e2e8f0;
-                  stroke-width: 2;
+                .node-shadow {
+                  filter: drop-shadow(0 6px 12px rgba(0,0,0,0.15));
                 }
               `}
             </style>
+            <marker
+              id="arrow"
+              viewBox="0 0 10 10"
+              refX="9"
+              refY="5"
+              markerWidth="6"
+              markerHeight="6"
+              orient="auto-start-reverse"
+            >
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#6B7280" />
+            </marker>
           </defs>
 
-          {/* Clusters */}
-          {nodes
-            .filter((n) => n.kind === "cluster")
-            .map((c) => (
-              <g key={c.id}>
-                <rect x={c.x} y={c.y} width={c.w} height={c.h} rx={12} className="cluster" />
-                <text x={c.x + 14} y={c.y + 24} fontSize="14" fontWeight={600} fill="#334155">
-                  {c.label}
-                </text>
-                {c.meta?.completion !== undefined && (
-                  <>
-                    <rect x={c.x + 14} y={c.y + 30} width={c.w - 28} height={6} fill="#e5e7eb" rx={3} />
-                    <rect
-                      x={c.x + 14}
-                      y={c.y + 30}
-                      width={((c.w - 28) * Number(c.meta.completion)) / 100}
-                      height={6}
-                      fill="#10b981"
-                      rx={3}
-                    />
-                  </>
-                )}
-              </g>
-            ))}
-
-          {/* Edges first (so they go under nodes) */}
-          {edges.map((e) => {
-            const from = nodes.find((n) => n.id === e.from)
-            const to = nodes.find((n) => n.id === e.to)
-            if (!from || !to) return null
-            const d = getPath(from, to)
-            const color = protocolColor(e.protocol)
-            const visible =
-              view !== "auth-flow" || workflowStep === 0 || (e.sequence !== undefined && e.sequence <= workflowStep)
+          {/* Edges with tooltips */}
+          {enrichedEdges.map((edge) => {
+            const stroke = getConnectionColor(edge.type)
             return (
-              <g key={e.id} opacity={visible ? 1 : 0.15}>
-                <path
-                  d={d}
-                  stroke={color}
-                  strokeWidth={
-                    Number(
-                      getComputedStyle(document.documentElement).getPropertyValue("--pn-edge-width").replace("px", ""),
-                    ) || 2
-                  }
-                  fill="none"
-                  className={e.animated && isAnimating && showDataFlow ? "animated-path" : ""}
-                  markerEnd="url(#arrow)"
-                  strokeDasharray={e.dashed ? "6 6" : undefined}
-                />
-                <text>
-                  <textPath href={`#${e.id}-path`} startOffset="50%"></textPath>
-                </text>
-                {/* Edge label near mid */}
-                <text
-                  x={(from.x + from.w + to.x) / 2}
-                  y={(from.y + from.h / 2 + to.y + to.h / 2) / 2 - 8}
-                  fontSize="11"
-                  textAnchor="middle"
-                  fill="#374151"
-                >
-                  {e.label}
-                </text>
-              </g>
+              <TooltipProvider key={`edge-${edge.id}`}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <g className="cursor-pointer">
+                      {/* Invisible thick path to improve hover interaction */}
+                      <path
+                        d={edge.d}
+                        stroke="transparent"
+                        strokeWidth="14"
+                        fill="none"
+                        style={{ pointerEvents: "stroke" }}
+                      />
+                      <path
+                        d={edge.d}
+                        stroke={stroke}
+                        strokeWidth="2"
+                        fill="none"
+                        className={edge.animated ? "animated-path" : ""}
+                        markerEnd="url(#arrow)"
+                      />
+                      <text x={edge.midX} y={edge.midY} textAnchor="middle" fontSize="11" fill="#374151">
+                        {edge.label}
+                      </text>
+                    </g>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-sm">
+                    <div className="text-xs space-y-1">
+                      <div className="font-semibold">{edge.label}</div>
+                      <div className="grid grid-cols-3 gap-x-2 gap-y-1 mt-1">
+                        <div className="text-[10px] uppercase text-muted-foreground">Protocol</div>
+                        <div className="col-span-2">{edge.type.toUpperCase()}</div>
+
+                        <div className="text-[10px] uppercase text-muted-foreground">Ports</div>
+                        <div className="col-span-2">{edge.meta.ports}</div>
+
+                        <div className="text-[10px] uppercase text-muted-foreground">Ciphers</div>
+                        <div className="col-span-2">{edge.meta.ciphers}</div>
+
+                        <div className="text-[10px] uppercase text-muted-foreground">Cert Validity</div>
+                        <div className="col-span-2">{edge.meta.certValidity}</div>
+
+                        <div className="text-[10px] uppercase text-muted-foreground">Latency</div>
+                        <div className="col-span-2">{edge.meta.latencyMs} ms (approx)</div>
+                      </div>
+                      {edge.meta.referenceUrls && edge.meta.referenceUrls.length > 0 && (
+                        <div className="pt-2 border-t mt-2">
+                          <div className="text-[10px] uppercase text-muted-foreground mb-1">References</div>
+                          <ul className="space-y-1">
+                            {edge.meta.referenceUrls.map((r) => (
+                              <li key={r.href}>
+                                <a
+                                  href={r.href}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:underline"
+                                >
+                                  {r.label}
+                                  <ExternalLink className="w-3 h-3" />
+                                </a>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )
           })}
 
           {/* Nodes */}
-          {nodes
-            .filter((n) => n.kind !== "cluster")
-            .map((n) => {
-              const hovered = selectedNodeId === n.id
-              return (
-                <TooltipProvider key={n.id}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <g
-                        className={`node ${hovered ? "hovered" : ""} cursor-pointer`}
-                        onClick={() => setSelectedNodeId((id) => (id === n.id ? null : n.id))}
-                      >
-                        <rect
-                          x={n.x}
-                          y={n.y}
-                          width={n.w}
-                          height={n.h}
-                          rx={10}
-                          fill={n.fill}
-                          opacity={0.96}
-                          stroke="#ffffff"
-                          strokeWidth={2}
-                        />
-                        {/* Logo */}
-                        {n.logo ? (
-                          <image x={n.x + 8} y={n.y + 8} width="24" height="24" href={n.logo} />
-                        ) : (
-                          <text x={n.x + 20} y={n.y + 26} fontSize="18">
-                            {n.icon || iconFor(n.kind)}
-                          </text>
-                        )}
-                        {/* Title */}
-                        <text
-                          x={n.x + n.w / 2}
-                          y={n.y + n.h / 2}
-                          fontSize="13"
-                          fontWeight={700}
-                          textAnchor="middle"
-                          fill="#0f172a"
-                        >
-                          {n.label}
-                        </text>
-                      </g>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="max-w-xs">
-                      <div className="space-y-1">
-                        <div className="font-semibold">{n.label}</div>
-                        {n.description && <div className="text-sm text-slate-600">{n.description}</div>}
-                        {n.vendor && <div className="text-xs text-slate-500">Vendor: {n.vendor.toUpperCase()}</div>}
-                        {n.meta && (
-                          <div className="text-xs text-slate-600">
-                            {Object.entries(n.meta).map(([k, v]) => (
-                              <div key={k}>
-                                <span className="font-medium">{k}: </span>
-                                <span>{String(v)}</span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )
-            })}
+          {nodes.map((node) => (
+            <g
+              key={node.id}
+              className="cursor-move node-shadow"
+              onMouseDown={(e) => onMouseDownNode(e, node)}
+              aria-label={node.label}
+            >
+              <rect
+                x={node.x}
+                y={node.y}
+                width={node.width}
+                height={node.height}
+                rx={10}
+                fill={node.color}
+                stroke="#fff"
+                strokeWidth={2}
+                opacity={0.95}
+              />
+              {/* Image */}
+              {node.imageUrl && (
+                <image
+                  href={node.imageUrl}
+                  x={node.x + 8}
+                  y={node.y + 8}
+                  width="28"
+                  height="28"
+                  preserveAspectRatio="xMidYMid meet"
+                />
+              )}
+              {/* Label */}
+              <text
+                x={node.x + node.width / 2}
+                y={node.y + node.height / 2}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                fontSize="13"
+                fontWeight="600"
+                fill="#111827"
+              >
+                {node.label}
+              </text>
+              {/* Subtext */}
+              {node.description && (
+                <text
+                  x={node.x + node.width / 2}
+                  y={node.y + node.height - 12}
+                  textAnchor="middle"
+                  fontSize="10"
+                  fill="#374151"
+                >
+                  {node.description}
+                </text>
+              )}
+            </g>
+          ))}
         </svg>
       </div>
     </div>
   )
-})
-
-export default InteractiveDiagram
-export type { Props as InteractiveDiagramProps }
+}

@@ -1,281 +1,279 @@
-"use client"
+'use client'
 
-import { useEffect, useMemo, useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { Book, MapPin, Users, Calendar, Settings, Network, Cloud } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
+import { Book, MapPin, Users, Calendar, Settings, CheckCircle, Clock, AlertTriangle, XCircle } from 'lucide-react'
 
-type Site = {
-  id?: string
-  name?: string
-  region?: string
-  country?: string
-  priority?: "High" | "Medium" | "Low"
-  phase?: string
-  users?: number
-  projectManager?: string
-  technicalOwners?: string[]
-  status?: "Planned" | "In Progress" | "Complete" | "Delayed"
-  completionPercent?: number
-  wiredVendors?: string[]
-  wirelessVendors?: string[]
-  deviceTypes?: string[]
-  radsec?: string
-  plannedStart?: string
-  plannedEnd?: string
-  notes?: string
+interface SiteWorkbookProps {
+  siteId: string | null
 }
 
-function safeArr<T>(val?: T[]): T[] {
-  return Array.isArray(val) ? val : []
-}
+export default function SiteWorkbook({ siteId }: SiteWorkbookProps) {
+  // Sample site data - in a real app this would be fetched based on siteId
+  const siteData = siteId ? {
+    id: 'ABM-HQ001',
+    name: 'ABM Global Headquarters',
+    region: 'North America',
+    country: 'USA',
+    priority: 'High',
+    phase: '1',
+    users: 2500,
+    projectManager: 'Alex Rivera',
+    technicalOwners: ['John Smith', 'Mark Wilson'],
+    status: 'In Progress',
+    completionPercent: 35,
+    notes: 'Executive network needs priority handling. Board room has custom AV equipment requiring special considerations for IoT device authentication.',
+    wiredVendors: ['Cisco', 'Juniper'],
+    wirelessVendors: ['Cisco'],
+    deviceTypes: ['Windows', 'Apple', 'Mobile', 'IoT'],
+    radsec: 'Native',
+    plannedStart: '2025-08-01',
+    plannedEnd: '2025-08-15',
+    deploymentChecklist: [
+      { item: 'Intune Configuration', status: 'complete' },
+      { item: 'Certificate Templates', status: 'complete' },
+      { item: 'RADIUS Configuration', status: 'in-progress' },
+      { item: 'Switch Configuration', status: 'in-progress' },
+      { item: 'Wireless Configuration', status: 'pending' },
+      { item: 'Policy Configuration', status: 'pending' },
+      { item: 'User Testing', status: 'pending' },
+      { item: 'Go-Live', status: 'pending' }
+    ]
+  } : null
 
-function fmtDate(d?: string) {
-  if (!d) return "—"
-  const dt = new Date(d)
-  return isNaN(dt.getTime()) ? "—" : dt.toLocaleDateString()
-}
-
-export default function SiteWorkbook({ siteId }: { siteId?: string }) {
-  const [sites, setSites] = useState<Site[]>([])
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem("portnox-sites")
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        if (Array.isArray(parsed)) {
-          setSites(parsed)
-          return
-        }
-      }
-    } catch {
-      /* ignore */
-    }
-    // fallback sample
-    setSites([
-      {
-        id: "HQ-1",
-        name: "Global HQ",
-        region: "North America",
-        country: "USA",
-        priority: "High",
-        phase: "1",
-        users: 2000,
-        projectManager: "Jane Doe",
-        technicalOwners: ["Alice", "Bob"],
-        status: "In Progress",
-        completionPercent: 45,
-        wiredVendors: ["Cisco"],
-        wirelessVendors: ["Aruba"],
-        deviceTypes: ["Windows", "Apple", "Mobile", "IoT"],
-        radsec: "Proxy",
-        plannedStart: "2025-06-01",
-        plannedEnd: "2025-10-15",
-        notes: "HQ rollout focusing on certificate-based auth and Intune compliance.",
-      },
-    ])
-  }, [])
-
-  const current = useMemo(() => {
-    if (!siteId) return undefined
-    return sites.find((s) => s.id === siteId || s.name === siteId)
-  }, [sites, siteId])
-
-  if (!siteId || !current) {
+  if (!siteId || !siteData) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Book className="h-6 w-6 text-[#00c8d7]" />
-            <span>Site Workbook</span>
-          </CardTitle>
+          <CardTitle>Site Workbook</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-12">
-            <Book className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">No Site Selected</h3>
-            <p className="text-muted-foreground">Choose a site in the Master Site List to view details.</p>
+          <div className="text-center py-12 text-muted-foreground">
+            {siteId ? `Site workbook for ${siteId}` : 'Select a site to view its workbook'}
           </div>
         </CardContent>
       </Card>
     )
   }
 
-  const technicalOwners = safeArr(current.technicalOwners)
-  const wiredVendors = safeArr(current.wiredVendors)
-  const wirelessVendors = safeArr(current.wirelessVendors)
-  const deviceTypes = safeArr(current.deviceTypes)
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'High': return 'destructive'
+      case 'Medium': return 'default'
+      case 'Low': return 'secondary'
+      default: return 'outline'
+    }
+  }
 
-  const statusColor =
-    current.status === "Complete"
-      ? "text-green-600"
-      : current.status === "In Progress"
-        ? "text-blue-600"
-        : current.status === "Delayed"
-          ? "text-red-600"
-          : "text-gray-600"
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Complete': return 'text-green-600'
+      case 'In Progress': return 'text-blue-600'
+      case 'Planned': return 'text-gray-600'
+      case 'Delayed': return 'text-red-600'
+      default: return 'text-gray-600'
+    }
+  }
+
+  const getChecklistIcon = (status: string) => {
+    switch (status) {
+      case 'complete':
+        return <CheckCircle className="h-4 w-4 text-green-600" />
+      case 'in-progress':
+        return <Clock className="h-4 w-4 text-blue-600" />
+      case 'pending':
+        return <XCircle className="h-4 w-4 text-gray-400" />
+      default:
+        return <XCircle className="h-4 w-4 text-gray-400" />
+    }
+  }
 
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Book className="h-6 w-6 text-[#00c8d7]" />
-            <span>
-              Site Workbook: {current.name} {current.id ? `(${current.id})` : ""}
-            </span>
-          </CardTitle>
+          <CardTitle>Site Workbook: {siteData.name}</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="space-y-3">
-              <h3 className="text-lg font-semibold flex items-center gap-2">
+            {/* Basic Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold flex items-center space-x-2">
                 <MapPin className="h-5 w-5 text-blue-600" />
-                Site Information
+                <span>Site Information</span>
               </h3>
-              <div className="space-y-2">
+              
+              <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Region</span>
-                  <span>{current.region || "—"}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Country</span>
-                  <span>{current.country || "—"}</span>
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Site ID:</span>
+                  <span className="font-mono">{siteData.id}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Priority</span>
-                  <Badge variant="secondary">{current.priority || "—"}</Badge>
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Region:</span>
+                  <span>{siteData.region}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Phase</span>
-                  <span>{current.phase ? `Phase ${current.phase}` : "—"}</span>
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Country:</span>
+                  <span>{siteData.country}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Users</span>
-                  <span>{typeof current.users === "number" ? current.users.toLocaleString() : "—"}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <Users className="h-5 w-5 text-blue-600" />
-                Project Team
-              </h3>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Project Manager</span>
-                  <span>{current.projectManager || "—"}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Technical Owners</span>
-                  <div className="text-right">{technicalOwners.length > 0 ? technicalOwners.join(", ") : "—"}</div>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Status</span>
-                  <span className={`font-medium ${statusColor}`}>{current.status || "—"}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Completion</span>
-                  <div className="flex items-center gap-2">
-                    <div className="w-32 bg-gray-200 rounded-full h-2">
-                      <div
-                        className="bg-blue-600 h-2 rounded-full"
-                        style={{ width: `${current.completionPercent ?? 0}%` }}
-                      />
-                    </div>
-                    <span className="text-sm">{current.completionPercent ?? 0}%</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-blue-600" />
-                Timeline
-              </h3>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Planned Start</span>
-                  <span>{fmtDate(current.plannedStart)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Planned End</span>
-                  <span>{fmtDate(current.plannedEnd)}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <Settings className="h-5 w-5 text-blue-600" />
-                Technical Configuration
-              </h3>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Network className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Wired Vendors:</span>
-                  <div className="flex flex-wrap gap-1">
-                    {wiredVendors.length > 0 ? (
-                      wiredVendors.map((v, i) => (
-                        <Badge key={`${v}-${i}`} variant="outline" className="text-xs">
-                          {v}
-                        </Badge>
-                      ))
-                    ) : (
-                      <span>—</span>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Network className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Wireless Vendors:</span>
-                  <div className="flex flex-wrap gap-1">
-                    {wirelessVendors.length > 0 ? (
-                      wirelessVendors.map((v, i) => (
-                        <Badge key={`${v}-${i}`} variant="outline" className="text-xs">
-                          {v}
-                        </Badge>
-                      ))
-                    ) : (
-                      <span>—</span>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Cloud className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">RADSec:</span>
-                  <Badge variant="outline" className="text-xs">
-                    {current.radsec || "—"}
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Priority:</span>
+                  <Badge variant={getPriorityColor(siteData.priority)}>
+                    {siteData.priority}
                   </Badge>
                 </div>
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Phase:</span>
+                  <span>Phase {siteData.phase}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Users:</span>
+                  <span>{siteData.users.toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Project Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold flex items-center space-x-2">
+                <Users className="h-5 w-5 text-blue-600" />
+                <span>Project Team</span>
+              </h3>
+              
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Project Manager:</span>
+                  <span>{siteData.projectManager}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Technical Owners:</span>
+                  <div className="text-right">
+                    {siteData.technicalOwners.map((owner, index) => (
+                      <div key={index}>{owner}</div>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Status:</span>
+                  <span className={`font-medium ${getStatusColor(siteData.status)}`}>
+                    {siteData.status}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Completion:</span>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-20 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <div 
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${siteData.completionPercent}%` }}
+                      />
+                    </div>
+                    <span className="text-sm font-medium">{siteData.completionPercent}%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Timeline */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold flex items-center space-x-2">
+                <Calendar className="h-5 w-5 text-blue-600" />
+                <span>Project Timeline</span>
+              </h3>
+              
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Planned Start:</span>
+                  <span>{new Date(siteData.plannedStart).toLocaleDateString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Planned End:</span>
+                  <span>{new Date(siteData.plannedEnd).toLocaleDateString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Duration:</span>
+                  <span>
+                    {Math.ceil((new Date(siteData.plannedEnd).getTime() - new Date(siteData.plannedStart).getTime()) / (1000 * 60 * 60 * 24))} days
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Technical Configuration */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold flex items-center space-x-2">
+                <Settings className="h-5 w-5 text-blue-600" />
+                <span>Technical Configuration</span>
+              </h3>
+              
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">RADSEC Implementation:</span>
+                  <Badge variant="outline">{siteData.radsec}</Badge>
+                </div>
                 <div>
-                  <span className="text-muted-foreground">Device Types:</span>
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Wired Vendors:</span>
                   <div className="flex flex-wrap gap-1 mt-1">
-                    {deviceTypes.length > 0 ? (
-                      deviceTypes.map((type, i) => (
-                        <Badge key={`${type}-${i}`} variant="secondary" className="text-xs">
-                          {type}
-                        </Badge>
-                      ))
-                    ) : (
-                      <span>—</span>
-                    )}
+                    {siteData.wiredVendors.map((vendor, index) => (
+                      <Badge key={index} variant="outline" className="text-xs">
+                        {vendor}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Wireless Vendors:</span>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {siteData.wirelessVendors.map((vendor, index) => (
+                      <Badge key={index} variant="outline" className="text-xs">
+                        {vendor}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Device Types:</span>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {siteData.deviceTypes.map((type, index) => (
+                      <Badge key={index} variant="outline" className="text-xs">
+                        {type}
+                      </Badge>
+                    ))}
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <Separator />
+          {/* Deployment Checklist */}
+          <div className="mt-6 pt-6 border-t">
+            <h3 className="text-lg font-semibold mb-4">Deployment Checklist</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {siteData.deploymentChecklist.map((item, index) => (
+                <div key={index} className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  {getChecklistIcon(item.status)}
+                  <span className={`flex-1 ${item.status === 'complete' ? 'line-through text-gray-500' : ''}`}>
+                    {item.item}
+                  </span>
+                  <Badge 
+                    variant={item.status === 'complete' ? 'default' : item.status === 'in-progress' ? 'secondary' : 'outline'}
+                    className="text-xs"
+                  >
+                    {item.status.replace('-', ' ')}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </div>
 
-          <div>
-            <h3 className="text-lg font-semibold mb-2">Notes</h3>
-            <div className="bg-gray-50 rounded-lg p-4">
-              <p className="text-sm">{current.notes || "—"}</p>
+          {/* Notes Section */}
+          <div className="mt-6 pt-6 border-t">
+            <h3 className="text-lg font-semibold mb-3">Project Notes</h3>
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+              <p className="text-gray-700 dark:text-gray-300">
+                {siteData.notes}
+              </p>
             </div>
           </div>
         </CardContent>
