@@ -18,6 +18,7 @@ import ReactFlow, {
   type EdgeProps,
   type NodeProps,
   getSmoothStepPath,
+  useReactFlow,
 } from "reactflow"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Badge } from "@/components/ui/badge"
@@ -60,19 +61,6 @@ type Meta = {
   referenceUrls?: { label: string; href: string }[]
 }
 
-declare module "reactflow" {
-  // Extend Node/Edge data typing
-  interface Node<Data = StencilData> {
-    data: Data
-    width?: number
-    height?: number
-  }
-  interface Edge<Data = { label?: string; kind?: EdgeKind; meta?: Meta }> {
-    data?: Data
-  }
-}
-
-// Helpers: placeholders for stencils/logos
 const stencil = (query: string, w = 32, h = 32) =>
   `/placeholder.svg?height=${h}&width=${w}&query=${encodeURIComponent(query)}`
 
@@ -140,7 +128,6 @@ const mdmStencil = (name: string) => {
   return stencil("MDM platform logo")
 }
 
-// Colors by node "kind"
 const colorFor = (kind: string) => {
   switch (kind) {
     case "endpoint":
@@ -171,7 +158,6 @@ const colorFor = (kind: string) => {
   }
 }
 
-// Defaults per protocol
 const defaultMetaFor = (kind: EdgeKind, label?: string): Meta => {
   const refs = [
     { label: "Portnox Zero Trust", href: "https://docs.portnox.com/topics/zero_trust" },
@@ -215,29 +201,27 @@ const defaultMetaFor = (kind: EdgeKind, label?: string): Meta => {
   }
 }
 
-// Custom Stencil Node
+// Custom HTML node (React Flow nodes render as HTML)
 function StencilNode({ data, selected }: NodeProps<StencilData>) {
   const fill = data.color || "#fff"
   return (
-    <foreignObject x={-90} y={-35} width={180} height={70}>
-      <div
-        className="rounded-lg border shadow-sm px-3 py-2 flex items-center gap-2"
-        style={{ background: fill, borderColor: selected ? "#3b82f6" : "#e5e7eb" }}
-      >
-        {data.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={data.imageUrl || "/placeholder.svg"} alt={data.label} width={28} height={28} className="rounded" />
-        ) : null}
-        <div className="min-w-0">
-          <div className="text-xs font-semibold truncate">{data.label}</div>
-          {data.description ? <div className="text-[10px] text-slate-600 truncate">{data.description}</div> : null}
-        </div>
+    <div
+      className="rounded-lg border shadow-sm px-3 py-2 flex items-center gap-2 min-w-[180px]"
+      style={{ background: fill, borderColor: selected ? "#3b82f6" : "#e5e7eb" }}
+    >
+      {data.imageUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={data.imageUrl || "/placeholder.svg"} alt={data.label} width={28} height={28} className="rounded" />
+      ) : null}
+      <div className="min-w-0">
+        <div className="text-xs font-semibold truncate">{data.label}</div>
+        {data.description ? <div className="text-[10px] text-slate-600 truncate">{data.description}</div> : null}
       </div>
-    </foreignObject>
+    </div>
   )
 }
 
-// Custom Edge with rich tooltip and orthogonal path
+// Custom SVG edge
 function PortnoxEdge(
   props: EdgeProps<{
     label?: string
@@ -245,7 +229,7 @@ function PortnoxEdge(
     meta?: Meta
   }>,
 ) {
-  const { sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data, id } = props
+  const { sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data, id, markerEnd } = props
   const [path, labelX, labelY] = getSmoothStepPath({
     sourceX,
     sourceY,
@@ -256,7 +240,6 @@ function PortnoxEdge(
     targetPosition: targetPosition || Position.Left,
   })
 
-  // Latency approximation based on distance + protocol overhead
   const d = Math.hypot(sourceX - targetX, sourceY - targetY)
   let latency = Math.max(2, Math.round(d / 18))
   switch (data?.kind) {
@@ -295,8 +278,9 @@ function PortnoxEdge(
 
   return (
     <g>
-      {/* wide hover area for easy interaction */}
-      <path d={path} stroke="transparent" strokeWidth={14} fill="none" className="pointer-events-stroke" />
+      {/* Transparent wide stroke to ease hover */}
+      <path d={path} stroke="transparent" strokeWidth={14} fill="none" />
+
       <TooltipProvider delayDuration={100}>
         <Tooltip>
           <TooltipTrigger asChild>
@@ -308,15 +292,14 @@ function PortnoxEdge(
                 strokeWidth={2}
                 fill="none"
                 className="animated-path"
-                markerEnd="url(#pnx-arrow)"
+                markerEnd={undefined}
               />
-              {/* Label */}
+              {/* Use React Flow markerEnd (ArrowClosed) via edge option, not a custom SVG marker */}
+              {markerEnd ? <path d={path} stroke="transparent" fill="none" markerEnd={markerEnd as any} /> : null}
               {data?.label && (
-                <foreignObject x={labelX - 60} y={labelY - 12} width={120} height={24}>
-                  <div className="px-2 py-1 rounded-full bg-white/90 border text-[11px] text-slate-800 text-center">
-                    {data.label}
-                  </div>
-                </foreignObject>
+                <text x={labelX} y={labelY - 2} textAnchor="middle" fontSize={11} fill="#374151">
+                  {data.label}
+                </text>
               )}
             </g>
           </TooltipTrigger>
@@ -370,9 +353,8 @@ function PortnoxEdge(
 const nodeTypes = { stencil: StencilNode }
 const edgeTypes = { portnox: PortnoxEdge }
 
-// Build graph per view
 function buildGraph(view: ViewId, vendor: string, connectivity: string, identity: string, deployment: string) {
-  const N = (id: string, label: string, kind: string, opts?: Partial<StencilData> & { idp?: boolean }) =>
+  const N = (id: string, label: string, kind: string, opts?: Partial<StencilData>) =>
     ({
       id,
       type: "stencil",
@@ -591,14 +573,12 @@ function buildGraph(view: ViewId, vendor: string, connectivity: string, identity
       E("tacacs-ad", "tacacs", "ad", "LDAP/LDAPS", "ldap"),
     )
   } else {
-    // Fallback minimal graph
     nodes.push(N("portnox", "Portnox Cloud", "nac", { description: "Cloud NAC", imageUrl: stencil("Portnox") }))
   }
 
   return { nodes, edges }
 }
 
-// ELK layout
 const elk = new ELK()
 async function layoutWithElk(nodes: Node[], edges: Edge[]) {
   const elkGraph = {
@@ -633,7 +613,6 @@ async function layoutWithElk(nodes: Node[], edges: Edge[]) {
     }
   })
 
-  // React Flow will draw edges; positions from ELK ensure orthogonal geometry
   return { nodes: layoutedNodes, edges }
 }
 
@@ -644,13 +623,15 @@ export default function InteractiveDiagram({
   identity,
   deployment,
 }: InteractiveDiagramProps) {
-  const [zoom, setZoom] = useState(1)
   const [isAnimating, setIsAnimating] = useState(true)
+  const [zoom, setZoom] = useState(1)
+  const [viewport, setViewportState] = useState<{ x: number; y: number; zoom: number }>({ x: 0, y: 0, zoom: 1 })
+
+  const { setViewport } = useReactFlow()
 
   const [rfNodes, setRfNodes, onNodesChange] = useNodesState<StencilData>([])
   const [rfEdges, setRfEdges, onEdgesChange] = useEdgesState([])
 
-  // Rebuild and layout when inputs change
   useEffect(() => {
     const v = (view as ViewId) || "zero-trust-nac"
     const { nodes, edges } = buildGraph(v, vendor, connectivity, identity, deployment)
@@ -671,11 +652,9 @@ export default function InteractiveDiagram({
     })
   }, [view, vendor, connectivity, identity, deployment, setRfNodes, setRfEdges])
 
-  // Edge color animation control
   useEffect(() => {
     const root = document.documentElement
-    const dur = Math.max(0.25, 2 / 1) // base
-    root.style.setProperty("--pnx-anim-duration", `${dur}s`)
+    root.style.setProperty("--pnx-anim-duration", `2s`)
   }, [])
 
   const onConnect = useCallback(
@@ -693,8 +672,42 @@ export default function InteractiveDiagram({
     [setRfEdges],
   )
 
+  const handleZoomIn = () => {
+    const newZoom = Math.min(3, viewport.zoom * 1.2)
+    setViewport({ ...viewport, zoom: newZoom })
+    setZoom(newZoom)
+  }
+  const handleZoomOut = () => {
+    const newZoom = Math.max(0.5, viewport.zoom / 1.2)
+    setViewport({ ...viewport, zoom: newZoom })
+    setZoom(newZoom)
+  }
+  const handleReset = () => {
+    const v = (view as ViewId) || "zero-trust-nac"
+    const { nodes, edges } = buildGraph(v, vendor, connectivity, identity, deployment)
+    layoutWithElk(nodes, edges).then(({ nodes: ln, edges: le }) => {
+      setRfNodes(ln.map((n) => ({ ...n, draggable: true, type: "stencil" })))
+      setRfEdges(le.map((e) => ({ ...e, type: "portnox" })))
+      setViewport({ x: 0, y: 0, zoom: 1 })
+      setZoom(1)
+      setViewportState({ x: 0, y: 0, zoom: 1 })
+    })
+  }
+
   return (
     <div className="relative">
+      {/* Animation CSS (global for this component subtree) */}
+      <style>{`
+        .animated-path {
+          stroke-dasharray: 10 6;
+          animation: pnx-dash var(--pnx-anim-duration, 2s) linear infinite;
+          animation-play-state: ${isAnimating ? "running" : "paused"};
+        }
+        @keyframes pnx-dash {
+          to { stroke-dashoffset: -16; }
+        }
+      `}</style>
+
       {/* Controls */}
       <div className="absolute top-3 right-3 z-10 flex items-center gap-2">
         <button
@@ -705,27 +718,19 @@ export default function InteractiveDiagram({
         </button>
         <button
           className="inline-flex items-center justify-center rounded-md border px-2 py-1 text-sm"
-          onClick={() => setZoom((z) => Math.min(3, z * 1.2))}
+          onClick={handleZoomIn}
         >
           <ZoomIn className="w-4 h-4" />
         </button>
         <button
           className="inline-flex items-center justify-center rounded-md border px-2 py-1 text-sm"
-          onClick={() => setZoom((z) => Math.max(0.5, z / 1.2))}
+          onClick={handleZoomOut}
         >
           <ZoomOut className="w-4 h-4" />
         </button>
         <button
           className="inline-flex items-center justify-center rounded-md border px-2 py-1 text-sm"
-          onClick={() => {
-            const v = (view as ViewId) || "zero-trust-nac"
-            const { nodes, edges } = buildGraph(v, vendor, connectivity, identity, deployment)
-            layoutWithElk(nodes, edges).then(({ nodes: ln, edges: le }) => {
-              setRfNodes(ln.map((n) => ({ ...n, draggable: true, type: "stencil" })))
-              setRfEdges(le.map((e) => ({ ...e, type: "portnox" })))
-              setZoom(1)
-            })
-          }}
+          onClick={handleReset}
         >
           <RotateCcw className="w-4 h-4" />
         </button>
@@ -751,29 +756,13 @@ export default function InteractiveDiagram({
           snapGrid={[12, 12]}
           connectionLineType={ConnectionLineType.SmoothStep}
           proOptions={{ hideAttribution: true }}
-          style={{
-            transform: `scale(${zoom})`,
-            transformOrigin: "50% 50%",
+          onMove={(_, vp) => {
+            if (vp) {
+              setViewportState(vp)
+              setZoom(vp.zoom)
+            }
           }}
         >
-          <defs>
-            <style>
-              {`
-                .animated-path {
-                  stroke-dasharray: 10 6;
-                  animation: pnx-dash var(--pnx-anim-duration, 2s) linear infinite;
-                  animation-play-state: ${isAnimating ? "running" : "paused"};
-                }
-                @keyframes pnx-dash {
-                  to { stroke-dashoffset: -16; }
-                }
-              `}
-            </style>
-            <marker id="pnx-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
-              <path d="M 0 0 L 10 5 L 0 10 z" fill="#6B7280" />
-            </marker>
-          </defs>
-
           <MiniMap pannable zoomable />
           <Controls />
           <Background variant="dots" gap={16} size={1} />
