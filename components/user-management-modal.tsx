@@ -1,102 +1,107 @@
-'use client'
+"use client"
 
-import { useState } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Plus, Trash2, User, Mail } from 'lucide-react'
+import { useEffect, useState } from "react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge"
+import { Plus, Trash2 } from "lucide-react"
 
-interface User {
-  id: string
-  name: string
-  email: string
-  role: string
-}
+type Role = "Viewer" | "Editor" | "Admin"
+type User = { id: string; name: string; email: string; role: Role }
 
-interface UserManagementModalProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-}
+export default function UserManagementModal({
+  open,
+  onOpenChange,
+}: { open: boolean; onOpenChange: (o: boolean) => void }) {
+  const [users, setUsers] = useState<User[]>([])
+  const [name, setName] = useState("")
+  const [email, setEmail] = useState("")
+  const [role, setRole] = useState<Role>("Viewer")
 
-export default function UserManagementModal({ open, onOpenChange }: UserManagementModalProps) {
-  const [projectManagers, setProjectManagers] = useState<User[]>([
-    { id: '1', name: 'Alex Rivera', email: 'alex.rivera@abm.com', role: 'Senior Project Manager' },
-    { id: '2', name: 'Marcus Chen', email: 'marcus.chen@abm.com', role: 'Project Manager' },
-    { id: '3', name: 'Sofia Linden', email: 'sofia.linden@abm.com', role: 'Project Manager' },
-    { id: '4', name: 'Michael Zhang', email: 'michael.zhang@abm.com', role: 'Project Manager' },
-    { id: '5', name: 'Maria Rodriguez', email: 'maria.rodriguez@abm.com', role: 'Project Manager' },
-    { id: '6', name: 'James Wilson', email: 'james.wilson@abm.com', role: 'Project Manager' }
-  ])
+  useEffect(() => {
+    const saved = localStorage.getItem("portnox-users")
+    if (saved) setUsers(JSON.parse(saved))
+  }, [])
+  useEffect(() => {
+    localStorage.setItem("portnox-users", JSON.stringify(users))
+  }, [users])
 
-  const [technicalOwners, setTechnicalOwners] = useState<User[]>([
-    { id: '1', name: 'John Smith', email: 'john.smith@abm.com', role: 'Network Administrator' },
-    { id: '2', name: 'Mark Wilson', email: 'mark.wilson@abm.com', role: 'Security Engineer' },
-    { id: '3', name: 'Emily Jones', email: 'emily.jones@abm.com', role: 'Network Engineer' },
-    { id: '4', name: 'Paul Davis', email: 'paul.davis@abm.com', role: 'IT Manager' },
-    { id: '5', name: 'Sarah Thompson', email: 'sarah.thompson@abm.com', role: 'Network Administrator' },
-    { id: '6', name: 'Carlos Mendez', email: 'carlos.mendez@abm.com', role: 'Network Engineer' },
-    { id: '7', name: 'Diego Ruiz', email: 'diego.ruiz@abm.com', role: 'Security Engineer' },
-    { id: '8', name: 'Jennifer Lee', email: 'jennifer.lee@abm.com', role: 'System Administrator' }
-  ])
-
-  const [newPMName, setNewPMName] = useState('')
-  const [newPMEmail, setNewPMEmail] = useState('')
-  const [newTOName, setNewTOName] = useState('')
-  const [newTOEmail, setNewTOEmail] = useState('')
-  const [newTORole, setNewTORole] = useState('')
-
-  const addProjectManager = () => {
-    if (newPMName && newPMEmail) {
-      const newPM: User = {
-        id: Date.now().toString(),
-        name: newPMName,
-        email: newPMEmail,
-        role: 'Project Manager'
-      }
-      setProjectManagers([...projectManagers, newPM])
-      setNewPMName('')
-      setNewPMEmail('')
-    }
+  const add = () => {
+    if (!name || !email) return
+    setUsers((arr) => [...arr, { id: crypto.randomUUID(), name, email, role }])
+    setName("")
+    setEmail("")
+    setRole("Viewer")
   }
 
-  const addTechnicalOwner = () => {
-    if (newTOName && newTOEmail && newTORole) {
-      const newTO: User = {
-        id: Date.now().toString(),
-        name: newTOName,
-        email: newTOEmail,
-        role: newTORole
-      }
-      setTechnicalOwners([...technicalOwners, newTO])
-      setNewTOName('')
-      setNewTOEmail('')
-      setNewTORole('')
-    }
-  }
-
-  const removeProjectManager = (id: string) => {
-    setProjectManagers(projectManagers.filter(pm => pm.id !== id))
-  }
-
-  const removeTechnicalOwner = (id: string) => {
-    setTechnicalOwners(technicalOwners.filter(to => to.id !== id))
-  }
-
-  const getUserInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase()
-  }
+  const remove = (id: string) => setUsers((arr) => arr.filter((u) => u.id !== id))
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>User Management</DialogTitle>
         </DialogHeader>
-        <div className="text-center py-12 text-muted-foreground">
-          User management functionality will be implemented here
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+            <Input placeholder="Full name" value={name} onChange={(e) => setName(e.target.value)} />
+            <Input placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+            <Select value={role} onValueChange={(v) => setRole(v as Role)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Role" />
+              </SelectTrigger>
+              <SelectContent>
+                {["Viewer", "Editor", "Admin"].map((r) => (
+                  <SelectItem key={r} value={r}>
+                    {r}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button onClick={add}>
+              <Plus className="h-4 w-4 mr-1" /> Add
+            </Button>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left border-b">
+                  <th className="p-2">Name</th>
+                  <th className="p-2">Email</th>
+                  <th className="p-2">Role</th>
+                  <th className="p-2 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map((u) => (
+                  <tr key={u.id} className="border-b">
+                    <td className="p-2">{u.name}</td>
+                    <td className="p-2">{u.email}</td>
+                    <td className="p-2">
+                      <Badge variant={u.role === "Admin" ? "default" : u.role === "Editor" ? "secondary" : "outline"}>
+                        {u.role}
+                      </Badge>
+                    </td>
+                    <td className="p-2 text-right">
+                      <Button variant="ghost" size="sm" className="text-red-600" onClick={() => remove(u.id)}>
+                        <Trash2 className="h-4 w-4 mr-1" /> Remove
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+                {users.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="p-6 text-center text-neutral-500">
+                      No users yet.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

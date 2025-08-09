@@ -1,81 +1,58 @@
-'use client'
+"use client"
 
-import { useState } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
-import { Palette, RotateCcw } from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { useThemeSettings } from "@/lib/theme"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Slider } from "@/components/ui/slider"
+import { Badge } from "@/components/ui/badge"
 
-interface ThemeCustomizerProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-}
+export default function ThemeCustomizer({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
+  const { theme, updateTheme } = useThemeSettings()
 
-export default function ThemeCustomizer({ open, onOpenChange }: ThemeCustomizerProps) {
-  const [colors, setColors] = useState({
-    primary: '#1a73e8',
-    planned: '#17a2b8',
-    inProgress: '#ff9800',
-    complete: '#0f9d58',
-    delayed: '#d93025'
-  })
-
-  const updateColor = (colorKey: string, value: string) => {
-    setColors(prev => ({ ...prev, [colorKey]: value }))
-    
-    // Apply the color to CSS custom properties
-    const root = document.documentElement
-    switch (colorKey) {
-      case 'primary':
-        root.style.setProperty('--primary', value)
-        break
-      case 'planned':
-        root.style.setProperty('--chart-planned', value)
-        break
-      case 'inProgress':
-        root.style.setProperty('--chart-in-progress', value)
-        break
-      case 'complete':
-        root.style.setProperty('--chart-complete', value)
-        break
-      case 'delayed':
-        root.style.setProperty('--chart-delayed', value)
-        break
-    }
-  }
-
-  const resetColors = () => {
-    const defaultColors = {
-      primary: '#1a73e8',
-      planned: '#17a2b8',
-      inProgress: '#ff9800',
-      complete: '#0f9d58',
-      delayed: '#d93025'
-    }
-    
-    setColors(defaultColors)
-    
-    // Reset CSS custom properties
-    const root = document.documentElement
-    root.style.setProperty('--primary', defaultColors.primary)
-    root.style.setProperty('--chart-planned', defaultColors.planned)
-    root.style.setProperty('--chart-in-progress', defaultColors.inProgress)
-    root.style.setProperty('--chart-complete', defaultColors.complete)
-    root.style.setProperty('--chart-delayed', defaultColors.delayed)
-  }
+  const updateProto = (key: string, val: string) =>
+    updateTheme({ protocolColors: { ...theme.protocolColors, [key]: val } })
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle className="flex items-center space-x-2">
-            <Palette className="h-6 w-6 text-blue-600" />
-            <span>Theme Customizer</span>
-          </DialogTitle>
+          <DialogTitle>Theme Customizer</DialogTitle>
         </DialogHeader>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <Label>Primary</Label>
+            <Input type="color" value={theme.primary} onChange={(e) => updateTheme({ primary: e.target.value })} />
+          </div>
+          <div className="space-y-2">
+            <Label>Background Gradient (CSS)</Label>
+            <Input value={theme.background} onChange={(e) => updateTheme({ background: e.target.value })} />
+          </div>
+          <div className="space-y-2">
+            <Label>Edge Width</Label>
+            <Slider
+              min={1}
+              max={6}
+              step={1}
+              value={[theme.edgeWidth]}
+              onValueChange={(v) => updateTheme({ edgeWidth: v[0] })}
+            />
+            <Badge variant="outline">{theme.edgeWidth}px</Badge>
+          </div>
 
-        <div className="text-center py-12 text-muted-foreground">
-          Theme customization functionality will be implemented here
+          <div className="md:col-span-3">
+            <Label className="block mb-2">Protocol Colors</Label>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {Object.entries(theme.protocolColors).map(([k, v]) => (
+                <div key={k} className="flex items-center gap-2">
+                  <Badge className="min-w-[80px]" variant="secondary">
+                    {k.toUpperCase()}
+                  </Badge>
+                  <Input type="color" value={v} onChange={(e) => updateProto(k, e.target.value)} />
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
