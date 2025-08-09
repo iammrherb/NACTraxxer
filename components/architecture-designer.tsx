@@ -1,166 +1,317 @@
 "use client"
 
-import { useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Slider } from "@/components/ui/slider"
-import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import InteractiveDiagram, { type InteractiveDiagramHandle } from "@/components/interactive-diagram"
-import { Download, Settings, Play, Layers } from "lucide-react"
-import OnboardingScenarios from "@/components/onboarding-scenarios"
-import PolicyEditor from "@/components/policy-editor"
-import { useSites } from "@/hooks/use-sites"
+import { Slider } from "@/components/ui/slider"
+import { Download, Globe, Server, Shield, Lock, Zap, Workflow } from "lucide-react"
+import GraphCanvas, { type GraphSpec } from "@/components/graph-canvas"
+import { toPng, toSvg } from "html-to-image"
+import type { JSX } from "react/jsx-runtime"
 
-export default function ArchitectureDesigner() {
-  const { sites } = useSites()
-  const [selectedView, setSelectedView] = useState("multi-site")
-  const [animationSpeed, setAnimationSpeed] = useState([1])
-  const [showDataFlow, setShowDataFlow] = useState(true)
-  const [showPolicyEditor, setShowPolicyEditor] = useState(false)
-  const [showOnboardingScenarios, setShowOnboardingScenarios] = useState(false)
-  const [activeSiteId, setActiveSiteId] = useState<string>(sites[0]?.id || "")
+type ViewId =
+  | "complete"
+  | "auth-flow"
+  | "coa-flow"
+  | "pki"
+  | "tacacs"
+  | "intune"
+  | "jamf"
+  | "kandji"
+  | "onboarding-guest"
+  | "onboarding-iot"
 
-  const diagramRef = useRef<InteractiveDiagramHandle>(null)
+const cloudProviders = [
+  { id: "aws", label: "AWS" },
+  { id: "azure", label: "Azure" },
+  { id: "gcp", label: "GCP" },
+  { id: "onprem", label: "On-Prem" },
+] as const
 
-  const architectureViews = useMemo(
-    () => [
-      {
-        value: "multi-site",
-        label: "Multi-Site Global View",
-        description: "All sites with RADSec placement and cloud",
-      },
-      { value: "complete", label: "Complete Architecture (Site)", description: "End-to-end for selected site" },
-      { value: "auth-flow", label: "Authentication Workflow (CoA)", description: "Step-by-step 802.1X with CoA" },
-      { value: "pki", label: "PKI & Certificate Management", description: "Root/Issuing CA, CRL and cert flows" },
-      {
-        value: "policies",
-        label: "Policy Enforcement & VLANs",
-        description: "User/device policies and VLAN assignment",
-      },
-      {
-        value: "tacacs-admin",
-        label: "Admin Access (TACACS+/RADIUS)",
-        description: "Admin AAA for firewalls/switches",
-      },
-      { value: "onboarding", label: "Device Onboarding & Guest/IoT", description: "Captive portal, BYOD, IoT" },
-    ],
-    [],
+const vendors = ["cisco", "aruba", "juniper", "extreme", "ruckus", "fortinet", "paloalto"] as const
+
+const mdms = ["intune", "jamf", "kandji"] as const
+
+export default function ArchitectureDesigner({ selectedSiteId }: { selectedSiteId?: string }) {
+  const [view, setView] = useState<ViewId>("complete")
+  const [cloud, setCloud] = useState<(typeof cloudProviders)[number]["id"]>("azure")
+  const [wired, setWired] = useState<(typeof vendors)[number]>("cisco")
+  const [wireless, setWireless] = useState<(typeof vendors)[number]>("aruba")
+  const [firewall, setFirewall] = useState<(typeof vendors)[number]>("fortinet")
+  const [mdm, setMdm] = useState<(typeof mdms)[number]>("intune")
+  const [radsec, setRadsec] = useState<"onprem" | "aws" | "azure" | "gcp">("azure")
+  const [agentMode, setAgentMode] = useState<"agent" | "agentless">("agentless")
+  const [animationSpeed, setAnimationSpeed] = useState(1)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  // Optionally hydrate selections from the selected site
+  useEffect(() => {
+    if (!selectedSiteId) return
+    try {
+      const saved = localStorage.getItem("portnox-sites")
+      if (!saved) return
+      const sites = JSON.parse(saved) as any[]
+      const site = sites.find((s) => s.id === selectedSiteId)
+      if (!site) return
+      // map some preferences
+      if (site.wiredVendors?.[0]) {
+        const v = (site.wiredVendors[0] as string).toLowerCase().replace(/\s+/g, "") as any
+        if (vendors.includes(v)) setWired(v)
+      }
+      if (site.wirelessVendors?.[0]) {
+        const v = (site.wirelessVendors[0] as string).toLowerCase().replace(/\s+/g, "") as any
+        if (vendors.includes(v)) setWireless(v)
+      }
+      if (site.radsec) {
+        const r = site.radsec.toLowerCase()
+        if (["onprem", "aws", "azure", "gcp"].includes(r)) setRadsec(r as any)
+      }
+    } catch {
+      // ignore
+    }
+  }, [selectedSiteId])
+
+  const views: { id: ViewId; label: string; icon: JSX.Element; desc: string }[] = [
+    {
+      id: "complete",
+      label: "Complete Architecture",
+      icon: <Globe className="w-4 h-4" />,
+      desc: "End-to-end multi-cloud NAC",
+    },
+    { id: "auth-flow", label: "Authentication Flow", icon: <Shield className="w-4 h-4" />, desc: "802.1X RADIUS flow" },
+    {
+      id: "coa-flow",
+      label: "Change of Authorization (CoA)",
+      icon: <Workflow className="w-4 h-4" />,
+      desc: "CoA/VLAN update sequence",
+    },
+    { id: "pki", label: "PKI & Certificates", icon: <Lock className="w-4 h-4" />, desc: "Root/Issuing CAs and certs" },
+    { id: "tacacs", label: "TACACS+ Admin", icon: <Server className="w-4 h-4" />, desc: "Device admin auth" },
+    { id: "intune", label: "Microsoft Intune", icon: <Zap className="w-4 h-4" />, desc: "Compliance-driven access" },
+    { id: "jamf", label: "Jamf Pro", icon: <Zap className="w-4 h-4" />, desc: "macOS compliance and certs" },
+    { id: "kandji", label: "Kandji", icon: <Zap className="w-4 h-4" />, desc: "Apple device mgmt" },
+    {
+      id: "onboarding-guest",
+      label: "Guest/Captive Portal",
+      icon: <Globe className="w-4 h-4" />,
+      desc: "Sponsored guest onboarding",
+    },
+    {
+      id: "onboarding-iot",
+      label: "IoT Profiling",
+      icon: <Globe className="w-4 h-4" />,
+      desc: "IoT identification/onboarding",
+    },
+  ]
+
+  const spec: GraphSpec = useMemo(
+    () => ({
+      view,
+      cloud,
+      wired,
+      wireless,
+      firewall,
+      mdm,
+      radsec,
+      agentMode,
+      animationSpeed,
+    }),
+    [view, cloud, wired, wireless, firewall, mdm, radsec, agentMode, animationSpeed],
   )
 
-  const exportPNG = () => diagramRef.current?.exportPNG(`diagram-${selectedView}.png`)
-  const exportSVG = () => diagramRef.current?.exportSVG(`diagram-${selectedView}.svg`)
+  const exportPNG = async () => {
+    if (!containerRef.current) return
+    const node = containerRef.current
+    const dataUrl = await toPng(node, { cacheBust: true, backgroundColor: "white" })
+    const link = document.createElement("a")
+    link.download = `portnox-${view}-${Date.now()}.png`
+    link.href = dataUrl
+    link.click()
+  }
+
+  const exportSVG = async () => {
+    if (!containerRef.current) return
+    const node = containerRef.current
+    const dataUrl = await toSvg(node, { cacheBust: true, backgroundColor: "white" })
+    const link = document.createElement("a")
+    link.download = `portnox-${view}-${Date.now()}.svg`
+    link.href = dataUrl
+    link.click()
+  }
 
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Portnox NAC Architecture Designer</span>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={exportPNG}>
-                <Download className="h-4 w-4 mr-2" />
-                Export PNG
-              </Button>
-              <Button variant="outline" size="sm" onClick={exportSVG}>
-                <Download className="h-4 w-4 mr-2" />
-                Export SVG
-              </Button>
-            </div>
+          <CardTitle className="flex items-center gap-2">
+            {views.find((v) => v.id === view)?.icon}
+            <span>Architecture Controls</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="view-select">View</Label>
-              <Select value={selectedView} onValueChange={setSelectedView}>
-                <SelectTrigger id="view-select">
+              <Label>View</Label>
+              <Select value={view} onValueChange={(v) => setView(v as ViewId)}>
+                <SelectTrigger>
                   <SelectValue placeholder="Select view" />
                 </SelectTrigger>
                 <SelectContent>
-                  {architectureViews.map((view) => (
-                    <SelectItem key={view.value} value={view.value}>
-                      <div className="flex flex-col">
-                        <span className="font-medium">{view.label}</span>
-                        <span className="text-xs text-muted-foreground">{view.description}</span>
+                  {views.map((v) => (
+                    <SelectItem key={v.id} value={v.id}>
+                      <div className="flex items-center gap-2">
+                        {v.icon}
+                        <span>{v.label}</span>
                       </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-
             <div className="space-y-2">
-              <Label htmlFor="site-select">Active Site (for site views)</Label>
-              <Select value={activeSiteId} onValueChange={setActiveSiteId}>
-                <SelectTrigger id="site-select">
-                  <SelectValue placeholder="Select site" />
+              <Label>Cloud</Label>
+              <Select value={cloud} onValueChange={(v) => setCloud(v as any)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Cloud" />
                 </SelectTrigger>
                 <SelectContent>
-                  {sites.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      <div className="flex items-center gap-2">
-                        <Layers className="h-4 w-4 text-emerald-600" />
-                        <span className="font-medium">{s.name}</span>
-                        <Badge variant="secondary">{s.region}</Badge>
-                      </div>
+                  {cloudProviders.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-
             <div className="space-y-2">
-              <Label htmlFor="animation-speed">Animation Speed</Label>
-              <div className="flex items-center gap-2">
-                <Slider
-                  id="animation-speed"
-                  min={0.5}
-                  max={3}
-                  step={0.5}
-                  value={animationSpeed}
-                  onValueChange={setAnimationSpeed}
-                />
-                <Badge variant="outline">{animationSpeed[0]}x</Badge>
-              </div>
+              <Label>Wired</Label>
+              <Select value={wired} onValueChange={(v) => setWired(v as any)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Wired Vendor" />
+                </SelectTrigger>
+                <SelectContent>
+                  {vendors.map((v) => (
+                    <SelectItem key={v} value={v}>
+                      {v}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+            <div className="space-y-2">
+              <Label>Wireless</Label>
+              <Select value={wireless} onValueChange={(v) => setWireless(v as any)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Wireless Vendor" />
+                </SelectTrigger>
+                <SelectContent>
+                  {vendors.map((v) => (
+                    <SelectItem key={v} value={v}>
+                      {v}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Firewall</Label>
+              <Select value={firewall} onValueChange={(v) => setFirewall(v as any)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Firewall Vendor" />
+                </SelectTrigger>
+                <SelectContent>
+                  {vendors.map((v) => (
+                    <SelectItem key={v} value={v}>
+                      {v}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>MDM</Label>
+              <Select value={mdm} onValueChange={(v) => setMdm(v as any)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="MDM" />
+                </SelectTrigger>
+                <SelectContent>
+                  {mdms.map((v) => (
+                    <SelectItem key={v} value={v}>
+                      {v}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
 
-            <div className="flex items-center gap-3">
-              <Switch id="data-flow" checked={showDataFlow} onCheckedChange={setShowDataFlow} />
-              <Label htmlFor="data-flow">Show Data Flow Animation</Label>
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="space-y-2">
+              <Label>RADSec</Label>
+              <Select value={radsec} onValueChange={(v) => setRadsec(v as any)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="RADSec" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="onprem">On-Prem</SelectItem>
+                  <SelectItem value="aws">AWS</SelectItem>
+                  <SelectItem value="azure">Azure</SelectItem>
+                  <SelectItem value="gcp">GCP</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+            <div className="space-y-2">
+              <Label>Agent Mode</Label>
+              <Select value={agentMode} onValueChange={(v) => setAgentMode(v as any)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Agent Mode" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="agentless">Agentless (MDM Compliance)</SelectItem>
+                  <SelectItem value="agent">Portnox Agent (Risk/Policy)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label>Animation Speed: {animationSpeed.toFixed(1)}x</Label>
+              <Slider
+                value={[animationSpeed]}
+                onValueChange={(v) => setAnimationSpeed(v[0])}
+                min={0.5}
+                max={3}
+                step={0.5}
+              />
+            </div>
+            <div className="flex items-end gap-2 md:col-span-2">
+              <Button variant="outline" onClick={exportSVG}>
+                <Download className="w-4 h-4 mr-2" />
+                Export SVG
+              </Button>
+              <Button variant="outline" onClick={exportPNG}>
+                <Download className="w-4 h-4 mr-2" />
+                Export PNG
+              </Button>
+            </div>
+          </div>
 
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={() => setShowPolicyEditor(true)}>
-                <Settings className="h-4 w-4 mr-2" /> Policy Editor
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => setShowOnboardingScenarios(true)}>
-                <Play className="h-4 w-4 mr-2" /> Onboarding Flows
-              </Button>
-            </div>
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="outline">Cloud: {cloud}</Badge>
+            <Badge variant="outline">Wired: {wired}</Badge>
+            <Badge variant="outline">Wireless: {wireless}</Badge>
+            <Badge variant="outline">Firewall: {firewall}</Badge>
+            <Badge variant="outline">MDM: {mdm}</Badge>
+            <Badge variant="outline">RADSec: {radsec}</Badge>
+            <Badge variant="outline">Mode: {agentMode}</Badge>
           </div>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{architectureViews.find((v) => v.value === selectedView)?.label || "Diagram"}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <InteractiveDiagram
-            ref={diagramRef}
-            view={selectedView}
-            animationSpeed={animationSpeed[0]}
-            showDataFlow={showDataFlow}
-            activeSiteId={activeSiteId}
-          />
-        </CardContent>
-      </Card>
-
-      {showPolicyEditor && <PolicyEditor onClose={() => setShowPolicyEditor(false)} />}
-      {showOnboardingScenarios && <OnboardingScenarios onClose={() => setShowOnboardingScenarios(false)} />}
+      <div ref={containerRef}>
+        <GraphCanvas spec={spec} />
+      </div>
     </div>
   )
 }
