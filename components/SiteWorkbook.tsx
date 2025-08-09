@@ -1,35 +1,47 @@
-'use client'
+"use client"
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Book, MapPin, Users, Calendar, Settings } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Book, MapPin, Users, Calendar, Settings } from "lucide-react"
 
 interface SiteWorkbookProps {
   siteId: string | null
 }
 
-export default function SiteWorkbook({ siteId }: SiteWorkbookProps) {
+export default function SiteWorkbook({ siteId = null }: SiteWorkbookProps) {
   // Sample site data - in a real app this would be fetched based on siteId
-  const siteData = siteId ? {
-    id: 'ABM-HQ001',
-    name: 'ABM Global Headquarters',
-    region: 'North America',
-    country: 'USA',
-    priority: 'High',
-    phase: '1',
-    users: 2500,
-    projectManager: 'Alex Rivera',
-    technicalOwners: ['John Smith', 'Mark Wilson'],
-    status: 'In Progress',
-    completionPercent: 35,
-    notes: 'Executive network needs priority handling. Board room has custom AV equipment.',
-    wiredVendors: ['Cisco', 'Juniper'],
-    wirelessVendors: ['Cisco'],
-    deviceTypes: ['Windows', 'Apple', 'Mobile', 'IoT'],
-    radsec: 'Native',
-    plannedStart: '2025-08-01',
-    plannedEnd: '2025-08-15'
-  } : null
+  const siteData = siteId
+    ? {
+        id: "ABM-HQ001",
+        name: "ABM Global Headquarters",
+        region: "North America",
+        country: "USA",
+        priority: "High",
+        phase: "1",
+        users: 2500,
+        projectManager: "Alex Rivera",
+        technicalOwners: ["John Smith", "Mark Wilson"],
+        status: "In Progress",
+        completionPercent: 35,
+        notes: "Executive network needs priority handling. Board room has custom AV equipment.",
+        wiredVendors: ["Cisco", "Juniper"],
+        wirelessVendors: ["Cisco"],
+        deviceTypes: ["Windows", "Apple", "Mobile", "IoT"],
+        radsec: "Native",
+        plannedStart: "2025-08-01",
+        plannedEnd: "2025-08-15",
+      }
+    : null
+
+  const technicalOwners = siteData?.technicalOwners ?? []
+  const wiredVendors = siteData?.wiredVendors ?? []
+  const wirelessVendors = siteData?.wirelessVendors ?? []
+  const deviceTypes = siteData?.deviceTypes ?? []
+
+  const plannedStart = siteData?.plannedStart ? new Date(siteData.plannedStart) : null
+  const plannedEnd = siteData?.plannedEnd ? new Date(siteData.plannedEnd) : null
+  const completionPercent = typeof siteData?.completionPercent === "number" ? siteData.completionPercent : 0
+  const usersCount = typeof siteData?.users === "number" ? siteData.users : 0
 
   if (!siteId || !siteData) {
     return (
@@ -43,9 +55,7 @@ export default function SiteWorkbook({ siteId }: SiteWorkbookProps) {
         <CardContent>
           <div className="text-center py-12">
             <Book className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-              No Site Selected
-            </h3>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No Site Selected</h3>
             <p className="text-gray-600 dark:text-gray-400">
               Please select a site from the Master List to view its detailed workbook.
             </p>
@@ -57,20 +67,29 @@ export default function SiteWorkbook({ siteId }: SiteWorkbookProps) {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'High': return 'bg-red-100 text-red-800 border-red-200'
-      case 'Medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200'
-      case 'Low': return 'bg-green-100 text-green-800 border-green-200'
-      default: return 'bg-gray-100 text-gray-800 border-gray-200'
+      case "High":
+        return "bg-red-100 text-red-800 border-red-200"
+      case "Medium":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200"
+      case "Low":
+        return "bg-green-100 text-green-800 border-green-200"
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200"
     }
   }
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'Complete': return 'text-green-600'
-      case 'In Progress': return 'text-blue-600'
-      case 'Planned': return 'text-gray-600'
-      case 'Delayed': return 'text-red-600'
-      default: return 'text-gray-600'
+      case "Complete":
+        return "text-green-600"
+      case "In Progress":
+        return "text-blue-600"
+      case "Planned":
+        return "text-gray-600"
+      case "Delayed":
+        return "text-red-600"
+      default:
+        return "text-gray-600"
     }
   }
 
@@ -91,7 +110,7 @@ export default function SiteWorkbook({ siteId }: SiteWorkbookProps) {
                 <MapPin className="h-5 w-5 text-blue-600" />
                 <span>Site Information</span>
               </h3>
-              
+
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="font-medium text-gray-600 dark:text-gray-400">Site ID:</span>
@@ -107,9 +126,7 @@ export default function SiteWorkbook({ siteId }: SiteWorkbookProps) {
                 </div>
                 <div className="flex justify-between">
                   <span className="font-medium text-gray-600 dark:text-gray-400">Priority:</span>
-                  <Badge className={getPriorityColor(siteData.priority)}>
-                    {siteData.priority}
-                  </Badge>
+                  <Badge className={getPriorityColor(siteData.priority)}>{siteData.priority}</Badge>
                 </div>
                 <div className="flex justify-between">
                   <span className="font-medium text-gray-600 dark:text-gray-400">Phase:</span>
@@ -117,7 +134,7 @@ export default function SiteWorkbook({ siteId }: SiteWorkbookProps) {
                 </div>
                 <div className="flex justify-between">
                   <span className="font-medium text-gray-600 dark:text-gray-400">Users:</span>
-                  <span>{siteData.users.toLocaleString()}</span>
+                  <span>{usersCount.toLocaleString()}</span>
                 </div>
               </div>
             </div>
@@ -128,7 +145,7 @@ export default function SiteWorkbook({ siteId }: SiteWorkbookProps) {
                 <Users className="h-5 w-5 text-blue-600" />
                 <span>Project Team</span>
               </h3>
-              
+
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="font-medium text-gray-600 dark:text-gray-400">Project Manager:</span>
@@ -137,27 +154,22 @@ export default function SiteWorkbook({ siteId }: SiteWorkbookProps) {
                 <div className="flex justify-between">
                   <span className="font-medium text-gray-600 dark:text-gray-400">Technical Owners:</span>
                   <div className="text-right">
-                    {siteData.technicalOwners.map((owner, index) => (
+                    {technicalOwners.map((owner: string, index: number) => (
                       <div key={index}>{owner}</div>
                     ))}
                   </div>
                 </div>
                 <div className="flex justify-between">
                   <span className="font-medium text-gray-600 dark:text-gray-400">Status:</span>
-                  <span className={`font-medium ${getStatusColor(siteData.status)}`}>
-                    {siteData.status}
-                  </span>
+                  <span className={`font-medium ${getStatusColor(siteData.status)}`}>{siteData.status}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="font-medium text-gray-600 dark:text-gray-400">Completion:</span>
                   <div className="flex items-center space-x-2">
                     <div className="w-20 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                      <div 
-                        className="bg-blue-600 h-2 rounded-full"
-                        style={{ width: `${siteData.completionPercent}%` }}
-                      />
+                      <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${completionPercent}%` }} />
                     </div>
-                    <span className="text-sm font-medium">{siteData.completionPercent}%</span>
+                    <span className="text-sm font-medium">{completionPercent}%</span>
                   </div>
                 </div>
               </div>
@@ -169,20 +181,22 @@ export default function SiteWorkbook({ siteId }: SiteWorkbookProps) {
                 <Calendar className="h-5 w-5 text-blue-600" />
                 <span>Project Timeline</span>
               </h3>
-              
+
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="font-medium text-gray-600 dark:text-gray-400">Planned Start:</span>
-                  <span>{new Date(siteData.plannedStart).toLocaleDateString()}</span>
+                  <span>{plannedStart ? plannedStart.toLocaleDateString() : "TBD"}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="font-medium text-gray-600 dark:text-gray-400">Planned End:</span>
-                  <span>{new Date(siteData.plannedEnd).toLocaleDateString()}</span>
+                  <span>{plannedEnd ? plannedEnd.toLocaleDateString() : "TBD"}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="font-medium text-gray-600 dark:text-gray-400">Duration:</span>
                   <span>
-                    {Math.ceil((new Date(siteData.plannedEnd).getTime() - new Date(siteData.plannedStart).getTime()) / (1000 * 60 * 60 * 24))} days
+                    {plannedStart && plannedEnd
+                      ? `${Math.ceil((plannedEnd.getTime() - plannedStart.getTime()) / (1000 * 60 * 60 * 24))} days`
+                      : "TBD"}
                   </span>
                 </div>
               </div>
@@ -194,7 +208,7 @@ export default function SiteWorkbook({ siteId }: SiteWorkbookProps) {
                 <Settings className="h-5 w-5 text-blue-600" />
                 <span>Technical Configuration</span>
               </h3>
-              
+
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="font-medium text-gray-600 dark:text-gray-400">RADSEC Implementation:</span>
@@ -203,7 +217,7 @@ export default function SiteWorkbook({ siteId }: SiteWorkbookProps) {
                 <div>
                   <span className="font-medium text-gray-600 dark:text-gray-400">Wired Vendors:</span>
                   <div className="flex flex-wrap gap-1 mt-1">
-                    {siteData.wiredVendors.map((vendor, index) => (
+                    {wiredVendors.map((vendor: string, index: number) => (
                       <Badge key={index} variant="outline" className="text-xs">
                         {vendor}
                       </Badge>
@@ -213,7 +227,7 @@ export default function SiteWorkbook({ siteId }: SiteWorkbookProps) {
                 <div>
                   <span className="font-medium text-gray-600 dark:text-gray-400">Wireless Vendors:</span>
                   <div className="flex flex-wrap gap-1 mt-1">
-                    {siteData.wirelessVendors.map((vendor, index) => (
+                    {wirelessVendors.map((vendor: string, index: number) => (
                       <Badge key={index} variant="outline" className="text-xs">
                         {vendor}
                       </Badge>
@@ -223,7 +237,7 @@ export default function SiteWorkbook({ siteId }: SiteWorkbookProps) {
                 <div>
                   <span className="font-medium text-gray-600 dark:text-gray-400">Device Types:</span>
                   <div className="flex flex-wrap gap-1 mt-1">
-                    {siteData.deviceTypes.map((type, index) => (
+                    {deviceTypes.map((type: string, index: number) => (
                       <Badge key={index} variant="outline" className="text-xs">
                         {type}
                       </Badge>
@@ -238,9 +252,7 @@ export default function SiteWorkbook({ siteId }: SiteWorkbookProps) {
           <div className="mt-6 pt-6 border-t">
             <h3 className="text-lg font-semibold mb-3">Project Notes</h3>
             <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-              <p className="text-gray-700 dark:text-gray-300">
-                {siteData.notes}
-              </p>
+              <p className="text-gray-700 dark:text-gray-300">{siteData.notes}</p>
             </div>
           </div>
         </CardContent>
