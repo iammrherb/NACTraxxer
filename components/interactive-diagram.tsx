@@ -24,8 +24,6 @@ import ReactFlow, {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Badge } from "@/components/ui/badge"
 import { Play, Pause, RotateCcw, ZoomIn, ZoomOut, ExternalLink } from "lucide-react"
-
-// ELK for auto layout (runs in browser)
 import ELK from "elkjs/lib/elk.bundled.js"
 
 type ViewId =
@@ -65,81 +63,79 @@ type Meta = {
   referenceUrls?: { label: string; href: string }[]
 }
 
-const asset = (name: string) => `/logos/${name}`
+const asset = (name: string) => `/logos/${name}.png`
 
-// Logo helpers mapped to local assets
 const vendorLogo = (v: string) => {
   switch (v) {
     case "cisco":
-      return asset("cisco.svg")
+      return asset("cisco")
     case "aruba":
-      return asset("aruba.svg")
+      return asset("aruba")
     case "juniper":
-      return asset("juniper.svg")
+      return asset("juniper")
     case "extreme":
-      return asset("extreme.svg")
+      return asset("extreme")
     case "fortinet":
-      return asset("fortinet.svg")
+      return asset("fortinet")
     case "paloalto":
-      return asset("paloalto.svg")
+      return asset("paloalto")
     case "meraki":
-      return asset("meraki.svg")
+      return asset("meraki")
     case "ubiquiti":
-      return asset("ubiquiti.svg")
+      return asset("ubiquiti")
     case "mikrotik":
-      return asset("mikrotik.svg")
+      return asset("mikrotik")
     case "cambium":
-      return asset("cambium.svg")
+      return asset("cambium")
     case "ruckus":
-      return asset("ruckus.svg")
+      return asset("ruckus")
     default:
-      return asset("network-generic.svg")
+      return asset("network-generic")
   }
 }
 const cloudLogo = (p: string) => {
   switch (p) {
     case "aws":
-      return asset("aws.svg")
+      return asset("aws")
     case "azure":
-      return asset("azure.svg")
+      return asset("azure")
     case "gcp":
-      return asset("gcp.svg")
+      return asset("gcp")
     default:
-      return asset("cloud.svg")
+      return asset("cloud")
   }
 }
 const idpLogo = (idp: string) => {
   switch (idp) {
     case "azure-ad":
-      return asset("entra.svg")
+      return asset("entra")
     case "active-directory":
-      return asset("active-directory.svg")
+      return asset("active-directory")
     case "okta":
-      return asset("okta.svg")
+      return asset("okta")
     case "ping":
-      return asset("ping.svg")
+      return asset("ping")
     default:
-      return asset("idp.svg")
+      return asset("idp")
   }
 }
 const mdmLogo = (name: string) => {
-  if (/intune/i.test(name)) return asset("intune.svg")
-  if (/jamf/i.test(name)) return asset("jamf.svg")
-  if (/kandji/i.test(name)) return asset("kandji.svg")
-  return asset("mdm.svg")
+  if (/intune/i.test(name)) return asset("intune")
+  if (/jamf/i.test(name)) return asset("jamf")
+  if (/kandji/i.test(name)) return asset("kandji")
+  return asset("mdm")
 }
 const productLogo = (name: string) => {
   switch (name) {
     case "portnox":
-      return asset("portnox.svg")
+      return asset("portnox")
     case "panorama":
-      return asset("panorama.svg")
+      return asset("panorama")
     default:
-      return asset("product.svg")
+      return asset("product")
   }
 }
 
-// Colors by node kind
 const colorFor = (kind: string) => {
   switch (kind) {
     case "endpoint":
@@ -178,7 +174,6 @@ const colorFor = (kind: string) => {
   }
 }
 
-// Defaults per protocol for tooltip
 const defaultMetaFor = (kind: EdgeKind, label?: string): Meta => {
   const refs = [
     { label: "Portnox Zero Trust", href: "https://docs.portnox.com/topics/zero_trust" },
@@ -222,7 +217,6 @@ const defaultMetaFor = (kind: EdgeKind, label?: string): Meta => {
   }
 }
 
-// Custom HTML node (React Flow nodes render as HTML)
 function StencilNode({ data, selected }: NodeProps<StencilData>) {
   const fill = data.color || "#fff"
   return (
@@ -244,7 +238,6 @@ function StencilNode({ data, selected }: NodeProps<StencilData>) {
   )
 }
 
-// Custom SVG edge with tooltip and smooth orthogonal corners
 function PortnoxEdge(
   props: EdgeProps<{
     label?: string
@@ -263,7 +256,6 @@ function PortnoxEdge(
     targetPosition: targetPosition || Position.Left,
   })
 
-  // Latency approximation based on distance + protocol overhead
   const dist = Math.hypot(sourceX - targetX, sourceY - targetY)
   let latency = Math.max(2, Math.round(dist / 18))
   switch (data?.kind) {
@@ -365,7 +357,6 @@ function PortnoxEdge(
 const nodeTypes = { stencil: StencilNode }
 const edgeTypes = { portnox: PortnoxEdge }
 
-// Build graph per view
 function buildGraph(view: ViewId, vendor: string, connectivity: string, identity: string, deployment: string) {
   const N = (id: string, label: string, kind: string, opts?: Partial<StencilData>) =>
     ({
@@ -399,11 +390,10 @@ function buildGraph(view: ViewId, vendor: string, connectivity: string, identity
   const edges: Edge[] = []
 
   if (view === "complete-architecture") {
-    // A high-level full diagram combining identity, MDM, PKI, RADIUS, firewall
     nodes.push(
       N("endpoints", "Corporate Endpoints", "endpoint", {
         description: "Windows • macOS • iOS • Android • IoT",
-        imageUrl: asset("endpoints.svg"),
+        imageUrl: asset("endpoints"),
       }),
       N("switch", `${vendor.toUpperCase()} Switch`, "network", {
         description: "802.1X Authenticator (Wired)",
@@ -417,10 +407,7 @@ function buildGraph(view: ViewId, vendor: string, connectivity: string, identity
         "proxy",
         connectivity === "radsec" || connectivity === "hybrid" ? "RADSec Proxy" : "Direct RADIUS",
         "connectivity",
-        {
-          description: "Secure RADIUS transport",
-          imageUrl: asset("radsec.svg"),
-        },
+        { description: "Secure RADIUS transport", imageUrl: asset("radsec") },
       ),
       N("portnox", "Portnox Cloud (RADIUS/TACACS+)", "nac", {
         description: "AAA • Policies • Posture",
@@ -430,18 +417,12 @@ function buildGraph(view: ViewId, vendor: string, connectivity: string, identity
         description: "User identity • SSO",
         imageUrl: idpLogo(identity),
       }),
-      N("mdm", "Microsoft Intune", "mdm", {
-        description: "Compliance • SCEP",
-        imageUrl: mdmLogo("Intune"),
-      }),
-      N("rootca", "Root CA (Offline)", "pki", { description: "Trust anchor", imageUrl: asset("rootca.svg") }),
-      N("issuing", "Issuing CA", "pki", { description: "Device/User Certs", imageUrl: asset("issuingca.svg") }),
-      N("crl", "CRL / OCSP", "pki", { description: "Revocation", imageUrl: asset("crl-ocsp.svg") }),
-      N("fw", "Next-Gen Firewall", "firewall", {
-        description: "Segmentation • User-ID",
-        imageUrl: asset("firewall.svg"),
-      }),
-      N("siem", "SIEM / Syslog", "syslog", { description: "Events • Analytics", imageUrl: asset("siem.svg") }),
+      N("mdm", "Microsoft Intune", "mdm", { description: "Compliance • SCEP", imageUrl: mdmLogo("Intune") }),
+      N("rootca", "Root CA (Offline)", "pki", { description: "Trust anchor", imageUrl: asset("rootca") }),
+      N("issuing", "Issuing CA", "pki", { description: "Device/User Certs", imageUrl: asset("issuingca") }),
+      N("crl", "CRL / OCSP", "pki", { description: "Revocation", imageUrl: asset("crl-ocsp") }),
+      N("fw", "Next-Gen Firewall", "firewall", { description: "Segmentation • User-ID", imageUrl: asset("firewall") }),
+      N("siem", "SIEM / Syslog", "syslog", { description: "Events • Analytics", imageUrl: asset("siem") }),
     )
     const viaProxy = connectivity === "radsec" || connectivity === "hybrid"
     edges.push(
@@ -469,7 +450,7 @@ function buildGraph(view: ViewId, vendor: string, connectivity: string, identity
     nodes.push(
       N("endpoints", "Corporate Endpoints", "endpoint", {
         description: "Windows • macOS • iOS • Android • IoT",
-        imageUrl: asset("endpoints.svg"),
+        imageUrl: asset("endpoints"),
       }),
       N("switch", `${vendor.toUpperCase()} Switch`, "network", {
         description: "802.1X Authenticator (Wired)",
@@ -483,10 +464,7 @@ function buildGraph(view: ViewId, vendor: string, connectivity: string, identity
         "proxy",
         connectivity === "radsec" || connectivity === "hybrid" ? "RADSec Proxy" : "Direct RADIUS",
         "connectivity",
-        {
-          description: "Secure RADIUS transport",
-          imageUrl: asset("radsec.svg"),
-        },
+        { description: "Secure RADIUS transport", imageUrl: asset("radsec") },
       ),
       N("portnox", "Portnox Cloud RADIUS", "nac", {
         description: "AAA • Policies • Posture",
@@ -500,10 +478,7 @@ function buildGraph(view: ViewId, vendor: string, connectivity: string, identity
         description: "Compliance & certificates",
         imageUrl: mdmLogo("Intune"),
       }),
-      N("fw", "Next-Gen Firewall", "firewall", {
-        description: "Segmentation & policy",
-        imageUrl: asset("firewall.svg"),
-      }),
+      N("fw", "Next-Gen Firewall", "firewall", { description: "Segmentation & policy", imageUrl: asset("firewall") }),
     )
     const viaProxy = connectivity === "radsec" || connectivity === "hybrid"
     edges.push(
@@ -524,10 +499,7 @@ function buildGraph(view: ViewId, vendor: string, connectivity: string, identity
     )
   } else if (view === "802.1x-auth") {
     nodes.push(
-      N("device", "Device", "endpoint", {
-        description: "Supplicant with cert",
-        imageUrl: asset("endpoint-laptop.svg"),
-      }),
+      N("device", "Device", "endpoint", { description: "Supplicant with cert", imageUrl: asset("endpoint-laptop") }),
       N("authenticator", "Authenticator (Switch/AP)", "network", {
         description: "802.1X authenticator",
         imageUrl: vendorLogo(vendor),
@@ -537,14 +509,13 @@ function buildGraph(view: ViewId, vendor: string, connectivity: string, identity
         description: "User identity",
         imageUrl: idpLogo(identity),
       }),
-      N("policy", "Policy Engine", "policy", { description: "Decision & context", imageUrl: asset("policy.svg") }),
+      N("policy", "Policy Engine", "policy", { description: "Decision & context", imageUrl: asset("policy") }),
     )
     const viaProxy = connectivity === "radsec"
-    if (viaProxy) {
+    if (viaProxy)
       nodes.push(
-        N("proxy", "RADSec Proxy", "connectivity", { description: "Secure RADIUS", imageUrl: asset("radsec.svg") }),
+        N("proxy", "RADSec Proxy", "connectivity", { description: "Secure RADIUS", imageUrl: asset("radsec") }),
       )
-    }
     const edgeAuthTo = viaProxy ? "proxy" : "portnox"
     edges.push(
       E("dev-auth", "device", "authenticator", "EAPOL/EAP", "radius"),
@@ -562,17 +533,17 @@ function buildGraph(view: ViewId, vendor: string, connectivity: string, identity
     )
   } else if (view === "pki-infrastructure") {
     nodes.push(
-      N("root", "Root CA", "pki", { description: "Offline root CA", imageUrl: asset("rootca.svg") }),
-      N("issuing", "Issuing CA", "pki", { description: "Device/User certs", imageUrl: asset("issuingca.svg") }),
+      N("root", "Root CA", "pki", { description: "Offline root CA", imageUrl: asset("rootca") }),
+      N("issuing", "Issuing CA", "pki", { description: "Device/User certs", imageUrl: asset("issuingca") }),
       N("servercert", "RADIUS Server Cert", "certificate", {
         description: "TLS server auth",
-        imageUrl: asset("server-cert.svg"),
+        imageUrl: asset("server-cert"),
       }),
       N("clientcerts", "Device/User Certs", "certificate", {
         description: "EAP‑TLS client auth",
-        imageUrl: asset("client-cert.svg"),
+        imageUrl: asset("client-cert"),
       }),
-      N("crl", "CRL / OCSP", "pki", { description: "Revocation checking", imageUrl: asset("crl-ocsp.svg") }),
+      N("crl", "CRL / OCSP", "pki", { description: "Revocation checking", imageUrl: asset("crl-ocsp") }),
     )
     edges.push(
       E("root-issuing", "root", "issuing", "Signs", "data"),
@@ -586,8 +557,8 @@ function buildGraph(view: ViewId, vendor: string, connectivity: string, identity
         description: "Context • Rules • Actions",
         imageUrl: productLogo("portnox"),
       }),
-      N("groups", "User/Device Groups", "policy", { description: "AD/IdP groups", imageUrl: asset("groups.svg") }),
-      N("contexts", "Context Sources", "policy", { description: "MDM • Risk • Geo", imageUrl: asset("context.svg") }),
+      N("groups", "User/Device Groups", "policy", { description: "AD/IdP groups", imageUrl: asset("groups") }),
+      N("contexts", "Context Sources", "policy", { description: "MDM • Risk • Geo", imageUrl: asset("context") }),
       N("switch", `${vendor.toUpperCase()} Switch`, "network", {
         description: "VLAN / ACL",
         imageUrl: vendorLogo(vendor),
@@ -596,13 +567,10 @@ function buildGraph(view: ViewId, vendor: string, connectivity: string, identity
         description: "PSK / VLAN / ACL",
         imageUrl: vendorLogo(vendor),
       }),
-      N("fw", "Firewall", "firewall", { description: "Segmentation • SGT/Tags", imageUrl: asset("firewall.svg") }),
-      N("guest", "Guest VLAN", "connectivity", { description: "Internet only", imageUrl: asset("vlan.svg") }),
-      N("corp", "Corp VLAN", "connectivity", { description: "Full access", imageUrl: asset("vlan.svg") }),
-      N("restricted", "Restricted VLAN", "connectivity", {
-        description: "Limited access",
-        imageUrl: asset("vlan.svg"),
-      }),
+      N("fw", "Firewall", "firewall", { description: "Segmentation • SGT/Tags", imageUrl: asset("firewall") }),
+      N("guest", "Guest VLAN", "connectivity", { description: "Internet only", imageUrl: asset("vlan") }),
+      N("corp", "Corp VLAN", "connectivity", { description: "Full access", imageUrl: asset("vlan") }),
+      N("restricted", "Restricted VLAN", "connectivity", { description: "Limited access", imageUrl: asset("vlan") }),
     )
     edges.push(
       E("policy-groups", "portnox", "groups", "Group mapping", "data"),
@@ -616,7 +584,7 @@ function buildGraph(view: ViewId, vendor: string, connectivity: string, identity
     )
   } else if (view === "connectivity-options") {
     nodes.push(
-      N("branch", "Branch Site", "portal", { description: "Remote branch", imageUrl: asset("branch.svg") }),
+      N("branch", "Branch Site", "portal", { description: "Remote branch", imageUrl: asset("branch") }),
       N("switch", `${vendor.toUpperCase()} Switch`, "network", {
         description: "Wired 802.1X",
         imageUrl: vendorLogo(vendor),
@@ -625,12 +593,12 @@ function buildGraph(view: ViewId, vendor: string, connectivity: string, identity
         description: "WLAN 802.1X",
         imageUrl: vendorLogo(vendor),
       }),
-      N("direct", "Direct RADIUS", "connectivity", { description: "UDP 1812/1813", imageUrl: asset("radius.svg") }),
-      N("radsec", "RADSec Proxy", "connectivity", { description: "TLS-secured RADIUS", imageUrl: asset("radsec.svg") }),
-      N("vpn", "Site-to-Site VPN", "connectivity", { description: "IPSec/GRE", imageUrl: asset("vpn.svg") }),
+      N("direct", "Direct RADIUS", "connectivity", { description: "UDP 1812/1813", imageUrl: asset("radius") }),
+      N("radsec", "RADSec Proxy", "connectivity", { description: "TLS-secured RADIUS", imageUrl: asset("radsec") }),
+      N("vpn", "Site-to-Site VPN", "connectivity", { description: "IPSec/GRE", imageUrl: asset("vpn") }),
       N("privatelink", "Private Link", "connectivity", {
         description: "Cloud private networking",
-        imageUrl: asset("privatelink.svg"),
+        imageUrl: asset("privatelink"),
       }),
       N("portnox", "Portnox Cloud", "nac", { description: "RADIUS / TACACS+", imageUrl: productLogo("portnox") }),
     )
@@ -649,8 +617,8 @@ function buildGraph(view: ViewId, vendor: string, connectivity: string, identity
   } else if (view === "multi-cloud") {
     const provider = deployment === "cloud" ? (identity === "azure-ad" ? "azure" : "aws") : "gcp"
     nodes.push(
-      N("branch", "Branch Site", "portal", { description: "Remote branch", imageUrl: asset("branch.svg") }),
-      N("edge", "Edge/SD‑WAN", "connectivity", { description: "Connectivity hub", imageUrl: asset("sdwan.svg") }),
+      N("branch", "Branch Site", "portal", { description: "Remote branch", imageUrl: asset("branch") }),
+      N("edge", "Edge/SD‑WAN", "connectivity", { description: "Connectivity hub", imageUrl: asset("sdwan") }),
       N("cloud", `${provider.toUpperCase()} Cloud`, "cloud", {
         description: "Selected cloud",
         imageUrl: cloudLogo(provider),
@@ -664,17 +632,11 @@ function buildGraph(view: ViewId, vendor: string, connectivity: string, identity
     )
   } else if (view === "intune-integration") {
     nodes.push(
-      N("devices", "Managed Devices", "endpoint", {
-        description: "Intune-managed",
-        imageUrl: asset("endpoints.svg"),
-      }),
+      N("devices", "Managed Devices", "endpoint", { description: "Intune-managed", imageUrl: asset("endpoints") }),
       N("intune", "Microsoft Intune", "mdm", { description: "MDM policies, SCEP", imageUrl: mdmLogo("Intune") }),
       N("entra", "Entra ID", "identity", { description: "User identity", imageUrl: idpLogo("azure-ad") }),
       N("portnox", "Portnox Cloud", "nac", { description: "Compliance & AAA", imageUrl: productLogo("portnox") }),
-      N("compliance", "Compliance Engine", "policy", {
-        description: "Risk assessment",
-        imageUrl: asset("compliance.svg"),
-      }),
+      N("compliance", "Compliance Engine", "policy", { description: "Risk assessment", imageUrl: asset("compliance") }),
     )
     edges.push(
       E("dev-intune", "devices", "intune", "MDM Enrollment", "https"),
@@ -684,20 +646,14 @@ function buildGraph(view: ViewId, vendor: string, connectivity: string, identity
     )
   } else if (view === "device-onboarding") {
     nodes.push(
-      N("portal", "Onboarding Portal", "portal", {
-        description: "Self-service onboarding",
-        imageUrl: asset("portal.svg"),
-      }),
+      N("portal", "Onboarding Portal", "portal", { description: "Self-service onboarding", imageUrl: asset("portal") }),
       N("corp", "Corporate (EAP‑TLS)", "workflow", {
         description: "User/machine certs",
-        imageUrl: asset("workflow-corp.svg"),
+        imageUrl: asset("workflow-corp"),
       }),
-      N("byod", "BYOD / Mobile", "workflow", {
-        description: "Captive portal / PSK",
-        imageUrl: asset("workflow-byod.svg"),
-      }),
-      N("guest", "Guest Access", "workflow", { description: "Sponsored guest", imageUrl: asset("workflow-guest.svg") }),
-      N("iot", "IoT & Profiling", "workflow", { description: "Profiling & MAB", imageUrl: asset("workflow-iot.svg") }),
+      N("byod", "BYOD / Mobile", "workflow", { description: "Captive portal / PSK", imageUrl: asset("workflow-byod") }),
+      N("guest", "Guest Access", "workflow", { description: "Sponsored guest", imageUrl: asset("workflow-guest") }),
+      N("iot", "IoT & Profiling", "workflow", { description: "Profiling & MAB", imageUrl: asset("workflow-iot") }),
     )
     edges.push(
       E("p-corp", "portal", "corp", "Initiates", "data"),
@@ -707,7 +663,7 @@ function buildGraph(view: ViewId, vendor: string, connectivity: string, identity
     )
   } else if (view === "fortigate-tacacs") {
     nodes.push(
-      N("admin", "Network Admin", "endpoint", { description: "SSH/HTTPS to device", imageUrl: asset("admin.svg") }),
+      N("admin", "Network Admin", "endpoint", { description: "SSH/HTTPS to device", imageUrl: asset("admin") }),
       N("fg", "FortiGate", "firewall", { description: "Device admin", imageUrl: vendorLogo("fortinet") }),
       N("tacacs", "Portnox TACACS+", "nac", { description: "AAA for admin", imageUrl: productLogo("portnox") }),
       N("ad", "Active Directory", "identity", { description: "RBAC groups", imageUrl: idpLogo("active-directory") }),
@@ -719,7 +675,7 @@ function buildGraph(view: ViewId, vendor: string, connectivity: string, identity
     )
   } else if (view === "paloalto-tacacs") {
     nodes.push(
-      N("admin", "Network Admin", "endpoint", { description: "SSH/HTTPS to device", imageUrl: asset("admin.svg") }),
+      N("admin", "Network Admin", "endpoint", { description: "SSH/HTTPS to device", imageUrl: asset("admin") }),
       N("pan", "Palo Alto NGFW", "firewall", { description: "Device admin", imageUrl: vendorLogo("paloalto") }),
       N("panorama", "Panorama", "management", { description: "Central management", imageUrl: productLogo("panorama") }),
       N("tacacs", "Portnox TACACS+", "nac", { description: "AAA for admin", imageUrl: productLogo("portnox") }),
@@ -733,14 +689,12 @@ function buildGraph(view: ViewId, vendor: string, connectivity: string, identity
       E("tacacs-ad", "tacacs", "ad", "LDAP/LDAPS", "ldap"),
     )
   } else {
-    // Fallback minimal graph
     nodes.push(N("portnox", "Portnox Cloud", "nac", { description: "Cloud NAC", imageUrl: productLogo("portnox") }))
   }
 
   return { nodes, edges }
 }
 
-// ELK layout helper
 const elk = new ELK()
 async function layoutWithElk(nodes: Node[], edges: Edge[]) {
   const elkGraph = {
@@ -793,25 +747,12 @@ export default function InteractiveDiagram({
 
   const rfInstance = useRef<ReactFlowInstance | null>(null)
 
-  // Build and layout on inputs change
   useEffect(() => {
     const v = (view as ViewId) || "complete-architecture"
     const { nodes, edges } = buildGraph(v, vendor, connectivity, identity, deployment)
     layoutWithElk(nodes, edges).then(({ nodes: ln, edges: le }) => {
-      setRfNodes(
-        ln.map((n) => ({
-          ...n,
-          draggable: true,
-          type: "stencil",
-        })),
-      )
-      setRfEdges(
-        le.map((e) => ({
-          ...e,
-          type: "portnox",
-        })),
-      )
-      // Fit view after layout
+      setRfNodes(ln.map((n) => ({ ...n, draggable: true, type: "stencil" })))
+      setRfEdges(le.map((e) => ({ ...e, type: "portnox" })))
       setTimeout(() => rfInstance.current?.fitView({ padding: 0.2 }), 0)
     })
   }, [view, vendor, connectivity, identity, deployment, setRfNodes, setRfEdges])
@@ -865,7 +806,6 @@ export default function InteractiveDiagram({
 
   return (
     <div className="relative">
-      {/* Edge animation CSS */}
       <style>{`
         .animated-path {
           stroke-dasharray: 10 6;
@@ -877,7 +817,6 @@ export default function InteractiveDiagram({
         }
       `}</style>
 
-      {/* Controls */}
       <div className="absolute top-3 right-3 z-10 flex items-center gap-2">
         <button
           className="inline-flex items-center justify-center rounded-md border px-2 py-1 text-sm"
@@ -916,10 +855,7 @@ export default function InteractiveDiagram({
             onConnect={onConnect}
             nodeTypes={nodeTypes}
             edgeTypes={edgeTypes}
-            defaultEdgeOptions={{
-              type: "portnox",
-              markerEnd: { type: MarkerType.ArrowClosed },
-            }}
+            defaultEdgeOptions={{ type: "portnox", markerEnd: { type: MarkerType.ArrowClosed } }}
             fitView
             fitViewOptions={{ padding: 0.2 }}
             snapToGrid
