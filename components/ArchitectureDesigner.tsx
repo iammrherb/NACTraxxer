@@ -113,7 +113,7 @@ export default function ArchitectureDesigner() {
     { id: "internet", label: "Internet Connection" },
   ]
 
-  const currentView = architectureViews.find((view) => view.id === view)
+  const currentView = architectureViews.find((v) => v.id === view)
 
   // Export Functions
   const exportDiagram = async (format: "svg" | "png" | "pdf") => {
