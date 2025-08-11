@@ -1,405 +1,314 @@
-'use client'
+"use client"
 
-import { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Textarea } from '@/components/ui/textarea'
-import { Badge } from '@/components/ui/badge'
-import { X, Plus, Save, Trash2 } from 'lucide-react'
-
-interface PolicyEditorProps {
-  onClose: () => void
-}
+import { useState, useEffect } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
+import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { X, Plus, Globe, Building } from "lucide-react"
 
 interface Policy {
   id: string
   name: string
-  type: 'user' | 'device' | 'network' | 'compliance'
+  condition: string
+  action: string
+  vlan: string
   priority: number
-  conditions: string[]
-  actions: string[]
-  vlan: number
-  description: string
-  enabled: boolean
+  type: "global" | "site-specific"
+  siteId?: string
+  description?: string
 }
 
-export default function PolicyEditor({ onClose }: PolicyEditorProps) {
-  const [policies, setPolicies] = useState<Policy[]>([
-    {
-      id: '1',
-      name: 'Corporate Windows Devices',
-      type: 'device',
-      priority: 1,
-      conditions: ['Device Type: Windows', 'Certificate Present: True', 'Domain Joined: True'],
-      actions: ['Allow Access', 'Assign VLAN 100'],
-      vlan: 100,
-      description: 'Policy for corporate Windows devices with valid certificates',
-      enabled: true
-    },
-    {
-      id: '2',
-      name: 'Guest Access',
-      type: 'user',
-      priority: 3,
-      conditions: ['User Group: Guests', 'Sponsor Approval: Required'],
-      actions: ['Limited Access', 'Assign VLAN 200', 'Time Limit: 8 hours'],
-      vlan: 200,
-      description: 'Temporary access for guest users with sponsor approval',
-      enabled: true
-    },
-    {
-      id: '3',
-      name: 'IoT Devices',
-      type: 'device',
-      priority: 2,
-      conditions: ['Authentication: MAC', 'Device Category: IoT'],
-      actions: ['Allow Access', 'Assign VLAN 300', 'Bandwidth Limit: 10Mbps'],
-      vlan: 300,
-      description: 'Policy for IoT devices using MAC authentication bypass',
-      enabled: true
+interface PolicyEditorProps {
+  onClose: () => void
+  siteId?: string
+  siteName?: string
+}
+
+export default function PolicyEditor({ onClose, siteId, siteName }: PolicyEditorProps) {
+  const [globalPolicies, setGlobalPolicies] = useState<Policy[]>([])
+  const [sitePolicies, setSitePolicies] = useState<Policy[]>([])
+  const [activeTab, setActiveTab] = useState(siteId ? "site" : "global")
+
+  const [newPolicy, setNewPolicy] = useState({
+    name: "",
+    condition: "",
+    action: "Allow",
+    vlan: "",
+    priority: 1,
+    description: "",
+    type: "global" as "global" | "site-specific",
+  })
+
+  // Load policies from localStorage
+  useEffect(() => {
+    const savedGlobalPolicies = localStorage.getItem("portnox-global-policies")
+    if (savedGlobalPolicies) {
+      setGlobalPolicies(JSON.parse(savedGlobalPolicies))
     }
-  ])
 
-  const [selectedPolicy, setSelectedPolicy] = useState<Policy | null>(null)
-  const [isEditing, setIsEditing] = useState(false)
-
-  const handleEditPolicy = (policy: Policy) => {
-    setSelectedPolicy({ ...policy })
-    setIsEditing(true)
-  }
-
-  const handleSavePolicy = () => {
-    if (!selectedPolicy) return
-
-    if (selectedPolicy.id === 'new') {
-      const newPolicy = {
-        ...selectedPolicy,
-        id: Date.now().toString()
+    if (siteId) {
+      const savedSitePolicies = localStorage.getItem(`portnox-site-policies-${siteId}`)
+      if (savedSitePolicies) {
+        setSitePolicies(JSON.parse(savedSitePolicies))
       }
-      setPolicies([...policies, newPolicy])
+    }
+  }, [siteId])
+
+  // Save policies to localStorage
+  const saveGlobalPolicies = (policies: Policy[]) => {
+    localStorage.setItem("portnox-global-policies", JSON.stringify(policies))
+    setGlobalPolicies(policies)
+  }
+
+  const saveSitePolicies = (policies: Policy[]) => {
+    if (siteId) {
+      localStorage.setItem(`portnox-site-policies-${siteId}`, JSON.stringify(policies))
+      setSitePolicies(policies)
+    }
+  }
+
+  const addPolicy = () => {
+    if (newPolicy.name && newPolicy.condition) {
+      const policy: Policy = {
+        ...newPolicy,
+        id: `policy-${Date.now()}`,
+        type: activeTab === "global" ? "global" : "site-specific",
+        siteId: activeTab === "site" ? siteId : undefined,
+      }
+
+      if (activeTab === "global") {
+        const updatedPolicies = [...globalPolicies, policy]
+        saveGlobalPolicies(updatedPolicies)
+      } else {
+        const updatedPolicies = [...sitePolicies, policy]
+        saveSitePolicies(updatedPolicies)
+      }
+
+      setNewPolicy({
+        name: "",
+        condition: "",
+        action: "Allow",
+        vlan: "",
+        priority: 1,
+        description: "",
+        type: "global",
+      })
+    }
+  }
+
+  const removePolicy = (id: string, type: "global" | "site") => {
+    if (type === "global") {
+      const updatedPolicies = globalPolicies.filter((p) => p.id !== id)
+      saveGlobalPolicies(updatedPolicies)
     } else {
-      setPolicies(policies.map(p => p.id === selectedPolicy.id ? selectedPolicy : p))
-    }
-
-    setSelectedPolicy(null)
-    setIsEditing(false)
-  }
-
-  const handleDeletePolicy = (id: string) => {
-    setPolicies(policies.filter(p => p.id !== id))
-    if (selectedPolicy?.id === id) {
-      setSelectedPolicy(null)
-      setIsEditing(false)
+      const updatedPolicies = sitePolicies.filter((p) => p.id !== id)
+      saveSitePolicies(updatedPolicies)
     }
   }
 
-  const handleAddPolicy = () => {
-    setSelectedPolicy({
-      id: 'new',
-      name: '',
-      type: 'user',
-      priority: policies.length + 1,
-      conditions: [],
-      actions: [],
-      vlan: 100,
-      description: '',
-      enabled: true
-    })
-    setIsEditing(true)
-  }
-
-  const addCondition = () => {
-    if (!selectedPolicy) return
-    setSelectedPolicy({
-      ...selectedPolicy,
-      conditions: [...selectedPolicy.conditions, '']
-    })
-  }
-
-  const updateCondition = (index: number, value: string) => {
-    if (!selectedPolicy) return
-    const newConditions = [...selectedPolicy.conditions]
-    newConditions[index] = value
-    setSelectedPolicy({
-      ...selectedPolicy,
-      conditions: newConditions
-    })
-  }
-
-  const removeCondition = (index: number) => {
-    if (!selectedPolicy) return
-    setSelectedPolicy({
-      ...selectedPolicy,
-      conditions: selectedPolicy.conditions.filter((_, i) => i !== index)
-    })
-  }
-
-  const addAction = () => {
-    if (!selectedPolicy) return
-    setSelectedPolicy({
-      ...selectedPolicy,
-      actions: [...selectedPolicy.actions, '']
-    })
-  }
-
-  const updateAction = (index: number, value: string) => {
-    if (!selectedPolicy) return
-    const newActions = [...selectedPolicy.actions]
-    newActions[index] = value
-    setSelectedPolicy({
-      ...selectedPolicy,
-      actions: newActions
-    })
-  }
-
-  const removeAction = (index: number) => {
-    if (!selectedPolicy) return
-    setSelectedPolicy({
-      ...selectedPolicy,
-      actions: selectedPolicy.actions.filter((_, i) => i !== index)
-    })
-  }
+  const PolicyList = ({ policies, type }: { policies: Policy[]; type: "global" | "site" }) => (
+    <div className="space-y-3">
+      {policies.map((policy) => (
+        <div key={policy.id} className="flex items-center justify-between p-4 border rounded-lg">
+          <div className="flex-1">
+            <div className="flex items-center space-x-2 mb-2">
+              <Badge variant="outline">Priority {policy.priority}</Badge>
+              <span className="font-medium">{policy.name}</span>
+              {type === "global" && (
+                <Badge variant="secondary">
+                  <Globe className="h-3 w-3 mr-1" />
+                  Global
+                </Badge>
+              )}
+              {type === "site" && (
+                <Badge variant="default">
+                  <Building className="h-3 w-3 mr-1" />
+                  Site
+                </Badge>
+              )}
+            </div>
+            {policy.description && <div className="text-sm text-muted-foreground mb-1">{policy.description}</div>}
+            <div className="text-sm text-muted-foreground mb-1">
+              <strong>Condition:</strong> {policy.condition}
+            </div>
+            <div className="text-sm text-muted-foreground">
+              <strong>Action:</strong> {policy.action} (VLAN {policy.vlan})
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => removePolicy(policy.id, type)}
+            className="text-red-600 hover:text-red-800"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      ))}
+      {policies.length === 0 && (
+        <div className="text-center py-8 text-muted-foreground">
+          <p>No {type} policies defined yet.</p>
+        </div>
+      )}
+    </div>
+  )
 
   return (
-    <Card className="w-full max-w-6xl mx-auto">
+    <Card className="fixed inset-4 z-50 bg-white shadow-2xl overflow-auto">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>NAC Policy Editor</CardTitle>
         <Button variant="ghost" size="sm" onClick={onClose}>
           <X className="h-4 w-4" />
         </Button>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Policy List */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Policies</h3>
-              <Button onClick={handleAddPolicy} size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Policy
-              </Button>
+      <CardContent className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="global" className="flex items-center space-x-2">
+              <Globe className="h-4 w-4" />
+              <span>Global Policies</span>
+            </TabsTrigger>
+            <TabsTrigger value="site" disabled={!siteId} className="flex items-center space-x-2">
+              <Building className="h-4 w-4" />
+              <span>Site Policies {siteName && `(${siteName})`}</span>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="global" className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold mb-4 flex items-center space-x-2">
+                <Globe className="h-5 w-5 text-blue-600" />
+                <span>Global Policies</span>
+              </h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Global policies apply to all sites and have lower priority than site-specific policies.
+              </p>
+              <PolicyList policies={globalPolicies} type="global" />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="site" className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold mb-4 flex items-center space-x-2">
+                <Building className="h-5 w-5 text-green-600" />
+                <span>Site-Specific Policies {siteName && `for ${siteName}`}</span>
+              </h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Site-specific policies override global policies and have higher priority.
+              </p>
+              <PolicyList policies={sitePolicies} type="site" />
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        {/* Add New Policy */}
+        <div className="border-t pt-6">
+          <h3 className="text-lg font-semibold mb-4">
+            Add New {activeTab === "global" ? "Global" : "Site-Specific"} Policy
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="policy-name">Policy Name</Label>
+              <Input
+                id="policy-name"
+                value={newPolicy.name}
+                onChange={(e) => setNewPolicy({ ...newPolicy, name: e.target.value })}
+                placeholder="e.g., Mobile Devices"
+              />
             </div>
 
             <div className="space-y-2">
-              {policies.map((policy) => (
-                <Card 
-                  key={policy.id} 
-                  className={`cursor-pointer transition-colors ${
-                    selectedPolicy?.id === policy.id ? 'ring-2 ring-blue-500' : ''
-                  }`}
-                  onClick={() => handleEditPolicy(policy)}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <h4 className="font-medium">{policy.name}</h4>
-                          <Badge variant={policy.enabled ? 'default' : 'secondary'}>
-                            {policy.enabled ? 'Enabled' : 'Disabled'}
-                          </Badge>
-                          <Badge variant="outline">
-                            Priority {policy.priority}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-2">
-                          {policy.description}
-                        </p>
-                        <div className="flex flex-wrap gap-1">
-                          <Badge variant="outline" className="text-xs">
-                            {policy.type}
-                          </Badge>
-                          <Badge variant="outline" className="text-xs">
-                            VLAN {policy.vlan}
-                          </Badge>
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleDeletePolicy(policy.id)
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+              <Label htmlFor="policy-action">Action</Label>
+              <Select value={newPolicy.action} onValueChange={(value) => setNewPolicy({ ...newPolicy, action: value })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Allow">Allow Full Access</SelectItem>
+                  <SelectItem value="Quarantine">Quarantine</SelectItem>
+                  <SelectItem value="Deny">Deny Access</SelectItem>
+                  <SelectItem value="Limited">Limited Access</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="policy-vlan">VLAN ID</Label>
+              <Input
+                id="policy-vlan"
+                value={newPolicy.vlan}
+                onChange={(e) => setNewPolicy({ ...newPolicy, vlan: e.target.value })}
+                placeholder="e.g., 300"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="policy-priority">Priority</Label>
+              <Input
+                id="policy-priority"
+                type="number"
+                value={newPolicy.priority}
+                onChange={(e) => setNewPolicy({ ...newPolicy, priority: Number.parseInt(e.target.value) || 1 })}
+                min="1"
+              />
+            </div>
+
+            <div className="md:col-span-2 space-y-2">
+              <Label htmlFor="policy-description">Description (Optional)</Label>
+              <Input
+                id="policy-description"
+                value={newPolicy.description}
+                onChange={(e) => setNewPolicy({ ...newPolicy, description: e.target.value })}
+                placeholder="Brief description of this policy"
+              />
+            </div>
+
+            <div className="md:col-span-2 space-y-2">
+              <Label htmlFor="policy-condition">Condition</Label>
+              <Textarea
+                id="policy-condition"
+                value={newPolicy.condition}
+                onChange={(e) => setNewPolicy({ ...newPolicy, condition: e.target.value })}
+                placeholder="e.g., Device Type = iOS AND Certificate Valid = True"
+                rows={3}
+              />
             </div>
           </div>
 
-          {/* Policy Editor */}
-          <div className="space-y-4">
-            {isEditing && selectedPolicy ? (
-              <>
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold">
-                    {selectedPolicy.id === 'new' ? 'New Policy' : 'Edit Policy'}
-                  </h3>
-                  <div className="space-x-2">
-                    <Button variant="outline" onClick={() => setIsEditing(false)}>
-                      Cancel
-                    </Button>
-                    <Button onClick={handleSavePolicy}>
-                      <Save className="h-4 w-4 mr-2" />
-                      Save
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="policy-name">Policy Name</Label>
-                      <Input
-                        id="policy-name"
-                        value={selectedPolicy.name}
-                        onChange={(e) => setSelectedPolicy({
-                          ...selectedPolicy,
-                          name: e.target.value
-                        })}
-                        placeholder="Enter policy name"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="policy-type">Policy Type</Label>
-                      <Select
-                        value={selectedPolicy.type}
-                        onValueChange={(value: 'user' | 'device' | 'network' | 'compliance') =>
-                          setSelectedPolicy({
-                            ...selectedPolicy,
-                            type: value
-                          })
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="user">User-based</SelectItem>
-                          <SelectItem value="device">Device-based</SelectItem>
-                          <SelectItem value="network">Network-based</SelectItem>
-                          <SelectItem value="compliance">Compliance-based</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="policy-priority">Priority</Label>
-                      <Input
-                        id="policy-priority"
-                        type="number"
-                        value={selectedPolicy.priority}
-                        onChange={(e) => setSelectedPolicy({
-                          ...selectedPolicy,
-                          priority: parseInt(e.target.value) || 1
-                        })}
-                        min="1"
-                        max="10"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="policy-vlan">VLAN Assignment</Label>
-                      <Input
-                        id="policy-vlan"
-                        type="number"
-                        value={selectedPolicy.vlan}
-                        onChange={(e) => setSelectedPolicy({
-                          ...selectedPolicy,
-                          vlan: parseInt(e.target.value) || 100
-                        })}
-                        min="1"
-                        max="4094"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="policy-description">Description</Label>
-                    <Textarea
-                      id="policy-description"
-                      value={selectedPolicy.description}
-                      onChange={(e) => setSelectedPolicy({
-                        ...selectedPolicy,
-                        description: e.target.value
-                      })}
-                      placeholder="Enter policy description"
-                      rows={3}
-                    />
-                  </div>
-
-                  {/* Conditions */}
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <Label>Conditions</Label>
-                      <Button variant="outline" size="sm" onClick={addCondition}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Condition
-                      </Button>
-                    </div>
-                    <div className="space-y-2">
-                      {selectedPolicy.conditions.map((condition, index) => (
-                        <div key={index} className="flex items-center space-x-2">
-                          <Input
-                            value={condition}
-                            onChange={(e) => updateCondition(index, e.target.value)}
-                            placeholder="Enter condition"
-                          />
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeCondition(index)}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <Label>Actions</Label>
-                      <Button variant="outline" size="sm" onClick={addAction}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Action
-                      </Button>
-                    </div>
-                    <div className="space-y-2">
-                      {selectedPolicy.actions.map((action, index) => (
-                        <div key={index} className="flex items-center space-x-2">
-                          <Input
-                            value={action}
-                            onChange={(e) => updateAction(index, e.target.value)}
-                            placeholder="Enter action"
-                          />
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeAction(index)}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className="flex items-center justify-center h-64 text-muted-foreground">
-                Select a policy to edit or create a new one
-              </div>
-            )}
+          <div className="flex justify-end space-x-2 mt-4">
+            <Button
+              variant="outline"
+              onClick={() =>
+                setNewPolicy({
+                  name: "",
+                  condition: "",
+                  action: "Allow",
+                  vlan: "",
+                  priority: 1,
+                  description: "",
+                  type: "global",
+                })
+              }
+            >
+              Clear
+            </Button>
+            <Button onClick={addPolicy}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add {activeTab === "global" ? "Global" : "Site"} Policy
+            </Button>
           </div>
+        </div>
+
+        {/* Save Changes */}
+        <div className="flex justify-end space-x-2 pt-4 border-t">
+          <Button variant="outline" onClick={onClose}>
+            Close
+          </Button>
         </div>
       </CardContent>
     </Card>

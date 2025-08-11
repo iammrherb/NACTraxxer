@@ -1,987 +1,1729 @@
 "use client"
 
-import "reactflow/dist/style.css"
-
-import { useCallback, useEffect, useRef, useState } from "react"
-import ReactFlow, {
-  Background,
-  Controls,
-  MiniMap,
-  ReactFlowProvider,
-  type Node,
-  type Edge,
-  type ReactFlowInstance,
-  useEdgesState,
-  useNodesState,
-  addEdge,
-  MarkerType,
-  Position,
-  ConnectionLineType,
-  type EdgeProps,
-  type NodeProps,
-  getSmoothStepPath,
-} from "reactflow"
+import { useEffect, useRef, useState } from "react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Badge } from "@/components/ui/badge"
-import { Play, Pause, RotateCcw, ZoomIn, ZoomOut, ExternalLink } from "lucide-react"
-import ELK from "elkjs/lib/elk.bundled.js"
-
-type ViewId =
-  | "complete-architecture"
-  | "zero-trust-nac"
-  | "802.1x-auth"
-  | "pki-infrastructure"
-  | "access-control-policies"
-  | "connectivity-options"
-  | "multi-cloud"
-  | "intune-integration"
-  | "device-onboarding"
-  | "fortigate-tacacs"
-  | "paloalto-tacacs"
-  | "cisco-tacacs"
-  | "aruba-tacacs"
-  | "juniper-tacacs"
-  | "meraki-wireless"
-  | "mist-wireless"
-
-type EdgeKind = "radius" | "https" | "ldap" | "syslog" | "tacacs" | "data"
+import { Card, CardContent } from "@/components/ui/card"
 
 interface InteractiveDiagramProps {
   view: string
-  vendor: string
-  connectivity: string
-  identity: string
-  deployment: string
+  cloudProvider: string
+  networkVendor: string
+  connectivityType: string
+  animationSpeed: number
+  showDataFlow?: boolean
 }
 
-type StencilData = {
+interface DiagramNode {
+  id: string
+  x: number
+  y: number
+  width: number
+  height: number
   label: string
-  imageUrl?: string
-  description?: string
+  type: string
+  color: string
+  description: string
+  icon?: string
+  status?: "active" | "standby" | "offline"
+}
+
+interface DiagramConnection {
+  id: string
+  from: string
+  to: string
+  type: "standard" | "secure" | "dashed"
+  label?: string
   color?: string
+  protocol?: string
+  bandwidth?: string
 }
 
-type Meta = {
-  ports?: string
-  ciphers?: string
-  certValidity?: string
-  referenceUrls?: { label: string; href: string }[]
-}
+export default function InteractiveDiagram({
+  view,
+  cloudProvider,
+  networkVendor,
+  connectivityType,
+  animationSpeed,
+  showDataFlow = false,
+}: InteractiveDiagramProps) {
+  const svgRef = useRef<SVGSVGElement>(null)
+  const [nodes, setNodes] = useState<DiagramNode[]>([])
+  const [connections, setConnections] = useState<DiagramConnection[]>([])
+  const [selectedNode, setSelectedNode] = useState<string | null>(null)
+  const [hoveredNode, setHoveredNode] = useState<string | null>(null)
+  const [isAnimating, setIsAnimating] = useState(false)
 
-const asset = (name: string) => `/logos/${name}.png`
+  useEffect(() => {
+    generateDiagram()
+  }, [view, cloudProvider, networkVendor, connectivityType])
 
-const vendorLogo = (v: string) => {
-  switch (v) {
-    case "cisco":
-      return asset("cisco")
-    case "aruba":
-      return asset("aruba")
-    case "juniper":
-      return asset("juniper")
-    case "extreme":
-      return asset("extreme")
-    case "fortinet":
-      return asset("fortinet")
-    case "paloalto":
-      return asset("paloalto")
-    case "meraki":
-      return asset("meraki")
-    case "mist":
-      return asset("mist")
-    case "ubiquiti":
-      return asset("ubiquiti")
-    case "mikrotik":
-      return asset("mikrotik")
-    case "cambium":
-      return asset("cambium")
-    case "ruckus":
-      return asset("ruckus")
-    default:
-      return asset("network-generic")
-  }
-}
-const cloudLogo = (p: string) => {
-  switch (p) {
-    case "aws":
-      return asset("aws")
-    case "azure":
-      return asset("azure")
-    case "gcp":
-      return asset("gcp")
-    default:
-      return asset("cloud")
-  }
-}
-const idpLogo = (idp: string) => {
-  switch (idp) {
-    case "azure-ad":
-      return asset("entra")
-    case "active-directory":
-      return asset("active-directory")
-    case "okta":
-      return asset("okta")
-    case "ping":
-      return asset("ping")
-    default:
-      return asset("idp")
-  }
-}
-const mdmLogo = (name: string) => {
-  if (/intune/i.test(name)) return asset("intune")
-  if (/jamf/i.test(name)) return asset("jamf")
-  if (/kandji/i.test(name)) return asset("kandji")
-  return asset("mdm")
-}
-const productLogo = (name: string) => {
-  switch (name) {
-    case "portnox":
-      return asset("portnox")
-    case "panorama":
-      return asset("panorama")
-    default:
-      return asset("product")
-  }
-}
+  const generateDiagram = () => {
+    let newNodes: DiagramNode[] = []
+    let newConnections: DiagramConnection[] = []
 
-const colorFor = (kind: string) => {
-  switch (kind) {
-    case "endpoint":
-      return "#e0e7ff"
-    case "network":
-    case "wireless":
-      return "#d1fae5"
-    case "nac":
-      return "#ccfbf1"
-    case "identity":
-      return "#dbeafe"
-    case "mdm":
-      return "#fef3c7"
-    case "firewall":
-      return "#fee2e2"
-    case "policy":
-      return "#fde68a"
-    case "cloud":
-      return "#e0f2fe"
-    case "portal":
-      return "#e9d5ff"
-    case "workflow":
-      return "#d1fae5"
-    case "connectivity":
-      return "#f3e8ff"
-    case "pki":
-      return "#fff1f2"
-    case "certificate":
-      return "#eef2ff"
-    case "syslog":
-      return "#ede9fe"
-    case "management":
-      return "#fae8ff"
-    default:
-      return "#ffffff"
-  }
-}
-
-const defaultMetaFor = (kind: EdgeKind, label?: string): Meta => {
-  const refs = [
-    { label: "Portnox Zero Trust", href: "https://docs.portnox.com/topics/zero_trust" },
-    { label: "Microsoft Zero Trust", href: "https://learn.microsoft.com/security/zero-trust/" },
-  ]
-  switch (kind) {
-    case "radius": {
-      const isCoA = /coa|session|reauth/i.test(label || "")
-      return {
-        ports: isCoA ? "UDP 3799 (CoA)" : "UDP 1812 (Auth), 1813 (Acct)",
-        ciphers: /eap[-\s]?tls/i.test(label || "") ? "EAP‑TLS (TLS 1.2/1.3)" : "EAP per policy",
-        certValidity: /eap[-\s]?tls/i.test(label || "")
-          ? "Client: ~365d, Server: ~398d (example)"
-          : "Server: ~398d (example)",
-        referenceUrls: isCoA
-          ? [{ label: "RADIUS CoA", href: "https://docs.portnox.com/topics/radius_coa" }, ...refs]
-          : refs,
-      }
+    switch (view) {
+      case "complete":
+        newNodes = generateCompleteArchitecture()
+        newConnections = generateCompleteConnections()
+        break
+      case "auth-flow":
+        newNodes = generateAuthFlowNodes()
+        newConnections = generateAuthFlowConnections()
+        break
+      case "pki":
+        newNodes = generatePKINodes()
+        newConnections = generatePKIConnections()
+        break
+      case "radsec-proxy":
+        newNodes = generateRADSecProxyNodes()
+        newConnections = generateRADSecProxyConnections()
+        break
+      case "policies":
+        newNodes = generatePolicyNodes()
+        newConnections = generatePolicyConnections()
+        break
+      case "connectivity":
+        newNodes = generateConnectivityNodes()
+        newConnections = generateConnectivityConnections()
+        break
+      case "intune":
+        newNodes = generateIntuneNodes()
+        newConnections = generateIntuneConnections()
+        break
+      case "onboarding":
+        newNodes = generateOnboardingNodes()
+        newConnections = generateOnboardingConnections()
+        break
     }
-    case "https":
-      return {
-        ports: "TCP 443",
-        ciphers: "TLS 1.2/1.3 (AES‑GCM)",
-        certValidity: "Server cert e.g., 398 days",
-        referenceUrls: refs,
-      }
-    case "ldap":
-      return {
-        ports: "TCP 389 (STARTTLS) / 636 (LDAPS)",
-        ciphers: "STARTTLS/LDAPS (TLS 1.2/1.3)",
-        certValidity: "Server cert via CA policy",
-        referenceUrls: refs,
-      }
-    case "tacacs":
-      return { ports: "TCP 49", ciphers: "Per-session encryption", certValidity: "N/A", referenceUrls: refs }
-    case "syslog":
-      return { ports: "UDP 514 / TCP 6514 (TLS)", ciphers: "TLS if TCP 6514", certValidity: "N/A", referenceUrls: refs }
-    case "data":
-    default:
-      return { ports: "—", ciphers: "—", certValidity: "N/A", referenceUrls: refs }
-  }
-}
 
-function StencilNode({ data, selected }: NodeProps<StencilData>) {
-  const fill = data.color || "#fff"
-  return (
-    <div
-      className="rounded-lg border shadow-sm px-3 py-2 flex items-center gap-2 min-w-[200px]"
-      style={{ background: fill, borderColor: selected ? "#3b82f6" : "#e5e7eb" }}
-      role="group"
-      aria-label={data.label}
-    >
-      {data.imageUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={data.imageUrl || "/placeholder.svg"} alt={data.label} width={28} height={28} className="rounded" />
-      ) : null}
-      <div className="min-w-0">
-        <div className="text-xs font-semibold truncate">{data.label}</div>
-        {data.description ? <div className="text-[10px] text-slate-600 truncate">{data.description}</div> : null}
-      </div>
-    </div>
-  )
-}
-
-function PortnoxEdge(
-  props: EdgeProps<{
-    label?: string
-    kind?: EdgeKind
-    meta?: Meta
-  }>,
-) {
-  const { sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data } = props
-  const [path, labelX, labelY] = getSmoothStepPath({
-    sourceX,
-    sourceY,
-    targetX,
-    targetY,
-    borderRadius: 8,
-    sourcePosition: sourcePosition || Position.Right,
-    targetPosition: targetPosition || Position.Left,
-  })
-
-  const dist = Math.hypot(sourceX - targetX, sourceY - targetY)
-  let latency = Math.max(2, Math.round(dist / 18))
-  switch (data?.kind) {
-    case "https":
-      latency += 8
-      break
-    case "ldap":
-      latency += 5
-      break
-    case "tacacs":
-      latency += 4
-      break
-    case "syslog":
-      latency += 1
-      break
+    setNodes(newNodes)
+    setConnections(newConnections)
   }
 
-  const stroke = (() => {
-    switch (data?.kind) {
-      case "radius":
-        return "#00c8d7"
-      case "https":
-        return "#059669"
-      case "ldap":
-        return "#0078D4"
-      case "syslog":
-        return "#7C3AED"
-      case "tacacs":
-        return "#DC2626"
+  const generateCompleteArchitecture = (): DiagramNode[] => {
+    const cloudColor = getCloudColor(cloudProvider)
+    const vendorLabel = networkVendor.charAt(0).toUpperCase() + networkVendor.slice(1)
+
+    return [
+      {
+        id: "portnox-cloud",
+        x: 450,
+        y: 50,
+        width: 300,
+        height: 120,
+        label: "Portnox Cloud NAC",
+        type: "cloud",
+        color: "#e3f2fd",
+        icon: "☁️",
+        description: "Cloud-based NAC engine with Private PKI, policy management, and RADIUS authentication services",
+      },
+      {
+        id: "cloud-proxy-primary",
+        x: 100,
+        y: 250,
+        width: 180,
+        height: 100,
+        label: `${cloudProvider.toUpperCase()} RADSec Proxy (Primary)`,
+        type: cloudProvider,
+        color: cloudColor,
+        icon: "🔄",
+        status: "active",
+        description: `Primary ${cloudProvider.toUpperCase()} RADSec proxy with 7-day cache`,
+      },
+      {
+        id: "cloud-proxy-standby",
+        x: 320,
+        y: 250,
+        width: 180,
+        height: 100,
+        label: `${cloudProvider.toUpperCase()} RADSec Proxy (Standby)`,
+        type: cloudProvider,
+        color: cloudColor,
+        icon: "🔄",
+        status: "standby",
+        description: `Standby ${cloudProvider.toUpperCase()} RADSec proxy for high availability`,
+      },
+      {
+        id: "connectivity",
+        x: 100,
+        y: 400,
+        width: 400,
+        height: 60,
+        label: getConnectivityLabel(connectivityType),
+        type: "connectivity",
+        color: "#f3e5f5",
+        icon: "🌐",
+        description: `${getConnectivityLabel(connectivityType)} network connectivity with redundancy`,
+      },
+      {
+        id: "site-infrastructure",
+        x: 100,
+        y: 520,
+        width: 400,
+        height: 120,
+        label: `ABM Site - ${vendorLabel} Stack`,
+        type: "site",
+        color: "#e8f5e9",
+        icon: "🏢",
+        description: `Physical location with ${vendorLabel} network infrastructure and 802.1X authentication`,
+      },
+      {
+        id: "intune",
+        x: 800,
+        y: 250,
+        width: 300,
+        height: 150,
+        label: "Microsoft Intune MDM",
+        type: "intune",
+        color: "#e1f5fe",
+        icon: "📱",
+        description: "Mobile Device Management for certificate deployment and device configuration",
+      },
+      {
+        id: "endpoints",
+        x: 800,
+        y: 450,
+        width: 300,
+        height: 200,
+        label: "Managed Endpoints",
+        type: "device",
+        color: "#f5f5f5",
+        icon: "💻",
+        description: "Corporate devices with certificates deployed via Intune for 802.1X authentication",
+      },
+    ]
+  }
+
+  const generateCompleteConnections = (): DiagramConnection[] => {
+    return [
+      {
+        id: "cloud-to-primary",
+        from: "portnox-cloud",
+        to: "cloud-proxy-primary",
+        type: "secure",
+        label: "RADSec/TLS 1.3",
+        protocol: "RADSec",
+        bandwidth: "1 Gbps",
+      },
+      {
+        id: "cloud-to-standby",
+        from: "portnox-cloud",
+        to: "cloud-proxy-standby",
+        type: "secure",
+        label: "RADSec/TLS 1.3",
+        protocol: "RADSec",
+        bandwidth: "1 Gbps",
+      },
+      {
+        id: "primary-to-connectivity",
+        from: "cloud-proxy-primary",
+        to: "connectivity",
+        type: "standard",
+        protocol: "RADIUS",
+        bandwidth: "100 Mbps",
+      },
+      {
+        id: "standby-to-connectivity",
+        from: "cloud-proxy-standby",
+        to: "connectivity",
+        type: "dashed",
+        protocol: "RADIUS",
+        bandwidth: "100 Mbps",
+      },
+      {
+        id: "connectivity-to-site",
+        from: "connectivity",
+        to: "site-infrastructure",
+        type: getConnectivityType(connectivityType),
+        protocol: getConnectivityProtocol(connectivityType),
+        bandwidth: getConnectivityBandwidth(connectivityType),
+      },
+      {
+        id: "site-to-endpoints",
+        from: "site-infrastructure",
+        to: "endpoints",
+        type: "standard",
+        label: "802.1X EAP-TLS",
+        protocol: "802.1X",
+        bandwidth: "1 Gbps",
+      },
+      {
+        id: "intune-to-endpoints",
+        from: "intune",
+        to: "endpoints",
+        type: "secure",
+        label: "Certificate Push",
+        protocol: "HTTPS",
+        bandwidth: "10 Mbps",
+      },
+      {
+        id: "cloud-to-intune",
+        from: "portnox-cloud",
+        to: "intune",
+        type: "dashed",
+        label: "SCEP",
+        protocol: "SCEP",
+        bandwidth: "1 Mbps",
+      },
+    ]
+  }
+
+  const generateRADSecProxyNodes = (): DiagramNode[] => {
+    const cloudColor = getCloudColor(cloudProvider)
+
+    const nodes: DiagramNode[] = [
+      {
+        id: "portnox-cloud",
+        x: 50,
+        y: 300,
+        width: 200,
+        height: 100,
+        label: "Portnox Cloud",
+        type: "cloud",
+        color: "#e3f2fd",
+        icon: "☁️",
+        description: "Cloud NAC service with global reach and built-in high availability",
+      },
+      {
+        id: "proxy-container-1",
+        x: 300,
+        y: 200,
+        width: 150,
+        height: 100,
+        label: "RADSec Proxy Container 1",
+        type: "container",
+        color: "#e8f5e9",
+        icon: "📦",
+        status: "active",
+        description: "Docker container running RADSec proxy with local 7-day cache",
+      },
+      {
+        id: "proxy-container-2",
+        x: 500,
+        y: 200,
+        width: 150,
+        height: 100,
+        label: "RADSec Proxy Container 2",
+        type: "container",
+        color: "#e8f5e9",
+        icon: "📦",
+        status: "active",
+        description: "Docker container running RADSec proxy with local 7-day cache",
+      },
+      {
+        id: "monitoring",
+        x: 700,
+        y: 250,
+        width: 150,
+        height: 80,
+        label: "Monitoring & Logs",
+        type: "monitoring",
+        color: "#f3e5f5",
+        icon: "📊",
+        description: "CloudWatch/Prometheus monitoring with alerting and health checks",
+      },
+      {
+        id: "site-nas",
+        x: 350,
+        y: 450,
+        width: 200,
+        height: 100,
+        label: `${networkVendor.toUpperCase()} NAS`,
+        type: "network",
+        color: "#e8f5e9",
+        icon: "🔧",
+        description: "Network Access Server with RADIUS client and failover configuration",
+      },
+    ]
+
+    if (cloudProvider !== "onprem") {
+      nodes.push({
+        id: "load-balancer",
+        x: 350,
+        y: 50,
+        width: 200,
+        height: 80,
+        label: `${cloudProvider.toUpperCase()} Load Balancer (Optional)`,
+        type: "load-balancer",
+        color: cloudColor,
+        icon: "⚖️",
+        description: "Optional Application Load Balancer for additional traffic distribution",
+      })
+    }
+
+    return nodes
+  }
+
+  const generateRADSecProxyConnections = (): DiagramConnection[] => {
+    const connections: DiagramConnection[] = [
+      {
+        id: "cloud-to-proxy1",
+        from: "portnox-cloud",
+        to: "proxy-container-1",
+        type: "secure",
+        label: "RADSec/TLS 1.3",
+        protocol: "RADSec",
+        bandwidth: "10 Gbps",
+      },
+      {
+        id: "cloud-to-proxy2",
+        from: "portnox-cloud",
+        to: "proxy-container-2",
+        type: "secure",
+        label: "RADSec/TLS 1.3",
+        protocol: "RADSec",
+        bandwidth: "10 Gbps",
+      },
+      {
+        id: "proxy1-to-monitoring",
+        from: "proxy-container-1",
+        to: "monitoring",
+        type: "dashed",
+        label: "Health Check",
+        protocol: "HTTPS",
+        bandwidth: "10 Mbps",
+      },
+      {
+        id: "proxy2-to-monitoring",
+        from: "proxy-container-2",
+        to: "monitoring",
+        type: "dashed",
+        label: "Health Check",
+        protocol: "HTTPS",
+        bandwidth: "10 Mbps",
+      },
+      {
+        id: "nas-to-proxy1",
+        from: "site-nas",
+        to: "proxy-container-1",
+        type: "standard",
+        label: "Primary RADIUS",
+        protocol: "RADIUS",
+        bandwidth: "100 Mbps",
+      },
+      {
+        id: "nas-to-proxy2",
+        from: "site-nas",
+        to: "proxy-container-2",
+        type: "dashed",
+        label: "Failover RADIUS",
+        protocol: "RADIUS",
+        bandwidth: "100 Mbps",
+      },
+    ]
+
+    if (cloudProvider !== "onprem") {
+      connections.push(
+        {
+          id: "lb-to-proxy1",
+          from: "load-balancer",
+          to: "proxy-container-1",
+          type: "standard",
+          label: "Traffic Distribution",
+          protocol: "HTTP",
+          bandwidth: "1 Gbps",
+        },
+        {
+          id: "lb-to-proxy2",
+          from: "load-balancer",
+          to: "proxy-container-2",
+          type: "standard",
+          label: "Traffic Distribution",
+          protocol: "HTTP",
+          bandwidth: "1 Gbps",
+        },
+      )
+    }
+
+    return connections
+  }
+
+  // Additional generator functions for other views...
+  const generateAuthFlowNodes = (): DiagramNode[] => {
+    return [
+      {
+        id: "device",
+        x: 50,
+        y: 300,
+        width: 120,
+        height: 80,
+        label: "End Device",
+        type: "device",
+        color: "#e8f5e9",
+        icon: "💻",
+        description: "User device with certificate attempting network access",
+      },
+      {
+        id: "nas",
+        x: 250,
+        y: 300,
+        width: 150,
+        height: 80,
+        label: `${networkVendor.toUpperCase()} NAS`,
+        type: "network",
+        color: "#e8f5e9",
+        icon: "🔧",
+        description: "Network Access Server handling 802.1X authentication",
+      },
+      {
+        id: "proxy",
+        x: 500,
+        y: 300,
+        width: 180,
+        height: 80,
+        label: `RADSec Proxy`,
+        type: cloudProvider,
+        color: getCloudColor(cloudProvider),
+        icon: "🔄",
+        description: "RADIUS over TLS proxy with 7-day cache",
+      },
+      {
+        id: "portnox",
+        x: 800,
+        y: 300,
+        width: 200,
+        height: 100,
+        label: "Portnox Cloud",
+        type: "cloud",
+        color: "#e3f2fd",
+        icon: "☁️",
+        description: "Cloud NAC service for authentication decisions",
+      },
+      {
+        id: "identity",
+        x: 800,
+        y: 450,
+        width: 200,
+        height: 80,
+        label: "Azure AD/Entra ID",
+        type: "identity",
+        color: "#e3f2fd",
+        icon: "🔐",
+        description: "Identity provider for user authentication",
+      },
+    ]
+  }
+
+  const generateAuthFlowConnections = (): DiagramConnection[] => {
+    return [
+      { id: "device-to-nas", from: "device", to: "nas", type: "standard", label: "1. EAP Start" },
+      { id: "nas-to-proxy", from: "nas", to: "proxy", type: "standard", label: "2. RADIUS Request" },
+      { id: "proxy-to-portnox", from: "proxy", to: "portnox", type: "secure", label: "3. RADSec Forward" },
+      { id: "portnox-to-identity", from: "portnox", to: "identity", type: "standard", label: "4. Identity Lookup" },
+      { id: "identity-to-portnox", from: "identity", to: "portnox", type: "standard", label: "5. User Info" },
+      { id: "portnox-to-proxy-return", from: "portnox", to: "proxy", type: "secure", label: "6. Auth Decision" },
+      { id: "proxy-to-nas-return", from: "proxy", to: "nas", type: "standard", label: "7. RADIUS Response" },
+      { id: "nas-to-device-return", from: "nas", to: "device", type: "standard", label: "8. Network Access" },
+    ]
+  }
+
+  // Helper functions
+  const getCloudColor = (provider: string): string => {
+    switch (provider) {
+      case "aws":
+        return "#fff3e0"
+      case "azure":
+        return "#e1f5fe"
+      case "gcp":
+        return "#e8f5e9"
+      case "onprem":
+        return "#ffeaa7"
       default:
-        return "#6B7280"
+        return "#f5f5f5"
     }
-  })()
+  }
 
-  const meta = { ...defaultMetaFor(data?.kind || "data", data?.label), ...(data?.meta || {}) }
+  const getConnectivityLabel = (type: string): string => {
+    switch (type) {
+      case "sdwan":
+        return "SD-WAN Network"
+      case "expressroute":
+        return "Azure ExpressRoute"
+      case "directconnect":
+        return "AWS Direct Connect"
+      case "mpls":
+        return "MPLS Network"
+      case "vpn":
+        return "Site-to-Site VPN"
+      case "internet":
+        return "Internet Connection"
+      default:
+        return "Network Connection"
+    }
+  }
 
-  return (
-    <g>
-      <path d={path} stroke="transparent" strokeWidth={14} fill="none" />
-      <TooltipProvider delayDuration={100}>
+  const getConnectivityType = (type: string): "standard" | "secure" | "dashed" => {
+    switch (type) {
+      case "sdwan":
+        return "dashed"
+      case "expressroute":
+        return "secure"
+      case "directconnect":
+        return "secure"
+      case "mpls":
+        return "dashed"
+      case "vpn":
+        return "secure"
+      default:
+        return "standard"
+    }
+  }
+
+  const getConnectivityProtocol = (type: string): string => {
+    switch (type) {
+      case "sdwan":
+        return "SD-WAN"
+      case "expressroute":
+        return "ExpressRoute"
+      case "directconnect":
+        return "Direct Connect"
+      case "mpls":
+        return "MPLS"
+      case "vpn":
+        return "IPSec"
+      default:
+        return "IP"
+    }
+  }
+
+  const getConnectivityBandwidth = (type: string): string => {
+    switch (type) {
+      case "sdwan":
+        return "100 Mbps"
+      case "expressroute":
+        return "1 Gbps"
+      case "directconnect":
+        return "1 Gbps"
+      case "mpls":
+        return "100 Mbps"
+      case "vpn":
+        return "50 Mbps"
+      default:
+        return "10 Mbps"
+    }
+  }
+
+  // Placeholder functions for other node generators
+  const generatePKINodes = (): DiagramNode[] => {
+    return [
+      {
+        id: "portnox-ca",
+        x: 450,
+        y: 50,
+        width: 300,
+        height: 100,
+        label: "Portnox Private CA",
+        type: "pki",
+        color: "#e3f2fd",
+        icon: "🔐",
+        description: "Private Certificate Authority for issuing X.509 certificates with automated lifecycle management",
+      },
+      {
+        id: "scep-server",
+        x: 200,
+        y: 200,
+        width: 200,
+        height: 80,
+        label: "SCEP Server",
+        type: "cert",
+        color: "#e8f5e9",
+        icon: "📜",
+        description: "Simple Certificate Enrollment Protocol server for automated certificate provisioning",
+      },
+      {
+        id: "ocsp-responder",
+        x: 500,
+        y: 200,
+        width: 200,
+        height: 80,
+        label: "OCSP Responder",
+        type: "cert",
+        color: "#e8f5e9",
+        icon: "✅",
+        description: "Online Certificate Status Protocol for real-time certificate validation",
+      },
+      {
+        id: "crl-distribution",
+        x: 800,
+        y: 200,
+        width: 200,
+        height: 80,
+        label: "CRL Distribution Point",
+        type: "cert",
+        color: "#e8f5e9",
+        icon: "📋",
+        description: "Certificate Revocation List distribution for offline validation",
+      },
+      {
+        id: "intune-connector",
+        x: 100,
+        y: 350,
+        width: 180,
+        height: 80,
+        label: "Intune SCEP Connector",
+        type: "mdm",
+        color: "#fff3e0",
+        icon: "🔗",
+        description: "Microsoft Intune connector for SCEP certificate enrollment",
+      },
+      {
+        id: "cert-templates",
+        x: 350,
+        y: 350,
+        width: 180,
+        height: 80,
+        label: "Certificate Templates",
+        type: "template",
+        color: "#f3e5f5",
+        icon: "📄",
+        description: "Predefined certificate templates for different device types",
+      },
+      {
+        id: "key-escrow",
+        x: 600,
+        y: 350,
+        width: 180,
+        height: 80,
+        label: "Key Escrow Service",
+        type: "security",
+        color: "#fff3e0",
+        icon: "🔑",
+        description: "Secure key recovery and escrow for compliance requirements",
+      },
+      {
+        id: "end-devices",
+        x: 850,
+        y: 350,
+        width: 180,
+        height: 80,
+        label: "End Devices",
+        type: "device",
+        color: "#e8f5e9",
+        icon: "💻",
+        description: "Corporate devices receiving certificates for 802.1X authentication",
+      },
+    ]
+  }
+
+  const generatePKIConnections = (): DiagramConnection[] => {
+    return [
+      { id: "ca-to-scep", from: "portnox-ca", to: "scep-server", type: "secure", label: "Certificate Issuance" },
+      { id: "ca-to-ocsp", from: "portnox-ca", to: "ocsp-responder", type: "secure", label: "Status Updates" },
+      { id: "ca-to-crl", from: "portnox-ca", to: "crl-distribution", type: "standard", label: "CRL Publishing" },
+      { id: "ca-to-templates", from: "portnox-ca", to: "cert-templates", type: "dashed", label: "Template Management" },
+      { id: "ca-to-escrow", from: "portnox-ca", to: "key-escrow", type: "secure", label: "Key Backup" },
+      { id: "scep-to-intune", from: "scep-server", to: "intune-connector", type: "standard", label: "SCEP Enrollment" },
+      {
+        id: "intune-to-devices",
+        from: "intune-connector",
+        to: "end-devices",
+        type: "standard",
+        label: "Certificate Deploy",
+      },
+      { id: "templates-to-devices", from: "cert-templates", to: "end-devices", type: "dashed", label: "Profile Push" },
+    ]
+  }
+
+  // Policy Framework nodes and connections
+  const generatePolicyNodes = (): DiagramNode[] => {
+    return [
+      {
+        id: "policy-engine",
+        x: 400,
+        y: 50,
+        width: 400,
+        height: 100,
+        label: "Portnox Policy Engine",
+        type: "policy",
+        color: "#e3f2fd",
+        icon: "⚙️",
+        description: "Centralized policy management and enforcement engine with real-time decision making",
+      },
+      {
+        id: "user-policies",
+        x: 50,
+        y: 200,
+        width: 200,
+        height: 120,
+        label: "User-Based Policies",
+        type: "policy",
+        color: "#d4edda",
+        icon: "👤",
+        description: "Identity-based access control policies with role-based permissions",
+      },
+      {
+        id: "device-policies",
+        x: 300,
+        y: 200,
+        width: 200,
+        height: 120,
+        label: "Device Compliance",
+        type: "policy",
+        color: "#cce5ff",
+        icon: "📱",
+        description: "Device health and compliance policies including OS version, encryption status",
+      },
+      {
+        id: "network-policies",
+        x: 550,
+        y: 200,
+        width: 200,
+        height: 120,
+        label: "Network Segmentation",
+        type: "policy",
+        color: "#fff3cd",
+        icon: "🌐",
+        description: "VLAN assignment and network access policies based on user/device context",
+      },
+      {
+        id: "time-policies",
+        x: 800,
+        y: 200,
+        width: 200,
+        height: 120,
+        label: "Time-Based Access",
+        type: "policy",
+        color: "#f8d7da",
+        icon: "⏰",
+        description: "Temporal access controls with business hours and maintenance windows",
+      },
+      {
+        id: "location-policies",
+        x: 50,
+        y: 370,
+        width: 200,
+        height: 120,
+        label: "Location-Based",
+        type: "policy",
+        color: "#e2e3e5",
+        icon: "📍",
+        description: "Geographic and network location-based access policies",
+      },
+      {
+        id: "risk-policies",
+        x: 300,
+        y: 370,
+        width: 200,
+        height: 120,
+        label: "Risk Assessment",
+        type: "policy",
+        color: "#ffeaa7",
+        icon: "⚠️",
+        description: "Dynamic risk-based policies with threat intelligence integration",
+      },
+      {
+        id: "guest-policies",
+        x: 550,
+        y: 370,
+        width: 200,
+        height: 120,
+        label: "Guest Access",
+        type: "policy",
+        color: "#dda0dd",
+        icon: "🎫",
+        description: "Sponsored guest access with time-limited credentials and restricted access",
+      },
+      {
+        id: "iot-policies",
+        x: 800,
+        y: 370,
+        width: 200,
+        height: 120,
+        label: "IoT Device Policies",
+        type: "policy",
+        color: "#98fb98",
+        icon: "🔌",
+        description: "IoT device policies with MAC Authentication Bypass and device profiling",
+      },
+    ]
+  }
+
+  const generatePolicyConnections = (): DiagramConnection[] => {
+    return [
+      { id: "engine-to-user", from: "policy-engine", to: "user-policies", type: "standard", label: "Identity Lookup" },
+      {
+        id: "engine-to-device",
+        from: "policy-engine",
+        to: "device-policies",
+        type: "standard",
+        label: "Compliance Check",
+      },
+      {
+        id: "engine-to-network",
+        from: "policy-engine",
+        to: "network-policies",
+        type: "standard",
+        label: "VLAN Assignment",
+      },
+      { id: "engine-to-time", from: "policy-engine", to: "time-policies", type: "standard", label: "Time Validation" },
+      {
+        id: "engine-to-location",
+        from: "policy-engine",
+        to: "location-policies",
+        type: "dashed",
+        label: "Location Check",
+      },
+      { id: "engine-to-risk", from: "policy-engine", to: "risk-policies", type: "secure", label: "Risk Analysis" },
+      { id: "engine-to-guest", from: "policy-engine", to: "guest-policies", type: "dashed", label: "Guest Validation" },
+      { id: "engine-to-iot", from: "policy-engine", to: "iot-policies", type: "standard", label: "Device Profiling" },
+    ]
+  }
+
+  // Connectivity Options nodes and connections
+  const generateConnectivityNodes = (): DiagramNode[] => {
+    return [
+      {
+        id: "portnox-global",
+        x: 500,
+        y: 300,
+        width: 300,
+        height: 100,
+        label: "Portnox Global Cloud",
+        type: "cloud",
+        color: "#e3f2fd",
+        icon: "🌍",
+        description: "Global cloud infrastructure with regional presence and edge locations",
+      },
+      {
+        id: "aws-regions",
+        x: 50,
+        y: 50,
+        width: 200,
+        height: 100,
+        label: "AWS Multi-Region",
+        type: "aws",
+        color: "#fff3e0",
+        icon: "☁️",
+        description: "AWS infrastructure across multiple regions with auto-failover",
+      },
+      {
+        id: "azure-regions",
+        x: 300,
+        y: 50,
+        width: 200,
+        height: 100,
+        label: "Azure Global",
+        type: "azure",
+        color: "#e1f5fe",
+        icon: "🔷",
+        description: "Azure infrastructure with ExpressRoute connectivity",
+      },
+      {
+        id: "gcp-regions",
+        x: 550,
+        y: 50,
+        width: 200,
+        height: 100,
+        label: "Google Cloud",
+        type: "gcp",
+        color: "#e8f5e9",
+        icon: "🌐",
+        description: "Google Cloud Platform with dedicated interconnect",
+      },
+      {
+        id: "edge-locations",
+        x: 800,
+        y: 50,
+        width: 200,
+        height: 100,
+        label: "Edge Locations",
+        type: "edge",
+        color: "#f0f8ff",
+        icon: "📡",
+        description: "Edge computing locations for reduced latency",
+      },
+      {
+        id: "sdwan-fabric",
+        x: 50,
+        y: 500,
+        width: 200,
+        height: 80,
+        label: "SD-WAN Fabric",
+        type: "sdwan",
+        color: "#ffe4e1",
+        icon: "🕸️",
+        description: "Software-defined WAN with dynamic path selection",
+      },
+      {
+        id: "mpls-backbone",
+        x: 300,
+        y: 500,
+        width: 200,
+        height: 80,
+        label: "MPLS Backbone",
+        type: "mpls",
+        color: "#f5deb3",
+        icon: "🛤️",
+        description: "Traditional MPLS network with QoS guarantees",
+      },
+      {
+        id: "internet-breakout",
+        x: 550,
+        y: 500,
+        width: 200,
+        height: 80,
+        label: "Internet Breakout",
+        type: "internet",
+        color: "#e6e6fa",
+        icon: "🌐",
+        description: "Direct internet connectivity with security controls",
+      },
+      {
+        id: "private-circuits",
+        x: 800,
+        y: 500,
+        width: 200,
+        height: 80,
+        label: "Private Circuits",
+        type: "private",
+        color: "#f0fff0",
+        icon: "🔒",
+        description: "Dedicated private circuits for sensitive traffic",
+      },
+    ]
+  }
+
+  const generateConnectivityConnections = (): DiagramConnection[] => {
+    return [
+      { id: "aws-to-global", from: "aws-regions", to: "portnox-global", type: "secure", label: "RADSec/TLS" },
+      { id: "azure-to-global", from: "azure-regions", to: "portnox-global", type: "secure", label: "RADSec/TLS" },
+      { id: "gcp-to-global", from: "gcp-regions", to: "portnox-global", type: "secure", label: "RADSec/TLS" },
+      { id: "edge-to-global", from: "edge-locations", to: "portnox-global", type: "secure", label: "Edge Sync" },
+      { id: "global-to-sdwan", from: "portnox-global", to: "sdwan-fabric", type: "dashed", label: "Dynamic Routing" },
+      { id: "global-to-mpls", from: "portnox-global", to: "mpls-backbone", type: "standard", label: "QoS Traffic" },
+      {
+        id: "global-to-internet",
+        from: "portnox-global",
+        to: "internet-breakout",
+        type: "standard",
+        label: "Public Access",
+      },
+      {
+        id: "global-to-private",
+        from: "portnox-global",
+        to: "private-circuits",
+        type: "secure",
+        label: "Dedicated Links",
+      },
+    ]
+  }
+
+  // Intune Integration nodes and connections
+  const generateIntuneNodes = (): DiagramNode[] => {
+    return [
+      {
+        id: "intune-portal",
+        x: 450,
+        y: 50,
+        width: 300,
+        height: 100,
+        label: "Microsoft Intune Portal",
+        type: "intune",
+        color: "#e1f5fe",
+        icon: "🏢",
+        description: "Centralized device management portal with policy configuration",
+      },
+      {
+        id: "portnox-scep",
+        x: 450,
+        y: 200,
+        width: 300,
+        height: 80,
+        label: "Portnox SCEP Connector",
+        type: "pki",
+        color: "#e3f2fd",
+        icon: "🔗",
+        description: "SCEP connector integrating Portnox PKI with Intune certificate profiles",
+      },
+      {
+        id: "windows-devices",
+        x: 50,
+        y: 350,
+        width: 180,
+        height: 100,
+        label: "Windows Devices",
+        type: "device",
+        color: "#e8f5e9",
+        icon: "🖥️",
+        description: "Corporate Windows devices with Intune management agent",
+      },
+      {
+        id: "ios-devices",
+        x: 280,
+        y: 350,
+        width: 180,
+        height: 100,
+        label: "iOS Devices",
+        type: "device",
+        color: "#e8f5e9",
+        icon: "📱",
+        description: "Corporate and BYOD iOS devices with MDM enrollment",
+      },
+      {
+        id: "android-devices",
+        x: 510,
+        y: 350,
+        width: 180,
+        height: 100,
+        label: "Android Devices",
+        type: "device",
+        color: "#e8f5e9",
+        icon: "📱",
+        description: "Android devices with work profile management",
+      },
+      {
+        id: "macos-devices",
+        x: 740,
+        y: 350,
+        width: 180,
+        height: 100,
+        label: "macOS Devices",
+        type: "device",
+        color: "#e8f5e9",
+        icon: "💻",
+        description: "Corporate Mac devices with automated enrollment",
+      },
+      {
+        id: "compliance-policies",
+        x: 50,
+        y: 500,
+        width: 200,
+        height: 80,
+        label: "Compliance Policies",
+        type: "policy",
+        color: "#fff3cd",
+        icon: "✅",
+        description: "Device compliance requirements and health attestation",
+      },
+      {
+        id: "app-protection",
+        x: 300,
+        y: 500,
+        width: 200,
+        height: 80,
+        label: "App Protection",
+        type: "security",
+        color: "#f8d7da",
+        icon: "🛡️",
+        description: "Application-level security policies and data protection",
+      },
+      {
+        id: "conditional-access",
+        x: 550,
+        y: 500,
+        width: 200,
+        height: 80,
+        label: "Conditional Access",
+        type: "security",
+        color: "#d4edda",
+        icon: "🚪",
+        description: "Azure AD conditional access policies integration",
+      },
+      {
+        id: "wifi-profiles",
+        x: 800,
+        y: 500,
+        width: 200,
+        height: 80,
+        label: "WiFi Profiles",
+        type: "network",
+        color: "#e2e3e5",
+        icon: "📶",
+        description: "802.1X WiFi profiles with certificate-based authentication",
+      },
+    ]
+  }
+
+  const generateIntuneConnections = (): DiagramConnection[] => {
+    return [
+      { id: "portal-to-scep", from: "intune-portal", to: "portnox-scep", type: "secure", label: "SCEP Configuration" },
+      {
+        id: "scep-to-windows",
+        from: "portnox-scep",
+        to: "windows-devices",
+        type: "standard",
+        label: "Certificate Deploy",
+      },
+      { id: "scep-to-ios", from: "portnox-scep", to: "ios-devices", type: "standard", label: "Certificate Deploy" },
+      {
+        id: "scep-to-android",
+        from: "portnox-scep",
+        to: "android-devices",
+        type: "standard",
+        label: "Certificate Deploy",
+      },
+      { id: "scep-to-macos", from: "portnox-scep", to: "macos-devices", type: "standard", label: "Certificate Deploy" },
+      {
+        id: "portal-to-compliance",
+        from: "intune-portal",
+        to: "compliance-policies",
+        type: "dashed",
+        label: "Policy Push",
+      },
+      { id: "portal-to-app", from: "intune-portal", to: "app-protection", type: "dashed", label: "App Policies" },
+      {
+        id: "portal-to-conditional",
+        from: "intune-portal",
+        to: "conditional-access",
+        type: "secure",
+        label: "Access Control",
+      },
+      { id: "portal-to-wifi", from: "intune-portal", to: "wifi-profiles", type: "standard", label: "Network Profiles" },
+    ]
+  }
+
+  // Device Onboarding nodes and connections
+  const generateOnboardingNodes = (): DiagramNode[] => {
+    return [
+      {
+        id: "onboarding-portal",
+        x: 400,
+        y: 50,
+        width: 400,
+        height: 100,
+        label: "Device Onboarding Portal",
+        type: "portal",
+        color: "#e3f2fd",
+        icon: "🌐",
+        description: "Self-service device registration portal with multi-factor authentication",
+      },
+      {
+        id: "corporate-enrollment",
+        x: 50,
+        y: 200,
+        width: 200,
+        height: 150,
+        label: "Corporate Device Enrollment",
+        type: "flow",
+        color: "#d4edda",
+        icon: "🏢",
+        description: "Automated enrollment for corporate-owned devices via Intune/JAMF",
+      },
+      {
+        id: "byod-enrollment",
+        x: 300,
+        y: 200,
+        width: 200,
+        height: 150,
+        label: "BYOD Self-Service",
+        type: "flow",
+        color: "#cce5ff",
+        icon: "📱",
+        description: "Bring Your Own Device enrollment with user consent and privacy controls",
+      },
+      {
+        id: "guest-access",
+        x: 550,
+        y: 200,
+        width: 200,
+        height: 150,
+        label: "Guest Access Portal",
+        type: "flow",
+        color: "#fff3cd",
+        icon: "🎫",
+        description: "Sponsored guest access with time-limited credentials and sponsor approval",
+      },
+      {
+        id: "iot-onboarding",
+        x: 800,
+        y: 200,
+        width: 200,
+        height: 150,
+        label: "IoT Device Onboarding",
+        type: "flow",
+        color: "#f8d7da",
+        icon: "🔌",
+        description: "IoT device registration with MAC Authentication Bypass and device profiling",
+      },
+      {
+        id: "certificate-issuance",
+        x: 200,
+        y: 400,
+        width: 200,
+        height: 80,
+        label: "Certificate Issuance",
+        type: "cert",
+        color: "#e8f5e9",
+        icon: "📜",
+        description: "Automated certificate generation and deployment to enrolled devices",
+      },
+      {
+        id: "device-profiling",
+        x: 450,
+        y: 400,
+        width: 200,
+        height: 80,
+        label: "Device Profiling",
+        type: "analysis",
+        color: "#f3e5f5",
+        icon: "🔍",
+        description: "Automated device fingerprinting and classification",
+      },
+      {
+        id: "policy-assignment",
+        x: 700,
+        y: 400,
+        width: 200,
+        height: 80,
+        label: "Policy Assignment",
+        type: "policy",
+        color: "#fff3e0",
+        icon: "📋",
+        description: "Dynamic policy assignment based on device type and user context",
+      },
+      {
+        id: "network-access",
+        x: 200,
+        y: 520,
+        width: 200,
+        height: 80,
+        label: "Network Access Grant",
+        type: "network",
+        color: "#e2e3e5",
+        icon: "🌐",
+        description: "VLAN assignment and network access provisioning",
+      },
+      {
+        id: "monitoring-alerts",
+        x: 450,
+        y: 520,
+        width: 200,
+        height: 80,
+        label: "Monitoring & Alerts",
+        type: "monitoring",
+        color: "#ffeaa7",
+        icon: "📊",
+        description: "Real-time monitoring of onboarding process with alerting",
+      },
+      {
+        id: "compliance-check",
+        x: 700,
+        y: 520,
+        width: 200,
+        height: 80,
+        label: "Compliance Validation",
+        type: "security",
+        color: "#dda0dd",
+        icon: "✅",
+        description: "Continuous compliance monitoring and remediation",
+      },
+    ]
+  }
+
+  const generateOnboardingConnections = (): DiagramConnection[] => {
+    return [
+      {
+        id: "portal-to-corporate",
+        from: "onboarding-portal",
+        to: "corporate-enrollment",
+        type: "standard",
+        label: "MDM Enrollment",
+      },
+      {
+        id: "portal-to-byod",
+        from: "onboarding-portal",
+        to: "byod-enrollment",
+        type: "standard",
+        label: "Self-Service",
+      },
+      {
+        id: "portal-to-guest",
+        from: "onboarding-portal",
+        to: "guest-access",
+        type: "dashed",
+        label: "Sponsor Approval",
+      },
+      {
+        id: "portal-to-iot",
+        from: "onboarding-portal",
+        to: "iot-onboarding",
+        type: "standard",
+        label: "Device Registration",
+      },
+      {
+        id: "corporate-to-cert",
+        from: "corporate-enrollment",
+        to: "certificate-issuance",
+        type: "secure",
+        label: "Auto-Provision",
+      },
+      {
+        id: "byod-to-cert",
+        from: "byod-enrollment",
+        to: "certificate-issuance",
+        type: "secure",
+        label: "User Consent",
+      },
+      {
+        id: "iot-to-profiling",
+        from: "iot-onboarding",
+        to: "device-profiling",
+        type: "standard",
+        label: "Fingerprinting",
+      },
+      {
+        id: "profiling-to-policy",
+        from: "device-profiling",
+        to: "policy-assignment",
+        type: "dashed",
+        label: "Classification",
+      },
+      {
+        id: "cert-to-network",
+        from: "certificate-issuance",
+        to: "network-access",
+        type: "standard",
+        label: "Access Grant",
+      },
+      {
+        id: "policy-to-network",
+        from: "policy-assignment",
+        to: "network-access",
+        type: "standard",
+        label: "VLAN Assignment",
+      },
+      {
+        id: "network-to-monitoring",
+        from: "network-access",
+        to: "monitoring-alerts",
+        type: "dashed",
+        label: "Status Updates",
+      },
+      {
+        id: "monitoring-to-compliance",
+        from: "monitoring-alerts",
+        to: "compliance-check",
+        type: "standard",
+        label: "Health Check",
+      },
+    ]
+  }
+
+  const handleNodeClick = (nodeId: string) => {
+    setSelectedNode(selectedNode === nodeId ? null : nodeId)
+  }
+
+  const renderNode = (node: DiagramNode) => {
+    const isSelected = selectedNode === node.id
+    const isHovered = hoveredNode === node.id
+
+    return (
+      <TooltipProvider key={node.id}>
         <Tooltip>
           <TooltipTrigger asChild>
-            <g className="cursor-pointer">
-              <path d={path} stroke={stroke} strokeWidth={2} fill="none" className="animated-path" />
-              {data?.label && (
-                <text x={labelX} y={labelY - 2} textAnchor="middle" fontSize={11} fill="#374151">
-                  {data.label}
-                </text>
+            <g
+              className="cursor-pointer transition-all duration-200 hover:opacity-90"
+              onClick={() => handleNodeClick(node.id)}
+              onMouseEnter={() => setHoveredNode(node.id)}
+              onMouseLeave={() => setHoveredNode(null)}
+            >
+              {/* Node background with gradient */}
+              <defs>
+                <linearGradient id={`gradient-${node.id}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor={node.color} stopOpacity="1" />
+                  <stop offset="100%" stopColor={node.color} stopOpacity="0.7" />
+                </linearGradient>
+                <filter id={`shadow-${node.id}`}>
+                  <feDropShadow dx="2" dy="2" stdDeviation="3" floodOpacity="0.3" />
+                </filter>
+              </defs>
+
+              <rect
+                x={node.x}
+                y={node.y}
+                width={node.width}
+                height={node.height}
+                rx={12}
+                fill={`url(#gradient-${node.id})`}
+                stroke={isSelected ? "#3b82f6" : isHovered ? "#6b7280" : "#d1d5db"}
+                strokeWidth={isSelected ? 3 : 2}
+                filter={`url(#shadow-${node.id})`}
+                className="transition-all duration-200"
+              />
+
+              {/* Status indicator */}
+              {node.status && (
+                <circle
+                  cx={node.x + node.width - 15}
+                  cy={node.y + 15}
+                  r={6}
+                  fill={node.status === "active" ? "#10b981" : node.status === "standby" ? "#f59e0b" : "#ef4444"}
+                  stroke="white"
+                  strokeWidth={2}
+                />
+              )}
+
+              {/* Node icon */}
+              <text x={node.x + 15} y={node.y + 25} fontSize="20" className="pointer-events-none">
+                {node.icon}
+              </text>
+
+              {/* Node label with better positioning */}
+              <text
+                x={node.x + node.width / 2}
+                y={node.y + node.height / 2 + 5}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                className="fill-gray-800 font-semibold text-sm pointer-events-none"
+                style={{ textShadow: "1px 1px 2px rgba(255,255,255,0.8)" }}
+              >
+                {node.label}
+              </text>
+
+              {/* Connection points for selected nodes */}
+              {isSelected && (
+                <>
+                  <circle
+                    cx={node.x + node.width / 2}
+                    cy={node.y}
+                    r="8"
+                    fill="#3b82f6"
+                    stroke="white"
+                    strokeWidth="3"
+                  />
+                  <circle
+                    cx={node.x + node.width}
+                    cy={node.y + node.height / 2}
+                    r="8"
+                    fill="#3b82f6"
+                    stroke="white"
+                    strokeWidth="3"
+                  />
+                  <circle
+                    cx={node.x + node.width / 2}
+                    cy={node.y + node.height}
+                    r="8"
+                    fill="#3b82f6"
+                    stroke="white"
+                    strokeWidth="3"
+                  />
+                  <circle
+                    cx={node.x}
+                    cy={node.y + node.height / 2}
+                    r="8"
+                    fill="#3b82f6"
+                    stroke="white"
+                    strokeWidth="3"
+                  />
+                </>
               )}
             </g>
           </TooltipTrigger>
-          <TooltipContent className="max-w-sm">
-            <div className="text-xs space-y-1">
-              <div className="font-semibold">{data?.label || "Connection"}</div>
-              <div className="grid grid-cols-3 gap-x-2 gap-y-1 mt-1">
-                <div className="text-[10px] uppercase text-muted-foreground">Protocol</div>
-                <div className="col-span-2">{(data?.kind || "data").toUpperCase()}</div>
-
-                <div className="text-[10px] uppercase text-muted-foreground">Ports</div>
-                <div className="col-span-2">{meta.ports}</div>
-
-                <div className="text-[10px] uppercase text-muted-foreground">Ciphers</div>
-                <div className="col-span-2">{meta.ciphers}</div>
-
-                <div className="text-[10px] uppercase text-muted-foreground">Cert Validity</div>
-                <div className="col-span-2">{meta.certValidity}</div>
-
-                <div className="text-[10px] uppercase text-muted-foreground">Latency</div>
-                <div className="col-span-2">{latency} ms (approx)</div>
-              </div>
-              {meta.referenceUrls && (
-                <div className="pt-2 border-t mt-2">
-                  <div className="text-[10px] uppercase text-muted-foreground mb-1">References</div>
-                  <ul className="space-y-1">
-                    {meta.referenceUrls.map((r) => (
-                      <li key={r.href}>
-                        <a
-                          href={r.href}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:underline"
-                        >
-                          {r.label}
-                          <ExternalLink className="w-3 h-3" />
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+          <TooltipContent side="top" className="max-w-xs">
+            <div>
+              <p className="font-semibold flex items-center gap-2">
+                <span>{node.icon}</span>
+                {node.label}
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">{node.description}</p>
+              {node.status && (
+                <Badge variant="outline" className="mt-2">
+                  Status: {node.status}
+                </Badge>
               )}
             </div>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
-    </g>
-  )
-}
-
-const nodeTypes = { stencil: StencilNode }
-const edgeTypes = { portnox: PortnoxEdge }
-
-function buildGraph(view: ViewId, vendor: string, connectivity: string, identity: string, deployment: string) {
-  const N = (id: string, label: string, kind: string, opts?: Partial<StencilData>) =>
-    ({
-      id,
-      type: "stencil",
-      data: {
-        label,
-        description: opts?.description,
-        imageUrl: opts?.imageUrl,
-        color: opts?.color || colorFor(kind),
-      },
-      position: { x: 0, y: 0 },
-      width: 200,
-      height: 70,
-      sourcePosition: Position.Right,
-      targetPosition: Position.Left,
-    }) as Node<StencilData>
-
-  const E = (id: string, from: string, to: string, label: string, kind: EdgeKind, meta?: Meta) =>
-    ({
-      id,
-      source: from,
-      target: to,
-      type: "portnox",
-      animated: true,
-      markerEnd: { type: MarkerType.ArrowClosed, color: "#6B7280" },
-      data: { label, kind, meta },
-    }) as Edge
-
-  const nodes: Node[] = []
-  const edges: Edge[] = []
-
-  if (view === "complete-architecture") {
-    nodes.push(
-      N("endpoints", "Corporate Endpoints", "endpoint", {
-        description: "Windows • macOS • iOS • Android • IoT",
-        imageUrl: asset("endpoints"),
-      }),
-      N("switch", `${vendor.toUpperCase()} Switch`, "network", {
-        description: "802.1X Authenticator (Wired)",
-        imageUrl: vendorLogo(vendor),
-      }),
-      N("ap", `${vendor.toUpperCase()} Wireless`, "wireless", {
-        description: "802.1X Authenticator (Wireless)",
-        imageUrl: vendorLogo(vendor),
-      }),
-      N(
-        "proxy",
-        connectivity === "radsec" || connectivity === "hybrid" ? "RADSec Proxy" : "Direct RADIUS",
-        "connectivity",
-        { description: "Secure RADIUS transport", imageUrl: asset("radsec") },
-      ),
-      N("portnox", "Portnox Cloud (RADIUS/TACACS+)", "nac", {
-        description: "AAA • Policies • Posture",
-        imageUrl: productLogo("portnox"),
-      }),
-      N("idp", identity === "active-directory" ? "Active Directory" : "Entra ID", "identity", {
-        description: "User identity • SSO",
-        imageUrl: idpLogo(identity),
-      }),
-      N("mdm", "Microsoft Intune", "mdm", { description: "Compliance • SCEP", imageUrl: mdmLogo("Intune") }),
-      N("rootca", "Root CA (Offline)", "pki", { description: "Trust anchor", imageUrl: asset("rootca") }),
-      N("issuing", "Issuing CA", "pki", { description: "Device/User Certs", imageUrl: asset("issuingca") }),
-      N("crl", "CRL / OCSP", "pki", { description: "Revocation", imageUrl: asset("crl-ocsp") }),
-      N("fw", "Next-Gen Firewall", "firewall", { description: "Segmentation • User-ID", imageUrl: asset("firewall") }),
-      N("siem", "SIEM / Syslog", "syslog", { description: "Events • Analytics", imageUrl: asset("siem") }),
     )
-    const viaProxy = connectivity === "radsec" || connectivity === "hybrid"
-    edges.push(
-      E("ep-sw", "endpoints", "switch", "802.1X (EAP‑TLS)", "radius"),
-      E("ep-ap", "endpoints", "ap", "802.1X (EAP‑TLS)", "radius"),
-      E("sw-core", "switch", viaProxy ? "proxy" : "portnox", viaProxy ? "RADIUS → RADSec" : "RADIUS", "radius"),
-      E("ap-core", "ap", viaProxy ? "proxy" : "portnox", viaProxy ? "RADIUS → RADSec" : "RADIUS", "radius"),
-      ...(viaProxy ? [E("proxy-core", "proxy", "portnox", "RADSec", "radius")] : []),
-      E(
-        "core-idp",
-        "portnox",
-        "idp",
-        identity === "active-directory" ? "LDAP/LDAPS" : "SAML/OIDC",
-        identity === "active-directory" ? "ldap" : "https",
-      ),
-      E("mdm-core", "mdm", "portnox", "Compliance API", "https"),
-      E("issuing-servercert", "issuing", "portnox", "RADIUS Server Cert", "data"),
-      E("issuing-devicecerts", "issuing", "endpoints", "Device/User Certs", "data"),
-      E("issuing-crl", "issuing", "crl", "Publishes", "https"),
-      E("core-fw", "portnox", "fw", "User-ID/FSSO/Syslog", "syslog"),
-      E("fw-siem", "fw", "siem", "Syslog", "syslog"),
-      E("coa", "portnox", "switch", "CoA (Session-Update)", "radius", { ports: "UDP 3799 (CoA)" }),
-    )
-  } else if (view === "zero-trust-nac") {
-    nodes.push(
-      N("endpoints", "Corporate Endpoints", "endpoint", {
-        description: "Windows • macOS • iOS • Android • IoT",
-        imageUrl: asset("endpoints"),
-      }),
-      N("switch", `${vendor.toUpperCase()} Switch`, "network", {
-        description: "802.1X Authenticator (Wired)",
-        imageUrl: vendorLogo(vendor),
-      }),
-      N("ap", `${vendor.toUpperCase()} Wireless`, "wireless", {
-        description: "802.1X Authenticator (Wireless)",
-        imageUrl: vendorLogo(vendor),
-      }),
-      N(
-        "proxy",
-        connectivity === "radsec" || connectivity === "hybrid" ? "RADSec Proxy" : "Direct RADIUS",
-        "connectivity",
-        { description: "Secure RADIUS transport", imageUrl: asset("radsec") },
-      ),
-      N("portnox", "Portnox Cloud RADIUS", "nac", {
-        description: "AAA • Policies • Posture",
-        imageUrl: productLogo("portnox"),
-      }),
-      N("idp", identity === "active-directory" ? "Active Directory" : "Entra ID", "identity", {
-        description: "User identity • SSO",
-        imageUrl: idpLogo(identity),
-      }),
-      N("mdm", "MDM (Intune/Jamf/Kandji)", "mdm", {
-        description: "Compliance & certificates",
-        imageUrl: mdmLogo("Intune"),
-      }),
-      N("fw", "Next-Gen Firewall", "firewall", { description: "Segmentation & policy", imageUrl: asset("firewall") }),
-    )
-    const viaProxy = connectivity === "radsec" || connectivity === "hybrid"
-    edges.push(
-      E("ep-switch", "endpoints", "switch", "802.1X (EAP‑TLS)", "radius"),
-      E("ep-ap", "endpoints", "ap", "802.1X (EAP‑TLS)", "radius"),
-      E("switch-portnox", "switch", viaProxy ? "proxy" : "portnox", viaProxy ? "RADIUS → RADSec" : "RADIUS", "radius"),
-      E("ap-portnox", "ap", viaProxy ? "proxy" : "portnox", viaProxy ? "RADIUS → RADSec" : "RADIUS", "radius"),
-      ...(viaProxy ? [E("proxy-portnox", "proxy", "portnox", "RADSec", "radius")] : []),
-      E(
-        "portnox-idp",
-        "portnox",
-        "idp",
-        identity === "active-directory" ? "LDAP/LDAPS" : "SAML/OIDC",
-        identity === "active-directory" ? "ldap" : "https",
-      ),
-      E("mdm-portnox", "mdm", "portnox", "Compliance API", "https"),
-      E("portnox-fw", "portnox", "fw", "User-ID/FSSO/Syslog", "syslog"),
-    )
-  } else if (view === "802.1x-auth") {
-    nodes.push(
-      N("device", "Device", "endpoint", { description: "Supplicant with cert", imageUrl: asset("endpoint-laptop") }),
-      N("authenticator", "Authenticator (Switch/AP)", "network", {
-        description: "802.1X authenticator",
-        imageUrl: vendorLogo(vendor),
-      }),
-      N("portnox", "Portnox RADIUS", "nac", { description: "EAP‑TLS termination", imageUrl: productLogo("portnox") }),
-      N("idp", identity === "active-directory" ? "Active Directory" : "Entra ID", "identity", {
-        description: "User identity",
-        imageUrl: idpLogo(identity),
-      }),
-      N("policy", "Policy Engine", "policy", { description: "Decision & context", imageUrl: asset("policy") }),
-    )
-    const viaProxy = connectivity === "radsec"
-    if (viaProxy)
-      nodes.push(
-        N("proxy", "RADSec Proxy", "connectivity", { description: "Secure RADIUS", imageUrl: asset("radsec") }),
-      )
-    const edgeAuthTo = viaProxy ? "proxy" : "portnox"
-    edges.push(
-      E("dev-auth", "device", "authenticator", "EAPOL/EAP", "radius"),
-      E("auth-radius", "authenticator", edgeAuthTo, "RADIUS", "radius"),
-      ...(viaProxy ? [E("proxy-portnox", "proxy", "portnox", "RADSec", "radius")] : []),
-      E(
-        "portnox-idp",
-        "portnox",
-        "idp",
-        identity === "active-directory" ? "LDAPS" : "SAML/OIDC",
-        identity === "active-directory" ? "ldap" : "https",
-      ),
-      E("portnox-policy", "portnox", "policy", "Policy", "data"),
-      E("coa", "portnox", "authenticator", "CoA (Session-Update)", "radius", { ports: "UDP 3799 (CoA)" }),
-    )
-  } else if (view === "pki-infrastructure") {
-    nodes.push(
-      N("root", "Root CA", "pki", { description: "Offline root CA", imageUrl: asset("rootca") }),
-      N("issuing", "Issuing CA", "pki", { description: "Device/User certs", imageUrl: asset("issuingca") }),
-      N("servercert", "RADIUS Server Cert", "certificate", {
-        description: "TLS server auth",
-        imageUrl: asset("server-cert"),
-      }),
-      N("clientcerts", "Device/User Certs", "certificate", {
-        description: "EAP‑TLS client auth",
-        imageUrl: asset("client-cert"),
-      }),
-      N("crl", "CRL / OCSP", "pki", { description: "Revocation checking", imageUrl: asset("crl-ocsp") }),
-    )
-    edges.push(
-      E("root-issuing", "root", "issuing", "Signs", "data"),
-      E("issuing-server", "issuing", "servercert", "Issues", "data"),
-      E("issuing-client", "issuing", "clientcerts", "Issues", "data"),
-      E("issuing-crl", "issuing", "crl", "Publishes", "https"),
-    )
-  } else if (view === "access-control-policies") {
-    nodes.push(
-      N("portnox", "Portnox Policy Engine", "nac", {
-        description: "Context • Rules • Actions",
-        imageUrl: productLogo("portnox"),
-      }),
-      N("groups", "User/Device Groups", "policy", { description: "AD/IdP groups", imageUrl: asset("groups") }),
-      N("contexts", "Context Sources", "policy", { description: "MDM • Risk • Geo", imageUrl: asset("context") }),
-      N("switch", `${vendor.toUpperCase()} Switch`, "network", {
-        description: "VLAN / ACL",
-        imageUrl: vendorLogo(vendor),
-      }),
-      N("ap", `${vendor.toUpperCase()} Wireless`, "wireless", {
-        description: "PSK / VLAN / ACL",
-        imageUrl: vendorLogo(vendor),
-      }),
-      N("fw", "Firewall", "firewall", { description: "Segmentation • SGT/Tags", imageUrl: asset("firewall") }),
-      N("guest", "Guest VLAN", "connectivity", { description: "Internet only", imageUrl: asset("vlan") }),
-      N("corp", "Corp VLAN", "connectivity", { description: "Full access", imageUrl: asset("vlan") }),
-      N("restricted", "Restricted VLAN", "connectivity", { description: "Limited access", imageUrl: asset("vlan") }),
-    )
-    edges.push(
-      E("policy-groups", "portnox", "groups", "Group mapping", "data"),
-      E("policy-ctx", "portnox", "contexts", "Context ingestion", "https"),
-      E("policy-sw", "portnox", "switch", "CoA / VLAN / ACL", "radius"),
-      E("policy-ap", "portnox", "ap", "CoA / VLAN / ACL", "radius"),
-      E("policy-fw", "portnox", "fw", "User-ID / Tags", "syslog"),
-      E("sw-corp", "switch", "corp", "VLAN 20", "data"),
-      E("sw-restricted", "switch", "restricted", "VLAN 30", "data"),
-      E("ap-guest", "ap", "guest", "Guest VLAN 99", "data"),
-    )
-  } else if (view === "connectivity-options") {
-    nodes.push(
-      N("branch", "Branch Site", "portal", { description: "Remote branch", imageUrl: asset("branch") }),
-      N("switch", `${vendor.toUpperCase()} Switch`, "network", {
-        description: "Wired 802.1X",
-        imageUrl: vendorLogo(vendor),
-      }),
-      N("ap", `${vendor.toUpperCase()} Wireless`, "wireless", {
-        description: "WLAN 802.1X",
-        imageUrl: vendorLogo(vendor),
-      }),
-      N("direct", "Direct RADIUS", "connectivity", { description: "UDP 1812/1813", imageUrl: asset("radius") }),
-      N("radsec", "RADSec Proxy", "connectivity", { description: "TLS-secured RADIUS", imageUrl: asset("radsec") }),
-      N("vpn", "Site-to-Site VPN", "connectivity", { description: "IPSec/GRE", imageUrl: asset("vpn") }),
-      N("privatelink", "Private Link", "connectivity", {
-        description: "Cloud private networking",
-        imageUrl: asset("privatelink"),
-      }),
-      N("portnox", "Portnox Cloud", "nac", { description: "RADIUS / TACACS+", imageUrl: productLogo("portnox") }),
-    )
-    edges.push(
-      E("branch-switch", "branch", "switch", "LAN", "data"),
-      E("branch-ap", "branch", "ap", "LAN", "data"),
-      E("switch-direct", "switch", "direct", "RADIUS", "radius"),
-      E("ap-direct", "ap", "direct", "RADIUS", "radius"),
-      E("switch-radsec", "switch", "radsec", "RADSec", "radius"),
-      E("ap-radsec", "ap", "radsec", "RADSec", "radius"),
-      E("radsec-vpn", "radsec", "vpn", "Overlay", "data"),
-      E("vpn-priv", "vpn", "privatelink", "Private path", "https"),
-      E("direct-pnx", "direct", "portnox", "Direct", "radius"),
-      E("priv-pnx", "privatelink", "portnox", "Private Link", "https"),
-    )
-  } else if (view === "multi-cloud") {
-    const provider = deployment === "cloud" ? (identity === "azure-ad" ? "azure" : "aws") : "gcp"
-    nodes.push(
-      N("branch", "Branch Site", "portal", { description: "Remote branch", imageUrl: asset("branch") }),
-      N("edge", "Edge/SD‑WAN", "connectivity", { description: "Connectivity hub", imageUrl: asset("sdwan") }),
-      N("cloud", `${provider.toUpperCase()} Cloud`, "cloud", {
-        description: "Selected cloud",
-        imageUrl: cloudLogo(provider),
-      }),
-      N("portnox", "Portnox Cloud", "nac", { description: "Cloud NAC", imageUrl: productLogo("portnox") }),
-    )
-    edges.push(
-      E("branch-edge", "branch", "edge", "IPSec/SD‑WAN", "data"),
-      E("edge-cloud", "edge", "cloud", "Private Link", "https"),
-      E("cloud-portnox", "cloud", "portnox", "API/RADIUS", "https"),
-    )
-  } else if (view === "intune-integration") {
-    nodes.push(
-      N("devices", "Managed Devices", "endpoint", { description: "Intune-managed", imageUrl: asset("endpoints") }),
-      N("intune", "Microsoft Intune", "mdm", { description: "MDM policies, SCEP", imageUrl: mdmLogo("Intune") }),
-      N("entra", "Entra ID", "identity", { description: "User identity", imageUrl: idpLogo("azure-ad") }),
-      N("portnox", "Portnox Cloud", "nac", { description: "Compliance & AAA", imageUrl: productLogo("portnox") }),
-      N("compliance", "Compliance Engine", "policy", { description: "Risk assessment", imageUrl: asset("compliance") }),
-    )
-    edges.push(
-      E("dev-intune", "devices", "intune", "MDM Enrollment", "https"),
-      E("intune-pnx", "intune", "portnox", "Compliance API", "https"),
-      E("entra-pnx", "entra", "portnox", "Auth/SAML/OIDC", "https"),
-      E("pnx-comp", "portnox", "compliance", "Policy Eval", "data"),
-    )
-  } else if (view === "device-onboarding") {
-    nodes.push(
-      N("portal", "Onboarding Portal", "portal", { description: "Self-service onboarding", imageUrl: asset("portal") }),
-      N("corp", "Corporate (EAP‑TLS)", "workflow", {
-        description: "User/machine certs",
-        imageUrl: asset("workflow-corp"),
-      }),
-      N("byod", "BYOD / Mobile", "workflow", { description: "Captive portal / PSK", imageUrl: asset("workflow-byod") }),
-      N("guest", "Guest Access", "workflow", { description: "Sponsored guest", imageUrl: asset("workflow-guest") }),
-      N("iot", "IoT & Profiling", "workflow", { description: "Profiling & MAB", imageUrl: asset("workflow-iot") }),
-    )
-    edges.push(
-      E("p-corp", "portal", "corp", "Initiates", "data"),
-      E("p-byod", "portal", "byod", "Initiates", "data"),
-      E("p-guest", "portal", "guest", "Initiates", "data"),
-      E("p-iot", "portal", "iot", "Initiates", "data"),
-    )
-  } else if (view === "fortigate-tacacs") {
-    nodes.push(
-      N("admin", "Network Admin", "endpoint", { description: "SSH/HTTPS to device", imageUrl: asset("admin") }),
-      N("fg", "FortiGate", "firewall", { description: "Device admin", imageUrl: vendorLogo("fortinet") }),
-      N("tacacs", "Portnox TACACS+", "nac", { description: "AAA for admin", imageUrl: productLogo("portnox") }),
-      N("ad", "Active Directory", "identity", { description: "RBAC groups", imageUrl: idpLogo("active-directory") }),
-      N("siem", "SIEM / Syslog", "syslog", { description: "Cmd/accounting", imageUrl: asset("siem") }),
-    )
-    edges.push(
-      E("adm-fg", "admin", "fg", "SSH/HTTPS", "https"),
-      E("fg-tacacs", "fg", "tacacs", "TACACS+", "tacacs"),
-      E("tacacs-ad", "tacacs", "ad", "LDAP/LDAPS", "ldap"),
-      E("tacacs-siem", "tacacs", "siem", "Command Accounting", "syslog"),
-    )
-  } else if (view === "paloalto-tacacs") {
-    nodes.push(
-      N("admin", "Network Admin", "endpoint", { description: "SSH/HTTPS to device", imageUrl: asset("admin") }),
-      N("pan", "Palo Alto NGFW", "firewall", { description: "Device admin", imageUrl: vendorLogo("paloalto") }),
-      N("panorama", "Panorama", "management", { description: "Central management", imageUrl: productLogo("panorama") }),
-      N("tacacs", "Portnox TACACS+", "nac", { description: "AAA for admin", imageUrl: productLogo("portnox") }),
-      N("ad", "Active Directory", "identity", { description: "RBAC groups", imageUrl: idpLogo("active-directory") }),
-      N("siem", "SIEM / Syslog", "syslog", { description: "Cmd/accounting", imageUrl: asset("siem") }),
-    )
-    edges.push(
-      E("adm-pan", "admin", "pan", "SSH/HTTPS", "https"),
-      E("pan-panorama", "pan", "panorama", "Mgmt", "https"),
-      E("pan-tacacs", "pan", "tacacs", "TACACS+", "tacacs"),
-      E("pano-tacacs", "panorama", "tacacs", "TACACS+", "tacacs"),
-      E("tacacs-ad", "tacacs", "ad", "LDAP/LDAPS", "ldap"),
-      E("tacacs-siem", "tacacs", "siem", "Command Accounting", "syslog"),
-    )
-  } else if (view === "cisco-tacacs") {
-    nodes.push(
-      N("admin", "Network Admin", "endpoint", { description: "SSH/HTTPS to IOS-XE/NX-OS", imageUrl: asset("admin") }),
-      N("cisco", "Cisco Devices", "network", { description: "Switches/Routers/WLC", imageUrl: vendorLogo("cisco") }),
-      N("tacacs", "Portnox TACACS+", "nac", { description: "AAA for admin", imageUrl: productLogo("portnox") }),
-      N("ad", "Active Directory", "identity", { description: "RBAC groups", imageUrl: idpLogo("active-directory") }),
-      N("siem", "SIEM / Syslog", "syslog", { description: "Cmd/accounting", imageUrl: asset("siem") }),
-    )
-    edges.push(
-      E("adm-dev", "admin", "cisco", "SSH/HTTPS", "https"),
-      E("dev-tac", "cisco", "tacacs", "TACACS+", "tacacs"),
-      E("tac-ad", "tacacs", "ad", "LDAP/LDAPS", "ldap"),
-      E("tac-siem", "tacacs", "siem", "Command Accounting", "syslog"),
-    )
-  } else if (view === "aruba-tacacs") {
-    nodes.push(
-      N("admin", "Network Admin", "endpoint", { description: "SSH/HTTPS to AOS-CX/MC", imageUrl: asset("admin") }),
-      N("aruba", "Aruba Devices", "network", {
-        description: "CX Switches / Mobility Ctrl",
-        imageUrl: vendorLogo("aruba"),
-      }),
-      N("tacacs", "Portnox TACACS+", "nac", { description: "AAA for admin", imageUrl: productLogo("portnox") }),
-      N("ad", "Active Directory", "identity", { description: "RBAC groups", imageUrl: idpLogo("active-directory") }),
-      N("siem", "SIEM / Syslog", "syslog", { description: "Cmd/accounting", imageUrl: asset("siem") }),
-    )
-    edges.push(
-      E("adm-dev", "admin", "aruba", "SSH/HTTPS", "https"),
-      E("dev-tac", "aruba", "tacacs", "TACACS+", "tacacs"),
-      E("tac-ad", "tacacs", "ad", "LDAP/LDAPS", "ldap"),
-      E("tac-siem", "tacacs", "siem", "Command Accounting", "syslog"),
-    )
-  } else if (view === "juniper-tacacs") {
-    nodes.push(
-      N("admin", "Network Admin", "endpoint", { description: "SSH/HTTPS to Junos", imageUrl: asset("admin") }),
-      N("junos", "Juniper Devices", "network", { description: "EX/QFX/SRX", imageUrl: vendorLogo("juniper") }),
-      N("tacacs", "Portnox TACACS+", "nac", { description: "AAA for admin", imageUrl: productLogo("portnox") }),
-      N("ad", "Active Directory", "identity", { description: "RBAC groups", imageUrl: idpLogo("active-directory") }),
-      N("siem", "SIEM / Syslog", "syslog", { description: "Cmd/accounting", imageUrl: asset("siem") }),
-    )
-    edges.push(
-      E("adm-dev", "admin", "junos", "SSH/HTTPS", "https"),
-      E("dev-tac", "junos", "tacacs", "TACACS+", "tacacs"),
-      E("tac-ad", "tacacs", "ad", "LDAP/LDAPS", "ldap"),
-      E("tac-siem", "tacacs", "siem", "Command Accounting", "syslog"),
-    )
-  } else if (view === "meraki-wireless") {
-    nodes.push(
-      N("client", "Client (Supplicant)", "endpoint", { description: "EAP‑TLS", imageUrl: asset("endpoint-laptop") }),
-      N("mr", "Meraki MR AP", "wireless", { description: "802.1X Authenticator", imageUrl: vendorLogo("meraki") }),
-      N("dash", "Meraki Dashboard", "cloud", { description: "Policy / Templates", imageUrl: vendorLogo("meraki") }),
-      N("portnox", "Portnox RADIUS", "nac", { description: "EAP‑TLS AAA", imageUrl: productLogo("portnox") }),
-      N("idp", identity === "active-directory" ? "Active Directory" : "Entra ID", "identity", {
-        description: "User identity",
-        imageUrl: idpLogo(identity),
-      }),
-      N("siem", "SIEM / Syslog", "syslog", { description: "Acct & events", imageUrl: asset("siem") }),
-    )
-    edges.push(
-      E("cl-mr", "client", "mr", "EAPOL/EAP", "radius"),
-      E("mr-pnx", "mr", "portnox", "RADIUS (Auth/Acct)", "radius"),
-      E(
-        "pnx-idp",
-        "portnox",
-        "idp",
-        identity === "active-directory" ? "LDAPS" : "SAML/OIDC",
-        identity === "active-directory" ? "ldap" : "https",
-      ),
-      E("dash-mr", "dash", "mr", "Config/Policy", "https"),
-      E("pnx-siem", "portnox", "siem", "Syslog/Acct", "syslog"),
-    )
-  } else if (view === "mist-wireless") {
-    nodes.push(
-      N("client", "Client (Supplicant)", "endpoint", { description: "EAP‑TLS", imageUrl: asset("endpoint-laptop") }),
-      N("ap", "Mist AP", "wireless", { description: "802.1X Authenticator", imageUrl: vendorLogo("mist") }),
-      N("mist", "Mist Cloud", "cloud", { description: "WLAN / Policy", imageUrl: vendorLogo("mist") }),
-      N("portnox", "Portnox RADIUS", "nac", { description: "EAP‑TLS AAA", imageUrl: productLogo("portnox") }),
-      N("idp", identity === "active-directory" ? "Active Directory" : "Entra ID", "identity", {
-        description: "User identity",
-        imageUrl: idpLogo(identity),
-      }),
-      N("siem", "SIEM / Syslog", "syslog", { description: "Acct & events", imageUrl: asset("siem") }),
-    )
-    edges.push(
-      E("cl-ap", "client", "ap", "EAPOL/EAP", "radius"),
-      E("ap-pnx", "ap", "portnox", "RADIUS (Auth/Acct)", "radius"),
-      E(
-        "pnx-idp",
-        "portnox",
-        "idp",
-        identity === "active-directory" ? "LDAPS" : "SAML/OIDC",
-        identity === "active-directory" ? "ldap" : "https",
-      ),
-      E("mist-ap", "mist", "ap", "Config/Policy", "https"),
-      E("pnx-siem", "portnox", "siem", "Syslog/Acct", "syslog"),
-    )
-  } else {
-    nodes.push(N("portnox", "Portnox Cloud", "nac", { description: "Cloud NAC", imageUrl: productLogo("portnox") }))
   }
 
-  return { nodes, edges }
-}
+  const renderConnection = (connection: DiagramConnection) => {
+    const fromNode = nodes.find((n) => n.id === connection.from)
+    const toNode = nodes.find((n) => n.id === connection.to)
 
-const elk = new ELK()
-async function layoutWithElk(nodes: Node[], edges: Edge[]) {
-  const elkGraph = {
-    id: "root",
-    layoutOptions: {
-      "elk.algorithm": "layered",
-      "elk.direction": "RIGHT",
-      "elk.layered.spacing.nodeNodeBetweenLayers": "60",
-      "elk.spacing.nodeNode": "40",
-      "elk.layered.mergeEdges": "true",
-      "elk.routing": "ORTHOGONAL",
-    },
-    children: nodes.map((n) => ({
-      id: n.id,
-      width: n.width || 200,
-      height: n.height || 70,
-    })),
-    edges: edges.map((e) => ({
-      id: e.id,
-      sources: [e.source],
-      targets: [e.target],
-    })),
-  }
+    if (!fromNode || !toNode) return null
 
-  const res = await elk.layout(elkGraph as any)
+    const x1 = fromNode.x + fromNode.width / 2
+    const y1 = fromNode.y + fromNode.height / 2
+    const x2 = toNode.x + toNode.width / 2
+    const y2 = toNode.y + toNode.height / 2
 
-  const layoutedNodes = nodes.map((n) => {
-    const l = (res.children || []).find((c: any) => c.id === n.id)
-    return {
-      ...n,
-      position: { x: l?.x || 0, y: l?.y || 0 },
+    let strokeDasharray = "none"
+    let strokeWidth = 3
+    let stroke = connection.color || "#6b7280"
+
+    switch (connection.type) {
+      case "secure":
+        stroke = "#10b981"
+        strokeWidth = 4
+        break
+      case "dashed":
+        strokeDasharray = "10,5"
+        stroke = "#f59e0b"
+        break
+      default:
+        stroke = "#3b82f6"
     }
-  })
 
-  return { nodes: layoutedNodes, edges }
-}
+    const midX = (x1 + x2) / 2
+    const midY = (y1 + y2) / 2
 
-export default function InteractiveDiagram({
-  view,
-  vendor,
-  connectivity,
-  identity,
-  deployment,
-}: InteractiveDiagramProps) {
-  const [isAnimating, setIsAnimating] = useState(true)
-  const [zoom, setZoom] = useState(1)
+    return (
+      <g key={connection.id}>
+        {/* Connection line with animation */}
+        <line
+          x1={x1}
+          y1={y1}
+          x2={x2}
+          y2={y2}
+          stroke={stroke}
+          strokeWidth={strokeWidth}
+          strokeDasharray={strokeDasharray}
+          className="transition-all duration-200"
+          style={{
+            strokeDasharray: showDataFlow ? "1000" : strokeDasharray,
+            strokeDashoffset: showDataFlow ? "1000" : "0",
+            animation: showDataFlow ? `drawLine ${2 / animationSpeed}s ease-out forwards` : "none",
+          }}
+        />
 
-  const [rfNodes, setRfNodes, onNodesChange] = useNodesState<StencilData>([])
-  const [rfEdges, setRfEdges, onEdgesChange] = useEdgesState([])
+        {/* Arrow marker */}
+        <defs>
+          <marker
+            id={`arrow-${connection.id}`}
+            markerWidth="12"
+            markerHeight="12"
+            refX="6"
+            refY="6"
+            orient="auto"
+            markerUnits="strokeWidth"
+          >
+            <path d="M 0 0 L 12 6 L 0 12 z" fill={stroke} />
+          </marker>
+        </defs>
 
-  const rfInstance = useRef<ReactFlowInstance | null>(null)
+        <line
+          x1={x1}
+          y1={y1}
+          x2={x2}
+          y2={y2}
+          stroke="transparent"
+          strokeWidth={strokeWidth}
+          markerEnd={`url(#arrow-${connection.id})`}
+        />
 
-  useEffect(() => {
-    const v = (view as ViewId) || "complete-architecture"
-    const { nodes, edges } = buildGraph(v, vendor, connectivity, identity, deployment)
-    layoutWithElk(nodes, edges).then(({ nodes: ln, edges: le }) => {
-      setRfNodes(ln.map((n) => ({ ...n, draggable: true, type: "stencil" })))
-      setRfEdges(le.map((e) => ({ ...e, type: "portnox" })))
-      setTimeout(() => rfInstance.current?.fitView({ padding: 0.2 }), 0)
-    })
-  }, [view, vendor, connectivity, identity, deployment, setRfNodes, setRfEdges])
+        {/* Connection label with better visibility */}
+        {connection.label && (
+          <g>
+            <rect
+              x={midX - 40}
+              y={midY - 15}
+              width={80}
+              height={20}
+              rx={10}
+              fill="white"
+              stroke={stroke}
+              strokeWidth={1}
+              opacity={0.9}
+            />
+            <text
+              x={midX}
+              y={midY}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              className="fill-gray-700 text-xs font-medium"
+            >
+              {connection.label}
+            </text>
+          </g>
+        )}
 
-  useEffect(() => {
-    document.documentElement.style.setProperty("--pnx-anim-duration", `2s`)
-  }, [])
-
-  const onConnect = useCallback(
-    (params: any) =>
-      setRfEdges((eds) =>
-        addEdge(
-          {
-            ...params,
-            type: "portnox",
-            markerEnd: { type: MarkerType.ArrowClosed },
-          },
-          eds,
-        ),
-      ),
-    [setRfEdges],
-  )
-
-  const handleZoomIn = () => {
-    if (!rfInstance.current) return
-    const vp = rfInstance.current.getViewport()
-    const newZoom = Math.min(3, vp.zoom * 1.2)
-    rfInstance.current.setViewport({ x: vp.x, y: vp.y, zoom: newZoom })
-    setZoom(newZoom)
-  }
-  const handleZoomOut = () => {
-    if (!rfInstance.current) return
-    const vp = rfInstance.current.getViewport()
-    const newZoom = Math.max(0.5, vp.zoom / 1.2)
-    rfInstance.current.setViewport({ x: vp.x, y: vp.y, zoom: newZoom })
-    setZoom(newZoom)
-  }
-  const handleReset = () => {
-    const v = (view as ViewId) || "complete-architecture"
-    const { nodes, edges } = buildGraph(v, vendor, connectivity, identity, deployment)
-    layoutWithElk(nodes, edges).then(({ nodes: ln, edges: le }) => {
-      setRfNodes(ln.map((n) => ({ ...n, draggable: true, type: "stencil" })))
-      setRfEdges(le.map((e) => ({ ...e, type: "portnox" })))
-      setTimeout(() => {
-        rfInstance.current?.fitView({ padding: 0.2, duration: 300 })
-        const vp = rfInstance.current?.getViewport()
-        if (vp) setZoom(vp.zoom)
-      }, 0)
-    })
+        {/* Protocol and bandwidth info on hover */}
+        {(connection.protocol || connection.bandwidth) && (
+          <g className="opacity-0 hover:opacity-100 transition-opacity">
+            <rect x={midX - 50} y={midY + 20} width={100} height={30} rx={5} fill="rgba(0,0,0,0.8)" />
+            <text x={midX} y={midY + 30} textAnchor="middle" className="fill-white text-xs">
+              {connection.protocol}
+            </text>
+            <text x={midX} y={midY + 42} textAnchor="middle" className="fill-white text-xs">
+              {connection.bandwidth}
+            </text>
+          </g>
+        )}
+      </g>
+    )
   }
 
   return (
-    <div className="relative">
-      <style>{`
-        .animated-path {
-          stroke-dasharray: 10 6;
-          animation: pnx-dash var(--pnx-anim-duration, 2s) linear infinite;
-          animation-play-state: ${isAnimating ? "running" : "paused"};
-        }
-        @keyframes pnx-dash {
-          to { stroke-dashoffset: -16; }
-        }
-      `}</style>
+    <div className="w-full architecture-diagram">
+      <div className="w-full h-[700px] overflow-auto border rounded-lg bg-gradient-to-br from-gray-50 to-white">
+        <svg ref={svgRef} width="1200" height="700" viewBox="0 0 1200 700" className="w-full h-full">
+          <style>
+            {`
+              @keyframes drawLine {
+                to {
+                  stroke-dashoffset: 0;
+                }
+              }
+              .connection-flow {
+                animation: flow 2s linear infinite;
+              }
+              @keyframes flow {
+                0% { stroke-dashoffset: 20; }
+                100% { stroke-dashoffset: 0; }
+              }
+            `}
+          </style>
 
-      <div className="absolute top-3 right-3 z-10 flex items-center gap-2">
-        <button
-          className="inline-flex items-center justify-center rounded-md border px-2 py-1 text-sm"
-          onClick={() => setIsAnimating((p) => !p)}
-        >
-          {isAnimating ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-        </button>
-        <button
-          className="inline-flex items-center justify-center rounded-md border px-2 py-1 text-sm"
-          onClick={handleZoomIn}
-        >
-          <ZoomIn className="w-4 h-4" />
-        </button>
-        <button
-          className="inline-flex items-center justify-center rounded-md border px-2 py-1 text-sm"
-          onClick={handleZoomOut}
-        >
-          <ZoomOut className="w-4 h-4" />
-        </button>
-        <button
-          className="inline-flex items-center justify-center rounded-md border px-2 py-1 text-sm"
-          onClick={handleReset}
-        >
-          <RotateCcw className="w-4 h-4" />
-        </button>
-        <Badge variant="outline">{Math.round(zoom * 100)}%</Badge>
+          {/* Background grid */}
+          <defs>
+            <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+              <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#f0f0f0" strokeWidth="1" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#grid)" />
+
+          {/* Render connections first (behind nodes) */}
+          {connections.map(renderConnection)}
+
+          {/* Render nodes */}
+          {nodes.map(renderNode)}
+        </svg>
       </div>
 
-      <div className="h-[700px] border rounded-lg overflow-hidden bg-white">
-        <ReactFlowProvider>
-          <ReactFlow
-            nodes={rfNodes}
-            edges={rfEdges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            nodeTypes={nodeTypes}
-            edgeTypes={edgeTypes}
-            defaultEdgeOptions={{ type: "portnox", markerEnd: { type: MarkerType.ArrowClosed } }}
-            fitView
-            fitViewOptions={{ padding: 0.2 }}
-            snapToGrid
-            snapGrid={[12, 12]}
-            connectionLineType={ConnectionLineType.SmoothStep}
-            proOptions={{ hideAttribution: true }}
-            onInit={(inst) => {
-              rfInstance.current = inst
-              const vp = inst.getViewport()
-              setZoom(vp.zoom)
-            }}
-            onMove={(_, vp) => {
-              if (vp) setZoom(vp.zoom)
-            }}
-          >
-            <MiniMap pannable zoomable />
-            <Controls />
-            <Background variant="dots" gap={16} size={1} />
-          </ReactFlow>
-        </ReactFlowProvider>
+      {/* Selected Node Details */}
+      {selectedNode && (
+        <Card className="mt-4">
+          <CardContent className="pt-6">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center space-x-3">
+                <span className="text-2xl">{nodes.find((n) => n.id === selectedNode)?.icon}</span>
+                <div>
+                  <h3 className="font-semibold text-lg">{nodes.find((n) => n.id === selectedNode)?.label}</h3>
+                  <p className="text-muted-foreground">{nodes.find((n) => n.id === selectedNode)?.description}</p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="secondary">Type: {nodes.find((n) => n.id === selectedNode)?.type}</Badge>
+                {nodes.find((n) => n.id === selectedNode)?.status && (
+                  <Badge
+                    variant={
+                      nodes.find((n) => n.id === selectedNode)?.status === "active"
+                        ? "default"
+                        : nodes.find((n) => n.id === selectedNode)?.status === "standby"
+                          ? "secondary"
+                          : "destructive"
+                    }
+                  >
+                    {nodes.find((n) => n.id === selectedNode)?.status}
+                  </Badge>
+                )}
+                <Badge variant="outline">Interactive</Badge>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Instructions */}
+      <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+        <p className="text-sm text-blue-800">
+          <strong>Instructions:</strong> Click on nodes to view detailed information. Hover over connections to see
+          protocol and bandwidth details. Use the animation controls above to visualize data flow through the
+          architecture.
+        </p>
       </div>
     </div>
   )

@@ -17,7 +17,7 @@ export default function ABMDesigner() {
   const [selectedSiteId, setSelectedSiteId] = useState<string | null>(null)
   const [showUserModal, setShowUserModal] = useState(false)
   const [showThemeCustomizer, setShowThemeCustomizer] = useState(false)
-  const [customerLogo, setCustomerLogo] = useState('https://servicecenter.uk.abm.com/Portal/assets/images/logo-light.png')
+  const [customerLogo, setCustomerLogo] = useState('https://ahorrainvierte.com/wp-content/uploads/abm-industries-inc.png')
 
   const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]

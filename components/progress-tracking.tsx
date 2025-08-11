@@ -1,10 +1,21 @@
-'use client'
+"use client"
 
-import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Progress } from '@/components/ui/progress'
-import { Badge } from '@/components/ui/badge'
-import { BarChart3, TrendingUp, Clock, CheckCircle, AlertTriangle, XCircle, Users, Building, Calendar, Target } from 'lucide-react'
+import { useState, useEffect } from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Progress } from "@/components/ui/progress"
+import { Badge } from "@/components/ui/badge"
+import {
+  BarChart3,
+  TrendingUp,
+  Clock,
+  CheckCircle,
+  AlertTriangle,
+  XCircle,
+  Users,
+  Building,
+  Calendar,
+  Target,
+} from "lucide-react"
 
 interface ProgressStats {
   totalSites: number
@@ -32,16 +43,16 @@ const sampleStats: ProgressStats = {
   plannedSites: 4,
   delayedSites: 1,
   totalUsers: 9550,
-  overallProgress: 35
+  overallProgress: 35,
 }
 
 const sampleSiteProgress: SiteProgress[] = [
-  { id: 'ABM-HQ001', name: 'ABM Global Headquarters', status: 'In Progress', progress: 35, phase: '1', users: 2500 },
-  { id: 'ABM-DC002', name: 'Primary Data Center', status: 'In Progress', progress: 65, phase: '1', users: 150 },
-  { id: 'ABM-EUR003', name: 'European HQ', status: 'Planned', progress: 0, phase: '2', users: 1200 },
-  { id: 'ABM-MFG006', name: 'Manufacturing Plant', status: 'Complete', progress: 100, phase: '1', users: 450 },
-  { id: 'ABM-EMEA010', name: 'London Office', status: 'Complete', progress: 100, phase: '1', users: 620 },
-  { id: 'ABM-DC012', name: 'Secondary Data Center', status: 'Complete', progress: 100, phase: '1', users: 120 }
+  { id: "ABM-HQ001", name: "ABM Global Headquarters", status: "In Progress", progress: 35, phase: "1", users: 2500 },
+  { id: "ABM-DC002", name: "Primary Data Center", status: "In Progress", progress: 65, phase: "1", users: 150 },
+  { id: "ABM-EUR003", name: "European HQ", status: "Planned", progress: 0, phase: "2", users: 1200 },
+  { id: "ABM-MFG006", name: "Manufacturing Plant", status: "Complete", progress: 100, phase: "1", users: 450 },
+  { id: "ABM-EMEA010", name: "London Office", status: "Complete", progress: 100, phase: "1", users: 620 },
+  { id: "ABM-DC012", name: "Secondary Data Center", status: "Complete", progress: 100, phase: "1", users: 120 },
 ]
 
 export default function ProgressTracking() {
@@ -58,13 +69,13 @@ export default function ProgressTracking() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'Complete':
+      case "Complete":
         return <CheckCircle className="h-4 w-4 text-green-600" />
-      case 'In Progress':
+      case "In Progress":
         return <Clock className="h-4 w-4 text-blue-600" />
-      case 'Delayed':
+      case "Delayed":
         return <AlertTriangle className="h-4 w-4 text-red-600" />
-      case 'Planned':
+      case "Planned":
         return <XCircle className="h-4 w-4 text-gray-600" />
       default:
         return null
@@ -73,16 +84,16 @@ export default function ProgressTracking() {
 
   const getProgressColor = (status: string) => {
     switch (status) {
-      case 'Complete':
-        return 'bg-green-500'
-      case 'In Progress':
-        return 'bg-blue-500'
-      case 'Delayed':
-        return 'bg-red-500'
-      case 'Planned':
-        return 'bg-gray-400'
+      case "Complete":
+        return "bg-green-500"
+      case "In Progress":
+        return "bg-blue-500"
+      case "Delayed":
+        return "bg-red-500"
+      case "Planned":
+        return "bg-gray-400"
       default:
-        return 'bg-gray-400'
+        return "bg-gray-400"
     }
   }
 
@@ -97,9 +108,7 @@ export default function ProgressTracking() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalSites}</div>
-            <p className="text-xs text-muted-foreground">
-              Across all regions
-            </p>
+            <p className="text-xs text-muted-foreground">Across all regions</p>
           </CardContent>
         </Card>
 
@@ -123,9 +132,7 @@ export default function ProgressTracking() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">{stats.inProgressSites}</div>
-            <p className="text-xs text-muted-foreground">
-              Active deployments
-            </p>
+            <p className="text-xs text-muted-foreground">Active deployments</p>
           </CardContent>
         </Card>
 
@@ -136,9 +143,7 @@ export default function ProgressTracking() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalUsers.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">
-              Across all sites
-            </p>
+            <p className="text-xs text-muted-foreground">Across all sites</p>
           </CardContent>
         </Card>
       </div>
@@ -150,9 +155,7 @@ export default function ProgressTracking() {
             <BarChart3 className="h-5 w-5" />
             <span>Overall Project Progress</span>
           </CardTitle>
-          <CardDescription>
-            Total completion across all deployment sites
-          </CardDescription>
+          <CardDescription>Total completion across all deployment sites</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -190,9 +193,7 @@ export default function ProgressTracking() {
             <Target className="h-5 w-5" />
             <span>Site Progress Details</span>
           </CardTitle>
-          <CardDescription>
-            Individual site completion status and progress tracking
-          </CardDescription>
+          <CardDescription>Individual site completion status and progress tracking</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -209,18 +210,11 @@ export default function ProgressTracking() {
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <Badge variant={site.status === 'Complete' ? 'default' : 'secondary'}>
-                      {site.status}
-                    </Badge>
-                    <span className="text-sm font-medium w-12 text-right">
-                      {site.progress}%
-                    </span>
+                    <Badge variant={site.status === "Complete" ? "default" : "secondary"}>{site.status}</Badge>
+                    <span className="text-sm font-medium w-12 text-right">{site.progress}%</span>
                   </div>
                 </div>
-                <Progress 
-                  value={site.progress} 
-                  className={`h-2 ${getProgressColor(site.status)}`}
-                />
+                <Progress value={site.progress} className={`h-2 ${getProgressColor(site.status)}`} />
               </div>
             ))}
           </div>
