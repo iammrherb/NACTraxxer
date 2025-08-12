@@ -176,7 +176,11 @@ export default function SiteManagement({ onSiteSelect }: SiteManagementProps) {
   }, [])
 
   useEffect(() => {
-    localStorage.setItem("portnox-sites", JSON.stringify(sites))
+    if (sites.length > 0) {
+      localStorage.setItem("portnox-sites", JSON.stringify(sites))
+    }
+    // Dispatch custom event to notify other components
+    window.dispatchEvent(new Event("sitesUpdated"))
   }, [sites])
 
   const filteredSites = sites.filter((site) => {
@@ -292,6 +296,10 @@ export default function SiteManagement({ onSiteSelect }: SiteManagementProps) {
 
   const clearAllData = () => {
     setSites([])
+    localStorage.removeItem("portnox-sites")
+    localStorage.removeItem("portnox-timeline-events")
+    // Dispatch custom event to notify other components
+    window.dispatchEvent(new Event("sitesUpdated"))
   }
 
   return (
