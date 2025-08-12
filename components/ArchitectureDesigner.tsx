@@ -10,7 +10,19 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import InteractiveDiagram from "./InteractiveDiagram"
 import ArchitectureLegend from "./ArchitectureLegend"
-import { Cloud, Network, Shield, Settings, Zap, GlobeIcon, Lock, Users, Server, Download } from "lucide-react"
+import {
+  Cloud,
+  Network,
+  Shield,
+  Settings,
+  Zap,
+  GlobeIcon,
+  Lock,
+  Users,
+  Server,
+  Download,
+  Smartphone,
+} from "lucide-react"
 
 export default function ArchitectureDesigner() {
   const [selectedView, setSelectedView] = useState("complete")
@@ -57,6 +69,12 @@ export default function ArchitectureDesigner() {
       description: "Microsoft Intune MDM integration",
     },
     {
+      id: "jamf",
+      label: "JAMF Integration",
+      icon: <Smartphone className="w-4 h-4" />,
+      description: "Apple device management with JAMF Pro",
+    },
+    {
       id: "onboarding",
       label: "Device Onboarding",
       icon: <Zap className="w-4 h-4" />,
@@ -75,6 +93,24 @@ export default function ArchitectureDesigner() {
       description: "Palo Alto device administration with TACACS+",
     },
     {
+      id: "cisco-tacacs",
+      label: "Cisco TACACS+",
+      icon: <Server className="w-4 h-4" />,
+      description: "Cisco device administration with TACACS+",
+    },
+    {
+      id: "aruba-tacacs",
+      label: "Aruba TACACS+",
+      icon: <Server className="w-4 h-4" />,
+      description: "Aruba device administration with TACACS+",
+    },
+    {
+      id: "juniper-tacacs",
+      label: "Juniper TACACS+",
+      icon: <Server className="w-4 h-4" />,
+      description: "Juniper device administration with TACACS+",
+    },
+    {
       id: "palo-userid",
       label: "Palo Alto User-ID",
       icon: <Users className="w-4 h-4" />,
@@ -85,6 +121,18 @@ export default function ArchitectureDesigner() {
       label: "FortiGate FSSO",
       icon: <Users className="w-4 h-4" />,
       description: "FortiGate FSSO integration with syslog",
+    },
+    {
+      id: "meraki-wireless",
+      label: "Meraki Wireless",
+      icon: <Network className="w-4 h-4" />,
+      description: "Cisco Meraki wireless deep-dive integration",
+    },
+    {
+      id: "mist-wireless",
+      label: "Mist Wireless",
+      icon: <Network className="w-4 h-4" />,
+      description: "Juniper Mist wireless deep-dive integration",
     },
   ]
 
@@ -103,6 +151,17 @@ export default function ArchitectureDesigner() {
     { id: "ruckus", label: "Ruckus (CommScope)" },
     { id: "fortinet", label: "Fortinet" },
     { id: "paloalto", label: "Palo Alto Networks" },
+    { id: "meraki", label: "Cisco Meraki" },
+    { id: "mist", label: "Juniper Mist" },
+    { id: "ubiquiti", label: "Ubiquiti" },
+    { id: "netgear", label: "Netgear" },
+    { id: "dlink", label: "D-Link" },
+    { id: "tplink", label: "TP-Link" },
+    { id: "huawei", label: "Huawei" },
+    { id: "alcatel", label: "Alcatel-Lucent Enterprise" },
+    { id: "dell", label: "Dell Technologies" },
+    { id: "hpe", label: "HPE Networking" },
+    { id: "brocade", label: "Brocade (Broadcom)" },
   ]
 
   const connectivityOptions = [
@@ -114,7 +173,7 @@ export default function ArchitectureDesigner() {
     { id: "internet", label: "Internet Connection" },
   ]
 
-  const currentView = architectureViews.find((view) => view.id === selectedView)
+  const currentView = architectureViews.find((view) => view.id === selectedView) || architectureViews[0]
 
   // Export Functions
   const exportDiagram = async (format: "svg" | "png" | "pdf") => {
@@ -300,66 +359,6 @@ export default function ArchitectureDesigner() {
     await exportAsPNG(svgElement)
   }
 
-  const addExportHeader = (svgData: string, currentView: any) => {
-    const headerHeight = 80
-    const header = `
-      <g id="export-header">
-        <rect x="0" y="0" width="1200" height="${headerHeight}" fill="#00c8d7"/>
-        <image x="20" y="20" width="120" height="30" href="https://www.portnox.com/wp-content/uploads/2021/03/Portnotx_Logo_Color-768x193.png" />
-        <image x="1050" y="15" width="130" height="40" href="https://companieslogo.com/img/orig/ABM_BIG-47f1fb05.png?t=1720244490&download=true" />
-        <text x="600" y="35" textAnchor="middle" fill="white" fontSize="18" fontWeight="bold">
-          Portnox NAC Architecture - ${currentView?.label}
-        </text>
-        <text x="600" y="55" textAnchor="middle" fill="white" fontSize="12">
-          Generated on ${new Date().toLocaleDateString()}
-        </text>
-      </g>
-    `
-
-    return svgData.replace("<svg", `<svg`).replace(">", `>${header}`)
-  }
-
-  const addPNGHeader = async (ctx: CanvasRenderingContext2D, width: number) => {
-    // Header background
-    ctx.fillStyle = "#00c8d7"
-    ctx.fillRect(0, 0, width, 80)
-
-    // Load and draw Portnox logo
-    const portnoxLogo = new Image()
-    portnoxLogo.crossOrigin = "anonymous"
-    portnoxLogo.src = "https://www.portnox.com/wp-content/uploads/2021/03/Portnotx_Logo_Color-768x193.png"
-
-    // Load and draw ABM logo
-    const abmLogo = new Image()
-    abmLogo.crossOrigin = "anonymous"
-    abmLogo.src = "https://companieslogo.com/img/orig/ABM_BIG-47f1fb05.png?t=1720244490&download=true"
-
-    return new Promise((resolve) => {
-      let loadedCount = 0
-      const onLoad = () => {
-        loadedCount++
-        if (loadedCount === 2) {
-          ctx.drawImage(portnoxLogo, 20, 20, 120, 30)
-          ctx.drawImage(abmLogo, width - 150, 15, 130, 40)
-
-          // Add text
-          ctx.fillStyle = "white"
-          ctx.font = "bold 18px Arial"
-          ctx.textAlign = "center"
-          ctx.fillText(`Portnox NAC Architecture - ${currentView?.label}`, width / 2, 35)
-
-          ctx.font = "12px Arial"
-          ctx.fillText(`Generated on ${new Date().toLocaleDateString()}`, width / 2, 55)
-
-          resolve(undefined)
-        }
-      }
-
-      portnoxLogo.onload = onLoad
-      abmLogo.onload = onLoad
-    })
-  }
-
   const downloadFile = (blob: Blob, filename: string) => {
     const url = URL.createObjectURL(blob)
     const link = document.createElement("a")
@@ -411,8 +410,10 @@ export default function ArchitectureDesigner() {
                 <SelectContent>
                   {cloudProviders.map((provider) => (
                     <SelectItem key={provider.id} value={provider.id}>
-                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: provider.color }} />
-                      <span>{provider.label}</span>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: provider.color }} />
+                        <span>{provider.label}</span>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>

@@ -1,32 +1,37 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { Calendar, Clock, Plus, Trash2, MapPin, CheckCircle, AlertTriangle } from "lucide-react"
-
-interface Site {
-  id: string
-  name: string
-  region: string
-  status: "Planned" | "In Progress" | "Complete" | "Delayed"
-  plannedStart: string
-  plannedEnd: string
-  projectManager: string
-}
+  Calendar,
+  Clock,
+  Plus,
+  Edit,
+  Trash2,
+  Filter,
+  Users,
+  MapPin,
+  CheckCircle,
+  AlertCircle,
+  XCircle,
+  BarChart3,
+  CalendarDays,
+  Target,
+  Zap,
+  List,
+  Grid3X3,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react"
 
 interface TimelineEvent {
   id: string
@@ -34,264 +39,434 @@ interface TimelineEvent {
   description: string
   date: string
   time: string
-  type: "milestone" | "checkin" | "touchpoint" | "deployment" | "meeting"
+  type: "milestone" | "meeting" | "deployment" | "training" | "review" | "checkin"
+  priority: "low" | "medium" | "high" | "critical"
+  status: "scheduled" | "in-progress" | "completed" | "cancelled"
   siteId?: string
+  siteName?: string
   attendees: string[]
-  status: "scheduled" | "completed" | "cancelled"
-  priority: "high" | "medium" | "low"
+  location: string
+  duration: number // in minutes
+  notes: string
+}
+
+interface Site {
+  id: string
+  name: string
+  location: string
+  region: string
+  phase: string
+  status: string
+  networkVendor: string
+  wirelessVendor: string
+  deviceCount: number
+  plannedStart: string
+  plannedEnd: string
+  projectManager: string
+  technicalOwners: string[]
+  notes: string
+}
+
+interface TimelineSchedulerProps {
+  sites?: Site[]
 }
 
 const eventTypeColors = {
   milestone: "bg-purple-100 text-purple-800 border-purple-200",
-  checkin: "bg-blue-100 text-blue-800 border-blue-200",
-  touchpoint: "bg-green-100 text-green-800 border-green-200",
-  deployment: "bg-red-100 text-red-800 border-red-200",
-  meeting: "bg-yellow-100 text-yellow-800 border-yellow-200",
+  meeting: "bg-blue-100 text-blue-800 border-blue-200",
+  deployment: "bg-green-100 text-green-800 border-green-200",
+  training: "bg-orange-100 text-orange-800 border-orange-200",
+  review: "bg-yellow-100 text-yellow-800 border-yellow-200",
+  checkin: "bg-gray-100 text-gray-800 border-gray-200",
 }
 
 const priorityColors = {
-  high: "bg-red-100 text-red-800 border-red-200",
-  medium: "bg-yellow-100 text-yellow-800 border-yellow-200",
-  low: "bg-green-100 text-green-800 border-green-200",
+  low: "bg-gray-100 text-gray-600",
+  medium: "bg-blue-100 text-blue-600",
+  high: "bg-orange-100 text-orange-600",
+  critical: "bg-red-100 text-red-600",
 }
 
-export default function TimelineScheduler() {
-  const [sites, setSites] = useState<Site[]>([])
+const statusColors = {
+  scheduled: "bg-blue-100 text-blue-800",
+  "in-progress": "bg-yellow-100 text-yellow-800",
+  completed: "bg-green-100 text-green-800",
+  cancelled: "bg-red-100 text-red-800",
+}
+
+const statusIcons = {
+  scheduled: Clock,
+  "in-progress": AlertCircle,
+  completed: CheckCircle,
+  cancelled: XCircle,
+}
+
+export default function TimelineScheduler({ sites = [] }: TimelineSchedulerProps) {
   const [events, setEvents] = useState<TimelineEvent[]>([])
-  const [showAddEvent, setShowAddEvent] = useState(false)
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0])
-  const [editingEvent, setEditingEvent] = useState<TimelineEvent | null>(null)
+  const [filteredEvents, setFilteredEvents] = useState<TimelineEvent[]>([])
+  const [selectedEvent, setSelectedEvent] = useState<TimelineEvent | null>(null)
+  const [isAddingEvent, setIsAddingEvent] = useState(false)
+  const [filterType, setFilterType] = useState<string>("all")
+  const [filterSite, setFilterSite] = useState<string>("all")
+  const [filterStatus, setFilterStatus] = useState<string>("all")
+  const [searchTerm, setSearchTerm] = useState("")
+  const [viewMode, setViewMode] = useState<"list" | "calendar">("list")
+  const [currentDate, setCurrentDate] = useState(new Date())
 
-  const [newEvent, setNewEvent] = useState<Partial<TimelineEvent>>({
-    title: "",
-    description: "",
-    date: new Date().toISOString().split("T")[0],
-    time: "09:00",
-    type: "checkin",
-    attendees: [],
-    status: "scheduled",
-    priority: "medium",
-  })
-
+  // Load events from localStorage
   useEffect(() => {
-    // Load sites from localStorage
-    const savedSites = localStorage.getItem("portnox-sites")
-    if (savedSites) {
-      setSites(JSON.parse(savedSites))
-    }
-
-    // Load events from localStorage
     const savedEvents = localStorage.getItem("portnox-timeline-events")
     if (savedEvents) {
-      setEvents(JSON.parse(savedEvents))
-    } else {
-      // Create default events for existing sites
-      const defaultEvents: TimelineEvent[] = []
-      const sitesData = savedSites ? JSON.parse(savedSites) : []
-
-      sitesData.forEach((site: Site, index: number) => {
-        // Add kickoff meeting
-        defaultEvents.push({
-          id: `kickoff-${site.id}`,
-          title: `${site.name} - Project Kickoff`,
-          description: `Initial project kickoff meeting for ${site.name}`,
-          date: site.plannedStart,
-          time: "10:00",
-          type: "meeting",
-          siteId: site.id,
-          attendees: [site.projectManager],
-          status: "scheduled",
-          priority: "high",
-        })
-
-        // Add weekly check-ins
-        const startDate = new Date(site.plannedStart)
-        const endDate = new Date(site.plannedEnd)
-        const currentDate = new Date(startDate)
-
-        while (currentDate <= endDate) {
-          currentDate.setDate(currentDate.getDate() + 7)
-          if (currentDate <= endDate) {
-            defaultEvents.push({
-              id: `checkin-${site.id}-${currentDate.toISOString().split("T")[0]}`,
-              title: `${site.name} - Weekly Check-in`,
-              description: `Weekly progress review and status update`,
-              date: currentDate.toISOString().split("T")[0],
-              time: "14:00",
-              type: "checkin",
-              siteId: site.id,
-              attendees: [site.projectManager],
-              status: "scheduled",
-              priority: "medium",
-            })
-          }
-        }
-
-        // Add deployment milestone
-        const deploymentDate = new Date(endDate)
-        deploymentDate.setDate(deploymentDate.getDate() - 2)
-        defaultEvents.push({
-          id: `deployment-${site.id}`,
-          title: `${site.name} - Go-Live`,
-          description: `Production deployment and go-live`,
-          date: deploymentDate.toISOString().split("T")[0],
-          time: "08:00",
-          type: "deployment",
-          siteId: site.id,
-          attendees: [site.projectManager],
-          status: "scheduled",
-          priority: "high",
-        })
-      })
-
-      setEvents(defaultEvents)
-      localStorage.setItem("portnox-timeline-events", JSON.stringify(defaultEvents))
+      try {
+        const parsedEvents = JSON.parse(savedEvents)
+        setEvents(parsedEvents)
+      } catch (error) {
+        console.error("Error parsing saved events:", error)
+        setEvents([])
+      }
     }
   }, [])
 
+  // Save events to localStorage
   useEffect(() => {
     if (events.length > 0) {
       localStorage.setItem("portnox-timeline-events", JSON.stringify(events))
     }
   }, [events])
 
-  const handleAddEvent = () => {
-    if (!newEvent.title || !newEvent.date) return
+  // Filter events
+  useEffect(() => {
+    let filtered = events
 
-    const event: TimelineEvent = {
-      id: `event-${Date.now()}`,
-      title: newEvent.title!,
-      description: newEvent.description || "",
-      date: newEvent.date!,
-      time: newEvent.time || "09:00",
-      type: (newEvent.type as TimelineEvent["type"]) || "checkin",
-      siteId: newEvent.siteId,
-      attendees: newEvent.attendees || [],
-      status: "scheduled",
-      priority: (newEvent.priority as TimelineEvent["priority"]) || "medium",
+    if (filterType !== "all") {
+      filtered = filtered.filter((event) => event.type === filterType)
     }
 
-    setEvents((prev) => [...prev, event])
-    setNewEvent({
-      title: "",
-      description: "",
-      date: new Date().toISOString().split("T")[0],
-      time: "09:00",
-      type: "checkin",
-      attendees: [],
-      status: "scheduled",
-      priority: "medium",
+    if (filterSite !== "all") {
+      filtered = filtered.filter((event) => event.siteId === filterSite)
+    }
+
+    if (filterStatus !== "all") {
+      filtered = filtered.filter((event) => event.status === filterStatus)
+    }
+
+    if (searchTerm) {
+      filtered = filtered.filter(
+        (event) =>
+          event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          event.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          event.siteName?.toLowerCase().includes(searchTerm.toLowerCase()),
+      )
+    }
+
+    // Sort by date and time
+    filtered.sort((a, b) => {
+      const dateA = new Date(`${a.date} ${a.time}`)
+      const dateB = new Date(`${b.date} ${b.time}`)
+      return dateA.getTime() - dateB.getTime()
     })
-    setShowAddEvent(false)
+
+    setFilteredEvents(filtered)
+  }, [events, filterType, filterSite, filterStatus, searchTerm])
+
+  const generateInitialEvents = () => {
+    if (!sites || sites.length === 0) {
+      // Generate some demo events if no sites available
+      const demoEvents: TimelineEvent[] = [
+        {
+          id: "demo-1",
+          title: "Project Kickoff Meeting",
+          description: "Initial project planning and stakeholder alignment",
+          date: "2024-02-15",
+          time: "09:00",
+          type: "meeting",
+          priority: "high",
+          status: "scheduled",
+          attendees: ["Project Manager", "Technical Lead", "Customer Stakeholder"],
+          location: "Conference Room A",
+          duration: 120,
+          notes: "Bring project charter and technical requirements",
+        },
+        {
+          id: "demo-2",
+          title: "Architecture Review",
+          description: "Review and approve the Zero Trust NAC architecture design",
+          date: "2024-02-20",
+          time: "14:00",
+          type: "review",
+          priority: "high",
+          status: "scheduled",
+          attendees: ["Solution Architect", "Security Team", "Network Team"],
+          location: "Virtual Meeting",
+          duration: 90,
+          notes: "Architecture diagrams will be presented",
+        },
+        {
+          id: "demo-3",
+          title: "Pilot Deployment",
+          description: "Deploy NAC solution to pilot site",
+          date: "2024-03-01",
+          time: "08:00",
+          type: "deployment",
+          priority: "critical",
+          status: "scheduled",
+          attendees: ["Deployment Team", "Site Technical Contact"],
+          location: "Pilot Site",
+          duration: 480,
+          notes: "Full day deployment with testing",
+        },
+      ]
+      setEvents(demoEvents)
+      return
+    }
+
+    const newEvents: TimelineEvent[] = []
+
+    sites.forEach((site, index) => {
+      const startDate = new Date(site.plannedStart || "2024-02-01")
+      const endDate = new Date(site.plannedEnd || "2024-06-01")
+
+      // Generate events for each site
+      const siteEvents = [
+        {
+          id: `${site.id}-kickoff`,
+          title: `${site.name} - Project Kickoff`,
+          description: `Initial planning meeting for ${site.name} NAC deployment`,
+          date: startDate.toISOString().split("T")[0],
+          time: "09:00",
+          type: "meeting" as const,
+          priority: "high" as const,
+          status: "scheduled" as const,
+          siteId: site.id,
+          siteName: site.name,
+          attendees: [site.projectManager, ...site.technicalOwners],
+          location: site.location,
+          duration: 120,
+          notes: `Kickoff meeting for ${site.name} deployment`,
+        },
+        {
+          id: `${site.id}-assessment`,
+          title: `${site.name} - Site Assessment`,
+          description: `Technical assessment and network discovery for ${site.name}`,
+          date: new Date(startDate.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+          time: "10:00",
+          type: "review" as const,
+          priority: "medium" as const,
+          status: "scheduled" as const,
+          siteId: site.id,
+          siteName: site.name,
+          attendees: ["Network Engineer", "Site Contact"],
+          location: site.location,
+          duration: 240,
+          notes: `On-site assessment for ${site.name}`,
+        },
+        {
+          id: `${site.id}-deployment`,
+          title: `${site.name} - NAC Deployment`,
+          description: `Deploy Portnox NAC solution at ${site.name}`,
+          date: new Date(startDate.getTime() + 21 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+          time: "08:00",
+          type: "deployment" as const,
+          priority: "critical" as const,
+          status: "scheduled" as const,
+          siteId: site.id,
+          siteName: site.name,
+          attendees: ["Deployment Team", site.projectManager],
+          location: site.location,
+          duration: 480,
+          notes: `Full deployment for ${site.name} - ${site.deviceCount} devices`,
+        },
+        {
+          id: `${site.id}-training`,
+          title: `${site.name} - User Training`,
+          description: `Train local IT staff on NAC management for ${site.name}`,
+          date: new Date(startDate.getTime() + 28 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+          time: "13:00",
+          type: "training" as const,
+          priority: "medium" as const,
+          status: "scheduled" as const,
+          siteId: site.id,
+          siteName: site.name,
+          attendees: ["Trainer", ...site.technicalOwners],
+          location: site.location,
+          duration: 180,
+          notes: `Training session for ${site.name} IT staff`,
+        },
+      ]
+
+      newEvents.push(...siteEvents)
+    })
+
+    setEvents(newEvents)
   }
 
-  const handleDeleteEvent = (eventId: string) => {
+  const addEvent = (eventData: Partial<TimelineEvent>) => {
+    const newEvent: TimelineEvent = {
+      id: `event-${Date.now()}`,
+      title: eventData.title || "",
+      description: eventData.description || "",
+      date: eventData.date || "",
+      time: eventData.time || "",
+      type: eventData.type || "meeting",
+      priority: eventData.priority || "medium",
+      status: eventData.status || "scheduled",
+      siteId: eventData.siteId,
+      siteName: eventData.siteName,
+      attendees: eventData.attendees || [],
+      location: eventData.location || "",
+      duration: eventData.duration || 60,
+      notes: eventData.notes || "",
+    }
+
+    setEvents((prev) => [...prev, newEvent])
+    setIsAddingEvent(false)
+  }
+
+  const updateEvent = (eventId: string, updates: Partial<TimelineEvent>) => {
+    setEvents((prev) => prev.map((event) => (event.id === eventId ? { ...event, ...updates } : event)))
+    setSelectedEvent(null)
+  }
+
+  const deleteEvent = (eventId: string) => {
     setEvents((prev) => prev.filter((event) => event.id !== eventId))
-  }
-
-  const handleToggleEventStatus = (eventId: string) => {
-    setEvents((prev) =>
-      prev.map((event) =>
-        event.id === eventId ? { ...event, status: event.status === "completed" ? "scheduled" : "completed" } : event,
-      ),
-    )
-  }
-
-  const getEventsForDate = (date: string) => {
-    return events.filter((event) => event.date === date).sort((a, b) => a.time.localeCompare(b.time))
-  }
-
-  const getUpcomingEvents = () => {
-    const today = new Date().toISOString().split("T")[0]
-    return events
-      .filter((event) => event.date >= today && event.status === "scheduled")
-      .sort((a, b) => {
-        const dateCompare = a.date.localeCompare(b.date)
-        return dateCompare !== 0 ? dateCompare : a.time.localeCompare(b.time)
-      })
-      .slice(0, 5)
+    setSelectedEvent(null)
   }
 
   const getEventStats = () => {
     const total = events.length
     const completed = events.filter((e) => e.status === "completed").length
-    const upcoming = events.filter(
-      (e) => e.status === "scheduled" && e.date >= new Date().toISOString().split("T")[0],
-    ).length
-    const overdue = events.filter(
-      (e) => e.status === "scheduled" && e.date < new Date().toISOString().split("T")[0],
-    ).length
+    const upcoming = events.filter((e) => {
+      const eventDate = new Date(`${e.date} ${e.time}`)
+      return eventDate > new Date() && e.status === "scheduled"
+    }).length
+    const overdue = events.filter((e) => {
+      const eventDate = new Date(`${e.date} ${e.time}`)
+      return eventDate < new Date() && e.status === "scheduled"
+    }).length
 
     return { total, completed, upcoming, overdue }
   }
 
   const stats = getEventStats()
-  const upcomingEvents = getUpcomingEvents()
-  const selectedDateEvents = getEventsForDate(selectedDate)
 
-  // Generate calendar days for current month
-  const generateCalendarDays = () => {
-    const today = new Date()
-    const currentMonth = today.getMonth()
-    const currentYear = today.getFullYear()
-    const firstDay = new Date(currentYear, currentMonth, 1)
-    const lastDay = new Date(currentYear, currentMonth + 1, 0)
-    const daysInMonth = lastDay.getDate()
-    const startingDayOfWeek = firstDay.getDay()
+  const quickAddMeeting = (type: string) => {
+    const tomorrow = new Date()
+    tomorrow.setDate(tomorrow.getDate() + 1)
 
+    const meetingTypes = {
+      kickoff: {
+        title: "Project Kickoff Meeting",
+        description: "Initial project planning and stakeholder alignment",
+        type: "meeting" as const,
+        priority: "high" as const,
+        duration: 120,
+        attendees: ["Project Manager", "Technical Lead", "Customer Stakeholder"],
+      },
+      checkin: {
+        title: "Weekly Check-in",
+        description: "Weekly project status and progress review",
+        type: "checkin" as const,
+        priority: "medium" as const,
+        duration: 60,
+        attendees: ["Project Manager", "Team Lead"],
+      },
+      review: {
+        title: "Architecture Review",
+        description: "Review and approve technical architecture",
+        type: "review" as const,
+        priority: "high" as const,
+        duration: 90,
+        attendees: ["Solution Architect", "Technical Team"],
+      },
+    }
+
+    const meetingData = meetingTypes[type as keyof typeof meetingTypes]
+    if (meetingData) {
+      addEvent({
+        ...meetingData,
+        date: tomorrow.toISOString().split("T")[0],
+        time: "14:00",
+        location: "Conference Room",
+        status: "scheduled",
+      })
+    }
+  }
+
+  const clearAllData = () => {
+    setEvents([])
+    localStorage.removeItem("portnox-timeline-events")
+  }
+
+  // Calendar view functions
+  const getDaysInMonth = (date: Date) => {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
+  }
+
+  const getFirstDayOfMonth = (date: Date) => {
+    return new Date(date.getFullYear(), date.getMonth(), 1).getDay()
+  }
+
+  const getEventsForDate = (date: Date) => {
+    const dateString = date.toISOString().split("T")[0]
+    return filteredEvents.filter((event) => event.date === dateString)
+  }
+
+  const navigateMonth = (direction: "prev" | "next") => {
+    setCurrentDate((prev) => {
+      const newDate = new Date(prev)
+      if (direction === "prev") {
+        newDate.setMonth(newDate.getMonth() - 1)
+      } else {
+        newDate.setMonth(newDate.getMonth() + 1)
+      }
+      return newDate
+    })
+  }
+
+  const renderCalendarView = () => {
+    const daysInMonth = getDaysInMonth(currentDate)
+    const firstDay = getFirstDayOfMonth(currentDate)
     const days = []
 
     // Add empty cells for days before the first day of the month
-    for (let i = 0; i < startingDayOfWeek; i++) {
-      days.push(null)
+    for (let i = 0; i < firstDay; i++) {
+      days.push(<div key={`empty-${i}`} className="h-24 border border-gray-200"></div>)
     }
 
-    // Add days of the month
+    // Add cells for each day of the month
     for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(currentYear, currentMonth, day)
-      const dateString = date.toISOString().split("T")[0]
-      const dayEvents = getEventsForDate(dateString)
+      const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
+      const dayEvents = getEventsForDate(date)
+      const isToday = date.toDateString() === new Date().toDateString()
 
-      days.push({
-        date: day,
-        dateString,
-        events: dayEvents,
-        isToday: dateString === new Date().toISOString().split("T")[0],
-        isSelected: dateString === selectedDate,
-      })
+      days.push(
+        <div key={day} className={`h-24 border border-gray-200 p-1 ${isToday ? "bg-blue-50" : ""}`}>
+          <div className={`text-sm font-medium ${isToday ? "text-blue-600" : ""}`}>{day}</div>
+          <div className="space-y-1 mt-1">
+            {dayEvents.slice(0, 2).map((event) => (
+              <div
+                key={event.id}
+                className={`text-xs p-1 rounded truncate cursor-pointer ${eventTypeColors[event.type]}`}
+                onClick={() => setSelectedEvent(event)}
+                title={event.title}
+              >
+                {event.title}
+              </div>
+            ))}
+            {dayEvents.length > 2 && <div className="text-xs text-gray-500">+{dayEvents.length - 2} more</div>}
+          </div>
+        </div>,
+      )
     }
 
-    return days
-  }
-
-  const calendarDays = generateCalendarDays()
-  const monthNames = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ]
-  const currentMonth = monthNames[new Date().getMonth()]
-  const currentYear = new Date().getFullYear()
-
-  if (sites.length === 0) {
     return (
-      <div className="space-y-6">
-        <Card>
-          <CardContent className="text-center py-12">
-            <Calendar className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No timeline data available</h3>
-            <p className="text-gray-600 dark:text-gray-400">Add sites to create project timelines and schedules</p>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-7 gap-0 border border-gray-200">
+        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+          <div key={day} className="bg-gray-50 p-2 text-center font-medium text-sm border-b border-gray-200">
+            {day}
+          </div>
+        ))}
+        {days}
       </div>
     )
   }
@@ -299,339 +474,513 @@ export default function TimelineScheduler() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Timeline & Schedule</h2>
-          <p className="text-gray-600 dark:text-gray-400">Manage project timelines, check-ins, and touchpoints</p>
+          <h2 className="text-2xl font-bold text-gray-900">Timeline & Schedule</h2>
+          <p className="text-gray-600">Manage project timelines, meetings, and milestones</p>
         </div>
-        <Dialog open={showAddEvent} onOpenChange={setShowAddEvent}>
-          <DialogTrigger asChild>
-            <Button className="flex items-center space-x-2">
-              <Plus className="h-4 w-4" />
-              <span>Add Event</span>
+        <div className="flex items-center space-x-2">
+          <Button onClick={() => generateInitialEvents()} variant="outline">
+            <Zap className="h-4 w-4 mr-2" />
+            Load Demo Data
+          </Button>
+          <Button onClick={clearAllData} variant="outline">
+            <Trash2 className="h-4 w-4 mr-2" />
+            Clear All Data
+          </Button>
+          <Dialog open={isAddingEvent} onOpenChange={setIsAddingEvent}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Event
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Add New Event</DialogTitle>
+              </DialogHeader>
+              <EventForm onSubmit={addEvent} sites={sites} />
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+
+      {/* Statistics */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <CalendarDays className="h-5 w-5 text-blue-500" />
+              <div>
+                <p className="text-sm text-gray-600">Total Events</p>
+                <p className="text-2xl font-bold">{stats.total}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <CheckCircle className="h-5 w-5 text-green-500" />
+              <div>
+                <p className="text-sm text-gray-600">Completed</p>
+                <p className="text-2xl font-bold">{stats.completed}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <Clock className="h-5 w-5 text-blue-500" />
+              <div>
+                <p className="text-sm text-gray-600">Upcoming</p>
+                <p className="text-2xl font-bold">{stats.upcoming}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <AlertCircle className="h-5 w-5 text-red-500" />
+              <div>
+                <p className="text-sm text-gray-600">Overdue</p>
+                <p className="text-2xl font-bold">{stats.overdue}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Target className="h-5 w-5" />
+            <span>Quick Actions</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={() => quickAddMeeting("kickoff")} variant="outline" size="sm">
+              <Users className="h-4 w-4 mr-2" />
+              Schedule Kickoff
             </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Add New Event</DialogTitle>
-              <DialogDescription>Create a new timeline event or meeting</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="title">Title</Label>
-                <Input
-                  id="title"
-                  value={newEvent.title || ""}
-                  onChange={(e) => setNewEvent((prev) => ({ ...prev, title: e.target.value }))}
-                  placeholder="Event title"
-                />
-              </div>
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={newEvent.description || ""}
-                  onChange={(e) => setNewEvent((prev) => ({ ...prev, description: e.target.value }))}
-                  placeholder="Event description"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="date">Date</Label>
-                  <Input
-                    id="date"
-                    type="date"
-                    value={newEvent.date || ""}
-                    onChange={(e) => setNewEvent((prev) => ({ ...prev, date: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="time">Time</Label>
-                  <Input
-                    id="time"
-                    type="time"
-                    value={newEvent.time || ""}
-                    onChange={(e) => setNewEvent((prev) => ({ ...prev, time: e.target.value }))}
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="type">Type</Label>
-                  <Select
-                    value={newEvent.type}
-                    onValueChange={(value) =>
-                      setNewEvent((prev) => ({ ...prev, type: value as TimelineEvent["type"] }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="milestone">Milestone</SelectItem>
-                      <SelectItem value="checkin">Check-in</SelectItem>
-                      <SelectItem value="touchpoint">Touchpoint</SelectItem>
-                      <SelectItem value="deployment">Deployment</SelectItem>
-                      <SelectItem value="meeting">Meeting</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="priority">Priority</Label>
-                  <Select
-                    value={newEvent.priority}
-                    onValueChange={(value) =>
-                      setNewEvent((prev) => ({ ...prev, priority: value as TimelineEvent["priority"] }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="high">High</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="low">Low</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="site">Related Site (Optional)</Label>
-                <Select
-                  value={newEvent.siteId}
-                  onValueChange={(value) => setNewEvent((prev) => ({ ...prev, siteId: value }))}
+            <Button onClick={() => quickAddMeeting("checkin")} variant="outline" size="sm">
+              <Clock className="h-4 w-4 mr-2" />
+              Weekly Check-in
+            </Button>
+            <Button onClick={() => quickAddMeeting("review")} variant="outline" size="sm">
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Architecture Review
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* View Toggle and Filters */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center space-x-2">
+              <Filter className="h-4 w-4" />
+              <span className="text-sm font-medium">View:</span>
+              <div className="flex border rounded-lg">
+                <Button
+                  variant={viewMode === "list" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setViewMode("list")}
+                  className="rounded-r-none"
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a site" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {sites.map((site) => (
-                      <SelectItem key={site.id} value={site.id}>
-                        {site.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => setShowAddEvent(false)}>
-                  Cancel
+                  <List className="h-4 w-4 mr-2" />
+                  List
                 </Button>
-                <Button onClick={handleAddEvent}>Add Event</Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Events</p>
-                <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{stats.total}</p>
-              </div>
-              <Calendar className="h-12 w-12 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-green-600 dark:text-green-400">Completed</p>
-                <p className="text-3xl font-bold text-green-900 dark:text-green-100">{stats.completed}</p>
-              </div>
-              <CheckCircle className="h-12 w-12 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-blue-600 dark:text-blue-400">Upcoming</p>
-                <p className="text-3xl font-bold text-blue-900 dark:text-blue-100">{stats.upcoming}</p>
-              </div>
-              <Clock className="h-12 w-12 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-red-600 dark:text-red-400">Overdue</p>
-                <p className="text-3xl font-bold text-red-900 dark:text-red-100">{stats.overdue}</p>
-              </div>
-              <AlertTriangle className="h-12 w-12 text-red-600" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Calendar */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Calendar className="h-5 w-5" />
-              <span>
-                {currentMonth} {currentYear}
-              </span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-7 gap-1 mb-4">
-              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-                <div key={day} className="p-2 text-center text-sm font-medium text-gray-500">
-                  {day}
-                </div>
-              ))}
-            </div>
-            <div className="grid grid-cols-7 gap-1">
-              {calendarDays.map((day, index) => (
-                <div
-                  key={index}
-                  className={`
-                    min-h-[80px] p-1 border rounded cursor-pointer transition-colors
-                    ${day ? "hover:bg-gray-50 dark:hover:bg-gray-800" : ""}
-                    ${day?.isToday ? "bg-blue-50 border-blue-200" : "border-gray-200"}
-                    ${day?.isSelected ? "bg-blue-100 border-blue-300" : ""}
-                  `}
-                  onClick={() => day && setSelectedDate(day.dateString)}
+                <Button
+                  variant={viewMode === "calendar" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setViewMode("calendar")}
+                  className="rounded-l-none"
                 >
-                  {day && (
-                    <>
-                      <div
-                        className={`text-sm font-medium ${day.isToday ? "text-blue-600" : "text-gray-900 dark:text-gray-100"}`}
-                      >
-                        {day.date}
-                      </div>
-                      <div className="space-y-1">
-                        {day.events.slice(0, 2).map((event) => (
-                          <div key={event.id} className={`text-xs p-1 rounded truncate ${eventTypeColors[event.type]}`}>
-                            {event.title}
-                          </div>
-                        ))}
-                        {day.events.length > 2 && (
-                          <div className="text-xs text-gray-500">+{day.events.length - 2} more</div>
-                        )}
-                      </div>
-                    </>
-                  )}
-                </div>
-              ))}
+                  <Grid3X3 className="h-4 w-4 mr-2" />
+                  Calendar
+                </Button>
+              </div>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Upcoming Events */}
+            <Input
+              placeholder="Search events..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="max-w-xs"
+            />
+
+            <Select value={filterType} onValueChange={setFilterType}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Event Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="milestone">Milestones</SelectItem>
+                <SelectItem value="meeting">Meetings</SelectItem>
+                <SelectItem value="deployment">Deployments</SelectItem>
+                <SelectItem value="training">Training</SelectItem>
+                <SelectItem value="review">Reviews</SelectItem>
+                <SelectItem value="checkin">Check-ins</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={filterSite} onValueChange={setFilterSite}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Site" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Sites</SelectItem>
+                {sites.map((site) => (
+                  <SelectItem key={site.id} value={site.id}>
+                    {site.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="scheduled">Scheduled</SelectItem>
+                <SelectItem value="in-progress">In Progress</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Calendar View Header */}
+      {viewMode === "calendar" && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Clock className="h-5 w-5" />
-              <span>Upcoming Events</span>
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>{currentDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })}</CardTitle>
+              <div className="flex items-center space-x-2">
+                <Button variant="outline" size="sm" onClick={() => navigateMonth("prev")}>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setCurrentDate(new Date())}>
+                  Today
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => navigateMonth("next")}>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>{renderCalendarView()}</CardContent>
+        </Card>
+      )}
+
+      {/* Events Timeline/List */}
+      {viewMode === "list" && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Events Timeline ({filteredEvents.length} events)</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {upcomingEvents.length === 0 ? (
-                <p className="text-gray-500 text-sm">No upcoming events</p>
-              ) : (
-                upcomingEvents.map((event) => {
-                  const site = sites.find((s) => s.id === event.siteId)
+            {filteredEvents.length === 0 ? (
+              <div className="text-center py-8">
+                <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">No events found. Add some events to get started.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredEvents.map((event) => {
+                  const StatusIcon = statusIcons[event.status]
                   return (
-                    <div key={event.id} className="border rounded-lg p-3">
-                      <div className="flex items-start justify-between mb-2">
-                        <h4 className="font-medium text-sm">{event.title}</h4>
-                        <Badge className={`text-xs ${priorityColors[event.priority]}`}>{event.priority}</Badge>
-                      </div>
-                      <div className="space-y-1 text-xs text-gray-600">
-                        <div className="flex items-center space-x-1">
-                          <Calendar className="h-3 w-3" />
-                          <span>
-                            {event.date} at {event.time}
-                          </span>
-                        </div>
-                        {site && (
-                          <div className="flex items-center space-x-1">
-                            <MapPin className="h-3 w-3" />
-                            <span>{site.name}</span>
+                    <div key={event.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3 mb-2">
+                            <StatusIcon className="h-5 w-5 text-gray-500" />
+                            <h3 className="font-semibold text-lg">{event.title}</h3>
+                            <Badge className={eventTypeColors[event.type]}>{event.type}</Badge>
+                            <Badge className={priorityColors[event.priority]}>{event.priority}</Badge>
+                            <Badge className={statusColors[event.status]}>{event.status}</Badge>
                           </div>
-                        )}
-                        <Badge className={`text-xs ${eventTypeColors[event.type]}`}>{event.type}</Badge>
+
+                          <p className="text-gray-600 mb-3">{event.description}</p>
+
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                            <div className="flex items-center space-x-2">
+                              <Calendar className="h-4 w-4 text-gray-400" />
+                              <span>{event.date}</span>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Clock className="h-4 w-4 text-gray-400" />
+                              <span>
+                                {event.time} ({event.duration}min)
+                              </span>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <MapPin className="h-4 w-4 text-gray-400" />
+                              <span>{event.location}</span>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Users className="h-4 w-4 text-gray-400" />
+                              <span>{event.attendees.length} attendees</span>
+                            </div>
+                          </div>
+
+                          {event.siteName && (
+                            <div className="mt-2">
+                              <Badge variant="outline">{event.siteName}</Badge>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="outline" size="sm" onClick={() => setSelectedEvent(event)}>
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-2xl">
+                              <DialogHeader>
+                                <DialogTitle>Edit Event</DialogTitle>
+                              </DialogHeader>
+                              <EventForm
+                                event={event}
+                                onSubmit={(updates) => updateEvent(event.id, updates)}
+                                sites={sites}
+                              />
+                            </DialogContent>
+                          </Dialog>
+
+                          <Button variant="outline" size="sm" onClick={() => deleteEvent(event.id)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   )
-                })
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Selected Date Events */}
-      {selectedDateEvents.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Events for {new Date(selectedDate).toLocaleDateString()}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {selectedDateEvents.map((event) => {
-                const site = sites.find((s) => s.id === event.siteId)
-                return (
-                  <div key={event.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <h4 className="font-medium">{event.title}</h4>
-                        <Badge className={`text-xs ${eventTypeColors[event.type]}`}>{event.type}</Badge>
-                        <Badge className={`text-xs ${priorityColors[event.priority]}`}>{event.priority}</Badge>
-                        {event.status === "completed" && (
-                          <Badge className="text-xs bg-green-100 text-green-800 border-green-200">Completed</Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-600 mb-2">{event.description}</p>
-                      <div className="flex items-center space-x-4 text-xs text-gray-500">
-                        <div className="flex items-center space-x-1">
-                          <Clock className="h-3 w-3" />
-                          <span>{event.time}</span>
-                        </div>
-                        {site && (
-                          <div className="flex items-center space-x-1">
-                            <MapPin className="h-3 w-3" />
-                            <span>{site.name}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Button variant="ghost" size="sm" onClick={() => handleToggleEventStatus(event.id)}>
-                        {event.status === "completed" ? (
-                          <CheckCircle className="h-4 w-4 text-green-600" />
-                        ) : (
-                          <Clock className="h-4 w-4" />
-                        )}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteEvent(event.id)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
+                })}
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
     </div>
+  )
+}
+
+// Event Form Component
+function EventForm({
+  event,
+  onSubmit,
+  sites = [],
+}: {
+  event?: TimelineEvent
+  onSubmit: (data: Partial<TimelineEvent>) => void
+  sites?: Site[]
+}) {
+  const [formData, setFormData] = useState({
+    title: event?.title || "",
+    description: event?.description || "",
+    date: event?.date || "",
+    time: event?.time || "",
+    type: event?.type || "meeting",
+    priority: event?.priority || "medium",
+    status: event?.status || "scheduled",
+    siteId: event?.siteId || "none",
+    location: event?.location || "",
+    duration: event?.duration || 60,
+    attendees: event?.attendees?.join(", ") || "",
+    notes: event?.notes || "",
+  })
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+
+    const selectedSite = sites.find((s) => s.id === formData.siteId)
+
+    onSubmit({
+      ...formData,
+      siteId: formData.siteId === "none" ? undefined : formData.siteId,
+      siteName: selectedSite?.name,
+      attendees: formData.attendees
+        .split(",")
+        .map((a) => a.trim())
+        .filter(Boolean),
+    })
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="title">Title</Label>
+          <Input
+            id="title"
+            value={formData.title}
+            onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
+            required
+          />
+        </div>
+        <div>
+          <Label htmlFor="type">Type</Label>
+          <Select
+            value={formData.type}
+            onValueChange={(value) => setFormData((prev) => ({ ...prev, type: value as any }))}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="milestone">Milestone</SelectItem>
+              <SelectItem value="meeting">Meeting</SelectItem>
+              <SelectItem value="deployment">Deployment</SelectItem>
+              <SelectItem value="training">Training</SelectItem>
+              <SelectItem value="review">Review</SelectItem>
+              <SelectItem value="checkin">Check-in</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div>
+        <Label htmlFor="description">Description</Label>
+        <Textarea
+          id="description"
+          value={formData.description}
+          onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
+        />
+      </div>
+
+      <div className="grid grid-cols-3 gap-4">
+        <div>
+          <Label htmlFor="date">Date</Label>
+          <Input
+            id="date"
+            type="date"
+            value={formData.date}
+            onChange={(e) => setFormData((prev) => ({ ...prev, date: e.target.value }))}
+            required
+          />
+        </div>
+        <div>
+          <Label htmlFor="time">Time</Label>
+          <Input
+            id="time"
+            type="time"
+            value={formData.time}
+            onChange={(e) => setFormData((prev) => ({ ...prev, time: e.target.value }))}
+            required
+          />
+        </div>
+        <div>
+          <Label htmlFor="duration">Duration (minutes)</Label>
+          <Input
+            id="duration"
+            type="number"
+            value={formData.duration}
+            onChange={(e) => setFormData((prev) => ({ ...prev, duration: Number.parseInt(e.target.value) || 60 }))}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="priority">Priority</Label>
+          <Select
+            value={formData.priority}
+            onValueChange={(value) => setFormData((prev) => ({ ...prev, priority: value as any }))}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="low">Low</SelectItem>
+              <SelectItem value="medium">Medium</SelectItem>
+              <SelectItem value="high">High</SelectItem>
+              <SelectItem value="critical">Critical</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label htmlFor="status">Status</Label>
+          <Select
+            value={formData.status}
+            onValueChange={(value) => setFormData((prev) => ({ ...prev, status: value as any }))}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="scheduled">Scheduled</SelectItem>
+              <SelectItem value="in-progress">In Progress</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="cancelled">Cancelled</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="site">Site</Label>
+          <Select
+            value={formData.siteId}
+            onValueChange={(value) => setFormData((prev) => ({ ...prev, siteId: value }))}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select site (optional)" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">No specific site</SelectItem>
+              {sites.map((site) => (
+                <SelectItem key={site.id} value={site.id}>
+                  {site.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label htmlFor="location">Location</Label>
+          <Input
+            id="location"
+            value={formData.location}
+            onChange={(e) => setFormData((prev) => ({ ...prev, location: e.target.value }))}
+          />
+        </div>
+      </div>
+
+      <div>
+        <Label htmlFor="attendees">Attendees (comma-separated)</Label>
+        <Input
+          id="attendees"
+          value={formData.attendees}
+          onChange={(e) => setFormData((prev) => ({ ...prev, attendees: e.target.value }))}
+          placeholder="John Doe, Jane Smith, ..."
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="notes">Notes</Label>
+        <Textarea
+          id="notes"
+          value={formData.notes}
+          onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
+        />
+      </div>
+
+      <div className="flex justify-end space-x-2">
+        <Button type="submit">{event ? "Update Event" : "Add Event"}</Button>
+      </div>
+    </form>
   )
 }

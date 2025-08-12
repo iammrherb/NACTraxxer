@@ -1,254 +1,371 @@
-'use client'
+"use client"
 
-import { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
-import { Slider } from '@/components/ui/slider'
-import { Switch } from '@/components/ui/switch'
-import { Label } from '@/components/ui/label'
-import InteractiveDiagram from '@/components/interactive-diagram'
-import ArchitectureLegend from '@/components/architecture-legend'
-import PolicyEditor from '@/components/policy-editor'
-import OnboardingScenarios from '@/components/onboarding-scenarios'
-import { Download, Settings, Play, Pause, RotateCcw } from 'lucide-react'
+import { useState } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
+import { Slider } from "@/components/ui/slider"
+import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import InteractiveDiagram from "./interactive-diagram"
+import ArchitectureLegend from "./architecture-legend"
+import {
+  Cloud,
+  Network,
+  Shield,
+  Settings,
+  Zap,
+  GlobeIcon,
+  Lock,
+  Users,
+  Server,
+  Download,
+  Smartphone,
+} from "lucide-react"
 
 export default function ArchitectureDesigner() {
-  const [selectedView, setSelectedView] = useState('complete')
-  const [cloudProvider, setCloudProvider] = useState('aws')
-  const [networkVendor, setNetworkVendor] = useState('cisco')
-  const [connectivityType, setConnectivityType] = useState('expressroute')
+  const [selectedView, setSelectedView] = useState("complete")
+  const [cloudProvider, setCloudProvider] = useState("aws")
+  const [networkVendor, setNetworkVendor] = useState("cisco")
+  const [connectivityType, setConnectivityType] = useState("sdwan")
   const [animationSpeed, setAnimationSpeed] = useState([1])
-  const [showDataFlow, setShowDataFlow] = useState(false)
-  const [showPolicyEditor, setShowPolicyEditor] = useState(false)
-  const [showOnboardingScenarios, setShowOnboardingScenarios] = useState(false)
 
   const architectureViews = [
-    { value: 'complete', label: 'Complete Architecture', description: 'Full end-to-end NAC deployment' },
-    { value: 'auth-flow', label: 'Authentication Flow', description: 'Step-by-step authentication process' },
-    { value: 'pki', label: 'PKI Architecture', description: 'Certificate management and PKI components' },
-    { value: 'radsec-proxy', label: 'RADSec Proxy Design', description: 'Detailed proxy architecture and deployment' },
-    { value: 'policies', label: 'Policy Framework', description: 'NAC policies and enforcement points' },
-    { value: 'connectivity', label: 'Connectivity Options', description: 'Network connectivity patterns' },
-    { value: 'intune', label: 'Intune Integration', description: 'Microsoft Intune certificate deployment' },
-    { value: 'onboarding', label: 'Device Onboarding', description: 'Device enrollment and onboarding flows' }
+    {
+      id: "complete",
+      label: "Complete Architecture",
+      icon: <Cloud className="w-4 h-4" />,
+      description: "Full end-to-end NAC deployment with all components",
+    },
+    {
+      id: "auth-flow",
+      label: "Authentication Flow",
+      icon: <Shield className="w-4 h-4" />,
+      description: "802.1X authentication sequence and RADIUS flow",
+    },
+    {
+      id: "pki",
+      label: "PKI Infrastructure",
+      icon: <Lock className="w-4 h-4" />,
+      description: "Certificate authority and PKI components",
+    },
+    {
+      id: "policies",
+      label: "Policy Framework",
+      icon: <Settings className="w-4 h-4" />,
+      description: "Policy engine and rule management",
+    },
+    {
+      id: "connectivity",
+      label: "Connectivity Options",
+      icon: <Network className="w-4 h-4" />,
+      description: "Multi-cloud and network connectivity patterns",
+    },
+    {
+      id: "intune",
+      label: "Intune Integration",
+      icon: <Users className="w-4 h-4" />,
+      description: "Microsoft Intune MDM integration",
+    },
+    {
+      id: "jamf",
+      label: "JAMF Integration",
+      icon: <Smartphone className="w-4 h-4" />,
+      description: "Apple device management with JAMF Pro",
+    },
+    {
+      id: "onboarding",
+      label: "Device Onboarding",
+      icon: <Zap className="w-4 h-4" />,
+      description: "Device enrollment and provisioning workflows",
+    },
+    {
+      id: "fortigate-tacacs",
+      label: "FortiGate TACACS+",
+      icon: <Server className="w-4 h-4" />,
+      description: "FortiGate device administration with TACACS+",
+    },
+    {
+      id: "palo-tacacs",
+      label: "Palo Alto TACACS+",
+      icon: <Server className="w-4 h-4" />,
+      description: "Palo Alto device administration with TACACS+",
+    },
+    {
+      id: "cisco-tacacs",
+      label: "Cisco TACACS+",
+      icon: <Server className="w-4 h-4" />,
+      description: "Cisco device administration with TACACS+",
+    },
+    {
+      id: "aruba-tacacs",
+      label: "Aruba TACACS+",
+      icon: <Server className="w-4 h-4" />,
+      description: "Aruba device administration with TACACS+",
+    },
+    {
+      id: "juniper-tacacs",
+      label: "Juniper TACACS+",
+      icon: <Server className="w-4 h-4" />,
+      description: "Juniper device administration with TACACS+",
+    },
+    {
+      id: "palo-userid",
+      label: "Palo Alto User-ID",
+      icon: <Users className="w-4 h-4" />,
+      description: "Palo Alto User-ID integration with syslog",
+    },
+    {
+      id: "fortigate-fsso",
+      label: "FortiGate FSSO",
+      icon: <Users className="w-4 h-4" />,
+      description: "FortiGate FSSO integration with syslog",
+    },
+    {
+      id: "meraki-wireless",
+      label: "Meraki Wireless",
+      icon: <Network className="w-4 h-4" />,
+      description: "Cisco Meraki wireless deep-dive integration",
+    },
+    {
+      id: "mist-wireless",
+      label: "Mist Wireless",
+      icon: <Network className="w-4 h-4" />,
+      description: "Juniper Mist wireless deep-dive integration",
+    },
   ]
 
   const cloudProviders = [
-    { value: 'aws', label: 'Amazon Web Services', icon: '☁️' },
-    { value: 'azure', label: 'Microsoft Azure', icon: '🔷' },
-    { value: 'gcp', label: 'Google Cloud Platform', icon: '🌐' },
-    { value: 'onprem', label: 'On-Premises', icon: '🏢' }
+    { id: "aws", label: "Amazon Web Services", color: "#FF9900" },
+    { id: "azure", label: "Microsoft Azure", color: "#0078D4" },
+    { id: "gcp", label: "Google Cloud Platform", color: "#4285F4" },
+    { id: "onprem", label: "On-Premises", color: "#6B7280" },
   ]
 
   const networkVendors = [
-    { value: 'cisco', label: 'Cisco Meraki', icon: '🔧' },
-    { value: 'aruba', label: 'Aruba Networks', icon: '📡' },
-    { value: 'juniper', label: 'Juniper Networks', icon: '🌿' },
-    { value: 'extreme', label: 'Extreme Networks', icon: '⚡' },
-    { value: 'fortinet', label: 'Fortinet', icon: '🛡️' }
+    { id: "cisco", label: "Cisco" },
+    { id: "aruba", label: "Aruba (HPE)" },
+    { id: "juniper", label: "Juniper" },
+    { id: "extreme", label: "Extreme Networks" },
+    { id: "ruckus", label: "Ruckus (CommScope)" },
+    { id: "fortinet", label: "Fortinet" },
+    { id: "paloalto", label: "Palo Alto Networks" },
+    { id: "meraki", label: "Cisco Meraki" },
+    { id: "mist", label: "Juniper Mist" },
+    { id: "ubiquiti", label: "Ubiquiti" },
+    { id: "netgear", label: "Netgear" },
+    { id: "dlink", label: "D-Link" },
+    { id: "tplink", label: "TP-Link" },
+    { id: "huawei", label: "Huawei" },
+    { id: "alcatel", label: "Alcatel-Lucent Enterprise" },
+    { id: "dell", label: "Dell Technologies" },
+    { id: "hpe", label: "HPE Networking" },
+    { id: "brocade", label: "Brocade (Broadcom)" },
   ]
 
   const connectivityOptions = [
-    { value: 'expressroute', label: 'Azure ExpressRoute', description: 'Dedicated private connection' },
-    { value: 'directconnect', label: 'AWS Direct Connect', description: 'Dedicated network connection to AWS' },
-    { value: 'sdwan', label: 'SD-WAN', description: 'Software-defined WAN connectivity' },
-    { value: 'mpls', label: 'MPLS Network', description: 'Traditional MPLS connectivity' },
-    { value: 'vpn', label: 'Site-to-Site VPN', description: 'IPSec VPN tunnels' },
-    { value: 'internet', label: 'Internet', description: 'Public internet connectivity' }
+    { id: "sdwan", label: "SD-WAN" },
+    { id: "expressroute", label: "Azure Express Route" },
+    { id: "directconnect", label: "AWS Direct Connect" },
+    { id: "mpls", label: "MPLS Network" },
+    { id: "vpn", label: "Site-to-Site VPN" },
+    { id: "internet", label: "Internet Connection" },
   ]
 
-  const exportDiagram = (format: 'svg' | 'png' | 'pdf') => {
-  // Try multiple selectors to find the SVG element
-  let svgElement = document.querySelector('.architecture-diagram svg') as SVGElement
-  
-  if (!svgElement) {
-    // Fallback: look for any SVG in the diagram container
-    const diagramContainer = document.querySelector('.architecture-diagram')
-    svgElement = diagramContainer?.querySelector('svg') as SVGElement
-  }
-  
-  if (!svgElement) {
-    // Final fallback: look for any SVG on the page
-    svgElement = document.querySelector('svg') as SVGElement
-  }
-  
-  if (!svgElement) {
-    console.error('No SVG element found for export')
-    alert('No diagram found to export. Please wait for the diagram to load and try again.')
-    return
-  }
+  const currentView = architectureViews.find((view) => view.id === selectedView) || architectureViews[0]
 
-  try {
-    if (format === 'svg') {
-      exportAsSVG(svgElement)
-    } else if (format === 'png') {
-      exportAsPNG(svgElement)
-    } else if (format === 'pdf') {
-      // For PDF, we'll export as PNG first and let user convert
-      exportAsPNG(svgElement)
-      alert('PDF export: PNG file downloaded. You can convert it to PDF using online tools or print to PDF.')
+  // Export Functions
+  const exportDiagram = async (format: "svg" | "png" | "pdf") => {
+    const diagramElement = document.querySelector(".architecture-diagram svg")
+    if (!diagramElement) return
+
+    try {
+      if (format === "svg") {
+        await exportAsSVG(diagramElement as SVGElement)
+      } else if (format === "png") {
+        await exportAsPNG(diagramElement as SVGElement)
+      } else if (format === "pdf") {
+        await exportAsPDF(diagramElement as SVGElement)
+      }
+    } catch (error) {
+      console.error("Export failed:", error)
     }
-  } catch (error) {
-    console.error('Export failed:', error)
-    alert(`Failed to export as ${format.toUpperCase()}. Please try again.`)
   }
-}
 
-  const exportAsSVG = (svgElement: SVGElement) => {
-    // Clone and enhance the SVG
+  const exportAsSVG = async (svgElement: SVGElement) => {
+    // Clone the SVG to avoid modifying the original
     const svgClone = svgElement.cloneNode(true) as SVGElement
-    svgClone.setAttribute('width', '1400')
-    svgClone.setAttribute('height', '1000')
-    svgClone.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
-    
-    // Add export header
-    const headerGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g')
-    headerGroup.setAttribute('id', 'export-header')
-    
-    const headerBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
-    headerBg.setAttribute('x', '0')
-    headerBg.setAttribute('y', '0')
-    headerBg.setAttribute('width', '1400')
-    headerBg.setAttribute('height', '80')
-    headerBg.setAttribute('fill', '#00c8d7')
+
+    // Add proper dimensions and styling
+    svgClone.setAttribute("width", "1400")
+    svgClone.setAttribute("height", "1000")
+    svgClone.setAttribute("xmlns", "http://www.w3.org/2000/svg")
+
+    // Add header with logos and title
+    const headerGroup = document.createElementNS("http://www.w3.org/2000/svg", "g")
+    headerGroup.setAttribute("id", "export-header")
+
+    // Header background
+    const headerBg = document.createElementNS("http://www.w3.org/2000/svg", "rect")
+    headerBg.setAttribute("x", "0")
+    headerBg.setAttribute("y", "0")
+    headerBg.setAttribute("width", "1400")
+    headerBg.setAttribute("height", "80")
+    headerBg.setAttribute("fill", "#00c8d7")
     headerGroup.appendChild(headerBg)
-    
-    const titleText = document.createElementNS('http://www.w3.org/2000/svg', 'text')
-    titleText.setAttribute('x', '700')
-    titleText.setAttribute('y', '30')
-    titleText.setAttribute('text-anchor', 'middle')
-    titleText.setAttribute('fill', 'white')
-    titleText.setAttribute('font-size', '18')
-    titleText.setAttribute('font-weight', 'bold')
-    titleText.textContent = `Portnox NAC Architecture - ${architectureViews.find(v => v.value === selectedView)?.label || 'Architecture'}`
+
+    // Title text
+    const titleText = document.createElementNS("http://www.w3.org/2000/svg", "text")
+    titleText.setAttribute("x", "700")
+    titleText.setAttribute("y", "35")
+    titleText.setAttribute("text-anchor", "middle")
+    titleText.setAttribute("fill", "white")
+    titleText.setAttribute("font-size", "18")
+    titleText.setAttribute("font-weight", "bold")
+    titleText.textContent = `Portnox NAC Architecture - ${currentView?.label}`
     headerGroup.appendChild(titleText)
-    
-    const dateText = document.createElementNS('http://www.w3.org/2000/svg', 'text')
-    dateText.setAttribute('x', '700')
-    dateText.setAttribute('y', '50')
-    dateText.setAttribute('text-anchor', 'middle')
-    dateText.setAttribute('fill', 'white')
-    dateText.setAttribute('font-size', '12')
+
+    // Date text
+    const dateText = document.createElementNS("http://www.w3.org/2000/svg", "text")
+    dateText.setAttribute("x", "700")
+    dateText.setAttribute("y", "55")
+    dateText.setAttribute("text-anchor", "middle")
+    dateText.setAttribute("fill", "white")
+    dateText.setAttribute("font-size", "12")
     dateText.textContent = `Generated on ${new Date().toLocaleDateString()}`
     headerGroup.appendChild(dateText)
-    
+
+    // Insert header at the beginning
     svgClone.insertBefore(headerGroup, svgClone.firstChild)
-    
-    // Adjust existing content
-    const existingContent = Array.from(svgClone.children).find(child => 
-      child.getAttribute('id') !== 'export-header'
-    )
+
+    // Adjust viewBox to accommodate header
+    const currentViewBox = svgClone.getAttribute("viewBox") || "0 0 1200 800"
+    const viewBoxParts = currentViewBox.split(" ")
+    const newViewBox = `0 0 ${viewBoxParts[2]} ${Number.parseInt(viewBoxParts[3]) + 80}`
+    svgClone.setAttribute("viewBox", newViewBox)
+
+    // Move existing content down to make room for header
+    const existingContent = svgClone.querySelector("g:not(#export-header)")
     if (existingContent) {
-      existingContent.setAttribute('transform', 'translate(0, 80) scale(0.9)')
+      existingContent.setAttribute("transform", "translate(0, 80)")
     }
-    
-    // Download SVG
+
     const svgData = new XMLSerializer().serializeToString(svgClone)
-    const blob = new Blob([svgData], { type: 'image/svg+xml' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `portnox-architecture-${selectedView}-${Date.now()}.svg`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
+    const blob = new Blob([svgData], { type: "image/svg+xml" })
+    downloadFile(blob, `portnox-architecture-${selectedView}-${Date.now()}.svg`)
   }
 
-  const exportAsPNG = (svgElement: SVGElement) => {
-    // Create enhanced SVG
+  const exportAsPNG = async (svgElement: SVGElement) => {
+    // First create the enhanced SVG
     const svgClone = svgElement.cloneNode(true) as SVGElement
-    svgClone.setAttribute('width', '1400')
-    svgClone.setAttribute('height', '1000')
-    svgClone.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
-    
+    svgClone.setAttribute("width", "1400")
+    svgClone.setAttribute("height", "1000")
+    svgClone.setAttribute("xmlns", "http://www.w3.org/2000/svg")
+
     // Add white background
-    const background = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
-    background.setAttribute('x', '0')
-    background.setAttribute('y', '0')
-    background.setAttribute('width', '1400')
-    background.setAttribute('height', '1000')
-    background.setAttribute('fill', 'white')
+    const background = document.createElementNS("http://www.w3.org/2000/svg", "rect")
+    background.setAttribute("x", "0")
+    background.setAttribute("y", "0")
+    background.setAttribute("width", "1400")
+    background.setAttribute("height", "1000")
+    background.setAttribute("fill", "white")
     svgClone.insertBefore(background, svgClone.firstChild)
-    
+
     // Add header
-    const headerGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g')
-    const headerBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
-    headerBg.setAttribute('x', '0')
-    headerBg.setAttribute('y', '0')
-    headerBg.setAttribute('width', '1400')
-    headerBg.setAttribute('height', '80')
-    headerBg.setAttribute('fill', '#00c8d7')
+    const headerGroup = document.createElementNS("http://www.w3.org/2000/svg", "g")
+    headerGroup.setAttribute("id", "export-header")
+
+    const headerBg = document.createElementNS("http://www.w3.org/2000/svg", "rect")
+    headerBg.setAttribute("x", "0")
+    headerBg.setAttribute("y", "0")
+    headerBg.setAttribute("width", "1400")
+    headerBg.setAttribute("height", "80")
+    headerBg.setAttribute("fill", "#00c8d7")
     headerGroup.appendChild(headerBg)
-    
-    const titleText = document.createElementNS('http://www.w3.org/2000/svg', 'text')
-    titleText.setAttribute('x', '700')
-    titleText.setAttribute('y', '30')
-    titleText.setAttribute('text-anchor', 'middle')
-    titleText.setAttribute('fill', 'white')
-    titleText.setAttribute('font-size', '18')
-    titleText.setAttribute('font-weight', 'bold')
-    titleText.textContent = `Portnox NAC Architecture - ${architectureViews.find(v => v.value === selectedView)?.label || 'Architecture'}`
+
+    const titleText = document.createElementNS("http://www.w3.org/2000/svg", "text")
+    titleText.setAttribute("x", "700")
+    titleText.setAttribute("y", "35")
+    titleText.setAttribute("text-anchor", "middle")
+    titleText.setAttribute("fill", "white")
+    titleText.setAttribute("font-size", "18")
+    titleText.setAttribute("font-weight", "bold")
+    titleText.textContent = `Portnox NAC Architecture - ${currentView?.label}`
     headerGroup.appendChild(titleText)
-    
-    const dateText = document.createElementNS('http://www.w3.org/2000/svg', 'text')
-    dateText.setAttribute('x', '700')
-    dateText.setAttribute('y', '50')
-    dateText.setAttribute('text-anchor', 'middle')
-    dateText.setAttribute('fill', 'white')
-    dateText.setAttribute('font-size', '12')
+
+    const dateText = document.createElementNS("http://www.w3.org/2000/svg", "text")
+    dateText.setAttribute("x", "700")
+    dateText.setAttribute("y", "55")
+    dateText.setAttribute("text-anchor", "middle")
+    dateText.setAttribute("fill", "white")
+    dateText.setAttribute("font-size", "12")
     dateText.textContent = `Generated on ${new Date().toLocaleDateString()}`
     headerGroup.appendChild(dateText)
-    
+
     svgClone.insertBefore(headerGroup, background.nextSibling)
-    
-    // Adjust content position
-    const existingContent = Array.from(svgClone.children).find(child => 
-      child.tagName !== 'rect' && child.getAttribute('id') !== 'export-header'
+
+    // Move existing content down
+    const existingContent = Array.from(svgClone.children).find(
+      (child) => child.tagName !== "rect" && child.getAttribute("id") !== "export-header",
     )
     if (existingContent) {
-      existingContent.setAttribute('transform', 'translate(0, 80) scale(0.9)')
+      existingContent.setAttribute("transform", "translate(0, 80)")
     }
-    
+
     // Convert to PNG
-    const canvas = document.createElement('canvas')
-    const ctx = canvas.getContext('2d')
+    const canvas = document.createElement("canvas")
+    const ctx = canvas.getContext("2d")
     const img = new Image()
-    
+
     canvas.width = 1400
     canvas.height = 1000
-    
+
     const svgData = new XMLSerializer().serializeToString(svgClone)
-    const svgBlob = new Blob([svgData], { type: 'image/svg+xml' })
+    const svgBlob = new Blob([svgData], { type: "image/svg+xml" })
     const url = URL.createObjectURL(svgBlob)
-    
-    img.onload = () => {
-      ctx!.drawImage(img, 0, 0, 1400, 1000)
-      
-      canvas.toBlob((blob) => {
-        if (blob) {
-          const pngUrl = URL.createObjectURL(blob)
-          const link = document.createElement('a')
-          link.href = pngUrl
-          link.download = `portnox-architecture-${selectedView}-${Date.now()}.png`
-          document.body.appendChild(link)
-          link.click()
-          document.body.removeChild(link)
-          URL.revokeObjectURL(pngUrl)
+
+    return new Promise<void>((resolve, reject) => {
+      img.onload = () => {
+        try {
+          ctx!.drawImage(img, 0, 0, 1400, 1000)
+
+          canvas.toBlob((blob) => {
+            if (blob) {
+              downloadFile(blob, `portnox-architecture-${selectedView}-${Date.now()}.png`)
+              resolve()
+            } else {
+              reject(new Error("Failed to create PNG blob"))
+            }
+          }, "image/png")
+
+          URL.revokeObjectURL(url)
+        } catch (error) {
+          reject(error)
         }
-      }, 'image/png')
-      
-      URL.revokeObjectURL(url)
-    }
-    
-    img.onerror = () => {
-      console.error('Failed to load SVG for PNG conversion')
-      alert('Failed to export PNG. Please try again.')
-    }
-    
-    img.src = url
+      }
+
+      img.onerror = () => {
+        reject(new Error("Failed to load SVG image"))
+      }
+
+      img.src = url
+    })
+  }
+
+  const exportAsPDF = async (svgElement: SVGElement) => {
+    // This would require a PDF library like jsPDF
+    // For now, we'll export as PNG and let user convert if needed
+    await exportAsPNG(svgElement)
+  }
+
+  const downloadFile = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = filename
+    link.click()
+    URL.revokeObjectURL(url)
   }
 
   return (
@@ -256,18 +373,9 @@ export default function ArchitectureDesigner() {
       {/* Header */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Portnox NAC Architecture Designer</span>
-            <div className="flex items-center space-x-2">
-              <Button variant="outline" size="sm" onClick={() => exportDiagram('png')}>
-                <Download className="h-4 w-4 mr-2" />
-                Export PNG
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => exportDiagram('svg')}>
-                <Download className="h-4 w-4 mr-2" />
-                Export SVG
-              </Button>
-            </div>
+          <CardTitle className="flex items-center space-x-2">
+            <GlobeIcon className="h-6 w-6 text-blue-600" />
+            <span>Zero Trust NAC Architecture Designer</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -281,10 +389,10 @@ export default function ArchitectureDesigner() {
                 </SelectTrigger>
                 <SelectContent>
                   {architectureViews.map((view) => (
-                    <SelectItem key={view.value} value={view.value}>
-                      <div className="flex flex-col">
-                        <span className="font-medium">{view.label}</span>
-                        <span className="text-xs text-muted-foreground">{view.description}</span>
+                    <SelectItem key={view.id} value={view.id}>
+                      <div className="flex items-center space-x-2">
+                        {view.icon}
+                        <span>{view.label}</span>
                       </div>
                     </SelectItem>
                   ))}
@@ -301,11 +409,11 @@ export default function ArchitectureDesigner() {
                 </SelectTrigger>
                 <SelectContent>
                   {cloudProviders.map((provider) => (
-                    <SelectItem key={provider.value} value={provider.value}>
-                      <span className="flex items-center space-x-2">
-                        <span>{provider.icon}</span>
+                    <SelectItem key={provider.id} value={provider.id}>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: provider.color }} />
                         <span>{provider.label}</span>
-                      </span>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -321,18 +429,15 @@ export default function ArchitectureDesigner() {
                 </SelectTrigger>
                 <SelectContent>
                   {networkVendors.map((vendor) => (
-                    <SelectItem key={vendor.value} value={vendor.value}>
-                      <span className="flex items-center space-x-2">
-                        <span>{vendor.icon}</span>
-                        <span>{vendor.label}</span>
-                      </span>
+                    <SelectItem key={vendor.id} value={vendor.id}>
+                      {vendor.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Connectivity Type */}
+            {/* Connectivity Type Selection */}
             <div className="space-y-2">
               <Label htmlFor="connectivity-select">Connectivity</Label>
               <Select value={connectivityType} onValueChange={setConnectivityType}>
@@ -341,11 +446,8 @@ export default function ArchitectureDesigner() {
                 </SelectTrigger>
                 <SelectContent>
                   {connectivityOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      <div className="flex flex-col">
-                        <span className="font-medium">{option.label}</span>
-                        <span className="text-xs text-muted-foreground">{option.description}</span>
-                      </div>
+                    <SelectItem key={option.id} value={option.id}>
+                      {option.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -353,176 +455,101 @@ export default function ArchitectureDesigner() {
             </div>
           </div>
 
-          {/* Animation Controls */}
-          <div className="mt-6 flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="data-flow"
-                  checked={showDataFlow}
-                  onCheckedChange={setShowDataFlow}
-                />
-                <Label htmlFor="data-flow">Show Data Flow</Label>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Label htmlFor="animation-speed">Animation Speed:</Label>
-                <div className="w-32">
-                  <Slider
-                    id="animation-speed"
-                    min={0.5}
-                    max={3}
-                    step={0.5}
-                    value={animationSpeed}
-                    onValueChange={setAnimationSpeed}
-                  />
-                </div>
-                <Badge variant="outline">{animationSpeed[0]}x</Badge>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowPolicyEditor(!showPolicyEditor)}
-              >
-                <Settings className="h-4 w-4 mr-2" />
-                Policy Editor
-              </Button>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowOnboardingScenarios(!showOnboardingScenarios)}
-              >
-                <Play className="h-4 w-4 mr-2" />
-                Onboarding Flows
-              </Button>
-            </div>
+          {/* Animation Speed Control */}
+          <div className="mt-4 space-y-2">
+            <Label>Animation Speed: {animationSpeed[0]}x</Label>
+            <Slider
+              value={animationSpeed}
+              onValueChange={setAnimationSpeed}
+              max={3}
+              min={0.5}
+              step={0.5}
+              className="w-full"
+            />
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Interactive Diagram */}
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            {architectureViews.find(v => v.value === selectedView)?.label || 'Architecture Diagram'}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <InteractiveDiagram
-            view={selectedView}
-            cloudProvider={cloudProvider}
-            networkVendor={networkVendor}
-            connectivityType={connectivityType}
-            animationSpeed={animationSpeed[0]}
-            showDataFlow={showDataFlow}
-          />
-        </CardContent>
-      </Card>
-
-      {/* Architecture Legend */}
-      <ArchitectureLegend 
-        view={selectedView}
-        cloudProvider={cloudProvider}
-        networkVendor={networkVendor}
-      />
-
-      {/* Policy Editor */}
-      {showPolicyEditor && (
-        <PolicyEditor 
-          onClose={() => setShowPolicyEditor(false)}
-        />
-      )}
-
-      {/* Onboarding Scenarios */}
-      {showOnboardingScenarios && (
-        <OnboardingScenarios 
-          onClose={() => setShowOnboardingScenarios(false)}
-        />
-      )}
-
-      {/* Technical Details */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>RADSec Proxy Architecture</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <h4 className="font-semibold text-blue-900 mb-2">Container-Based Deployment</h4>
-                <ul className="text-sm text-blue-800 space-y-1">
-                  <li>• Docker containers for easy deployment and scaling</li>
-                  <li>• Kubernetes orchestration for high availability</li>
-                  <li>• Auto-scaling based on RADIUS request volume</li>
-                  <li>• Health checks and automatic failover</li>
-                </ul>
+          {/* Current View Info */}
+          {currentView && (
+            <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+              <div className="flex items-center space-x-2 mb-2">
+                {currentView.icon}
+                <h3 className="font-semibold text-blue-900 dark:text-blue-100">{currentView.label}</h3>
               </div>
-              
-              <div className="bg-green-50 p-4 rounded-lg">
-                <h4 className="font-semibold text-green-900 mb-2">High Availability Features</h4>
-                <ul className="text-sm text-green-800 space-y-1">
-                  <li>• Active/Active proxy pairs in different AZs</li>
-                  <li>• 7-day authentication cache for offline operation</li>
-                  <li>• Load balancing across multiple proxy instances</li>
-                  <li>• Automatic failback when primary comes online</li>
-                </ul>
-              </div>
-              
-              <div className="bg-purple-50 p-4 rounded-lg">
-                <h4 className="font-semibold text-purple-900 mb-2">Security & Compliance</h4>
-                <ul className="text-sm text-purple-800 space-y-1">
-                  <li>• TLS 1.3 encryption for all RADSec communications</li>
-                  <li>• Certificate-based mutual authentication</li>
-                  <li>• Audit logging for all authentication events</li>
-                  <li>• FIPS 140-2 Level 2 compliance ready</li>
-                </ul>
-              </div>
+              <p className="text-sm text-blue-800 dark:text-blue-200">{currentView.description}</p>
             </div>
-          </CardContent>
-        </Card>
+          )}
+        </CardContent>
+      </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Implementation Checklist</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {[
-                { task: 'Deploy RADSec proxy containers', status: 'complete' },
-                { task: 'Configure TLS certificates', status: 'complete' },
-                { task: 'Set up load balancer', status: 'in-progress' },
-                { task: 'Configure RADIUS shared secrets', status: 'in-progress' },
-                { task: 'Test authentication flow', status: 'pending' },
-                { task: 'Enable monitoring and alerting', status: 'pending' },
-                { task: 'Document runbook procedures', status: 'pending' },
-                { task: 'Conduct failover testing', status: 'pending' }
-              ].map((item, index) => (
-                <div key={index} className="flex items-center space-x-3">
-                  <div className={`w-3 h-3 rounded-full ${
-                    item.status === 'complete' ? 'bg-green-500' :
-                    item.status === 'in-progress' ? 'bg-yellow-500' : 'bg-gray-300'
-                  }`} />
-                  <span className={`text-sm ${
-                    item.status === 'complete' ? 'line-through text-gray-500' : ''
-                  }`}>
-                    {item.task}
-                  </span>
-                  <Badge variant={
-                    item.status === 'complete' ? 'default' :
-                    item.status === 'in-progress' ? 'secondary' : 'outline'
-                  }>
-                    {item.status}
-                  </Badge>
+      {/* Main Content */}
+      <Tabs defaultValue="diagram" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="diagram">Interactive Diagram</TabsTrigger>
+          <TabsTrigger value="legend">Components Legend</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="diagram" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center space-x-2">
+                  {currentView?.icon}
+                  <span>{currentView?.label}</span>
+                </CardTitle>
+                <div className="flex items-center space-x-2">
+                  <div className="flex space-x-2">
+                    <Badge variant="outline">{cloudProviders.find((p) => p.id === cloudProvider)?.label}</Badge>
+                    <Badge variant="outline">{networkVendors.find((v) => v.id === networkVendor)?.label}</Badge>
+                    <Badge variant="outline">{connectivityOptions.find((c) => c.id === connectivityType)?.label}</Badge>
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => exportDiagram("svg")}
+                      className="flex items-center space-x-1"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>SVG</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => exportDiagram("png")}
+                      className="flex items-center space-x-1"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>PNG</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => exportDiagram("pdf")}
+                      className="flex items-center space-x-1"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>PDF</span>
+                    </Button>
+                  </div>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <InteractiveDiagram
+                view={selectedView}
+                cloudProvider={cloudProvider}
+                networkVendor={networkVendor}
+                connectivityType={connectivityType}
+                animationSpeed={animationSpeed[0]}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="legend" className="space-y-4">
+          <ArchitectureLegend currentView={selectedView} />
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

@@ -1,245 +1,328 @@
-'use client'
+"use client"
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
-import { Shield, Cloud, Network, Server, Database, Lock, Users, Settings, Smartphone, Globe, Key, FileText, Zap, Eye, AlertTriangle } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import {
+  Shield,
+  Cloud,
+  Network,
+  Server,
+  Lock,
+  Users,
+  Settings,
+  Smartphone,
+  Globe,
+  Eye,
+  AlertTriangle,
+} from "lucide-react"
 
 interface ArchitectureLegendProps {
   currentView: string
 }
 
-export default function ArchitectureLegend({ currentView }: ArchitectureLegendProps) {
+export default function ArchitectureLegend({ currentView = "complete" }: ArchitectureLegendProps) {
   const componentTypes = [
     {
-      type: 'endpoint',
-      label: 'Endpoints',
-      color: '#4F46E5',
+      type: "endpoint",
+      label: "Endpoints",
+      color: "#4F46E5",
       icon: <Smartphone className="w-4 h-4" />,
-      description: 'User devices and endpoints',
-      examples: ['Corporate Devices', 'BYOD Devices', 'IoT Devices']
+      description: "User devices and endpoints",
+      examples: ["Corporate Devices", "BYOD Devices", "IoT Devices"],
     },
     {
-      type: 'network',
-      label: 'Network Infrastructure',
-      color: '#059669',
+      type: "network",
+      label: "Network Infrastructure",
+      color: "#059669",
       icon: <Network className="w-4 h-4" />,
-      description: 'Network access layer components',
-      examples: ['Switches', 'Wireless APs', 'Routers']
+      description: "Network access layer components",
+      examples: ["Switches", "Wireless APs", "Routers"],
     },
     {
-      type: 'nac',
-      label: 'NAC Platform',
-      color: '#00c8d7',
+      type: "nac",
+      label: "NAC Platform",
+      color: "#00c8d7",
       icon: <Shield className="w-4 h-4" />,
-      description: 'Portnox NAC components',
-      examples: ['Portnox Cloud', 'RADIUS Server', 'Policy Engine']
+      description: "Portnox NAC components",
+      examples: ["Portnox Cloud", "RADIUS Server", "Policy Engine"],
     },
     {
-      type: 'identity',
-      label: 'Identity Providers',
-      color: '#0078D4',
+      type: "identity",
+      label: "Identity Providers",
+      color: "#0078D4",
       icon: <Users className="w-4 h-4" />,
-      description: 'User authentication systems',
-      examples: ['Azure AD', 'Active Directory', 'LDAP']
+      description: "User authentication systems",
+      examples: ["Azure AD", "Active Directory", "LDAP"],
     },
     {
-      type: 'mdm',
-      label: 'Device Management',
-      color: '#7C3AED',
+      type: "mdm",
+      label: "Device Management",
+      color: "#7C3AED",
       icon: <Settings className="w-4 h-4" />,
-      description: 'Mobile device management',
-      examples: ['Microsoft Intune', 'JAMF', 'VMware Workspace ONE']
+      description: "Mobile device management",
+      examples: ["Microsoft Intune", "JAMF", "VMware Workspace ONE"],
     },
     {
-      type: 'pki',
-      label: 'PKI Infrastructure',
-      color: '#DC2626',
+      type: "pki",
+      label: "PKI Infrastructure",
+      color: "#DC2626",
       icon: <Lock className="w-4 h-4" />,
-      description: 'Certificate management',
-      examples: ['Certificate Authority', 'Certificate Store', 'CRL']
+      description: "Certificate management",
+      examples: ["Certificate Authority", "Certificate Store", "CRL"],
     },
     {
-      type: 'firewall',
-      label: 'Security Appliances',
-      color: '#EA580C',
+      type: "firewall",
+      label: "Security Appliances",
+      color: "#EA580C",
       icon: <Server className="w-4 h-4" />,
-      description: 'Network security devices',
-      examples: ['FortiGate', 'Palo Alto', 'Cisco ASA']
+      description: "Network security devices",
+      examples: ["FortiGate", "Palo Alto", "Cisco ASA"],
     },
     {
-      type: 'cloud',
-      label: 'Cloud Services',
-      color: '#0891B2',
+      type: "cloud",
+      label: "Cloud Services",
+      color: "#0891B2",
       icon: <Cloud className="w-4 h-4" />,
-      description: 'Cloud platform services',
-      examples: ['AWS', 'Azure', 'Google Cloud']
-    }
+      description: "Cloud platform services",
+      examples: ["AWS", "Azure", "Google Cloud"],
+    },
   ]
 
   const connectionTypes = [
     {
-      type: 'radius',
-      label: 'RADIUS',
-      color: '#00c8d7',
-      description: 'Authentication protocol',
-      pattern: 'solid'
+      type: "radius",
+      label: "RADIUS",
+      color: "#00c8d7",
+      description: "Authentication protocol",
+      pattern: "solid",
     },
     {
-      type: 'https',
-      label: 'HTTPS/REST API',
-      color: '#059669',
-      description: 'Secure web communication',
-      pattern: 'dashed'
+      type: "https",
+      label: "HTTPS/REST API",
+      color: "#059669",
+      description: "Secure web communication",
+      pattern: "dashed",
     },
     {
-      type: 'ldap',
-      label: 'LDAP/SAML',
-      color: '#0078D4',
-      description: 'Directory services',
-      pattern: 'dotted'
+      type: "ldap",
+      label: "LDAP/SAML",
+      color: "#0078D4",
+      description: "Directory services",
+      pattern: "dotted",
     },
     {
-      type: 'syslog',
-      label: 'Syslog',
-      color: '#7C3AED',
-      description: 'System logging',
-      pattern: 'solid'
+      type: "syslog",
+      label: "Syslog",
+      color: "#7C3AED",
+      description: "System logging",
+      pattern: "solid",
     },
     {
-      type: 'tacacs',
-      label: 'TACACS+',
-      color: '#DC2626',
-      description: 'Device administration',
-      pattern: 'solid'
+      type: "tacacs",
+      label: "TACACS+",
+      color: "#DC2626",
+      description: "Device administration",
+      pattern: "solid",
     },
     {
-      type: 'data',
-      label: 'Data Flow',
-      color: '#6B7280',
-      description: 'General data communication',
-      pattern: 'solid'
-    }
+      type: "data",
+      label: "Data Flow",
+      color: "#6B7280",
+      description: "General data communication",
+      pattern: "solid",
+    },
   ]
 
   const vendorInfo = [
     {
-      vendor: 'cisco',
-      label: 'Cisco',
-      color: '#1BA0D7',
-      logo: '🔵',
-      description: 'Network infrastructure vendor'
+      vendor: "cisco",
+      label: "Cisco",
+      color: "#1BA0D7",
+      logo: "🔵",
+      description: "Network infrastructure vendor",
     },
     {
-      vendor: 'aruba',
-      label: 'Aruba (HPE)',
-      color: '#FF6900',
-      logo: '🟠',
-      description: 'Wireless and switching solutions'
+      vendor: "aruba",
+      label: "Aruba (HPE)",
+      color: "#FF6900",
+      logo: "🟠",
+      description: "Wireless and switching solutions",
     },
     {
-      vendor: 'fortinet',
-      label: 'Fortinet',
-      color: '#EE3124',
-      logo: '🔴',
-      description: 'Security appliances and SASE'
+      vendor: "fortinet",
+      label: "Fortinet",
+      color: "#EE3124",
+      logo: "🔴",
+      description: "Security appliances and SASE",
     },
     {
-      vendor: 'paloalto',
-      label: 'Palo Alto Networks',
-      color: '#FF6B35',
-      logo: '🟠',
-      description: 'Next-generation security platform'
+      vendor: "paloalto",
+      label: "Palo Alto Networks",
+      color: "#FF6B35",
+      logo: "🟠",
+      description: "Next-generation security platform",
     },
     {
-      vendor: 'juniper',
-      label: 'Juniper Networks',
-      color: '#84BD00',
-      logo: '🟢',
-      description: 'Enterprise networking solutions'
+      vendor: "juniper",
+      label: "Juniper Networks",
+      color: "#84BD00",
+      logo: "🟢",
+      description: "Enterprise networking solutions",
     },
     {
-      vendor: 'extreme',
-      label: 'Extreme Networks',
-      color: '#7B68EE',
-      logo: '🟣',
-      description: 'Cloud-driven networking'
-    }
+      vendor: "extreme",
+      label: "Extreme Networks",
+      color: "#7B68EE",
+      logo: "🟣",
+      description: "Cloud-driven networking",
+    },
+    {
+      vendor: "meraki",
+      label: "Cisco Meraki",
+      color: "#1BA0D7",
+      logo: "🔵",
+      description: "Cloud-managed networking",
+    },
+    {
+      vendor: "mist",
+      label: "Juniper Mist",
+      color: "#84BD00",
+      logo: "🟢",
+      description: "AI-driven wireless",
+    },
+    {
+      vendor: "ubiquiti",
+      label: "Ubiquiti",
+      color: "#0559C4",
+      logo: "🔵",
+      description: "Enterprise wireless and routing",
+    },
+    {
+      vendor: "ruckus",
+      label: "Ruckus (CommScope)",
+      color: "#FF6B35",
+      logo: "🟠",
+      description: "Wireless networking solutions",
+    },
   ]
 
   const getViewSpecificInfo = () => {
-    switch (currentView) {
-      case 'complete':
+    if (!currentView) {
+      return {
+        title: "Architecture Components",
+        description: "Zero Trust NAC architecture components and connections.",
+        keyComponents: [],
+      }
+    }
+
+    switch (currentView.toLowerCase()) {
+      case "complete":
         return {
-          title: 'Complete Architecture Components',
-          description: 'Full end-to-end Zero Trust NAC deployment showing all integrated components and data flows.',
-          keyComponents: ['Portnox Cloud', 'Network Infrastructure', 'Identity Providers', 'Policy Engine']
+          title: "Complete Architecture Components",
+          description: "Full end-to-end Zero Trust NAC deployment showing all integrated components and data flows.",
+          keyComponents: ["Portnox Cloud", "Network Infrastructure", "Identity Providers", "Policy Engine"],
         }
-      case 'auth-flow':
+      case "auth-flow":
         return {
-          title: 'Authentication Flow Components',
-          description: '802.1X authentication sequence showing the complete RADIUS authentication process.',
-          keyComponents: ['Supplicant', 'Authenticator', 'RADIUS Server', 'Identity Store']
+          title: "Authentication Flow Components",
+          description: "802.1X authentication sequence showing the complete RADIUS authentication process.",
+          keyComponents: ["Supplicant", "Authenticator", "RADIUS Server", "Identity Store"],
         }
-      case 'pki':
+      case "pki":
         return {
-          title: 'PKI Infrastructure Components',
-          description: 'Certificate-based authentication infrastructure for secure device and user authentication.',
-          keyComponents: ['Root CA', 'Issuing CA', 'Certificate Store', 'CRL Distribution']
+          title: "PKI Infrastructure Components",
+          description: "Certificate-based authentication infrastructure for secure device and user authentication.",
+          keyComponents: ["Root CA", "Issuing CA", "Certificate Store", "CRL Distribution"],
         }
-      case 'policies':
+      case "policies":
         return {
-          title: 'Policy Framework Components',
-          description: 'Dynamic policy engine with user, device, and network-based access controls.',
-          keyComponents: ['Policy Engine', 'User Policies', 'Device Policies', 'Network Policies']
+          title: "Policy Framework Components",
+          description: "Dynamic policy engine with user, device, and network-based access controls.",
+          keyComponents: ["Policy Engine", "User Policies", "Device Policies", "Network Policies"],
         }
-      case 'connectivity':
+      case "connectivity":
         return {
-          title: 'Connectivity Options',
-          description: 'Multi-cloud and hybrid connectivity patterns for distributed NAC deployments.',
-          keyComponents: ['SD-WAN', 'Cloud Connectors', 'VPN Gateways', 'Direct Connect']
+          title: "Connectivity Options",
+          description: "Multi-cloud and hybrid connectivity patterns for distributed NAC deployments.",
+          keyComponents: ["SD-WAN", "Cloud Connectors", "VPN Gateways", "Direct Connect"],
         }
-      case 'intune':
+      case "intune":
         return {
-          title: 'Microsoft Intune Integration',
-          description: 'Device compliance integration with Microsoft Intune for comprehensive device management.',
-          keyComponents: ['Intune MDM', 'Azure AD', 'Compliance Policies', 'Device Enrollment']
+          title: "Microsoft Intune Integration",
+          description: "Device compliance integration with Microsoft Intune for comprehensive device management.",
+          keyComponents: ["Intune MDM", "Azure AD", "Compliance Policies", "Device Enrollment"],
         }
-      case 'onboarding':
+      case "jamf":
         return {
-          title: 'Device Onboarding Workflow',
-          description: 'Automated device enrollment and certificate provisioning for new devices.',
-          keyComponents: ['Captive Portal', 'Certificate Authority', 'MDM Enrollment', 'Policy Assignment']
+          title: "JAMF Pro Integration",
+          description: "Apple device management integration with JAMF Pro for macOS and iOS devices.",
+          keyComponents: ["JAMF Pro", "Apple Business Manager", "Device Enrollment", "Compliance Engine"],
         }
-      case 'fortigate-tacacs':
+      case "onboarding":
         return {
-          title: 'FortiGate TACACS+ Integration',
-          description: 'Device administration authentication for FortiGate firewalls using TACACS+.',
-          keyComponents: ['FortiGate Firewall', 'TACACS+ Server', 'Active Directory', 'Admin Authentication']
+          title: "Device Onboarding Workflow",
+          description: "Automated device enrollment and certificate provisioning for new devices.",
+          keyComponents: ["Captive Portal", "Certificate Authority", "MDM Enrollment", "Policy Assignment"],
         }
-      case 'palo-tacacs':
+      case "fortigate-tacacs":
         return {
-          title: 'Palo Alto TACACS+ Integration',
-          description: 'Centralized device administration for Palo Alto firewalls and Panorama management.',
-          keyComponents: ['Palo Alto Firewall', 'Panorama', 'TACACS+ Server', 'Admin Authentication']
+          title: "FortiGate TACACS+ Integration",
+          description: "Device administration authentication for FortiGate firewalls using TACACS+.",
+          keyComponents: ["FortiGate Firewall", "TACACS+ Server", "Active Directory", "Admin Authentication"],
         }
-      case 'palo-userid':
+      case "palo-tacacs":
         return {
-          title: 'Palo Alto User-ID Integration',
-          description: 'User identity mapping for Palo Alto firewalls using syslog-based User-ID integration.',
-          keyComponents: ['User-ID Agent', 'Syslog Container', 'Palo Alto Firewall', 'User Mapping']
+          title: "Palo Alto TACACS+ Integration",
+          description: "Centralized device administration for Palo Alto firewalls and Panorama management.",
+          keyComponents: ["Palo Alto Firewall", "Panorama", "TACACS+ Server", "Admin Authentication"],
         }
-      case 'fortigate-fsso':
+      case "cisco-tacacs":
         return {
-          title: 'FortiGate FSSO Integration',
-          description: 'Fortinet Single Sign-On integration using syslog for user session tracking.',
-          keyComponents: ['FSSO Agent', 'Syslog Container', 'FortiGate Firewall', 'User Sessions']
+          title: "Cisco TACACS+ Integration",
+          description: "Centralized device administration for Cisco network devices using TACACS+.",
+          keyComponents: ["Cisco Devices", "TACACS+ Server", "Active Directory", "Admin Authentication"],
+        }
+      case "aruba-tacacs":
+        return {
+          title: "Aruba TACACS+ Integration",
+          description: "Centralized device administration for Aruba network devices using TACACS+.",
+          keyComponents: ["Aruba Devices", "TACACS+ Server", "Active Directory", "Admin Authentication"],
+        }
+      case "juniper-tacacs":
+        return {
+          title: "Juniper TACACS+ Integration",
+          description: "Centralized device administration for Juniper network devices using TACACS+.",
+          keyComponents: ["Juniper Devices", "TACACS+ Server", "Active Directory", "Admin Authentication"],
+        }
+      case "palo-userid":
+        return {
+          title: "Palo Alto User-ID Integration",
+          description: "User identity mapping for Palo Alto firewalls using syslog-based User-ID integration.",
+          keyComponents: ["User-ID Agent", "Syslog Container", "Palo Alto Firewall", "User Mapping"],
+        }
+      case "fortigate-fsso":
+        return {
+          title: "FortiGate FSSO Integration",
+          description: "Fortinet Single Sign-On integration using syslog for user session tracking.",
+          keyComponents: ["FSSO Agent", "Syslog Container", "FortiGate Firewall", "User Sessions"],
+        }
+      case "meraki-wireless":
+        return {
+          title: "Cisco Meraki Wireless Integration",
+          description: "Cloud-managed wireless infrastructure with Cisco Meraki access points.",
+          keyComponents: ["Meraki Dashboard", "Meraki APs", "Cloud RADIUS", "Wireless Policies"],
+        }
+      case "mist-wireless":
+        return {
+          title: "Juniper Mist Wireless Integration",
+          description: "AI-driven wireless infrastructure with Juniper Mist access points.",
+          keyComponents: ["Mist Cloud", "Mist APs", "AI Engine", "Wireless Analytics"],
         }
       default:
         return {
-          title: 'Architecture Components',
-          description: 'Zero Trust NAC architecture components and connections.',
-          keyComponents: []
+          title: "Architecture Components",
+          description: "Zero Trust NAC architecture components and connections.",
+          keyComponents: [],
         }
     }
   }
@@ -285,7 +368,7 @@ export default function ArchitectureLegend({ currentView }: ArchitectureLegendPr
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {componentTypes.map((component) => (
               <div key={component.type} className="flex items-start space-x-3 p-3 border rounded-lg">
-                <div 
+                <div
                   className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
                   style={{ backgroundColor: component.color }}
                 >
@@ -321,14 +404,18 @@ export default function ArchitectureLegend({ currentView }: ArchitectureLegendPr
             {connectionTypes.map((connection) => (
               <div key={connection.type} className="flex items-center space-x-3 p-3 border rounded-lg">
                 <div className="flex items-center space-x-2">
-                  <div 
+                  <div
                     className="w-4 h-0.5"
-                    style={{ 
+                    style={{
                       backgroundColor: connection.color,
-                      borderStyle: connection.pattern === 'dashed' ? 'dashed' : 
-                                  connection.pattern === 'dotted' ? 'dotted' : 'solid',
-                      borderWidth: connection.pattern !== 'solid' ? '1px' : '0',
-                      borderColor: connection.color
+                      borderStyle:
+                        connection.pattern === "dashed"
+                          ? "dashed"
+                          : connection.pattern === "dotted"
+                            ? "dotted"
+                            : "solid",
+                      borderWidth: connection.pattern !== "solid" ? "1px" : "0",
+                      borderColor: connection.color,
                     }}
                   />
                   <span className="font-semibold text-sm">{connection.label}</span>
