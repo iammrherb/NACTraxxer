@@ -1,35 +1,27 @@
 "use client"
 
-import type React from "react"
+import { useEffect } from "react"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
+
+import type React from "react"
+import Image from "next/image"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
-  Cloud,
   Server,
-  Wifi,
-  Router,
-  Shield,
-  Users,
-  Database,
-  Lock,
-  Activity,
-  Globe,
-  Smartphone,
-  Monitor,
-  Laptop,
-  Tablet,
-  HardDrive,
   Network,
-  Eye,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  Zap,
+  Users,
+  ShieldCheck,
+  Database,
+  Cloud,
+  Laptop,
+  Smartphone,
+  Wifi,
+  ArrowRight,
+  Copy,
+  ServerCrash,
 } from "lucide-react"
+import type { ScopingQuestionnaire } from "@/lib/types"
 
 interface ArchitectureNode {
   id: string
@@ -60,7 +52,62 @@ interface DataFlow {
   color: string
 }
 
-export function EnhancedArchitectureDiagram() {
+const vendorLogos: { [key: string]: string } = {
+  cisco: "/logos/cisco.png",
+  meraki: "/logos/meraki.png",
+  aruba: "/logos/aruba.png",
+  juniper: "/logos/juniper.png",
+}
+
+const idpLogos: { [key: string]: string } = {
+  "entra-id": "/logos/entra-id.png",
+  okta: "/logos/okta.png",
+  "active-directory": "/logos/active-directory.png",
+}
+
+const mdmLogos: { [key: string]: string } = {
+  "Microsoft Intune": "/logos/intune.png",
+  JAMF: "/logos/jamf.png",
+}
+
+const siemLogos: { [key: string]: string } = {
+  Splunk: "/logos/splunk.png",
+  "Microsoft Sentinel": "/logos/sentinel.png",
+}
+
+const DiagramComponent = ({
+  icon,
+  title,
+  subtitle,
+  logo,
+}: {
+  icon: React.ReactNode
+  title: string
+  subtitle?: string
+  logo?: string
+}) => (
+  <div className="flex flex-col items-center text-center p-3 bg-card rounded-lg border shadow-sm min-w-[120px]">
+    {logo ? (
+      <Image src={logo || "/placeholder.svg"} alt={`${title} logo`} width={32} height={32} className="mb-2" />
+    ) : (
+      <div className="mb-2 text-primary">{icon}</div>
+    )}
+    <p className="font-semibold text-sm">{title}</p>
+    {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
+  </div>
+)
+
+const Arrow = () => (
+  <div className="flex items-center justify-center text-muted-foreground mx-2">
+    <ArrowRight size={20} />
+  </div>
+)
+
+interface EnhancedArchitectureDiagramProps {
+  data: ScopingQuestionnaire
+}
+
+export function EnhancedArchitectureDiagram({ data }: EnhancedArchitectureDiagramProps) {
   const [activeNode, setActiveNode] = useState<string | null>(null)
   const [activeScenario, setActiveScenario] = useState("overview")
   const [animationPhase, setAnimationPhase] = useState(0)
@@ -100,7 +147,7 @@ export function EnhancedArchitectureDiagram() {
       type: "cloud",
       x: 200,
       y: 150,
-      icon: Lock,
+      icon: ServerCrash,
       status: "active",
       connections: ["intune-mdm", "jamf-mdm"],
       details: {
@@ -119,7 +166,7 @@ export function EnhancedArchitectureDiagram() {
       type: "cloud",
       x: 400,
       y: 150,
-      icon: Shield,
+      icon: ShieldCheck,
       status: "active",
       connections: ["entra-id", "radius-proxy"],
       details: {
@@ -138,7 +185,7 @@ export function EnhancedArchitectureDiagram() {
       type: "cloud",
       x: 600,
       y: 150,
-      icon: Activity,
+      icon: Database,
       status: "active",
       connections: ["siem-splunk"],
       details: {
@@ -252,7 +299,7 @@ export function EnhancedArchitectureDiagram() {
       type: "network",
       x: 450,
       y: 380,
-      icon: Router,
+      icon: Network,
       status: "active",
       connections: ["windows-devices", "macos-devices", "iot-devices"],
       details: {
@@ -309,7 +356,7 @@ export function EnhancedArchitectureDiagram() {
       type: "endpoint",
       x: 250,
       y: 480,
-      icon: Monitor,
+      icon: Laptop,
       status: "active",
       connections: [],
       details: {
@@ -347,7 +394,7 @@ export function EnhancedArchitectureDiagram() {
       type: "endpoint",
       x: 550,
       y: 480,
-      icon: Tablet,
+      icon: Smartphone,
       status: "warning",
       connections: [],
       details: {
@@ -366,7 +413,7 @@ export function EnhancedArchitectureDiagram() {
       type: "endpoint",
       x: 700,
       y: 480,
-      icon: HardDrive,
+      icon: Laptop,
       status: "active",
       connections: [],
       details: {
@@ -385,7 +432,7 @@ export function EnhancedArchitectureDiagram() {
       type: "endpoint",
       x: 150,
       y: 480,
-      icon: AlertTriangle,
+      icon: ServerCrash,
       status: "error",
       connections: [],
       details: {
@@ -443,6 +490,11 @@ export function EnhancedArchitectureDiagram() {
     },
   ]
 
+  const hasWireless = data.networkVendors.some((v) => v.type === "wireless" || v.type === "both")
+  const hasWired = data.networkVendors.some((v) => v.type === "switch" || v.type === "both")
+  const hasBYOD = data.byodRequirements.enabled
+  const hasGuest = data.guestAccessRequirements.enabled
+
   useEffect(() => {
     const interval = setInterval(() => {
       setAnimationPhase((prev) => (prev + 1) % 4)
@@ -470,281 +522,91 @@ export function EnhancedArchitectureDiagram() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "active":
-        return <CheckCircle className="h-3 w-3 text-green-500" />
+        return <ShieldCheck className="h-3 w-3 text-green-500" />
       case "warning":
-        return <Clock className="h-3 w-3 text-yellow-500" />
+        return <ArrowRight className="h-3 w-3 text-yellow-500" />
       case "error":
-        return <AlertTriangle className="h-3 w-3 text-red-500" />
+        return <ServerCrash className="h-3 w-3 text-red-500" />
       default:
         return <div className="h-3 w-3 rounded-full bg-gray-400" />
     }
   }
 
   return (
-    <Card className="w-full">
+    <Card className="w-full overflow-x-auto">
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center space-x-2">
-            <Globe className="h-6 w-6" />
-            <span>Enhanced Portnox NAC Architecture</span>
-          </CardTitle>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant={showDataFlows ? "default" : "outline"}
-              size="sm"
-              onClick={() => setShowDataFlows(!showDataFlows)}
-            >
-              <Zap className="h-4 w-4 mr-2" />
-              Data Flows
-            </Button>
-            <Badge variant="outline">Interactive</Badge>
-          </div>
-        </div>
+        <CardTitle>Generated Architecture for {data.organizationName}</CardTitle>
       </CardHeader>
-      <CardContent>
-        <Tabs value={activeScenario} onValueChange={setActiveScenario} className="mb-6">
-          <TabsList className="grid w-full grid-cols-5">
-            {Object.entries(scenarios).map(([key, label]) => (
-              <TabsTrigger key={key} value={key} className="text-xs">
-                {label.split(" ")[0]}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
+      <CardContent className="p-6">
+        <div className="flex flex-col space-y-8">
+          {/* Layer 1: Endpoints */}
+          <div className="flex items-center justify-center flex-wrap gap-4">
+            <DiagramComponent icon={<Laptop size={32} />} title="Corporate" subtitle="Devices" />
+            {hasBYOD && <DiagramComponent icon={<Smartphone size={32} />} title="BYOD" />}
+            {hasGuest && <DiagramComponent icon={<Users size={32} />} title="Guests" />}
+          </div>
 
-        <div className="relative">
-          <svg
-            width="800"
-            height="550"
-            viewBox="0 0 800 550"
-            className="w-full h-auto border rounded-lg bg-gradient-to-br from-blue-50 via-white to-green-50"
-          >
-            {/* Background Zones */}
-            <defs>
-              <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-                <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e5e7eb" strokeWidth="0.5" />
-              </pattern>
-              <linearGradient id="cloudGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="rgba(59, 130, 246, 0.1)" />
-                <stop offset="100%" stopColor="rgba(147, 197, 253, 0.1)" />
-              </linearGradient>
-            </defs>
-
-            <rect width="100%" height="100%" fill="url(#grid)" />
-
-            {/* Cloud Zone */}
-            <rect
-              x="50"
-              y="50"
-              width="700"
-              height="180"
-              rx="20"
-              fill="url(#cloudGradient)"
-              stroke="rgba(59, 130, 246, 0.3)"
-              strokeWidth="2"
-              strokeDasharray="5,5"
-            />
-            <text x="400" y="80" textAnchor="middle" className="text-lg font-semibold fill-blue-600">
-              Portnox Cloud Platform
-            </text>
-
-            {/* Integration Zone */}
-            <rect
-              x="50"
-              y="250"
-              width="300"
-              height="150"
-              rx="15"
-              fill="rgba(34, 197, 94, 0.1)"
-              stroke="rgba(34, 197, 94, 0.3)"
-              strokeWidth="2"
-              strokeDasharray="5,5"
-            />
-            <text x="200" y="280" textAnchor="middle" className="text-sm font-semibold fill-green-600">
-              Identity & MDM Integration
-            </text>
-
-            {/* Network Infrastructure Zone */}
-            <rect
-              x="250"
-              y="350"
-              width="500"
-              height="80"
-              rx="15"
-              fill="rgba(168, 85, 247, 0.1)"
-              stroke="rgba(168, 85, 247, 0.3)"
-              strokeWidth="2"
-              strokeDasharray="5,5"
-            />
-            <text x="500" y="380" textAnchor="middle" className="text-sm font-semibold fill-purple-600">
-              Network Infrastructure
-            </text>
-
-            {/* Endpoint Zone */}
-            <rect
-              x="100"
-              y="450"
-              width="650"
-              height="80"
-              rx="15"
-              fill="rgba(245, 158, 11, 0.1)"
-              stroke="rgba(245, 158, 11, 0.3)"
-              strokeWidth="2"
-              strokeDasharray="5,5"
-            />
-            <text x="425" y="480" textAnchor="middle" className="text-sm font-semibold fill-amber-600">
-              Endpoints & Devices
-            </text>
-
-            {/* Data Flow Lines */}
-            {showDataFlows &&
-              dataFlows.map((flow) => {
-                const fromNode = nodes.find((n) => n.id === flow.from)
-                const toNode = nodes.find((n) => n.id === flow.to)
-                if (!fromNode || !toNode) return null
-
-                return (
-                  <g key={flow.id}>
-                    <line
-                      x1={fromNode.x}
-                      y1={fromNode.y}
-                      x2={toNode.x}
-                      y2={toNode.y}
-                      stroke={flow.color}
-                      strokeWidth="3"
-                      strokeDasharray={flow.animated ? "8,4" : "none"}
-                      opacity="0.7"
-                      className={flow.animated ? "animate-pulse" : ""}
-                    />
-                    {flow.animated && animationPhase % 2 === 0 && (
-                      <circle
-                        cx={fromNode.x + (toNode.x - fromNode.x) * 0.5}
-                        cy={fromNode.y + (toNode.y - fromNode.y) * 0.5}
-                        r="4"
-                        fill={flow.color}
-                        className="animate-ping"
-                      />
-                    )}
-                  </g>
-                )
-              })}
-
-            {/* Nodes */}
-            {nodes.map((node) => {
-              const Icon = node.icon
-              return (
-                <g key={node.id}>
-                  <circle
-                    cx={node.x}
-                    cy={node.y}
-                    r="35"
-                    className={`cursor-pointer transition-all duration-300 ${getNodeColor(node)}`}
-                    onClick={() => setActiveNode(activeNode === node.id ? null : node.id)}
+          {/* Layer 2: Network Access */}
+          <div className="flex items-center justify-center flex-wrap gap-4">
+            {hasWired && <DiagramComponent icon={<Network size={32} />} title="Wired Switches" />}
+            {hasWireless && <DiagramComponent icon={<Wifi size={32} />} title="Wireless APs" />}
+            {data.networkVendors.map(
+              (vendor) =>
+                vendorLogos[vendor.name] && (
+                  <DiagramComponent
+                    key={vendor.name}
+                    icon={<div />}
+                    title={vendor.name.charAt(0).toUpperCase() + vendor.name.slice(1)}
+                    logo={vendorLogos[vendor.name]}
                   />
-                  <foreignObject x={node.x - 12} y={node.y - 12} width="24" height="24">
-                    <Icon className="h-6 w-6 text-gray-700" />
-                  </foreignObject>
-
-                  {/* Status indicator */}
-                  <foreignObject x={node.x + 20} y={node.y - 25} width="16" height="16">
-                    {getStatusIcon(node.status)}
-                  </foreignObject>
-
-                  <text
-                    x={node.x}
-                    y={node.y + 50}
-                    textAnchor="middle"
-                    className="text-xs font-medium fill-gray-700 max-w-20"
-                  >
-                    {node.name.split(" ").slice(0, 2).join(" ")}
-                  </text>
-                </g>
-              )
-            })}
-          </svg>
-
-          {/* Node Details Panel */}
-          {activeNode && (
-            <div className="absolute top-4 right-4 w-96 bg-white border rounded-lg shadow-xl p-4 animate-fade-in z-10">
-              {(() => {
-                const node = nodes.find((n) => n.id === activeNode)
-                if (!node) return null
-
-                return (
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-semibold text-lg flex items-center space-x-2">
-                        <node.icon className="h-5 w-5" />
-                        <span>{node.name}</span>
-                      </h3>
-                      <Button variant="ghost" size="sm" onClick={() => setActiveNode(null)}>
-                        ×
-                      </Button>
-                    </div>
-
-                    <div className="space-y-4">
-                      <p className="text-sm text-gray-600">{node.details.description}</p>
-
-                      <div>
-                        <h4 className="font-medium text-sm mb-2">Key Features:</h4>
-                        <div className="flex flex-wrap gap-1">
-                          {node.details.features.map((feature, index) => (
-                            <Badge key={index} variant="secondary" className="text-xs">
-                              {feature}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-
-                      {node.details.metrics && (
-                        <div>
-                          <h4 className="font-medium text-sm mb-2">Metrics:</h4>
-                          <div className="space-y-2">
-                            {node.details.metrics.map((metric, index) => (
-                              <div key={index} className="flex justify-between items-center">
-                                <span className="text-sm">{metric.label}:</span>
-                                <Badge
-                                  variant={
-                                    metric.status === "good"
-                                      ? "default"
-                                      : metric.status === "warning"
-                                        ? "secondary"
-                                        : "destructive"
-                                  }
-                                  className="text-xs"
-                                >
-                                  {metric.value}
-                                </Badge>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )
-              })()}
-            </div>
-          )}
-        </div>
-
-        {/* Legend */}
-        <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-          <div className="flex items-center space-x-2">
-            <CheckCircle className="h-4 w-4 text-green-500" />
-            <span>Active/Healthy</span>
+                ),
+            )}
           </div>
-          <div className="flex items-center space-x-2">
-            <Clock className="h-4 w-4 text-yellow-500" />
-            <span>Warning/Issues</span>
+
+          <div className="flex justify-center">
+            <div className="w-px bg-border h-8"></div>
           </div>
-          <div className="flex items-center space-x-2">
-            <AlertTriangle className="h-4 w-4 text-red-500" />
-            <span>Error/Critical</span>
+
+          {/* Layer 3: Portnox Core */}
+          <div className="flex items-center justify-center flex-wrap gap-4 p-4 border-2 border-primary/50 border-dashed rounded-lg bg-primary/5">
+            <DiagramComponent icon={<ShieldCheck size={32} />} title="Portnox CLEAR" subtitle="Cloud NAC" />
+            {data.highAvailabilityRequired && (
+              <DiagramComponent icon={<Copy size={32} />} title="HA Instance" subtitle="Redundancy" />
+            )}
+            {data.disasterRecoveryRequired && (
+              <DiagramComponent icon={<ServerCrash size={32} />} title="DR Site" subtitle="Geo-Redundancy" />
+            )}
           </div>
-          <div className="flex items-center space-x-2">
-            <Eye className="h-4 w-4 text-blue-500" />
-            <span>Click to Inspect</span>
+
+          <div className="flex justify-center">
+            <div className="w-px bg-border h-8"></div>
+          </div>
+
+          {/* Layer 4: Integrations */}
+          <div className="flex items-center justify-center flex-wrap gap-4">
+            {data.identityProviders.map(
+              (idp) =>
+                idpLogos[idp.name] && (
+                  <DiagramComponent
+                    key={idp.name}
+                    icon={<div />}
+                    title={idp.type === "on-premises" ? "On-Prem AD" : "Cloud IDP"}
+                    logo={idpLogos[idp.name]}
+                  />
+                ),
+            )}
+            {data.mdmSolutions.map(
+              (mdm) =>
+                mdmLogos[mdm.name] && (
+                  <DiagramComponent key={mdm.name} icon={<div />} title="MDM" logo={mdmLogos[mdm.name]} />
+                ),
+            )}
+            {data.siemSolutions.map(
+              (siem) =>
+                siemLogos[siem.name] && (
+                  <DiagramComponent key={siem.name} icon={<div />} title="SIEM" logo={siemLogos[siem.name]} />
+                ),
+            )}
           </div>
         </div>
       </CardContent>

@@ -9,6 +9,7 @@ const createTransporter = (): Transporter | null => {
       return null
     }
 
+    // Corrected function call from createTransporter to createTransport
     return nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: Number.parseInt(process.env.SMTP_PORT),

@@ -1,73 +1,47 @@
-interface ActivityLog {
-  id: string
+import { sql } from "./database"
+
+export interface ActivityLog {
+  userId?: number
   action: string
-  resource: string
-  resourceId: string
-  details?: any
-  timestamp: Date
+  entityType: string
+  entityId?: string
+  oldValues?: any
+  newValues?: any
+  ipAddress?: string
+  userAgent?: string
 }
 
-class ActivityLogger {
-  private logs: ActivityLog[] = []
-
-  log(action: string, resource: string, resourceId: string, details?: any) {
-    const logEntry: ActivityLog = {
-      id: Math.random().toString(36).substr(2, 9),
-      action,
-      resource,
-      resourceId,
-      details,
-      timestamp: new Date(),
-    }
-
-    this.logs.push(logEntry)
-    console.log(`[ACTIVITY] ${action} ${resource} ${resourceId}`, details)
-
-    // In a real implementation, you would save to database
-    this.persistLog(logEntry)
-  }
-
-  private async persistLog(log: ActivityLog) {
-    try {
-      // This would save to your database
-      // await sql`INSERT INTO activity_logs ...`
-    } catch (error) {
-      console.error("Failed to persist activity log:", error)
-    }
-  }
-
-  getLogs(): ActivityLog[] {
-    return [...this.logs].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-  }
-
-  getLogsByResource(resource: string): ActivityLog[] {
-    return this.logs.filter((log) => log.resource === resource)
-  }
-
-  clearLogs() {
-    this.logs = []
+export async function logActivity(activity: ActivityLog) {
+  try {
+    await sql`
+      INSERT INTO activity_logs (
+        user_id, action, entity_type, entity_id, 
+        old_values, new_values, ip_address, user_agent
+      ) VALUES (
+        ${activity.userId || null}, ${activity.action}, ${activity.entityType}, 
+        ${activity.entityId || null}, ${JSON.stringify(activity.oldValues) || null}, 
+        ${JSON.stringify(activity.newValues) || null}, ${activity.ipAddress || null}, 
+        ${activity.userAgent || null}
+      )
+    `
+  } catch (error) {
+    console.error("Activity logging error:", error)
   }
 }
 
-export const activityLogger = new ActivityLogger()
+export async function getActivityLogs(limit = 50, userId?: number) {
+  let query = `
+    SELECT al.*, u.name as user_name
+    FROM activity_logs al
+    LEFT JOIN users u ON al.user_id = u.id
+  `
 
-// Helper functions for common activities
-export const logSiteCreated = (siteId: string, details?: any) => {
-  activityLogger.log("CREATE", "site", siteId, details)
-}
+  if (userId) {
+    query += ` WHERE al.user_id = $1`
+  }
 
-export const logSiteUpdated = (siteId: string, details?: any) => {
-  activityLogger.log("UPDATE", "site", siteId, details)
-}
+  query += ` ORDER BY al.created_at DESC LIMIT $${userId ? 2 : 1}`
 
-export const logSiteDeleted = (siteId: string, details?: any) => {
-  activityLogger.log("DELETE", "site", siteId, details)
-}
-
-export const logProjectCreated = (projectId: string, details?: any) => {
-  activityLogger.log("CREATE", "project", projectId, details)
-}
-
-export const logProjectUpdated = (projectId: string, details?: any) => {
-  activityLogger.log("UPDATE", "project", projectId, details)
+  const params = userId ? [userId, limit] : [limit]
+  return await sql(query, params)
 }

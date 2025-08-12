@@ -1,27 +1,23 @@
-import { sql } from "@vercel/postgres"
-import { NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
+import { getAllUsers, createUser } from "@/lib/data"
 
-// POST /api/users
-export async function POST(req: Request) {
-  const { name, email, password, user_type, avatar } = await req.json()
-
-  if (!name || !email || !password || !user_type) {
-    return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
-  }
-
-  // In a real app, use a strong hashing library like bcrypt
-  const password_hash = `hashed_${password}`
-
+export async function GET() {
   try {
-    const [newUser] =
-      await sql`INSERT INTO users (name, email, password_hash, user_type, avatar) VALUES (${name}, ${email}, ${password_hash}, ${user_type}, ${avatar}) RETURNING id, name, email, user_type, avatar`
-    return NextResponse.json(newUser, { status: 201 })
-  } catch (error: any) {
-    if (error.code === "23505") {
-      // Unique constraint violation
-      return NextResponse.json({ error: "User with this email already exists" }, { status: 409 })
-    }
-    console.error("Failed to create user:", error)
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
+    const users = await getAllUsers()
+    return NextResponse.json(users)
+  } catch (error) {
+    console.error("Error in GET /api/users:", error)
+    return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 })
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const user = await createUser(body)
+    return NextResponse.json(user, { status: 201 })
+  } catch (error) {
+    console.error("Error in POST /api/users:", error)
+    return NextResponse.json({ error: "Failed to create user" }, { status: 500 })
   }
 }

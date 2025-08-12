@@ -1,43 +1,70 @@
-interface EnvConfig {
-  DATABASE_URL: string
-  NODE_ENV: string
-  PORT: string
-  SMTP_HOST?: string
-  SMTP_PORT?: string
-  SMTP_USER?: string
-  SMTP_PASS?: string
-  SMTP_FROM?: string
+export interface EnvironmentConfig {
+  isValid: boolean
+  errors: string[]
+  warnings: string[]
+  database: {
+    url: string | undefined
+    configured: boolean
+  }
+  smtp: {
+    host: string | undefined
+    port: string | undefined
+    user: string | undefined
+    pass: string | undefined
+    from: string | undefined
+    configured: boolean
+  }
 }
 
-function getEnvVar(name: string, defaultValue?: string): string {
+export function validateEnvironment(): EnvironmentConfig {
+  const errors: string[] = []
+  const warnings: string[] = []
+
+  // Database configuration
+  const databaseUrl = process.env.DATABASE_URL
+  if (!databaseUrl) {
+    warnings.push("DATABASE_URL is not set - using fallback data")
+  }
+
+  // SMTP configuration (optional)
+  const smtpHost = process.env.SMTP_HOST
+  const smtpPort = process.env.SMTP_PORT
+  const smtpUser = process.env.SMTP_USER
+  const smtpPass = process.env.SMTP_PASS
+  const smtpFrom = process.env.SMTP_FROM
+
+  const smtpConfigured = !!(smtpHost && smtpPort && smtpUser && smtpPass)
+  if (!smtpConfigured) {
+    warnings.push("SMTP configuration incomplete - email features disabled")
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+    warnings,
+    database: {
+      url: databaseUrl,
+      configured: !!databaseUrl,
+    },
+    smtp: {
+      host: smtpHost,
+      port: smtpPort,
+      user: smtpUser,
+      pass: smtpPass,
+      from: smtpFrom,
+      configured: smtpConfigured,
+    },
+  }
+}
+
+export function getRequiredEnvVar(name: string): string {
   const value = process.env[name]
-  if (!value && !defaultValue) {
-    throw new Error(`Environment variable ${name} is required`)
+  if (!value) {
+    throw new Error(`Required environment variable ${name} is not set`)
   }
-  return value || defaultValue!
+  return value
 }
 
-export const envConfig: EnvConfig = {
-  DATABASE_URL: getEnvVar("DATABASE_URL"),
-  NODE_ENV: getEnvVar("NODE_ENV", "development"),
-  PORT: getEnvVar("PORT", "3000"),
-  SMTP_HOST: process.env.SMTP_HOST,
-  SMTP_PORT: process.env.SMTP_PORT,
-  SMTP_USER: process.env.SMTP_USER,
-  SMTP_PASS: process.env.SMTP_PASS,
-  SMTP_FROM: process.env.SMTP_FROM,
-}
-
-export const isDevelopment = envConfig.NODE_ENV === "development"
-export const isProduction = envConfig.NODE_ENV === "production"
-export const isTest = envConfig.NODE_ENV === "test"
-
-// Validate required environment variables
-export function validateEnvConfig() {
-  const requiredVars = ["DATABASE_URL"]
-  const missing = requiredVars.filter((varName) => !process.env[varName])
-
-  if (missing.length > 0) {
-    throw new Error(`Missing required environment variables: ${missing.join(", ")}`)
-  }
+export function getOptionalEnvVar(name: string, defaultValue?: string): string | undefined {
+  return process.env[name] || defaultValue
 }

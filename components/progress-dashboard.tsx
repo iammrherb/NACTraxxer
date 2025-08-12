@@ -1,291 +1,261 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useMemo } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts"
-import { TrendingUp, Clock, CheckCircle, Users } from "lucide-react"
-import { toast } from "sonner"
+import { ChartContainer } from "@/components/ui/chart"
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts"
+import type { Site } from "@/lib/database"
 
-interface ProgressStats {
-  totalProjects: number
-  activeProjects: number
-  completedProjects: number
-  totalSites: number
-  completedSites: number
-  overallProgress: number
-  projectsByStatus: Array<{ name: string; value: number; color: string }>
-  sitesByStatus: Array<{ name: string; value: number; color: string }>
-  monthlyProgress: Array<{ month: string; completed: number; total: number }>
+interface ProgressDashboardProps {
+  sites: Site[]
 }
 
-const COLORS = {
-  Planning: "#8884d8",
-  "In Progress": "#82ca9d",
-  Complete: "#00C49F",
-  "On Hold": "#FFBB28",
-  Delayed: "#FF8042",
-}
+export function ProgressDashboard({ sites }: ProgressDashboardProps) {
+  const stats = useMemo(() => {
+    const totalSites = sites.length
+    const completedSites = sites.filter((site) => site.status === "Complete").length
+    const inProgressSites = sites.filter((site) => site.status === "In Progress").length
+    const plannedSites = sites.filter((site) => site.status === "Planned").length
+    const delayedSites = sites.filter((site) => site.status === "Delayed").length
+    const totalUsers = sites.reduce((sum, site) => sum + site.users_count, 0)
+    const overallCompletion = totalSites > 0 ? Math.round((completedSites / totalSites) * 100) : 0
 
-export function ProgressDashboard() {
-  const [stats, setStats] = useState<ProgressStats | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [timeRange, setTimeRange] = useState("6months")
+    // Calculate checklist completion
+    const totalChecklistItems = sites.reduce((sum, site) => {
+      return sum + (site.checklist_items?.length || 0)
+    }, 0)
 
-  useEffect(() => {
-    fetchProgressStats()
-  }, [timeRange])
+    const completedChecklistItems = sites.reduce((sum, site) => {
+      return sum + (site.checklist_items?.filter((item) => item.completed).length || 0)
+    }, 0)
 
-  const fetchProgressStats = async () => {
-    try {
-      setLoading(true)
-      const response = await fetch(`/api/stats?range=${timeRange}`)
+    const checklistCompletion =
+      totalChecklistItems > 0 ? Math.round((completedChecklistItems / totalChecklistItems) * 100) : 0
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch progress stats")
-      }
-
-      const data = await response.json()
-
-      // Mock data structure - replace with actual API response
-      const mockStats: ProgressStats = {
-        totalProjects: data.stats?.totalProjects || 12,
-        activeProjects: data.stats?.activeProjects || 8,
-        completedProjects: data.stats?.completedProjects || 4,
-        totalSites: data.stats?.totalSites || 156,
-        completedSites: data.stats?.completedSites || 89,
-        overallProgress: data.stats?.completionRate || 57,
-        projectsByStatus: [
-          { name: "Planning", value: 3, color: COLORS["Planning"] },
-          { name: "In Progress", value: 5, color: COLORS["In Progress"] },
-          { name: "Complete", value: 4, color: COLORS["Complete"] },
-          { name: "On Hold", value: 0, color: COLORS["On Hold"] },
-          { name: "Delayed", value: 0, color: COLORS["Delayed"] },
-        ],
-        sitesByStatus: [
-          { name: "Not Started", value: 23, color: "#8884d8" },
-          { name: "In Progress", value: 44, color: "#82ca9d" },
-          { name: "Complete", value: 89, color: "#00C49F" },
-          { name: "On Hold", value: 0, color: "#FFBB28" },
-          { name: "Delayed", value: 0, color: "#FF8042" },
-        ],
-        monthlyProgress: [
-          { month: "Jan", completed: 12, total: 20 },
-          { month: "Feb", completed: 18, total: 25 },
-          { month: "Mar", completed: 25, total: 30 },
-          { month: "Apr", completed: 32, total: 40 },
-          { month: "May", completed: 45, total: 50 },
-          { month: "Jun", completed: 52, total: 60 },
-        ],
-      }
-
-      setStats(mockStats)
-    } catch (error) {
-      console.error("Error fetching progress stats:", error)
-      toast.error("Failed to load progress data")
-    } finally {
-      setLoading(false)
+    return {
+      totalSites,
+      completedSites,
+      inProgressSites,
+      plannedSites,
+      delayedSites,
+      totalUsers,
+      overallCompletion,
+      checklistCompletion,
+      totalChecklistItems,
+      completedChecklistItems,
     }
-  }
+  }, [sites])
 
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Card key={i}>
-              <CardHeader className="space-y-0 pb-2">
-                <div className="h-4 bg-gray-200 rounded animate-pulse" />
-              </CardHeader>
-              <CardContent>
-                <div className="h-8 bg-gray-200 rounded animate-pulse mb-2" />
-                <div className="h-3 bg-gray-200 rounded animate-pulse" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    )
-  }
+  const statusData = [
+    { name: "Complete", value: stats.completedSites, color: "#10b981" },
+    { name: "In Progress", value: stats.inProgressSites, color: "#3b82f6" },
+    { name: "Planned", value: stats.plannedSites, color: "#6b7280" },
+    { name: "Delayed", value: stats.delayedSites, color: "#ef4444" },
+  ]
 
-  if (!stats) {
-    return (
-      <div className="text-center py-8">
-        <p className="text-gray-500">Failed to load progress data</p>
-        <Button onClick={fetchProgressStats} className="mt-4">
-          Retry
-        </Button>
-      </div>
+  const regionData = useMemo(() => {
+    const regions = sites.reduce(
+      (acc, site) => {
+        acc[site.region] = (acc[site.region] || 0) + 1
+        return acc
+      },
+      {} as Record<string, number>,
     )
-  }
+
+    return Object.entries(regions).map(([region, count]) => ({
+      region,
+      count,
+      completed: sites.filter((site) => site.region === region && site.status === "Complete").length,
+    }))
+  }, [sites])
+
+  const phaseData = useMemo(() => {
+    const phases = sites.reduce(
+      (acc, site) => {
+        const phase = `Phase ${site.phase}`
+        acc[phase] = (acc[phase] || 0) + 1
+        return acc
+      },
+      {} as Record<string, number>,
+    )
+
+    return Object.entries(phases).map(([phase, count]) => ({
+      phase,
+      count,
+      completed: sites.filter((site) => `Phase ${site.phase}` === phase && site.status === "Complete").length,
+    }))
+  }, [sites])
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Progress Dashboard</h2>
-          <p className="text-gray-600">Track deployment progress across all projects</p>
-        </div>
-        <Select value={timeRange} onValueChange={setTimeRange}>
-          <SelectTrigger className="w-40">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="3months">Last 3 months</SelectItem>
-            <SelectItem value="6months">Last 6 months</SelectItem>
-            <SelectItem value="1year">Last year</SelectItem>
-            <SelectItem value="all">All time</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Key Metrics */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Projects</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalProjects}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.activeProjects} active, {stats.completedProjects} completed
-            </p>
-          </CardContent>
-        </Card>
-
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Sites</CardTitle>
-            <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalSites}</div>
+            <p className="text-xs text-muted-foreground">{stats.totalUsers.toLocaleString()} total users</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Completed</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{stats.completedSites}</div>
+            <p className="text-xs text-muted-foreground">{stats.overallCompletion}% of all sites</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">In Progress</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">{stats.inProgressSites}</div>
+            <p className="text-xs text-muted-foreground">Currently being deployed</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Checklist Progress</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.checklistCompletion}%</div>
             <p className="text-xs text-muted-foreground">
-              {stats.completedSites} completed ({Math.round((stats.completedSites / stats.totalSites) * 100)}%)
+              {stats.completedChecklistItems} of {stats.totalChecklistItems} items
             </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Overall Progress</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.overallProgress}%</div>
-            <Progress value={stats.overallProgress} className="mt-2" />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Deployments</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.activeProjects}</div>
-            <p className="text-xs text-muted-foreground">Projects in progress</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Charts */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Monthly Progress</CardTitle>
-            <CardDescription>Sites completed over time</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={stats.monthlyProgress}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="completed" fill="#00C49F" name="Completed" />
-                <Bar dataKey="total" fill="#8884d8" name="Total" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+      {/* Overall Progress */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Overall Project Progress</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div>
+              <div className="flex justify-between text-sm mb-2">
+                <span>Site Completion</span>
+                <span>{stats.overallCompletion}%</span>
+              </div>
+              <Progress value={stats.overallCompletion} className="h-3" />
+            </div>
+            <div>
+              <div className="flex justify-between text-sm mb-2">
+                <span>Checklist Items</span>
+                <span>{stats.checklistCompletion}%</span>
+              </div>
+              <Progress value={stats.checklistCompletion} className="h-3" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Status Distribution */}
         <Card>
           <CardHeader>
-            <CardTitle>Project Status Distribution</CardTitle>
-            <CardDescription>Current status of all projects</CardDescription>
+            <CardTitle>Status Distribution</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ChartContainer config={{}} className="h-[300px]">
               <PieChart>
                 <Pie
-                  data={stats.projectsByStatus}
+                  data={statusData}
                   cx="50%"
                   cy="50%"
-                  labelLine={false}
-                  label={({ name, value }) => `${name}: ${value}`}
-                  outerRadius={80}
-                  fill="#8884d8"
+                  innerRadius={60}
+                  outerRadius={100}
+                  paddingAngle={5}
                   dataKey="value"
                 >
-                  {stats.projectsByStatus.map((entry, index) => (
+                  {statusData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
                 <Tooltip />
+                <Legend />
               </PieChart>
-            </ResponsiveContainer>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+
+        {/* Regional Progress */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Progress by Region</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer config={{}} className="h-[300px]">
+              <BarChart data={regionData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="region" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="count" fill="#3b82f6" name="Total Sites" />
+                <Bar dataKey="completed" fill="#10b981" name="Completed" />
+              </BarChart>
+            </ChartContainer>
           </CardContent>
         </Card>
       </div>
 
-      {/* Status Breakdown */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Project Status Breakdown</CardTitle>
-            <CardDescription>Detailed view of project statuses</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {stats.projectsByStatus.map((status) => (
-                <div key={status.name} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: status.color }} />
-                    <span className="text-sm font-medium">{status.name}</span>
-                  </div>
-                  <Badge variant="secondary">{status.value}</Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+      {/* Phase Progress */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Progress by Phase</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ChartContainer config={{}} className="h-[300px]">
+            <BarChart data={phaseData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="phase" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="count" fill="#3b82f6" name="Total Sites" />
+              <Bar dataKey="completed" fill="#10b981" name="Completed" />
+            </BarChart>
+          </ChartContainer>
+        </CardContent>
+      </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Site Status Breakdown</CardTitle>
-            <CardDescription>Detailed view of site statuses</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {stats.sitesByStatus.map((status) => (
-                <div key={status.name} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: status.color }} />
-                    <span className="text-sm font-medium">{status.name}</span>
+      {/* Site Progress List */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Individual Site Progress</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {sites
+              .sort((a, b) => b.completion_percent - a.completion_percent)
+              .map((site) => (
+                <div key={site.id} className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-medium">
+                        {site.name} ({site.id})
+                      </span>
+                      <span className="text-sm text-muted-foreground">{site.completion_percent}%</span>
+                    </div>
+                    <Progress value={site.completion_percent} className="h-2" />
                   </div>
-                  <Badge variant="secondary">{status.value}</Badge>
+                  <div className="ml-4 text-sm text-muted-foreground">{site.status}</div>
                 </div>
               ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

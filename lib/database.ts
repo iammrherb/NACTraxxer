@@ -1,90 +1,90 @@
 import { neon } from "@neondatabase/serverless"
-import type { Database } from "./database.types"
 
 if (!process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL environment variable is not set")
 }
 
-export const sql = neon(process.env.DATABASE_URL)
+const sql = neon(process.env.DATABASE_URL)
 
+// Test database connection
 export async function testDatabaseConnection() {
   try {
     await sql`SELECT 1`
-    console.log("Database connection successful.")
-    return { success: true, message: "Database connection successful." }
+    return true
   } catch (error) {
     console.error("Database connection failed:", error)
-    return { success: false, message: "Database connection failed.", error }
+    return false
   }
 }
 
-export type Tables<T extends keyof Database["public"]["Tables"]> = Database["public"]["Tables"][T]["Row"]
-export type Enums<T extends keyof Database["public"]["Enums"]> = Database["public"]["Enums"][T]
+export { sql }
 
-export type Site = Tables<"sites"> & {
-  project_id: string
+// Types
+export interface DatabaseUser {
+  id: number
+  name: string
+  email: string
+  role: string
+  user_type: "project_manager" | "technical_owner"
+  created_at: string
+  updated_at: string
+  password_hash?: string
+  email_verified?: boolean
+  image?: string
+  last_login?: string
+  is_active?: boolean
+  permissions?: any
+}
+
+// Keep the original User interface for backward compatibility
+export interface User extends DatabaseUser {}
+
+export interface Site {
+  id: string
+  name: string
+  region: string
+  country: string
+  priority: "High" | "Medium" | "Low"
+  phase: number
+  users_count: number
+  project_manager_id: number
   project_manager_name?: string
-  technical_owners?: Pick<User, "id" | "name">[]
-  vendors?: Pick<Vendor, "id" | "name">[]
-  firewall_vendors?: Pick<BaseVendor, "id" | "name">[]
-  vpn_vendors?: Pick<BaseVendor, "id" | "name">[]
-  edr_xdr_vendors?: Pick<BaseVendor, "id" | "name">[]
-  siem_vendors?: Pick<BaseVendor, "id" | "name">[]
-  device_types?: Pick<DeviceType, "id" | "name">[]
-  checklist_items?: (Pick<ChecklistItem, "id" | "title"> & { completed: boolean })[]
-  use_cases?: Pick<UseCase, "id" | "title">[]
-  test_matrix_entries?: Pick<TestMatrixEntry, "id" | "scenario">[]
-  use_case_ids?: string[]
-  test_matrix_ids?: string[]
-  os_details?: {
-    windows?: boolean
-    macos?: boolean
-    ios?: boolean
-    android?: boolean
-    linux?: boolean
-    linux_distro?: string
-  }
-  auth_methods?: string[]
-  project_goals?: string[]
+  radsec: string
+  planned_start: string
+  planned_end: string
+  status: "Planned" | "In Progress" | "Complete" | "Delayed"
+  completion_percent: number
+  notes?: string
+  created_at: string
+  updated_at: string
+  technical_owners?: DatabaseUser[]
+  vendors?: Vendor[]
+  device_types?: DeviceType[]
+  checklist_items?: ChecklistItem[]
 }
 
-export type User = Tables<"users"> & {
-  role: Enums<"user_role">
-}
-export type Vendor = Tables<"vendors">
-export type BaseVendor = Tables<"base_vendors">
-export type DeviceType = Tables<"device_types">
-export type ChecklistItem = Tables<"checklist_items">
-export type UseCase = Tables<"use_cases">
-export type TestMatrixEntry = Tables<"test_matrix">
-export type ScopingResponse = Tables<"scoping_responses">
-export type Project = Tables<"projects"> & { customer_name?: string }
-
-export type SiteChecklistItem = {
-  site_id: string
-  checklist_item_id: number
-  completed: boolean
-  assigned_user_id: string | null
-  due_date: string | null
-  title: string
-  description: string | null
-  category: string
-  assigned_user_name: string | null
-  assigned_user_avatar: string | null
+export interface Vendor {
+  id: number
+  name: string
+  type: "wired" | "wireless"
+  is_custom: boolean
+  created_at: string
 }
 
-export interface LibraryData {
-  users: User[]
-  wiredVendors: Vendor[]
-  wirelessVendors: Vendor[]
-  firewallVendors: BaseVendor[]
-  vpnVendors: BaseVendor[]
-  edrXdrVendors: BaseVendor[]
-  siemVendors: BaseVendor[]
-  deviceTypes: DeviceType[]
-  checklistItems: ChecklistItem[]
-  useCases: UseCase[]
-  testMatrix: TestMatrixEntry[]
+export interface DeviceType {
+  id: number
+  name: string
+  is_custom: boolean
+  created_at: string
+}
+
+export interface ChecklistItem {
+  id: number
+  name: string
+  is_custom: boolean
+  completed?: boolean
+  completed_at?: string
+  created_at: string
 }
 
 export interface SiteStats {
@@ -95,8 +95,72 @@ export interface SiteStats {
   delayed_sites: number
   total_users: number
   overall_completion: number
-  total_checklist_items: number
-  completed_checklist_items: number
-  checklist_completion: number
-  sites: Site[]
+}
+
+// New Use Case related types
+export interface UseCase {
+  id: string
+  title: string
+  subtitle?: string
+  description: string
+  category: string
+  status: "pending" | "in-progress" | "completed" | "failed"
+  priority: "mandatory" | "optional" | "nice-to-have"
+  completion_percentage: number
+  notes?: string
+  created_at: string
+  updated_at: string
+  test_cases?: TestCase[]
+  requirements?: Requirement[]
+  documentation_links?: DocumentationLink[]
+  success_criteria?: SuccessCriteria[]
+}
+
+export interface TestCase {
+  id: string
+  name: string
+  description: string
+  expected_outcome: string
+  status: "pending" | "in-progress" | "completed" | "failed"
+  actual_outcome?: string
+  test_date?: string
+  tester_name?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface Requirement {
+  id: string
+  type: "functional" | "non-functional"
+  description: string
+  justification?: string
+  status: "met" | "not-met" | "partially-met"
+  created_at: string
+  updated_at: string
+}
+
+export interface BusinessObjective {
+  id: string
+  title: string
+  description: string
+  success_criteria?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface DocumentationLink {
+  id: number
+  use_case_id: string
+  title: string
+  url: string
+  description?: string
+  created_at: string
+}
+
+export interface SuccessCriteria {
+  id: number
+  use_case_id: string
+  criteria: string
+  is_met: boolean
+  created_at: string
 }

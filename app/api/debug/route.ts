@@ -1,93 +1,78 @@
 import { NextResponse } from "next/server"
-import { sql } from "@/lib/database"
-import { mockSites, mockUsers } from "@/lib/library-data"
+import { readFileSync } from "fs"
+import { join } from "path"
 
-async function seed() {
-  console.log("Starting database seed...")
-  // Clear existing data
-  await sql`DELETE FROM tasks;`
-  console.log("Tasks cleared.")
-  await sql`DELETE FROM sites;`
-  console.log("Sites cleared.")
-  await sql`DELETE FROM users;`
-  console.log("Users cleared.")
-
-  // Seed users
-  console.log(`Seeding ${mockUsers.length} users...`)
-  for (const user of mockUsers) {
-    await sql`
-    INSERT INTO users (id, name, email, role, user_type)
-    VALUES (${user.id}, ${user.name}, ${user.email}, ${user.role}, ${user.user_type})
-    ON CONFLICT (id) DO UPDATE SET
-      name = EXCLUDED.name,
-      email = EXCLUDED.email,
-      role = EXCLUDED.role,
-      user_type = EXCLUDED.user_type;
-  `
-  }
-  console.log("Users seeded.")
-
-  // Seed sites
-  console.log(`Seeding ${mockSites.length} sites...`)
-  for (const site of mockSites) {
-    await sql`
-    INSERT INTO sites (id, name, customer_name, country, region, site_code, status, deployment_type, project_manager_id, technical_owner_id, progress, health, auth_test_status, vendors, device_types, use_cases)
-    VALUES (
-      ${site.id}, ${site.name}, ${site.customer_name}, ${site.country}, ${site.region}, ${site.site_code}, ${site.status}, ${site.deployment_type}, ${site.project_manager_id}, ${site.technical_owner_id}, ${site.progress}, ${site.health}, ${site.auth_test_status}, ${JSON.stringify(site.vendors)}, ${JSON.stringify(site.device_types)}, ${JSON.stringify(site.use_cases)}
-    )
-    ON CONFLICT (id) DO UPDATE SET
-      name = EXCLUDED.name,
-      customer_name = EXCLUDED.customer_name,
-      country = EXCLUDED.country,
-      region = EXCLUDED.region,
-      site_code = EXCLUDED.site_code,
-      status = EXCLUDED.status,
-      deployment_type = EXCLUDED.deployment_type,
-      project_manager_id = EXCLUDED.project_manager_id,
-      technical_owner_id = EXCLUDED.technical_owner_id,
-      progress = EXCLUDED.progress,
-      health = EXCLUDED.health,
-      auth_test_status = EXCLUDED.auth_test_status,
-      vendors = EXCLUDED.vendors,
-      device_types = EXCLUDED.device_types,
-      use_cases = EXCLUDED.use_cases;
-  `
-  }
-  console.log("Sites seeded.")
-
-  // Reset sequences
-  await sql`SELECT setval('sites_id_seq', (SELECT COALESCE(MAX(id), 1) FROM sites));`
-  await sql`SELECT setval('users_id_seq', (SELECT COALESCE(MAX(id), 1) FROM users));`
-  console.log("Sequences reset.")
-
-  return { message: "Database seeded successfully" }
-}
-
-async function clear() {
-  console.log("Clearing site data...")
-  await sql`DELETE FROM tasks;`
-  await sql`DELETE FROM sites;`
-  console.log("Site data cleared.")
-  return { message: "Site data cleared successfully" }
-}
-
-export async function POST(request: Request) {
-  const { searchParams } = new URL(request.url)
-  const action = searchParams.get("action")
-
+export async function GET() {
   try {
-    if (action === "seed") {
-      const result = await seed()
-      return NextResponse.json(result)
+    // Test NextAuth import
+    let nextAuthImportStatus = "unknown"
+    let nextAuthError = null
+    let nextAuthVersion = "unknown"
+
+    try {
+      const NextAuth = await import("next-auth")
+      const CredentialsProvider = await import("next-auth/providers/credentials")
+      nextAuthImportStatus = "success"
+
+      // Try to get NextAuth version from package.json
+      try {
+        const packageJsonPath = join(process.cwd(), "package.json")
+        const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"))
+        nextAuthVersion = packageJson.dependencies["next-auth"] || "not found"
+      } catch (error) {
+        nextAuthVersion = "version check failed"
+      }
+    } catch (error) {
+      nextAuthImportStatus = "failed"
+      nextAuthError = error.message
     }
-    if (action === "clear") {
-      const result = await clear()
-      return NextResponse.json(result)
+
+    // Get Next.js version
+    let nextVersion = "unknown"
+    try {
+      const nextPackage = await import("next/package.json")
+      nextVersion = nextPackage.version
+    } catch (error) {
+      nextVersion = "version check failed"
     }
-    return NextResponse.json({ error: "Invalid action" }, { status: 400 })
+
+    return NextResponse.json({
+      status: "success",
+      message: "Debug API working",
+      timestamp: new Date().toISOString(),
+      environment: {
+        NODE_ENV: process.env.NODE_ENV,
+        NEXTAUTH_URL: process.env.NEXTAUTH_URL || "not set",
+        NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET ? "set" : "not set",
+        NEXT_PUBLIC_NEXTAUTH_URL: process.env.NEXT_PUBLIC_NEXTAUTH_URL || "not set",
+      },
+      nextAuth: {
+        importStatus: nextAuthImportStatus,
+        version: nextAuthVersion,
+        error: nextAuthError,
+      },
+      system: {
+        platform: process.platform,
+        nodeVersion: process.version,
+        nextVersion: nextVersion,
+        runtime: "edge" in globalThis ? "edge" : "nodejs",
+      },
+      urls: {
+        current: process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000",
+        nextauth: process.env.NEXTAUTH_URL || "not configured",
+      },
+    })
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred"
-    console.error("Debug API Error:", errorMessage)
-    return NextResponse.json({ error: "Internal Server Error", message: errorMessage }, { status: 500 })
+    console.error("Debug API error:", error)
+    return NextResponse.json(
+      {
+        status: "error",
+        error: "Debug API failed",
+        message: error.message,
+        stack: error.stack,
+        timestamp: new Date().toISOString(),
+      },
+      { status: 500 },
+    )
   }
 }

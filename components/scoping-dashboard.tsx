@@ -1,119 +1,125 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { PlusCircle, Edit, Trash2 } from "lucide-react"
-import { IntelligentQuestionnaire } from "./intelligent-questionnaire"
-import type { ScopingQuestionnaire, LibraryData } from "@/lib/database"
+import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { ScopingQuestionnaire } from "@/components/scoping-questionnaire"
+import { EnhancedArchitectureDiagram } from "@/components/enhanced-architecture-diagram"
+import { getScopingQuestionnaires, createScopingQuestionnaire } from "@/lib/api"
+import type { ScopingQuestionnaire as ScopingQuestionnaireType, ScopingData } from "@/lib/types"
+import { toast } from "sonner"
+import { PlusCircle, Loader2, Eye } from "lucide-react"
+import { format } from "date-fns"
 
-interface ScopingDashboardProps {
-  questionnaires: ScopingQuestionnaire[]
-  onSave: (data: Partial<ScopingQuestionnaire>) => Promise<void>
-  onDelete: (id: string) => Promise<void>
-  onUpdate: () => void
-  library: LibraryData | null
-}
+export function ScopingDashboard() {
+  const [questionnaires, setQuestionnaires] = useState<ScopingQuestionnaireType[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isQuestionnaireOpen, setIsQuestionnaireOpen] = useState(false)
+  const [isDiagramOpen, setIsDiagramOpen] = useState(false)
+  const [selectedQuestionnaire, setSelectedQuestionnaire] = useState<ScopingQuestionnaireType | null>(null)
 
-export function ScopingDashboard({ questionnaires, onSave, onDelete, onUpdate, library }: ScopingDashboardProps) {
-  const [isFormOpen, setIsFormOpen] = useState(false)
-  const [editingQuestionnaire, setEditingQuestionnaire] = useState<ScopingQuestionnaire | undefined>(undefined)
+  useEffect(() => {
+    const fetchQuestionnaires = async () => {
+      try {
+        const data = await getScopingQuestionnaires()
+        setQuestionnaires(data)
+      } catch (error) {
+        toast.error("Failed to load scoping questionnaires.")
+        console.error(error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchQuestionnaires()
+  }, [])
 
-  const handleNew = () => {
-    setEditingQuestionnaire(undefined)
-    setIsFormOpen(true)
-  }
-
-  const handleEdit = (q: ScopingQuestionnaire) => {
-    setEditingQuestionnaire(q)
-    setIsFormOpen(true)
-  }
-
-  const handleSave = async (data: Partial<ScopingQuestionnaire>) => {
-    await onSave(data)
-    setIsFormOpen(false)
-    onUpdate()
-  }
-
-  const handleDelete = async (id: string) => {
-    if (confirm("Are you sure you want to delete this scoping document?")) {
-      await onDelete(id)
-      onUpdate()
+  const handleSave = async (data: ScopingData) => {
+    try {
+      const newQuestionnaire = await createScopingQuestionnaire(data)
+      setQuestionnaires((prev) => [newQuestionnaire, ...prev])
+      toast.success("Questionnaire submitted successfully!")
+    } catch (error) {
+      toast.error("Failed to submit questionnaire.")
+      console.error(error)
     }
   }
 
-  if (isFormOpen) {
-    return (
-      <IntelligentQuestionnaire
-        libraryData={library}
-        onSave={handleSave}
-        onCancel={() => setIsFormOpen(false)}
-        questionnaire={editingQuestionnaire}
-      />
-    )
+  const handleViewDiagram = (questionnaire: ScopingQuestionnaireType) => {
+    setSelectedQuestionnaire(questionnaire)
+    setIsDiagramOpen(true)
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between items-center">
+    <>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle>Scoping & Discovery</CardTitle>
-            <CardDescription>Manage and initiate project scoping questionnaires.</CardDescription>
+            <CardTitle>Scoping Questionnaires</CardTitle>
+            <CardDescription>Review submitted forms and view generated architecture diagrams.</CardDescription>
           </div>
-          <Button onClick={handleNew}>
+          <Button onClick={() => setIsQuestionnaireOpen(true)}>
             <PlusCircle className="mr-2 h-4 w-4" />
-            New Scoping
+            New Questionnaire
           </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Organization</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Industry</TableHead>
-              <TableHead>Users</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {questionnaires.length > 0 ? (
-              questionnaires.map((q) => (
-                <TableRow key={q.id}>
-                  <TableCell className="font-medium">{q.organization_name}</TableCell>
-                  <TableCell>
-                    <Badge variant={q.status === "Completed" ? "success" : "outline"}>{q.status}</Badge>
-                  </TableCell>
-                  <TableCell>{q.industry}</TableCell>
-                  <TableCell>{q.total_users}</TableCell>
-                  <TableCell>{new Date(q.created_at).toLocaleDateString()}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button variant="ghost" size="icon" onClick={() => handleEdit(q)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(q.id)}>
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      </Button>
-                    </div>
-                  </TableCell>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex justify-center items-center py-10">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Organization</TableHead>
+                  <TableHead>Contact</TableHead>
+                  <TableHead>Submitted On</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center">
-                  No scoping documents found.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
+              </TableHeader>
+              <TableBody>
+                {questionnaires.length > 0 ? (
+                  questionnaires.map((q) => (
+                    <TableRow key={q.id}>
+                      <TableCell className="font-medium">{q.organizationName}</TableCell>
+                      <TableCell>{q.contactPerson}</TableCell>
+                      <TableCell>{format(new Date(q.created_at), "PPP")}</TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="outline" size="sm" onClick={() => handleViewDiagram(q)}>
+                          <Eye className="mr-2 h-4 w-4" />
+                          View Diagram
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center h-24">
+                      No questionnaires submitted yet.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      <ScopingQuestionnaire
+        isOpen={isQuestionnaireOpen}
+        onClose={() => setIsQuestionnaireOpen(false)}
+        onSave={handleSave}
+      />
+
+      {selectedQuestionnaire && (
+        <Dialog open={isDiagramOpen} onOpenChange={setIsDiagramOpen}>
+          <DialogContent className="max-w-4xl">
+            <EnhancedArchitectureDiagram data={selectedQuestionnaire} />
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
   )
 }

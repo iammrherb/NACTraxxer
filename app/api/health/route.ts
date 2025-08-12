@@ -1,25 +1,23 @@
 import { NextResponse } from "next/server"
-import { sql } from "@/lib/database"
+import { testDatabaseConnection } from "@/lib/database"
 
 export async function GET() {
   try {
-    // Test database connection
-    await sql`SELECT 1`
+    const dbConnected = await testDatabaseConnection()
 
     return NextResponse.json({
-      status: "healthy",
+      status: "ok",
+      database: dbConnected ? "connected" : "disconnected",
       timestamp: new Date().toISOString(),
-      database: "connected",
-      version: "1.0.0",
+      environment: process.env.NODE_ENV,
     })
   } catch (error) {
-    console.error("Health check failed:", error)
     return NextResponse.json(
       {
-        status: "unhealthy",
+        status: "error",
+        database: "error",
+        error: error.message,
         timestamp: new Date().toISOString(),
-        database: "disconnected",
-        error: "Database connection failed",
       },
       { status: 500 },
     )
