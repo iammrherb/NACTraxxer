@@ -1,24 +1,24 @@
-'use client'
+"use client"
 
-import { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
-import { Plus, Search, Download, Edit, Eye, Trash2 } from 'lucide-react'
+import { useState, useEffect } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge"
+import { Plus, Search, Download, Edit, Eye, Trash2 } from "lucide-react"
 
 interface Site {
   id: string
   name: string
   region: string
   country: string
-  priority: 'High' | 'Medium' | 'Low'
+  priority: "High" | "Medium" | "Low"
   phase: string
   users: number
   projectManager: string
   technicalOwners: string[]
-  status: 'Planned' | 'In Progress' | 'Complete' | 'Delayed'
+  status: "Planned" | "In Progress" | "Complete" | "Delayed"
   completionPercent: number
   notes: string
 }
@@ -28,106 +28,90 @@ interface MasterSiteListProps {
 }
 
 export default function MasterSiteList({ onSiteSelect }: MasterSiteListProps) {
-  const [searchTerm, setSearchTerm] = useState('')
-  const [regionFilter, setRegionFilter] = useState('')
-  const [statusFilter, setStatusFilter] = useState('')
-  const [priorityFilter, setPriorityFilter] = useState('')
+  const [searchTerm, setSearchTerm] = useState("")
+  const [regionFilter, setRegionFilter] = useState("all")
+  const [statusFilter, setStatusFilter] = useState("all")
+  const [priorityFilter, setPriorityFilter] = useState("all")
+  const [sites, setSites] = useState<Site[]>([])
 
-  // Sample data - in a real app this would come from an API
-  const [sites] = useState<Site[]>([
-    {
-      id: 'ABM-HQ001',
-      name: 'ABM Global Headquarters',
-      region: 'North America',
-      country: 'USA',
-      priority: 'High',
-      phase: '1',
-      users: 2500,
-      projectManager: 'Alex Rivera',
-      technicalOwners: ['John Smith', 'Mark Wilson'],
-      status: 'In Progress',
-      completionPercent: 35,
-      notes: 'Executive network needs priority handling.'
-    },
-    {
-      id: 'ABM-DC002',
-      name: 'Primary Data Center',
-      region: 'North America',
-      country: 'USA',
-      priority: 'High',
-      phase: '1',
-      users: 150,
-      projectManager: 'Marcus Chen',
-      technicalOwners: ['Emily Jones', 'Paul Davis'],
-      status: 'In Progress',
-      completionPercent: 65,
-      notes: '24/7 operation requires careful change windows.'
-    },
-    {
-      id: 'ABM-EUR003',
-      name: 'European HQ',
-      region: 'EMEA',
-      country: 'Germany',
-      priority: 'Medium',
-      phase: '2',
-      users: 1200,
-      projectManager: 'Sofia Linden',
-      technicalOwners: ['Sarah Thompson'],
-      status: 'Planned',
-      completionPercent: 0,
-      notes: 'GDPR compliance required.'
+  useEffect(() => {
+    const savedSites = localStorage.getItem("portnox-sites")
+    if (savedSites) {
+      setSites(JSON.parse(savedSites))
     }
-  ])
+  }, [])
 
-  const filteredSites = sites.filter(site => {
-    const matchesSearch = site.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         site.id.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesRegion = !regionFilter || site.region === regionFilter
-    const matchesStatus = !statusFilter || site.status === statusFilter
-    const matchesPriority = !priorityFilter || site.priority === priorityFilter
-    
+  const filteredSites = sites.filter((site) => {
+    const matchesSearch =
+      site.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      site.id.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesRegion = regionFilter === "all" || site.region === regionFilter
+    const matchesStatus = statusFilter === "all" || site.status === statusFilter
+    const matchesPriority = priorityFilter === "all" || site.priority === priorityFilter
+
     return matchesSearch && matchesRegion && matchesStatus && matchesPriority
   })
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'High': return 'bg-red-100 text-red-800 border-red-200'
-      case 'Medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200'
-      case 'Low': return 'bg-green-100 text-green-800 border-green-200'
-      default: return 'bg-gray-100 text-gray-800 border-gray-200'
+      case "High":
+        return "bg-red-100 text-red-800 border-red-200"
+      case "Medium":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200"
+      case "Low":
+        return "bg-green-100 text-green-800 border-green-200"
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200"
     }
   }
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'Complete': return 'text-green-600'
-      case 'In Progress': return 'text-blue-600'
-      case 'Planned': return 'text-gray-600'
-      case 'Delayed': return 'text-red-600'
-      default: return 'text-gray-600'
+      case "Complete":
+        return "text-green-600"
+      case "In Progress":
+        return "text-blue-600"
+      case "Planned":
+        return "text-gray-600"
+      case "Delayed":
+        return "text-red-600"
+      default:
+        return "text-gray-600"
     }
   }
 
   const exportCSV = () => {
-    const headers = ['Site ID', 'Site Name', 'Region', 'Country', 'Priority', 'Phase', 'Users', 'Status', 'Completion %']
+    const headers = [
+      "Site ID",
+      "Site Name",
+      "Region",
+      "Country",
+      "Priority",
+      "Phase",
+      "Users",
+      "Status",
+      "Completion %",
+    ]
     const csvContent = [
-      headers.join(','),
-      ...filteredSites.map(site => [
-        site.id,
-        `"${site.name}"`,
-        site.region,
-        site.country,
-        site.priority,
-        site.phase,
-        site.users,
-        site.status,
-        site.completionPercent
-      ].join(','))
-    ].join('\n')
+      headers.join(","),
+      ...filteredSites.map((site) =>
+        [
+          site.id,
+          `"${site.name}"`,
+          site.region,
+          site.country,
+          site.priority,
+          site.phase,
+          site.users,
+          site.status,
+          site.completionPercent,
+        ].join(","),
+      ),
+    ].join("\n")
 
-    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const blob = new Blob([csvContent], { type: "text/csv" })
     const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
+    const link = document.createElement("a")
     link.href = url
     link.download = `portnox-sites-${Date.now()}.csv`
     link.click()
@@ -165,13 +149,13 @@ export default function MasterSiteList({ onSiteSelect }: MasterSiteListProps) {
               />
             </div>
           </div>
-          
+
           <Select value={regionFilter} onValueChange={setRegionFilter}>
             <SelectTrigger className="w-[150px]">
               <SelectValue placeholder="All Regions" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Regions</SelectItem>
+              <SelectItem value="all">All Regions</SelectItem>
               <SelectItem value="North America">North America</SelectItem>
               <SelectItem value="EMEA">EMEA</SelectItem>
               <SelectItem value="APAC">APAC</SelectItem>
@@ -184,7 +168,7 @@ export default function MasterSiteList({ onSiteSelect }: MasterSiteListProps) {
               <SelectValue placeholder="All Statuses" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Statuses</SelectItem>
+              <SelectItem value="all">All Statuses</SelectItem>
               <SelectItem value="Planned">Planned</SelectItem>
               <SelectItem value="In Progress">In Progress</SelectItem>
               <SelectItem value="Complete">Complete</SelectItem>
@@ -197,7 +181,7 @@ export default function MasterSiteList({ onSiteSelect }: MasterSiteListProps) {
               <SelectValue placeholder="All Priorities" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Priorities</SelectItem>
+              <SelectItem value="all">All Priorities</SelectItem>
               <SelectItem value="High">High</SelectItem>
               <SelectItem value="Medium">Medium</SelectItem>
               <SelectItem value="Low">Low</SelectItem>
@@ -228,43 +212,38 @@ export default function MasterSiteList({ onSiteSelect }: MasterSiteListProps) {
                   <td className="p-3 font-medium">{site.name}</td>
                   <td className="p-3">{site.region}</td>
                   <td className="p-3">
-                    <Badge className={getPriorityColor(site.priority)}>
-                      {site.priority}
-                    </Badge>
+                    <Badge className={getPriorityColor(site.priority)}>{site.priority}</Badge>
                   </td>
                   <td className="p-3">Phase {site.phase}</td>
                   <td className="p-3">{site.users.toLocaleString()}</td>
                   <td className="p-3">
-                    <span className={`font-medium ${getStatusColor(site.status)}`}>
-                      {site.status}
-                    </span>
+                    <span className={`font-medium ${getStatusColor(site.status)}`}>{site.status}</span>
                   </td>
                   <td className="p-3">
                     <div className="flex items-center space-x-2">
                       <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                        <div 
+                        <div
                           className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                           style={{ width: `${site.completionPercent}%` }}
                         />
                       </div>
-                      <span className="text-sm font-medium min-w-[40px]">
-                        {site.completionPercent}%
-                      </span>
+                      <span className="text-sm font-medium min-w-[40px]">{site.completionPercent}%</span>
                     </div>
                   </td>
                   <td className="p-3">
                     <div className="flex space-x-1">
-                      <Button 
-                        size="sm" 
+                      <Button
+                        size="sm"
                         variant="outline"
                         onClick={() => onSiteSelect(site.id)}
+                        title="View Site Workbook"
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
                       <Button size="sm" variant="outline">
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700">
+                      <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700 bg-transparent">
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -275,10 +254,12 @@ export default function MasterSiteList({ onSiteSelect }: MasterSiteListProps) {
           </table>
         </div>
 
-        {filteredSites.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
-            No sites found matching your criteria.
-          </div>
+        {filteredSites.length === 0 && sites.length === 0 && (
+          <div className="text-center py-8 text-gray-500">No sites found. Add your first site to get started.</div>
+        )}
+
+        {filteredSites.length === 0 && sites.length > 0 && (
+          <div className="text-center py-8 text-gray-500">No sites found matching your criteria.</div>
         )}
       </CardContent>
     </Card>

@@ -1,295 +1,295 @@
-'use client'
+"use client"
 
-import { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Label } from '@/components/ui/label'
-import { Slider } from '@/components/ui/slider'
-import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import InteractiveDiagram from './InteractiveDiagram'
-import ArchitectureLegend from './ArchitectureLegend'
-import { Cloud, Network, Shield, Settings, Zap, Globe, Lock, Users, Database, Server, Download } from 'lucide-react'
+import { useState } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
+import { Slider } from "@/components/ui/slider"
+import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import InteractiveDiagram from "./InteractiveDiagram"
+import ArchitectureLegend from "./ArchitectureLegend"
+import { Cloud, Network, Shield, Settings, Zap, GlobeIcon, Lock, Users, Server, Download } from "lucide-react"
 
 export default function ArchitectureDesigner() {
-  const [selectedView, setSelectedView] = useState('complete')
-  const [cloudProvider, setCloudProvider] = useState('aws')
-  const [networkVendor, setNetworkVendor] = useState('cisco')
-  const [connectivityType, setConnectivityType] = useState('sdwan')
+  const [selectedView, setSelectedView] = useState("complete")
+  const [cloudProvider, setCloudProvider] = useState("aws")
+  const [networkVendor, setNetworkVendor] = useState("cisco")
+  const [connectivityType, setConnectivityType] = useState("sdwan")
   const [animationSpeed, setAnimationSpeed] = useState([1])
 
   const architectureViews = [
-    { 
-      id: 'complete', 
-      label: 'Complete Architecture', 
+    {
+      id: "complete",
+      label: "Complete Architecture",
       icon: <Cloud className="w-4 h-4" />,
-      description: 'Full end-to-end NAC deployment with all components'
+      description: "Full end-to-end NAC deployment with all components",
     },
-    { 
-      id: 'auth-flow', 
-      label: 'Authentication Flow', 
+    {
+      id: "auth-flow",
+      label: "Authentication Flow",
       icon: <Shield className="w-4 h-4" />,
-      description: '802.1X authentication sequence and RADIUS flow'
+      description: "802.1X authentication sequence and RADIUS flow",
     },
-    { 
-      id: 'pki', 
-      label: 'PKI Infrastructure', 
+    {
+      id: "pki",
+      label: "PKI Infrastructure",
       icon: <Lock className="w-4 h-4" />,
-      description: 'Certificate authority and PKI components'
+      description: "Certificate authority and PKI components",
     },
-    { 
-      id: 'policies', 
-      label: 'Policy Framework', 
+    {
+      id: "policies",
+      label: "Policy Framework",
       icon: <Settings className="w-4 h-4" />,
-      description: 'Policy engine and rule management'
+      description: "Policy engine and rule management",
     },
-    { 
-      id: 'connectivity', 
-      label: 'Connectivity Options', 
+    {
+      id: "connectivity",
+      label: "Connectivity Options",
       icon: <Network className="w-4 h-4" />,
-      description: 'Multi-cloud and network connectivity patterns'
+      description: "Multi-cloud and network connectivity patterns",
     },
-    { 
-      id: 'intune', 
-      label: 'Intune Integration', 
+    {
+      id: "intune",
+      label: "Intune Integration",
       icon: <Users className="w-4 h-4" />,
-      description: 'Microsoft Intune MDM integration'
+      description: "Microsoft Intune MDM integration",
     },
-    { 
-      id: 'onboarding', 
-      label: 'Device Onboarding', 
+    {
+      id: "onboarding",
+      label: "Device Onboarding",
       icon: <Zap className="w-4 h-4" />,
-      description: 'Device enrollment and provisioning workflows'
+      description: "Device enrollment and provisioning workflows",
     },
-    { 
-      id: 'fortigate-tacacs', 
-      label: 'FortiGate TACACS+', 
+    {
+      id: "fortigate-tacacs",
+      label: "FortiGate TACACS+",
       icon: <Server className="w-4 h-4" />,
-      description: 'FortiGate device administration with TACACS+'
+      description: "FortiGate device administration with TACACS+",
     },
-    { 
-      id: 'palo-tacacs', 
-      label: 'Palo Alto TACACS+', 
+    {
+      id: "palo-tacacs",
+      label: "Palo Alto TACACS+",
       icon: <Server className="w-4 h-4" />,
-      description: 'Palo Alto device administration with TACACS+'
+      description: "Palo Alto device administration with TACACS+",
     },
-    { 
-      id: 'palo-userid', 
-      label: 'Palo Alto User-ID', 
+    {
+      id: "palo-userid",
+      label: "Palo Alto User-ID",
       icon: <Users className="w-4 h-4" />,
-      description: 'Palo Alto User-ID integration with syslog'
+      description: "Palo Alto User-ID integration with syslog",
     },
-    { 
-      id: 'fortigate-fsso', 
-      label: 'FortiGate FSSO', 
+    {
+      id: "fortigate-fsso",
+      label: "FortiGate FSSO",
       icon: <Users className="w-4 h-4" />,
-      description: 'FortiGate FSSO integration with syslog'
-    }
+      description: "FortiGate FSSO integration with syslog",
+    },
   ]
 
   const cloudProviders = [
-    { id: 'aws', label: 'Amazon Web Services', color: '#FF9900' },
-    { id: 'azure', label: 'Microsoft Azure', color: '#0078D4' },
-    { id: 'gcp', label: 'Google Cloud Platform', color: '#4285F4' },
-    { id: 'onprem', label: 'On-Premises', color: '#6B7280' }
+    { id: "aws", label: "Amazon Web Services", color: "#FF9900" },
+    { id: "azure", label: "Microsoft Azure", color: "#0078D4" },
+    { id: "gcp", label: "Google Cloud Platform", color: "#4285F4" },
+    { id: "onprem", label: "On-Premises", color: "#6B7280" },
   ]
 
   const networkVendors = [
-    { id: 'cisco', label: 'Cisco' },
-    { id: 'aruba', label: 'Aruba (HPE)' },
-    { id: 'juniper', label: 'Juniper' },
-    { id: 'extreme', label: 'Extreme Networks' },
-    { id: 'ruckus', label: 'Ruckus (CommScope)' },
-    { id: 'fortinet', label: 'Fortinet' },
-    { id: 'paloalto', label: 'Palo Alto Networks' }
+    { id: "cisco", label: "Cisco" },
+    { id: "aruba", label: "Aruba (HPE)" },
+    { id: "juniper", label: "Juniper" },
+    { id: "extreme", label: "Extreme Networks" },
+    { id: "ruckus", label: "Ruckus (CommScope)" },
+    { id: "fortinet", label: "Fortinet" },
+    { id: "paloalto", label: "Palo Alto Networks" },
   ]
 
   const connectivityOptions = [
-    { id: 'sdwan', label: 'SD-WAN' },
-    { id: 'expressroute', label: 'Azure Express Route' },
-    { id: 'directconnect', label: 'AWS Direct Connect' },
-    { id: 'mpls', label: 'MPLS Network' },
-    { id: 'vpn', label: 'Site-to-Site VPN' },
-    { id: 'internet', label: 'Internet Connection' }
+    { id: "sdwan", label: "SD-WAN" },
+    { id: "expressroute", label: "Azure Express Route" },
+    { id: "directconnect", label: "AWS Direct Connect" },
+    { id: "mpls", label: "MPLS Network" },
+    { id: "vpn", label: "Site-to-Site VPN" },
+    { id: "internet", label: "Internet Connection" },
   ]
 
-  const currentView = architectureViews.find(view => view.id === selectedView)
+  const currentView = architectureViews.find((view) => view.id === selectedView)
 
   // Export Functions
-  const exportDiagram = async (format: 'svg' | 'png' | 'pdf') => {
-    const diagramElement = document.querySelector('.architecture-diagram svg')
+  const exportDiagram = async (format: "svg" | "png" | "pdf") => {
+    const diagramElement = document.querySelector(".architecture-diagram svg")
     if (!diagramElement) return
 
     try {
-      if (format === 'svg') {
+      if (format === "svg") {
         await exportAsSVG(diagramElement as SVGElement)
-      } else if (format === 'png') {
+      } else if (format === "png") {
         await exportAsPNG(diagramElement as SVGElement)
-      } else if (format === 'pdf') {
+      } else if (format === "pdf") {
         await exportAsPDF(diagramElement as SVGElement)
       }
     } catch (error) {
-      console.error('Export failed:', error)
+      console.error("Export failed:", error)
     }
   }
 
   const exportAsSVG = async (svgElement: SVGElement) => {
     // Clone the SVG to avoid modifying the original
     const svgClone = svgElement.cloneNode(true) as SVGElement
-    
+
     // Add proper dimensions and styling
-    svgClone.setAttribute('width', '1400')
-    svgClone.setAttribute('height', '1000')
-    svgClone.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
-    
+    svgClone.setAttribute("width", "1400")
+    svgClone.setAttribute("height", "1000")
+    svgClone.setAttribute("xmlns", "http://www.w3.org/2000/svg")
+
     // Add header with logos and title
-    const headerGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g')
-    headerGroup.setAttribute('id', 'export-header')
-    
+    const headerGroup = document.createElementNS("http://www.w3.org/2000/svg", "g")
+    headerGroup.setAttribute("id", "export-header")
+
     // Header background
-    const headerBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
-    headerBg.setAttribute('x', '0')
-    headerBg.setAttribute('y', '0')
-    headerBg.setAttribute('width', '1400')
-    headerBg.setAttribute('height', '100')
-    headerBg.setAttribute('fill', '#00c8d7')
+    const headerBg = document.createElementNS("http://www.w3.org/2000/svg", "rect")
+    headerBg.setAttribute("x", "0")
+    headerBg.setAttribute("y", "0")
+    headerBg.setAttribute("width", "1400")
+    headerBg.setAttribute("height", "80")
+    headerBg.setAttribute("fill", "#00c8d7")
     headerGroup.appendChild(headerBg)
-    
+
     // Title text
-    const titleText = document.createElementNS('http://www.w3.org/2000/svg', 'text')
-    titleText.setAttribute('x', '700')
-    titleText.setAttribute('y', '35')
-    titleText.setAttribute('text-anchor', 'middle')
-    titleText.setAttribute('fill', 'white')
-    titleText.setAttribute('font-size', '18')
-    titleText.setAttribute('font-weight', 'bold')
+    const titleText = document.createElementNS("http://www.w3.org/2000/svg", "text")
+    titleText.setAttribute("x", "700")
+    titleText.setAttribute("y", "35")
+    titleText.setAttribute("text-anchor", "middle")
+    titleText.setAttribute("fill", "white")
+    titleText.setAttribute("font-size", "18")
+    titleText.setAttribute("font-weight", "bold")
     titleText.textContent = `Portnox NAC Architecture - ${currentView?.label}`
     headerGroup.appendChild(titleText)
-    
+
     // Date text
-    const dateText = document.createElementNS('http://www.w3.org/2000/svg', 'text')
-    dateText.setAttribute('x', '700')
-    dateText.setAttribute('y', '55')
-    dateText.setAttribute('text-anchor', 'middle')
-    dateText.setAttribute('fill', 'white')
-    dateText.setAttribute('font-size', '12')
+    const dateText = document.createElementNS("http://www.w3.org/2000/svg", "text")
+    dateText.setAttribute("x", "700")
+    dateText.setAttribute("y", "55")
+    dateText.setAttribute("text-anchor", "middle")
+    dateText.setAttribute("fill", "white")
+    dateText.setAttribute("font-size", "12")
     dateText.textContent = `Generated on ${new Date().toLocaleDateString()}`
     headerGroup.appendChild(dateText)
-    
+
     // Insert header at the beginning
     svgClone.insertBefore(headerGroup, svgClone.firstChild)
-    
+
     // Adjust viewBox to accommodate header
-    const currentViewBox = svgClone.getAttribute('viewBox') || '0 0 1200 800'
-    const viewBoxParts = currentViewBox.split(' ')
-    const newViewBox = `0 0 ${viewBoxParts[2]} ${parseInt(viewBoxParts[3]) + 100}`
-    svgClone.setAttribute('viewBox', newViewBox)
-    
+    const currentViewBox = svgClone.getAttribute("viewBox") || "0 0 1200 800"
+    const viewBoxParts = currentViewBox.split(" ")
+    const newViewBox = `0 0 ${viewBoxParts[2]} ${Number.parseInt(viewBoxParts[3]) + 80}`
+    svgClone.setAttribute("viewBox", newViewBox)
+
     // Move existing content down to make room for header
-    const existingContent = svgClone.querySelector('g:not(#export-header)')
+    const existingContent = svgClone.querySelector("g:not(#export-header)")
     if (existingContent) {
-      existingContent.setAttribute('transform', 'translate(0, 100)')
+      existingContent.setAttribute("transform", "translate(0, 80)")
     }
-    
+
     const svgData = new XMLSerializer().serializeToString(svgClone)
-    const blob = new Blob([svgData], { type: 'image/svg+xml' })
+    const blob = new Blob([svgData], { type: "image/svg+xml" })
     downloadFile(blob, `portnox-architecture-${selectedView}-${Date.now()}.svg`)
   }
 
   const exportAsPNG = async (svgElement: SVGElement) => {
     // First create the enhanced SVG
     const svgClone = svgElement.cloneNode(true) as SVGElement
-    svgClone.setAttribute('width', '1400')
-    svgClone.setAttribute('height', '1000')
-    svgClone.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
-    
+    svgClone.setAttribute("width", "1400")
+    svgClone.setAttribute("height", "1000")
+    svgClone.setAttribute("xmlns", "http://www.w3.org/2000/svg")
+
     // Add white background
-    const background = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
-    background.setAttribute('x', '0')
-    background.setAttribute('y', '0')
-    background.setAttribute('width', '1400')
-    background.setAttribute('height', '1000')
-    background.setAttribute('fill', 'white')
+    const background = document.createElementNS("http://www.w3.org/2000/svg", "rect")
+    background.setAttribute("x", "0")
+    background.setAttribute("y", "0")
+    background.setAttribute("width", "1400")
+    background.setAttribute("height", "1000")
+    background.setAttribute("fill", "white")
     svgClone.insertBefore(background, svgClone.firstChild)
-    
+
     // Add header
-    const headerGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g')
-    headerGroup.setAttribute('id', 'export-header')
-    
-    const headerBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
-    headerBg.setAttribute('x', '0')
-    headerBg.setAttribute('y', '0')
-    headerBg.setAttribute('width', '1400')
-    headerBg.setAttribute('height', '100')
-    headerBg.setAttribute('fill', '#00c8d7')
+    const headerGroup = document.createElementNS("http://www.w3.org/2000/svg", "g")
+    headerGroup.setAttribute("id", "export-header")
+
+    const headerBg = document.createElementNS("http://www.w3.org/2000/svg", "rect")
+    headerBg.setAttribute("x", "0")
+    headerBg.setAttribute("y", "0")
+    headerBg.setAttribute("width", "1400")
+    headerBg.setAttribute("height", "80")
+    headerBg.setAttribute("fill", "#00c8d7")
     headerGroup.appendChild(headerBg)
-    
-    const titleText = document.createElementNS('http://www.w3.org/2000/svg', 'text')
-    titleText.setAttribute('x', '700')
-    titleText.setAttribute('y', '35')
-    titleText.setAttribute('text-anchor', 'middle')
-    titleText.setAttribute('fill', 'white')
-    titleText.setAttribute('font-size', '18')
-    titleText.setAttribute('font-weight', 'bold')
+
+    const titleText = document.createElementNS("http://www.w3.org/2000/svg", "text")
+    titleText.setAttribute("x", "700")
+    titleText.setAttribute("y", "35")
+    titleText.setAttribute("text-anchor", "middle")
+    titleText.setAttribute("fill", "white")
+    titleText.setAttribute("font-size", "18")
+    titleText.setAttribute("font-weight", "bold")
     titleText.textContent = `Portnox NAC Architecture - ${currentView?.label}`
     headerGroup.appendChild(titleText)
-    
-    const dateText = document.createElementNS('http://www.w3.org/2000/svg', 'text')
-    dateText.setAttribute('x', '700')
-    dateText.setAttribute('y', '55')
-    dateText.setAttribute('text-anchor', 'middle')
-    dateText.setAttribute('fill', 'white')
-    dateText.setAttribute('font-size', '12')
+
+    const dateText = document.createElementNS("http://www.w3.org/2000/svg", "text")
+    dateText.setAttribute("x", "700")
+    dateText.setAttribute("y", "55")
+    dateText.setAttribute("text-anchor", "middle")
+    dateText.setAttribute("fill", "white")
+    dateText.setAttribute("font-size", "12")
     dateText.textContent = `Generated on ${new Date().toLocaleDateString()}`
     headerGroup.appendChild(dateText)
-    
+
     svgClone.insertBefore(headerGroup, background.nextSibling)
-    
+
     // Move existing content down
-    const existingContent = Array.from(svgClone.children).find(child => 
-      child.tagName !== 'rect' && child.getAttribute('id') !== 'export-header'
+    const existingContent = Array.from(svgClone.children).find(
+      (child) => child.tagName !== "rect" && child.getAttribute("id") !== "export-header",
     )
     if (existingContent) {
-      existingContent.setAttribute('transform', 'translate(0, 100)')
+      existingContent.setAttribute("transform", "translate(0, 80)")
     }
-    
+
     // Convert to PNG
-    const canvas = document.createElement('canvas')
-    const ctx = canvas.getContext('2d')
+    const canvas = document.createElement("canvas")
+    const ctx = canvas.getContext("2d")
     const img = new Image()
-    
+
     canvas.width = 1400
     canvas.height = 1000
-    
+
     const svgData = new XMLSerializer().serializeToString(svgClone)
-    const svgBlob = new Blob([svgData], { type: 'image/svg+xml' })
+    const svgBlob = new Blob([svgData], { type: "image/svg+xml" })
     const url = URL.createObjectURL(svgBlob)
-    
+
     return new Promise<void>((resolve, reject) => {
       img.onload = () => {
         try {
           ctx!.drawImage(img, 0, 0, 1400, 1000)
-          
+
           canvas.toBlob((blob) => {
             if (blob) {
               downloadFile(blob, `portnox-architecture-${selectedView}-${Date.now()}.png`)
               resolve()
             } else {
-              reject(new Error('Failed to create PNG blob'))
+              reject(new Error("Failed to create PNG blob"))
             }
-          }, 'image/png')
-          
+          }, "image/png")
+
           URL.revokeObjectURL(url)
         } catch (error) {
           reject(error)
         }
       }
-      
+
       img.onerror = () => {
-        reject(new Error('Failed to load SVG image'))
+        reject(new Error("Failed to load SVG image"))
       }
-      
+
       img.src = url
     })
   }
@@ -300,13 +300,13 @@ export default function ArchitectureDesigner() {
     await exportAsPNG(svgElement)
   }
 
-  const addExportHeader = (svgData: string, format: string) => {
-    const headerHeight = 100
+  const addExportHeader = (svgData: string, currentView: any) => {
+    const headerHeight = 80
     const header = `
       <g id="export-header">
         <rect x="0" y="0" width="1200" height="${headerHeight}" fill="#00c8d7"/>
-        <image x="20" y="20" width="120" height="30" href="https://www.portnox.com/wp-content/uploads/2021/03/Portnotx_Logo_Color-768x193.png"/>
-        <image x="1050" y="15" width="130" height="40" href="https://companieslogo.com/img/orig/ABM_BIG-47f1fb05.png?t=1720244490&download=true"/>
+        <image x="20" y="20" width="120" height="30" href="https://www.portnox.com/wp-content/uploads/2021/03/Portnotx_Logo_Color-768x193.png" />
+        <image x="1050" y="15" width="130" height="40" href="https://companieslogo.com/img/orig/ABM_BIG-47f1fb05.png?t=1720244490&download=true" />
         <text x="600" y="35" textAnchor="middle" fill="white" fontSize="18" fontWeight="bold">
           Portnox NAC Architecture - ${currentView?.label}
         </text>
@@ -315,25 +315,25 @@ export default function ArchitectureDesigner() {
         </text>
       </g>
     `
-    
-    return svgData.replace('<svg', `<svg`).replace('>', `>${header}`)
+
+    return svgData.replace("<svg", `<svg`).replace(">", `>${header}`)
   }
 
   const addPNGHeader = async (ctx: CanvasRenderingContext2D, width: number) => {
     // Header background
-    ctx.fillStyle = '#00c8d7'
-    ctx.fillRect(0, 0, width, 100)
-    
+    ctx.fillStyle = "#00c8d7"
+    ctx.fillRect(0, 0, width, 80)
+
     // Load and draw Portnox logo
     const portnoxLogo = new Image()
-    portnoxLogo.crossOrigin = 'anonymous'
-    portnoxLogo.src = 'https://www.portnox.com/wp-content/uploads/2021/03/Portnotx_Logo_Color-768x193.png'
-    
+    portnoxLogo.crossOrigin = "anonymous"
+    portnoxLogo.src = "https://www.portnox.com/wp-content/uploads/2021/03/Portnotx_Logo_Color-768x193.png"
+
     // Load and draw ABM logo
     const abmLogo = new Image()
-    abmLogo.crossOrigin = 'anonymous'
-    abmLogo.src = 'https://companieslogo.com/img/orig/ABM_BIG-47f1fb05.png?t=1720244490&download=true'
-    
+    abmLogo.crossOrigin = "anonymous"
+    abmLogo.src = "https://companieslogo.com/img/orig/ABM_BIG-47f1fb05.png?t=1720244490&download=true"
+
     return new Promise((resolve) => {
       let loadedCount = 0
       const onLoad = () => {
@@ -341,20 +341,20 @@ export default function ArchitectureDesigner() {
         if (loadedCount === 2) {
           ctx.drawImage(portnoxLogo, 20, 20, 120, 30)
           ctx.drawImage(abmLogo, width - 150, 15, 130, 40)
-          
+
           // Add text
-          ctx.fillStyle = 'white'
-          ctx.font = 'bold 18px Arial'
-          ctx.textAlign = 'center'
+          ctx.fillStyle = "white"
+          ctx.font = "bold 18px Arial"
+          ctx.textAlign = "center"
           ctx.fillText(`Portnox NAC Architecture - ${currentView?.label}`, width / 2, 35)
-          
-          ctx.font = '12px Arial'
+
+          ctx.font = "12px Arial"
           ctx.fillText(`Generated on ${new Date().toLocaleDateString()}`, width / 2, 55)
-          
+
           resolve(undefined)
         }
       }
-      
+
       portnoxLogo.onload = onLoad
       abmLogo.onload = onLoad
     })
@@ -362,7 +362,7 @@ export default function ArchitectureDesigner() {
 
   const downloadFile = (blob: Blob, filename: string) => {
     const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
+    const link = document.createElement("a")
     link.href = url
     link.download = filename
     link.click()
@@ -375,7 +375,7 @@ export default function ArchitectureDesigner() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
-            <Globe className="h-6 w-6 text-blue-600" />
+            <GlobeIcon className="h-6 w-6 text-blue-600" />
             <span>Zero Trust NAC Architecture Designer</span>
           </CardTitle>
         </CardHeader>
@@ -411,13 +411,10 @@ export default function ArchitectureDesigner() {
                 <SelectContent>
                   {cloudProviders.map((provider) => (
                     <SelectItem key={provider.id} value={provider.id}>
-                      <div 
-                        className="w-3 h-3 rounded-full" 
-                        style={{ backgroundColor: provider.color }}
-                      />
+                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: provider.color }} />
                       <span>{provider.label}</span>
-                    </div>
-                  </SelectItem>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -475,13 +472,9 @@ export default function ArchitectureDesigner() {
             <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
               <div className="flex items-center space-x-2 mb-2">
                 {currentView.icon}
-                <h3 className="font-semibold text-blue-900 dark:text-blue-100">
-                  {currentView.label}
-                </h3>
+                <h3 className="font-semibold text-blue-900 dark:text-blue-100">{currentView.label}</h3>
               </div>
-              <p className="text-sm text-blue-800 dark:text-blue-200">
-                {currentView.description}
-              </p>
+              <p className="text-sm text-blue-800 dark:text-blue-200">{currentView.description}</p>
             </div>
           )}
         </CardContent>
@@ -504,21 +497,15 @@ export default function ArchitectureDesigner() {
                 </CardTitle>
                 <div className="flex items-center space-x-2">
                   <div className="flex space-x-2">
-                    <Badge variant="outline">
-                      {cloudProviders.find(p => p.id === cloudProvider)?.label}
-                    </Badge>
-                    <Badge variant="outline">
-                      {networkVendors.find(v => v.id === networkVendor)?.label}
-                    </Badge>
-                    <Badge variant="outline">
-                      {connectivityOptions.find(c => c.id === connectivityType)?.label}
-                    </Badge>
+                    <Badge variant="outline">{cloudProviders.find((p) => p.id === cloudProvider)?.label}</Badge>
+                    <Badge variant="outline">{networkVendors.find((v) => v.id === networkVendor)?.label}</Badge>
+                    <Badge variant="outline">{connectivityOptions.find((c) => c.id === connectivityType)?.label}</Badge>
                   </div>
                   <div className="flex space-x-2">
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => exportDiagram('svg')}
+                      onClick={() => exportDiagram("svg")}
                       className="flex items-center space-x-1"
                     >
                       <Download className="w-4 h-4" />
@@ -527,7 +514,7 @@ export default function ArchitectureDesigner() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => exportDiagram('png')}
+                      onClick={() => exportDiagram("png")}
                       className="flex items-center space-x-1"
                     >
                       <Download className="w-4 h-4" />
@@ -536,7 +523,7 @@ export default function ArchitectureDesigner() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => exportDiagram('pdf')}
+                      onClick={() => exportDiagram("pdf")}
                       className="flex items-center space-x-1"
                     >
                       <Download className="w-4 h-4" />
