@@ -14,20 +14,20 @@ const handler = NextAuth({
           return null
         }
 
-        // Demo users - in production, verify against your database
+        // Demo users for authentication
         const users = [
           {
             id: "1",
-            name: "Admin User",
             email: "admin@portnox.com",
             password: "password123",
+            name: "Admin User",
             role: "admin",
           },
           {
             id: "2",
-            name: "Regular User",
             email: "user@portnox.com",
             password: "password123",
+            name: "Regular User",
             role: "user",
           },
         ]
@@ -37,8 +37,8 @@ const handler = NextAuth({
         if (user) {
           return {
             id: user.id,
-            name: user.name,
             email: user.email,
+            name: user.name,
             role: user.role,
           }
         }
@@ -58,7 +58,7 @@ const handler = NextAuth({
       return token
     },
     async session({ session, token }) {
-      if (token && session.user) {
+      if (token) {
         session.user.id = token.sub
         session.user.role = token.role
       }

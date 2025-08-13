@@ -27,6 +27,12 @@ export default function ABMDesigner() {
   const [customerLogo, setCustomerLogo] = useState(
     "https://ahorrainvierte.com/wp-content/uploads/abm-industries-inc.png",
   )
+  const [isClient, setIsClient] = useState(false)
+
+  // Ensure we're on the client side
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
 
   // Check authentication
   useEffect(() => {
@@ -35,13 +41,15 @@ export default function ABMDesigner() {
     }
   }, [status, router])
 
-  // Load saved logo
+  // Load saved logo only on client side
   useEffect(() => {
-    const savedLogo = localStorage.getItem("customerLogo")
-    if (savedLogo) {
-      setCustomerLogo(savedLogo)
+    if (isClient) {
+      const savedLogo = localStorage.getItem("customerLogo")
+      if (savedLogo) {
+        setCustomerLogo(savedLogo)
+      }
     }
-  }, [])
+  }, [isClient])
 
   const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -50,7 +58,9 @@ export default function ABMDesigner() {
       reader.onload = (e) => {
         const result = e.target?.result as string
         setCustomerLogo(result)
-        localStorage.setItem("customerLogo", result)
+        if (isClient) {
+          localStorage.setItem("customerLogo", result)
+        }
         toast({
           title: "Logo updated",
           description: "Customer logo has been updated successfully.",
@@ -69,7 +79,7 @@ export default function ABMDesigner() {
     })
   }
 
-  if (status === "loading") {
+  if (status === "loading" || !isClient) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
