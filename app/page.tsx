@@ -1,21 +1,25 @@
 "use client"
 
 import type React from "react"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useSession, signOut } from "next-auth/react"
+import { useRouter } from "next/navigation"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { Upload, Users, Palette, Network, List, BarChart3, Book, Calendar } from "lucide-react"
+import { Upload, Users, Palette, Network, List, BarChart3, Book, Calendar, LogOut } from "lucide-react"
 import ArchitectureDesigner from "@/components/architecture-designer"
 import SiteManagement from "@/components/site-management"
 import ProgressTracking from "@/components/progress-tracking"
 import SiteWorkbook from "@/components/site-workbook"
 import TimelineScheduler from "@/components/timeline-scheduler"
-import UserManagementModal from "@/components/user-management-modal"
+import UserManagementModal from "@/components/UserManagementModal"
 import ThemeCustomizer from "@/components/theme-customizer"
+import { toast } from "@/components/ui/use-toast"
 
 export default function ABMDesigner() {
+  const { data: session, status } = useSession()
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState("architecture")
   const [selectedSiteId, setSelectedSiteId] = useState<string | null>(null)
   const [showUserModal, setShowUserModal] = useState(false)
@@ -24,15 +28,60 @@ export default function ABMDesigner() {
     "https://ahorrainvierte.com/wp-content/uploads/abm-industries-inc.png",
   )
 
+  // Check authentication
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login")
+    }
+  }, [status, router])
+
+  // Load saved logo
+  useEffect(() => {
+    const savedLogo = localStorage.getItem("customerLogo")
+    if (savedLogo) {
+      setCustomerLogo(savedLogo)
+    }
+  }, [])
+
   const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file && file.type.match("image.*")) {
       const reader = new FileReader()
       reader.onload = (e) => {
-        setCustomerLogo(e.target?.result as string)
+        const result = e.target?.result as string
+        setCustomerLogo(result)
+        localStorage.setItem("customerLogo", result)
+        toast({
+          title: "Logo updated",
+          description: "Customer logo has been updated successfully.",
+        })
       }
       reader.readAsDataURL(file)
     }
+  }
+
+  const handleSignOut = async () => {
+    await signOut({ redirect: false })
+    router.push("/login")
+    toast({
+      title: "Signed out",
+      description: "You have been signed out successfully.",
+    })
+  }
+
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-lg text-gray-600">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (status === "unauthenticated") {
+    return null // Will redirect in useEffect
   }
 
   return (
@@ -52,7 +101,7 @@ export default function ABMDesigner() {
                 <div className="bg-white/10 rounded-lg p-2 hover:bg-white/20 transition-colors">
                   <img
                     src={customerLogo || "/placeholder.svg"}
-                    alt="ABM Industries Logo"
+                    alt="Customer Logo"
                     className="h-10 max-w-[150px] object-contain"
                   />
                 </div>
@@ -91,6 +140,16 @@ export default function ABMDesigner() {
                 <Palette className="h-4 w-4 mr-2" />
                 Customize
               </Button>
+
+              <div className="flex items-center space-x-2 border-l border-white/20 pl-4">
+                <div className="text-sm">
+                  <div className="font-medium">{session?.user?.name}</div>
+                  <div className="text-xs opacity-70">{session?.user?.email}</div>
+                </div>
+                <Button variant="ghost" size="sm" onClick={handleSignOut} className="text-white hover:bg-white/20">
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
         </div>
