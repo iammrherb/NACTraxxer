@@ -16,6 +16,7 @@ import TimelineScheduler from "@/components/timeline-scheduler"
 import UserManagementModal from "@/components/UserManagementModal"
 import ThemeCustomizer from "@/components/theme-customizer"
 import { toast } from "@/components/ui/use-toast"
+import { storage } from "@/lib/storage"
 
 export default function ABMDesigner() {
   const { data: session, status } = useSession()
@@ -41,32 +42,61 @@ export default function ABMDesigner() {
     }
   }, [status, router])
 
-  // Load saved logo only on client side
+  // Load user preferences
   useEffect(() => {
     if (isClient) {
-      const savedLogo = localStorage.getItem("customerLogo")
-      if (savedLogo) {
-        setCustomerLogo(savedLogo)
-      }
+      loadUserPreferences()
     }
   }, [isClient])
 
-  const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const loadUserPreferences = async () => {
+    try {
+      const preferences = await storage.getUserPreferences()
+      if (preferences.customerLogo) {
+        setCustomerLogo(preferences.customerLogo)
+      }
+      if (preferences.defaultView) {
+        setActiveTab(preferences.defaultView)
+      }
+    } catch (error) {
+      console.error("Error loading preferences:", error)
+    }
+  }
+
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file && file.type.match("image.*")) {
       const reader = new FileReader()
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         const result = e.target?.result as string
         setCustomerLogo(result)
-        if (isClient) {
-          localStorage.setItem("customerLogo", result)
+
+        try {
+          await storage.updateUserPreferences({ customerLogo: result })
+          toast({
+            title: "Logo updated",
+            description: "Customer logo has been updated successfully.",
+          })
+        } catch (error) {
+          console.error("Error saving logo:", error)
+          toast({
+            title: "Error",
+            description: "Failed to save logo. Please try again.",
+            variant: "destructive",
+          })
         }
-        toast({
-          title: "Logo updated",
-          description: "Customer logo has been updated successfully.",
-        })
       }
       reader.readAsDataURL(file)
+    }
+  }
+
+  const handleTabChange = async (newTab: string) => {
+    setActiveTab(newTab)
+
+    try {
+      await storage.updateUserPreferences({ defaultView: newTab })
+    } catch (error) {
+      console.error("Error saving tab preference:", error)
     }
   }
 
@@ -167,7 +197,7 @@ export default function ABMDesigner() {
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
           <TabsList className="grid w-full grid-cols-5 bg-white shadow-sm">
             <TabsTrigger value="architecture" className="flex items-center space-x-2">
               <Network className="h-4 w-4" />

@@ -14,7 +14,7 @@ const handler = NextAuth({
           return null
         }
 
-        // Demo users for authentication
+        // Demo users for testing
         const users = [
           {
             id: "1",

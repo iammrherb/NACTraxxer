@@ -1,4 +1,5 @@
 "use client"
+
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -19,21 +20,11 @@ import {
 } from "@/components/ui/dialog"
 import { Calendar, Clock, Plus, Edit, Trash2, Users, CheckCircle, AlertCircle, CalendarIcon } from "lucide-react"
 import { toast } from "@/components/ui/use-toast"
+import { storage, type Event, type Site } from "@/lib/storage"
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
-
-interface Event {
-  id: string
-  title: string
-  description: string
-  date: string
-  time: string
-  type: "meeting" | "milestone" | "deployment" | "review" | "training"
-  status: "scheduled" | "in-progress" | "completed" | "cancelled"
-  assignee: string
-}
 
 interface SortableEventProps {
   event: Event
@@ -138,10 +129,11 @@ function SortableEvent({ event, onEdit, onDelete }: SortableEventProps) {
 
 export default function TimelineScheduler() {
   const [events, setEvents] = useState<Event[]>([])
+  const [sites, setSites] = useState<Site[]>([])
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingEvent, setEditingEvent] = useState<Event | null>(null)
   const [activeView, setActiveView] = useState("timeline")
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0])
+  const [loading, setLoading] = useState(true)
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -150,33 +142,50 @@ export default function TimelineScheduler() {
     }),
   )
 
-  // Load events from API
+  // Load events and sites from storage
   useEffect(() => {
-    fetchEvents()
+    loadData()
   }, [])
 
-  const fetchEvents = async () => {
+  const loadData = async () => {
     try {
-      const response = await fetch("/api/events")
-      if (response.ok) {
-        const data = await response.json()
-        setEvents(data)
-      }
+      setLoading(true)
+      const [loadedEvents, loadedSites] = await Promise.all([storage.getEvents(), storage.getSites()])
+      setEvents(loadedEvents)
+      setSites(loadedSites)
     } catch (error) {
-      console.error("Failed to fetch events:", error)
+      console.error("Error loading data:", error)
+      toast({
+        title: "Error",
+        description: "Failed to load data. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
     }
   }
 
-  const handleDragEnd = (event: any) => {
+  const handleDragEnd = async (event: any) => {
     const { active, over } = event
 
     if (active.id !== over.id) {
-      setEvents((items) => {
-        const oldIndex = items.findIndex((item) => item.id === active.id)
-        const newIndex = items.findIndex((item) => item.id === over.id)
+      const newEvents = arrayMove(
+        events,
+        events.findIndex((item) => item.id === active.id),
+        events.findIndex((item) => item.id === over.id),
+      )
+      setEvents(newEvents)
 
-        return arrayMove(items, oldIndex, newIndex)
-      })
+      try {
+        await storage.saveEvents(newEvents)
+      } catch (error) {
+        console.error("Error saving event order:", error)
+        toast({
+          title: "Error",
+          description: "Failed to save event order.",
+          variant: "destructive",
+        })
+      }
     }
   }
 
@@ -186,22 +195,17 @@ export default function TimelineScheduler() {
       description: formData.get("description") as string,
       date: formData.get("date") as string,
       time: formData.get("time") as string,
-      type: formData.get("type") as string,
-      status: formData.get("status") as string,
+      type: formData.get("type") as Event["type"],
+      status: formData.get("status") as Event["status"],
       assignee: formData.get("assignee") as string,
+      siteId: (formData.get("siteId") as string) || undefined,
     }
 
     try {
       if (editingEvent) {
         // Update existing event
-        const response = await fetch("/api/events", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: editingEvent.id, ...eventData }),
-        })
-
-        if (response.ok) {
-          const updatedEvent = await response.json()
+        const updatedEvent = await storage.updateEvent(editingEvent.id, eventData)
+        if (updatedEvent) {
           setEvents(events.map((e) => (e.id === editingEvent.id ? updatedEvent : e)))
           toast({
             title: "Event updated",
@@ -210,25 +214,18 @@ export default function TimelineScheduler() {
         }
       } else {
         // Create new event
-        const response = await fetch("/api/events", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(eventData),
+        const newEvent = await storage.createEvent(eventData)
+        setEvents([...events, newEvent])
+        toast({
+          title: "Event created",
+          description: "The event has been created successfully.",
         })
-
-        if (response.ok) {
-          const newEvent = await response.json()
-          setEvents([...events, newEvent])
-          toast({
-            title: "Event created",
-            description: "The event has been created successfully.",
-          })
-        }
       }
 
       setIsDialogOpen(false)
       setEditingEvent(null)
     } catch (error) {
+      console.error("Error saving event:", error)
       toast({
         title: "Error",
         description: "Failed to save event. Please try again.",
@@ -244,11 +241,8 @@ export default function TimelineScheduler() {
 
   const handleDelete = async (id: string) => {
     try {
-      const response = await fetch(`/api/events?id=${id}`, {
-        method: "DELETE",
-      })
-
-      if (response.ok) {
+      const success = await storage.deleteEvent(id)
+      if (success) {
         setEvents(events.filter((e) => e.id !== id))
         toast({
           title: "Event deleted",
@@ -256,6 +250,7 @@ export default function TimelineScheduler() {
         })
       }
     } catch (error) {
+      console.error("Error deleting event:", error)
       toast({
         title: "Error",
         description: "Failed to delete event. Please try again.",
@@ -291,6 +286,14 @@ export default function TimelineScheduler() {
     }
 
     return days
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    )
   }
 
   return (
@@ -410,6 +413,24 @@ export default function TimelineScheduler() {
                     className="col-span-3"
                     required
                   />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="siteId" className="text-right">
+                    Site
+                  </Label>
+                  <Select name="siteId" defaultValue={editingEvent?.siteId || "none"}>
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue placeholder="Select a site (optional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No site</SelectItem>
+                      {sites.map((site) => (
+                        <SelectItem key={site.id} value={site.id}>
+                          {site.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <DialogFooter>

@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -7,7 +9,10 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Trash2, User, Mail, GripVertical, Save } from "lucide-react"
+import { Label } from "@/components/ui/label"
+import { Plus, Trash2, User, Mail, GripVertical, Save, Edit } from "lucide-react"
+import { toast } from "@/components/ui/use-toast"
+import { storage, type User as UserType } from "@/lib/storage"
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
 import {
   SortableContext,
@@ -17,7 +22,6 @@ import {
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers"
-import { toast } from "@/components/ui/use-toast"
 
 interface UserManagementModalProps {
   open: boolean
@@ -25,11 +29,12 @@ interface UserManagementModalProps {
 }
 
 interface SortableUserItemProps {
-  user: any
+  user: UserType
+  onEdit: (user: UserType) => void
   onRemove: (id: string) => void
 }
 
-const SortableUserItem = ({ user, onRemove }: SortableUserItemProps) => {
+const SortableUserItem = ({ user, onEdit, onRemove }: SortableUserItemProps) => {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: user.id })
 
   const style = {
@@ -43,6 +48,19 @@ const SortableUserItem = ({ user, onRemove }: SortableUserItemProps) => {
       .map((n) => n[0])
       .join("")
       .toUpperCase()
+  }
+
+  const getRoleColor = (role: string) => {
+    switch (role) {
+      case "admin":
+        return "bg-red-100 text-red-800"
+      case "manager":
+        return "bg-blue-100 text-blue-800"
+      case "user":
+        return "bg-green-100 text-green-800"
+      default:
+        return "bg-gray-100 text-gray-800"
+    }
   }
 
   return (
@@ -68,10 +86,17 @@ const SortableUserItem = ({ user, onRemove }: SortableUserItemProps) => {
             <Mail className="h-3 w-3 mr-1" />
             {user.email}
           </p>
+          {user.department && <p className="text-xs text-gray-500">{user.department}</p>}
         </div>
       </div>
       <div className="flex items-center space-x-2">
-        <Badge variant="outline">{user.role}</Badge>
+        <Badge className={getRoleColor(user.role)} variant="outline">
+          {user.role}
+        </Badge>
+        <Badge variant={user.status === "active" ? "default" : "secondary"}>{user.status}</Badge>
+        <Button variant="outline" size="sm" onClick={() => onEdit(user)}>
+          <Edit className="h-4 w-4" />
+        </Button>
         <Button
           variant="outline"
           size="sm"
@@ -86,13 +111,16 @@ const SortableUserItem = ({ user, onRemove }: SortableUserItemProps) => {
 }
 
 export default function UserManagementModal({ open, onOpenChange }: UserManagementModalProps) {
-  const [projectManagers, setProjectManagers] = useState<any[]>([])
-  const [technicalOwners, setTechnicalOwners] = useState<any[]>([])
-  const [newPMName, setNewPMName] = useState("")
-  const [newPMEmail, setNewPMEmail] = useState("")
-  const [newTOName, setNewTOName] = useState("")
-  const [newTOEmail, setNewTOEmail] = useState("")
-  const [newTORole, setNewTORole] = useState("")
+  const [users, setUsers] = useState<UserType[]>([])
+  const [editingUser, setEditingUser] = useState<UserType | null>(null)
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    role: "user" as UserType["role"],
+    department: "",
+    status: "active" as UserType["status"],
+  })
   const [isLoading, setIsLoading] = useState(false)
 
   const sensors = useSensors(
@@ -102,7 +130,7 @@ export default function UserManagementModal({ open, onOpenChange }: UserManageme
     }),
   )
 
-  // Load users from API
+  // Load users from storage
   useEffect(() => {
     if (open) {
       fetchUsers()
@@ -112,36 +140,8 @@ export default function UserManagementModal({ open, onOpenChange }: UserManageme
   const fetchUsers = async () => {
     setIsLoading(true)
     try {
-      // In a real implementation, this would be an API call
-      // For now, we'll use localStorage as a temporary solution
-      const storedPMs = localStorage.getItem("projectManagers")
-      const storedTOs = localStorage.getItem("technicalOwners")
-
-      if (storedPMs) {
-        setProjectManagers(JSON.parse(storedPMs))
-      } else {
-        // Default data if nothing is stored
-        setProjectManagers([
-          { id: "1", name: "Alex Rivera", email: "alex.rivera@abm.com", role: "Senior Project Manager" },
-          { id: "2", name: "Marcus Chen", email: "marcus.chen@abm.com", role: "Project Manager" },
-          { id: "3", name: "Sofia Linden", email: "sofia.linden@abm.com", role: "Project Manager" },
-          { id: "4", name: "Michael Zhang", email: "michael.zhang@abm.com", role: "Project Manager" },
-        ])
-      }
-
-      if (storedTOs) {
-        setTechnicalOwners(JSON.parse(storedTOs))
-      } else {
-        // Default data if nothing is stored
-        setTechnicalOwners([
-          { id: "1", name: "John Smith", email: "john.smith@abm.com", role: "Network Administrator" },
-          { id: "2", name: "Mark Wilson", email: "mark.wilson@abm.com", role: "Security Engineer" },
-          { id: "3", name: "Emily Jones", email: "emily.jones@abm.com", role: "Network Engineer" },
-          { id: "4", name: "Paul Davis", email: "paul.davis@abm.com", role: "IT Manager" },
-          { id: "5", name: "Sarah Thompson", email: "sarah.thompson@abm.com", role: "Network Administrator" },
-          { id: "6", name: "Carlos Mendez", email: "carlos.mendez@abm.com", role: "Network Engineer" },
-        ])
-      }
+      const loadedUsers = await storage.getUsers()
+      setUsers(loadedUsers)
     } catch (error) {
       console.error("Error fetching users:", error)
       toast({
@@ -154,14 +154,9 @@ export default function UserManagementModal({ open, onOpenChange }: UserManageme
     }
   }
 
-  const saveUsers = async () => {
-    setIsLoading(true)
+  const saveUsers = async (updatedUsers: UserType[]) => {
     try {
-      // In a real implementation, this would be an API call
-      // For now, we'll use localStorage as a temporary solution
-      localStorage.setItem("projectManagers", JSON.stringify(projectManagers))
-      localStorage.setItem("technicalOwners", JSON.stringify(technicalOwners))
-
+      await storage.saveUsers(updatedUsers)
       toast({
         title: "Success",
         description: "User data saved successfully",
@@ -173,80 +168,120 @@ export default function UserManagementModal({ open, onOpenChange }: UserManageme
         description: "Failed to save users. Please try again.",
         variant: "destructive",
       })
-    } finally {
-      setIsLoading(false)
     }
   }
 
-  const addProjectManager = () => {
-    if (newPMName && newPMEmail) {
-      const newPM = {
-        id: Date.now().toString(),
-        name: newPMName,
-        email: newPMEmail,
-        role: "Project Manager",
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!formData.name || !formData.email) {
+      toast({
+        title: "Error",
+        description: "Name and email are required.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      if (editingUser) {
+        // Update existing user
+        const updatedUser = await storage.updateUser(editingUser.id, formData)
+        if (updatedUser) {
+          setUsers(users.map((u) => (u.id === editingUser.id ? updatedUser : u)))
+          toast({
+            title: "User updated",
+            description: "The user has been updated successfully.",
+          })
+        }
+      } else {
+        // Create new user
+        const newUser = await storage.createUser(formData)
+        setUsers([...users, newUser])
+        toast({
+          title: "User created",
+          description: "The user has been created successfully.",
+        })
       }
-      setProjectManagers([...projectManagers, newPM])
-      setNewPMName("")
-      setNewPMEmail("")
-    }
-  }
 
-  const addTechnicalOwner = () => {
-    if (newTOName && newTOEmail && newTORole) {
-      const newTO = {
-        id: Date.now().toString(),
-        name: newTOName,
-        email: newTOEmail,
-        role: newTORole,
-      }
-      setTechnicalOwners([...technicalOwners, newTO])
-      setNewTOName("")
-      setNewTOEmail("")
-      setNewTORole("")
-    }
-  }
-
-  const removeProjectManager = (id: string) => {
-    setProjectManagers(projectManagers.filter((pm) => pm.id !== id))
-  }
-
-  const removeTechnicalOwner = (id: string) => {
-    setTechnicalOwners(technicalOwners.filter((to) => to.id !== id))
-  }
-
-  const handlePMDragEnd = (event: any) => {
-    const { active, over } = event
-
-    if (active.id !== over.id) {
-      setProjectManagers((items) => {
-        const oldIndex = items.findIndex((item) => item.id === active.id)
-        const newIndex = items.findIndex((item) => item.id === over.id)
-
-        const newArray = [...items]
-        const [removed] = newArray.splice(oldIndex, 1)
-        newArray.splice(newIndex, 0, removed)
-
-        return newArray
+      // Reset form
+      setFormData({
+        name: "",
+        email: "",
+        role: "user",
+        department: "",
+        status: "active",
+      })
+      setEditingUser(null)
+      setShowAddForm(false)
+    } catch (error) {
+      console.error("Error saving user:", error)
+      toast({
+        title: "Error",
+        description: "Failed to save user. Please try again.",
+        variant: "destructive",
       })
     }
   }
 
-  const handleTODragEnd = (event: any) => {
+  const handleEdit = (user: UserType) => {
+    setEditingUser(user)
+    setFormData({
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      department: user.department || "",
+      status: user.status,
+    })
+    setShowAddForm(true)
+  }
+
+  const removeUser = async (id: string) => {
+    try {
+      const success = await storage.deleteUser(id)
+      if (success) {
+        setUsers(users.filter((u) => u.id !== id))
+        toast({
+          title: "User deleted",
+          description: "The user has been deleted successfully.",
+        })
+      }
+    } catch (error) {
+      console.error("Error deleting user:", error)
+      toast({
+        title: "Error",
+        description: "Failed to delete user. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleDragEnd = async (event: any) => {
     const { active, over } = event
 
     if (active.id !== over.id) {
-      setTechnicalOwners((items) => {
-        const oldIndex = items.findIndex((item) => item.id === active.id)
-        const newIndex = items.findIndex((item) => item.id === over.id)
+      const oldIndex = users.findIndex((item) => item.id === active.id)
+      const newIndex = users.findIndex((item) => item.id === over.id)
 
-        const newArray = [...items]
-        const [removed] = newArray.splice(oldIndex, 1)
-        newArray.splice(newIndex, 0, removed)
+      const newArray = [...users]
+      const [removed] = newArray.splice(oldIndex, 1)
+      newArray.splice(newIndex, 0, removed)
 
-        return newArray
-      })
+      setUsers(newArray)
+      await saveUsers(newArray)
     }
+  }
+
+  const cancelForm = () => {
+    setFormData({
+      name: "",
+      email: "",
+      role: "user",
+      department: "",
+      status: "active",
+    })
+    setEditingUser(null)
+    setShowAddForm(false)
   }
 
   return (
@@ -260,133 +295,134 @@ export default function UserManagementModal({ open, onOpenChange }: UserManageme
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Project Managers Section */}
+          {/* Add/Edit User Form */}
+          {showAddForm && (
+            <Card>
+              <CardHeader>
+                <CardTitle>{editingUser ? "Edit User" : "Add New User"}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="name">Full Name *</Label>
+                      <Input
+                        id="name"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="email">Email *</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="role">Role</Label>
+                      <Select
+                        value={formData.role}
+                        onValueChange={(value: UserType["role"]) => setFormData({ ...formData, role: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="admin">Admin</SelectItem>
+                          <SelectItem value="manager">Manager</SelectItem>
+                          <SelectItem value="user">User</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="department">Department</Label>
+                      <Input
+                        id="department"
+                        value={formData.department}
+                        onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="status">Status</Label>
+                      <Select
+                        value={formData.status}
+                        onValueChange={(value: UserType["status"]) => setFormData({ ...formData, status: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="active">Active</SelectItem>
+                          <SelectItem value="inactive">Inactive</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end space-x-2">
+                    <Button type="button" variant="outline" onClick={cancelForm}>
+                      Cancel
+                    </Button>
+                    <Button type="submit">
+                      <Save className="h-4 w-4 mr-2" />
+                      {editingUser ? "Update User" : "Create User"}
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Users List */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-lg">Project Managers</CardTitle>
-              <div className="text-sm text-gray-500">{projectManagers.length} users</div>
+              <CardTitle className="text-lg">Users ({users.length})</CardTitle>
+              <Button onClick={() => setShowAddForm(true)} disabled={showAddForm}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add User
+              </Button>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {/* Existing Project Managers */}
+              {isLoading ? (
+                <div className="flex items-center justify-center h-32">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              ) : users.length === 0 ? (
+                <div className="text-center py-8">
+                  <User className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500">No users found. Add your first user to get started.</p>
+                </div>
+              ) : (
                 <div className="space-y-3">
                   <DndContext
                     sensors={sensors}
                     collisionDetection={closestCenter}
-                    onDragEnd={handlePMDragEnd}
+                    onDragEnd={handleDragEnd}
                     modifiers={[restrictToVerticalAxis]}
                   >
-                    <SortableContext items={projectManagers.map((pm) => pm.id)} strategy={verticalListSortingStrategy}>
-                      {projectManagers.map((pm) => (
-                        <SortableUserItem key={pm.id} user={pm} onRemove={removeProjectManager} />
+                    <SortableContext items={users.map((user) => user.id)} strategy={verticalListSortingStrategy}>
+                      {users.map((user) => (
+                        <SortableUserItem key={user.id} user={user} onEdit={handleEdit} onRemove={removeUser} />
                       ))}
                     </SortableContext>
                   </DndContext>
                 </div>
-
-                {/* Add New Project Manager */}
-                <div className="border-t pt-4">
-                  <h4 className="font-medium mb-3">Add New Project Manager</h4>
-                  <div className="flex space-x-3">
-                    <Input
-                      placeholder="Full Name"
-                      value={newPMName}
-                      onChange={(e) => setNewPMName(e.target.value)}
-                      className="flex-1"
-                    />
-                    <Input
-                      placeholder="Email"
-                      type="email"
-                      value={newPMEmail}
-                      onChange={(e) => setNewPMEmail(e.target.value)}
-                      className="flex-1"
-                    />
-                    <Button onClick={addProjectManager} disabled={!newPMName || !newPMEmail}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Technical Owners Section */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-lg">Technical Owners</CardTitle>
-              <div className="text-sm text-gray-500">{technicalOwners.length} users</div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {/* Existing Technical Owners */}
-                <div className="space-y-3">
-                  <DndContext
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    onDragEnd={handleTODragEnd}
-                    modifiers={[restrictToVerticalAxis]}
-                  >
-                    <SortableContext items={technicalOwners.map((to) => to.id)} strategy={verticalListSortingStrategy}>
-                      {technicalOwners.map((to) => (
-                        <SortableUserItem key={to.id} user={to} onRemove={removeTechnicalOwner} />
-                      ))}
-                    </SortableContext>
-                  </DndContext>
-                </div>
-
-                {/* Add New Technical Owner */}
-                <div className="border-t pt-4">
-                  <h4 className="font-medium mb-3">Add New Technical Owner</h4>
-                  <div className="flex space-x-3">
-                    <Input
-                      placeholder="Full Name"
-                      value={newTOName}
-                      onChange={(e) => setNewTOName(e.target.value)}
-                      className="flex-1"
-                    />
-                    <Input
-                      placeholder="Email"
-                      type="email"
-                      value={newTOEmail}
-                      onChange={(e) => setNewTOEmail(e.target.value)}
-                      className="flex-1"
-                    />
-                    <Select value={newTORole} onValueChange={setNewTORole}>
-                      <SelectTrigger className="flex-1">
-                        <SelectValue placeholder="Select Role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Network Administrator">Network Administrator</SelectItem>
-                        <SelectItem value="Security Engineer">Security Engineer</SelectItem>
-                        <SelectItem value="IT Manager">IT Manager</SelectItem>
-                        <SelectItem value="System Administrator">System Administrator</SelectItem>
-                        <SelectItem value="Network Engineer">Network Engineer</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Button onClick={addTechnicalOwner} disabled={!newTOName || !newTOEmail || !newTORole}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add
-                    </Button>
-                  </div>
-                </div>
-              </div>
+              )}
             </CardContent>
           </Card>
         </div>
 
-        <div className="flex justify-between pt-4 border-t">
+        <div className="flex justify-end pt-4 border-t">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button
-            onClick={() => {
-              saveUsers()
-              onOpenChange(false)
-            }}
-          >
-            <Save className="h-4 w-4 mr-2" />
-            Save Changes
+            Close
           </Button>
         </div>
       </DialogContent>

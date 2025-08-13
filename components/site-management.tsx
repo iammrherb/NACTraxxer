@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -12,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import AddSiteModal from "@/components/add-site-modal"
+import { toast } from "@/components/ui/use-toast"
+import { storage, type Site } from "@/lib/storage"
 import {
   Plus,
   Search,
@@ -27,27 +28,6 @@ import {
   Globe,
   Zap,
 } from "lucide-react"
-
-interface Site {
-  id: string
-  name: string
-  region: string
-  country: string
-  priority: "High" | "Medium" | "Low"
-  phase: string
-  users: number
-  projectManager: string
-  technicalOwners: string[]
-  status: "Planned" | "In Progress" | "Complete" | "Delayed"
-  completionPercent: number
-  wiredVendors: string[]
-  wirelessVendors: string[]
-  deviceTypes: string[]
-  radsec: string
-  plannedStart: string
-  plannedEnd: string
-  notes: string
-}
 
 interface SiteManagementProps {
   onSiteSelect?: (siteId: string) => void
@@ -76,27 +56,29 @@ export default function SiteManagement({ onSiteSelect }: SiteManagementProps) {
   const [selectedSite, setSelectedSite] = useState<Site | null>(null)
   const [showAddModal, setShowAddModal] = useState(false)
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid")
+  const [loading, setLoading] = useState(true)
 
-  // Load sites from localStorage
+  // Load sites from storage
   useEffect(() => {
-    const savedSites = localStorage.getItem("portnox-sites")
-    if (savedSites) {
-      try {
-        const parsedSites = JSON.parse(savedSites)
-        setSites(parsedSites)
-      } catch (error) {
-        console.error("Error parsing saved sites:", error)
-        setSites([])
-      }
-    }
+    loadSites()
   }, [])
 
-  // Save sites to localStorage
-  useEffect(() => {
-    if (sites.length > 0) {
-      localStorage.setItem("portnox-sites", JSON.stringify(sites))
+  const loadSites = async () => {
+    try {
+      setLoading(true)
+      const loadedSites = await storage.getSites()
+      setSites(loadedSites)
+    } catch (error) {
+      console.error("Error loading sites:", error)
+      toast({
+        title: "Error",
+        description: "Failed to load sites. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
     }
-  }, [sites])
+  }
 
   // Filter sites
   useEffect(() => {
@@ -126,38 +108,79 @@ export default function SiteManagement({ onSiteSelect }: SiteManagementProps) {
     setFilteredSites(filtered)
   }, [sites, searchTerm, filterRegion, filterStatus, filterPriority])
 
-  const addSite = (siteData: Omit<Site, "id">) => {
-    const newSite: Site = {
-      ...siteData,
-      id: `site-${Date.now()}`,
+  const addSite = async (siteData: Omit<Site, "id" | "createdAt" | "updatedAt">) => {
+    try {
+      const newSite = await storage.createSite(siteData)
+      setSites((prev) => [...prev, newSite])
+      toast({
+        title: "Site added",
+        description: "The site has been added successfully.",
+      })
+    } catch (error) {
+      console.error("Error adding site:", error)
+      toast({
+        title: "Error",
+        description: "Failed to add site. Please try again.",
+        variant: "destructive",
+      })
     }
-    setSites((prev) => [...prev, newSite])
   }
 
-  const updateSite = (siteId: string, updates: Partial<Site>) => {
-    setSites((prev) => prev.map((site) => (site.id === siteId ? { ...site, ...updates } : site)))
-  }
-
-  const deleteSite = (siteId: string) => {
-    setSites((prev) => prev.filter((site) => site.id !== siteId))
-    if (selectedSite?.id === siteId) {
-      setSelectedSite(null)
+  const updateSite = async (siteId: string, updates: Partial<Site>) => {
+    try {
+      const updatedSite = await storage.updateSite(siteId, updates)
+      if (updatedSite) {
+        setSites((prev) => prev.map((site) => (site.id === siteId ? updatedSite : site)))
+        toast({
+          title: "Site updated",
+          description: "The site has been updated successfully.",
+        })
+      }
+    } catch (error) {
+      console.error("Error updating site:", error)
+      toast({
+        title: "Error",
+        description: "Failed to update site. Please try again.",
+        variant: "destructive",
+      })
     }
   }
 
-  const generateDemoSites = () => {
-    const demoSites: Site[] = [
+  const deleteSite = async (siteId: string) => {
+    try {
+      const success = await storage.deleteSite(siteId)
+      if (success) {
+        setSites((prev) => prev.filter((site) => site.id !== siteId))
+        if (selectedSite?.id === siteId) {
+          setSelectedSite(null)
+        }
+        toast({
+          title: "Site deleted",
+          description: "The site has been deleted successfully.",
+        })
+      }
+    } catch (error) {
+      console.error("Error deleting site:", error)
+      toast({
+        title: "Error",
+        description: "Failed to delete site. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const generateDemoSites = async () => {
+    const demoSites = [
       {
-        id: "site-demo-1",
         name: "New York Headquarters",
         region: "North America",
         country: "United States",
-        priority: "High",
+        priority: "High" as const,
         phase: "1",
         users: 850,
         projectManager: "John Smith",
         technicalOwners: ["Alice Johnson", "Bob Wilson"],
-        status: "In Progress",
+        status: "In Progress" as const,
         completionPercent: 65,
         wiredVendors: ["Cisco", "Aruba (HPE)"],
         wirelessVendors: ["Cisco"],
@@ -168,16 +191,15 @@ export default function SiteManagement({ onSiteSelect }: SiteManagementProps) {
         notes: "Primary headquarters with critical infrastructure. High priority deployment.",
       },
       {
-        id: "site-demo-2",
         name: "London Office",
         region: "EMEA",
         country: "United Kingdom",
-        priority: "Medium",
+        priority: "Medium" as const,
         phase: "2",
         users: 420,
         projectManager: "Sarah Davis",
         technicalOwners: ["David Brown", "Emma Taylor"],
-        status: "Planned",
+        status: "Planned" as const,
         completionPercent: 0,
         wiredVendors: ["Juniper", "Extreme Networks"],
         wirelessVendors: ["Aruba (HPE)"],
@@ -188,16 +210,15 @@ export default function SiteManagement({ onSiteSelect }: SiteManagementProps) {
         notes: "European regional office. Coordination with local IT team required.",
       },
       {
-        id: "site-demo-3",
         name: "Tokyo Branch",
         region: "APAC",
         country: "Japan",
-        priority: "Medium",
+        priority: "Medium" as const,
         phase: "3",
         users: 280,
         projectManager: "Hiroshi Tanaka",
         technicalOwners: ["Yuki Sato", "Kenji Nakamura"],
-        status: "Complete",
+        status: "Complete" as const,
         completionPercent: 100,
         wiredVendors: ["Cisco"],
         wirelessVendors: ["Cisco Meraki"],
@@ -208,16 +229,15 @@ export default function SiteManagement({ onSiteSelect }: SiteManagementProps) {
         notes: "Successfully completed deployment. Excellent user adoption rates.",
       },
       {
-        id: "site-demo-4",
         name: "São Paulo Office",
         region: "South America",
         country: "Brazil",
-        priority: "Low",
+        priority: "Low" as const,
         phase: "4",
         users: 150,
         projectManager: "Carlos Rodriguez",
         technicalOwners: ["Maria Silva"],
-        status: "Delayed",
+        status: "Delayed" as const,
         completionPercent: 25,
         wiredVendors: ["D-Link", "TP-Link"],
         wirelessVendors: ["Ubiquiti"],
@@ -229,35 +249,94 @@ export default function SiteManagement({ onSiteSelect }: SiteManagementProps) {
       },
     ]
 
-    setSites(demoSites)
+    try {
+      // Clear existing sites and add demo sites
+      await storage.clearAllData()
+      const newSites: Site[] = []
+
+      for (const siteData of demoSites) {
+        const newSite = await storage.createSite(siteData)
+        newSites.push(newSite)
+      }
+
+      setSites(newSites)
+      toast({
+        title: "Demo data loaded",
+        description: "Demo sites have been loaded successfully.",
+      })
+    } catch (error) {
+      console.error("Error generating demo sites:", error)
+      toast({
+        title: "Error",
+        description: "Failed to load demo data. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
-  const clearAllSites = () => {
-    setSites([])
-    localStorage.removeItem("portnox-sites")
+  const clearAllSites = async () => {
+    try {
+      await storage.clearAllData()
+      setSites([])
+      toast({
+        title: "All data cleared",
+        description: "All sites have been cleared successfully.",
+      })
+    } catch (error) {
+      console.error("Error clearing sites:", error)
+      toast({
+        title: "Error",
+        description: "Failed to clear sites. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
-  const exportSites = () => {
-    const dataStr = JSON.stringify(sites, null, 2)
-    const dataUri = "data:application/json;charset=utf-8," + encodeURIComponent(dataStr)
-    const exportFileDefaultName = "portnox-sites.json"
+  const exportSites = async () => {
+    try {
+      const exportData = await storage.exportAllData()
+      const dataUri = "data:application/json;charset=utf-8," + encodeURIComponent(exportData)
+      const exportFileDefaultName = `portnox-data-${new Date().toISOString().split("T")[0]}.json`
 
-    const linkElement = document.createElement("a")
-    linkElement.setAttribute("href", dataUri)
-    linkElement.setAttribute("download", exportFileDefaultName)
-    linkElement.click()
+      const linkElement = document.createElement("a")
+      linkElement.setAttribute("href", dataUri)
+      linkElement.setAttribute("download", exportFileDefaultName)
+      linkElement.click()
+
+      toast({
+        title: "Data exported",
+        description: "All data has been exported successfully.",
+      })
+    } catch (error) {
+      console.error("Error exporting data:", error)
+      toast({
+        title: "Error",
+        description: "Failed to export data. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
-  const importSites = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const importSites = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
       const reader = new FileReader()
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         try {
-          const importedSites = JSON.parse(e.target?.result as string)
-          setSites(importedSites)
+          const jsonData = e.target?.result as string
+          await storage.importAllData(jsonData)
+          await loadSites() // Reload sites after import
+          toast({
+            title: "Data imported",
+            description: "Data has been imported successfully.",
+          })
         } catch (error) {
-          alert("Error importing sites. Please check the file format.")
+          console.error("Error importing data:", error)
+          toast({
+            title: "Error",
+            description: "Failed to import data. Please check the file format.",
+            variant: "destructive",
+          })
         }
       }
       reader.readAsText(file)
@@ -281,6 +360,14 @@ export default function SiteManagement({ onSiteSelect }: SiteManagementProps) {
   }
 
   const stats = getSiteStats()
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
