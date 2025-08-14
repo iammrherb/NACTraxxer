@@ -6,40 +6,20 @@ const handler = NextAuth({
     CredentialsProvider({
       name: "credentials",
       credentials: {
-        email: { label: "Email", type: "email" },
+        username: { label: "Username", type: "text" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
+        if (!credentials?.username || !credentials?.password) {
           return null
         }
 
-        // Demo users for testing
-        const users = [
-          {
-            id: "1",
-            email: "admin@portnox.com",
-            password: "password123",
-            name: "Admin User",
-            role: "admin",
-          },
-          {
-            id: "2",
-            email: "user@portnox.com",
-            password: "password123",
-            name: "Regular User",
-            role: "user",
-          },
-        ]
-
-        const user = users.find((u) => u.email === credentials.email && u.password === credentials.password)
-
-        if (user) {
+        // Simple demo authentication - replace with real authentication
+        if (credentials.username === "admin" && credentials.password === "admin") {
           return {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            role: user.role,
+            id: "1",
+            name: "Admin User",
+            email: "admin@portnox.com",
           }
         }
 
@@ -47,27 +27,27 @@ const handler = NextAuth({
       },
     }),
   ],
+  pages: {
+    signIn: "/login",
+  },
   session: {
     strategy: "jwt",
   },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.role = user.role
+        token.id = user.id
       }
       return token
     },
     async session({ session, token }) {
       if (token) {
-        session.user.id = token.sub
-        session.user.role = token.role
+        session.user.id = token.id as string
       }
       return session
     },
   },
-  pages: {
-    signIn: "/login",
-  },
+  debug: process.env.NODE_ENV === "development",
 })
 
 export { handler as GET, handler as POST }

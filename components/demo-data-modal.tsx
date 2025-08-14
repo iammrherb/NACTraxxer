@@ -244,6 +244,9 @@ export default function DemoDataModal({ open, onOpenChange, onDataLoaded }: Demo
         setSelectedScenario(null)
         setProgress(0)
         setLoadingStep("")
+
+        // Force a page refresh to ensure all components reload with new data
+        window.location.reload()
       }, 1000)
     } catch (error) {
       console.error("Error loading demo data:", error)
@@ -285,6 +288,9 @@ export default function DemoDataModal({ open, onOpenChange, onDataLoaded }: Demo
         setLoading(false)
         setProgress(0)
         setLoadingStep("")
+
+        // Force a page refresh to ensure all components reload with new data
+        window.location.reload()
       }, 1000)
     } catch (error) {
       console.error("Error clearing data:", error)

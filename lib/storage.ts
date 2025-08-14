@@ -702,49 +702,35 @@ export const WIRELESS_VENDORS = [
       "AIR-AP2800",
       "AIR-AP1800",
     ],
-    firmwares: ["17.09.04", "17.06.05", "16.12.08", "17.03.06"],
+    firmwares: ["17.09.04", "17.06.05", "16.12.08", "8.10.185.0"],
   },
   {
     id: "aruba",
     name: "Aruba Wireless",
-    controllers: ["7030", "7205", "7210", "7240XM", "9012", "MM", "Instant"],
-    aps: ["AP-515", "AP-535", "AP-555", "AP-575", "AP-635", "AP-655", "AP-505", "AP-315", "AP-325", "AP-387"],
-    firmwares: ["8.10.0.5", "8.8.0.8", "10.3.1.1", "10.4.0.3"],
+    controllers: ["7030", "7205", "7210", "7240XM", "9004", "9012"],
+    aps: ["AP-635", "AP-655", "AP-675", "AP-535", "AP-555", "AP-575", "AP-515", "AP-505", "AP-515"],
+    firmwares: ["8.10.0.8", "8.9.0.2", "8.8.0.8", "10.3.1.1"],
   },
   {
-    id: "juniper-mist",
+    id: "juniper",
     name: "Juniper Mist",
-    controllers: ["Cloud", "Virtual"],
-    aps: ["AP43", "AP45", "AP63", "AP33", "AP21", "AP61", "AP12", "AP32", "BT11"],
-    firmwares: ["0.14.28011", "0.15.29876", "0.16.31245", "0.17.32145"],
-  },
-  {
-    id: "extreme",
-    name: "Extreme Wireless",
-    controllers: ["ExtremeWireless", "WiNG 7", "Cloud IQ"],
-    aps: ["AP410C", "AP460C", "AP560H", "AP305C", "AP302W", "AP650X", "AP310e"],
-    firmwares: ["10.61.02.0011", "10.71.00.0023", "10.81.01.0008"],
+    controllers: ["Cloud", "AI Engine"],
+    aps: ["AP45", "AP43", "AP41", "AP33", "AP32", "AP21", "AP12", "BT11"],
+    firmwares: ["0.18.28021", "0.17.27065", "0.16.26789"],
   },
   {
     id: "ruckus",
     name: "Ruckus (CommScope)",
-    controllers: ["SmartZone 100", "SmartZone 300", "SmartZone 144", "Virtual SmartZone"],
-    aps: ["R350", "R550", "R750", "R650", "R150", "R320", "T350c", "T350d"],
-    firmwares: ["104.0.0.0.408", "104.1.0.0.213", "105.0.0.0.123"],
+    controllers: ["SmartZone-100", "SmartZone-300", "vSZ-H", "vSZ-E"],
+    aps: ["R770", "R750", "R730", "R650", "R550", "R350", "R320", "H550", "H350"],
+    firmwares: ["6.1.1.0", "6.0.1.0", "5.2.2.0"],
   },
   {
-    id: "meraki",
-    name: "Cisco Meraki",
-    controllers: ["Cloud Dashboard"],
-    aps: ["MR36", "MR46", "MR56", "MR84", "MR86", "MR44", "MR33", "MR20", "MR18"],
-    firmwares: ["28.7", "29.4", "29.6.1", "30.5"],
-  },
-  {
-    id: "ubiquiti",
-    name: "Ubiquiti Networks",
-    controllers: ["UniFi Controller", "UniFi Cloud Key", "UDM Pro"],
-    aps: ["U6 Enterprise", "U6 Pro", "U6 Lite", "U6 LR", "nanoHD", "AC Pro", "AC Lite"],
-    firmwares: ["6.5.55", "7.2.92", "7.3.83", "7.4.162"],
+    id: "fortinet",
+    name: "Fortinet Wireless",
+    controllers: ["FortiGate", "FortiWLC"],
+    aps: ["FAP-431F", "FAP-433F", "FAP-231F", "FAP-234F", "FAP-221E", "FAP-223E"],
+    firmwares: ["7.0.6", "7.2.4", "6.4.9"],
   },
 ]
 
@@ -752,70 +738,32 @@ export const FIREWALL_VENDORS = [
   {
     id: "palo-alto",
     name: "Palo Alto Networks",
-    models: [
-      "PA-220",
-      "PA-850",
-      "PA-3250",
-      "PA-5250",
-      "PA-7080",
-      "PA-5260",
-      "PA-3260",
-      "VM-50",
-      "VM-100",
-      "VM-300",
-      "VM-500",
-      "VM-700",
-      "VM-1000",
-    ],
-    firmwares: ["10.2.7", "11.0.2", "11.1.0", "10.1.11"],
+    models: ["PA-220", "PA-850", "PA-3220", "PA-5220", "PA-7080", "VM-50", "VM-100", "VM-300", "VM-500", "VM-700"],
+    firmwares: ["11.0.2", "10.2.7", "10.1.11", "9.1.14"],
   },
   {
     id: "fortinet",
-    name: "Fortinet",
-    models: [
-      "FortiGate 60F",
-      "FortiGate 100F",
-      "FortiGate 600F",
-      "FortiGate 1800F",
-      "FortiGate 3000D",
-      "FortiGate 4200F",
-      "FortiGate 7040E",
-      "FortiGate VM",
-    ],
-    firmwares: ["7.0.12", "7.2.5", "7.4.1", "6.4.14"],
+    name: "Fortinet FortiGate",
+    models: ["FG-60F", "FG-80F", "FG-100F", "FG-200F", "FG-400F", "FG-800F", "FG-1500D", "FG-3000D", "VM02", "VM04"],
+    firmwares: ["7.4.1", "7.2.5", "7.0.12", "6.4.14"],
   },
   {
     id: "cisco",
-    name: "Cisco Security",
-    models: [
-      "ASA 5506-X",
-      "ASA 5516-X",
-      "Firepower 2100",
-      "Firepower 4100",
-      "Firepower 9300",
-      "ASA 5525-X",
-      "ASA 5555-X",
-      "ISR 4000",
-    ],
-    firmwares: ["9.19(1)", "9.16(4)", "7.2.5", "7.3.1"],
+    name: "Cisco ASA/FTD",
+    models: ["ASA5506-X", "ASA5516-X", "ASA5525-X", "ASA5545-X", "FTD1120", "FTD1140", "FTD2110", "FTD4112"],
+    firmwares: ["9.18.3", "9.16.4", "7.2.5", "7.1.0"],
   },
   {
     id: "checkpoint",
     name: "Check Point",
-    models: ["1490", "3200", "5200", "15600", "26000", "28600", "Quantum Spark", "CloudGuard", "Maestro"],
-    firmwares: ["R81.20", "R82.30", "R80.40", "R81.10"],
-  },
-  {
-    id: "sophos",
-    name: "Sophos",
-    models: ["XG 106", "XG 136", "XG 310", "XG 450", "XG 550", "XG 650", "XG 750", "SG UTM", "Cyberoam"],
-    firmwares: ["19.0.2", "19.5.1", "20.0.0", "18.5.4"],
+    models: ["1570", "1590", "3200", "5200", "5400", "6500", "15600", "26000", "R81.20", "R81.10"],
+    firmwares: ["R81.20", "R81.10", "R80.40", "R80.30"],
   },
   {
     id: "sonicwall",
     name: "SonicWall",
-    models: ["TZ370", "TZ470", "TZ570", "TZ670", "NSa 2700", "NSa 3700", "NSa 4700", "NSa 6700", "NSv Virtual"],
-    firmwares: ["7.0.1-5112", "7.1.1-7040", "6.5.4.4-44v-21"],
+    models: ["TZ370", "TZ470", "TZ570", "TZ670", "NSa2700", "NSa3700", "NSa4700", "NSa5700", "NSa6700", "NSv270"],
+    firmwares: ["7.0.1", "6.5.4", "6.2.9", "7.1.1"],
   },
 ]
 
@@ -823,1160 +771,322 @@ export const MDM_PROVIDERS = [
   {
     id: "intune",
     name: "Microsoft Intune",
-    description: "Microsoft device management and security",
-    features: ["Windows", "iOS", "Android", "macOS", "Conditional Access", "App Protection"],
+    description: "Cloud-based mobile device management",
+    features: ["Device compliance", "App management", "Conditional access", "Certificate deployment"],
   },
   {
     id: "jamf",
     name: "Jamf Pro",
     description: "Apple device management platform",
-    features: ["macOS", "iOS", "iPadOS", "tvOS", "DEP", "VPP", "Self Service"],
+    features: ["macOS management", "iOS deployment", "App store integration", "Security policies"],
   },
   {
-    id: "vmware-workspace-one",
+    id: "workspace-one",
     name: "VMware Workspace ONE",
-    description: "Unified endpoint management platform",
-    features: ["Windows", "iOS", "Android", "macOS", "Chrome OS", "IoT", "VDI"],
+    description: "Digital workspace platform",
+    features: ["Unified endpoint management", "Identity management", "App delivery", "Analytics"],
   },
   {
     id: "mobileiron",
     name: "Ivanti MobileIron",
     description: "Enterprise mobility management",
-    features: ["iOS", "Android", "Windows", "macOS", "EMM", "UEM", "Zero Sign-On"],
+    features: ["Device security", "App wrapping", "Content management", "Threat defense"],
   },
   {
-    id: "cisco-meraki",
-    name: "Cisco Meraki MDM",
-    description: "Cloud-based device management",
-    features: ["iOS", "Android", "Chrome OS", "Cloud Management", "SM"],
+    id: "airwatch",
+    name: "VMware AirWatch",
+    description: "Enterprise mobility management",
+    features: ["Device lifecycle", "Application catalog", "Content locker", "Email management"],
   },
   {
-    id: "citrix",
+    id: "citrix-endpoint",
     name: "Citrix Endpoint Management",
-    description: "Mobile and desktop management",
-    features: ["iOS", "Android", "Windows", "macOS", "XenMobile", "MAM"],
-  },
-  {
-    id: "google",
-    name: "Google Workspace",
-    description: "Google device management",
-    features: ["Android", "Chrome OS", "iOS", "G Suite", "Chrome Browser"],
-  },
-  {
-    id: "blackberry",
-    name: "BlackBerry UEM",
     description: "Unified endpoint management",
-    features: ["BlackBerry", "iOS", "Android", "Windows", "macOS", "AtHoc"],
+    features: ["Device provisioning", "Policy enforcement", "App deployment", "Remote support"],
   },
 ]
 
-export const COMPLIANCE_FRAMEWORKS = [
-  "SOX (Sarbanes-Oxley)",
-  "PCI-DSS",
-  "HIPAA",
-  "GDPR",
-  "CCPA",
-  "SOC 2 Type II",
-  "ISO 27001",
-  "ISO 27002",
-  "NIST Cybersecurity Framework",
-  "NIST 800-53",
-  "CIS Controls",
-  "COBIT",
-  "FISMA",
-  "FedRAMP",
-  "CMMC",
-  "PCI-PA-DSS",
-  "FFIEC",
-  "GLBA",
-  "FERPA",
-  "CJIS",
-  "IEC 62443",
-  "FDA 21 CFR Part 11",
-]
-
-export const SECURITY_STANDARDS = [
-  "Zero Trust Architecture",
-  "NIST Cybersecurity Framework",
-  "ISO 27001/27002",
-  "CIS Critical Security Controls",
-  "OWASP Top 10",
-  "SANS Top 25",
-  "MITRE ATT&CK Framework",
-  "CSF (Cybersecurity Framework)",
-  "COBIT 2019",
-  "Risk Management Framework (RMF)",
-  "Cyber Kill Chain",
-  "Diamond Model",
-  "STRIDE Threat Model",
-  "PASTA Threat Modeling",
-  "OCTAVE Risk Assessment",
-]
-
-class StorageManager {
-  private readonly STORAGE_KEY = "portnox-nac-designer"
-  private readonly VERSION = "4.0.0"
-
-  private getDefaultData(): AppData {
-    return {
-      sites: [],
-      events: [],
-      users: [],
-      globalPolicies: [],
-      architectureTemplates: [],
-      preferences: {
-        theme: "system",
-        companyName: "TechCorp Global",
-        defaultView: "architecture",
-        notifications: true,
-        autoSave: true,
-        demoScenario: "corporate",
-        language: "en",
-        dateFormat: "MM/DD/YYYY",
-        timeFormat: "12h",
-        currency: "USD",
-        dashboardLayout: ["architecture", "sites", "progress", "workbook", "timeline"],
-      },
-      version: this.VERSION,
-      lastUpdated: new Date().toISOString(),
-    }
+// Storage class implementation
+class Storage {
+  private getStorageKey(key: string): string {
+    return `portnox-nac-${key}`
   }
 
-  private getData(): AppData {
+  private getData<T>(key: string, defaultValue: T): T {
+    if (typeof window === "undefined") return defaultValue
+
     try {
-      const stored = localStorage.getItem(this.STORAGE_KEY)
-      if (!stored) {
-        const defaultData = this.getDefaultData()
-        this.saveData(defaultData)
-        return defaultData
-      }
-
-      const data = JSON.parse(stored) as AppData
-
-      // Version migration if needed
-      if (data.version !== this.VERSION) {
-        const migratedData = this.migrateData(data)
-        this.saveData(migratedData)
-        return migratedData
-      }
-
-      return data
+      const stored = localStorage.getItem(this.getStorageKey(key))
+      return stored ? JSON.parse(stored) : defaultValue
     } catch (error) {
-      console.error("Error loading data from storage:", error)
-      return this.getDefaultData()
+      console.error(`Error loading ${key}:`, error)
+      return defaultValue
     }
   }
 
-  private saveData(data: AppData): void {
+  private setData<T>(key: string, data: T): void {
+    if (typeof window === "undefined") return
+
     try {
-      data.lastUpdated = new Date().toISOString()
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data))
+      localStorage.setItem(this.getStorageKey(key), JSON.stringify(data))
     } catch (error) {
-      console.error("Error saving data to storage:", error)
-      throw new Error("Failed to save data")
+      console.error(`Error saving ${key}:`, error)
     }
   }
 
-  private migrateData(data: AppData): AppData {
-    // Handle version migrations here
-    return {
-      ...data,
-      globalPolicies: data.globalPolicies || [],
-      architectureTemplates: data.architectureTemplates || [],
-      version: this.VERSION,
-    }
-  }
-
-  // Site Management
+  // Sites
   async getSites(): Promise<Site[]> {
-    return this.getData().sites
+    return this.getData("sites", [])
   }
 
-  async getSite(id: string): Promise<Site | null> {
+  async createSite(site: Omit<Site, "id" | "createdAt" | "updatedAt">): Promise<Site> {
     const sites = await this.getSites()
-    return sites.find((site) => site.id === id) || null
-  }
-
-  async createSite(siteData: Omit<Site, "id" | "createdAt" | "updatedAt">): Promise<Site> {
-    const data = this.getData()
     const newSite: Site = {
-      ...siteData,
+      ...site,
       id: `site-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }
-
-    data.sites.push(newSite)
-    this.saveData(data)
+    sites.push(newSite)
+    this.setData("sites", sites)
     return newSite
   }
 
-  async createBulkSites(count: number, template: Partial<Site>, namingConvention: string): Promise<Site[]> {
-    const data = this.getData()
-    const newSites: Site[] = []
-
-    for (let i = 1; i <= count; i++) {
-      const siteName = namingConvention.replace("{n}", i.toString().padStart(2, "0"))
-
-      const newSite: Site = {
-        ...template,
-        id: `site-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 9)}`,
-        name: siteName,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      } as Site
-
-      newSites.push(newSite)
-      data.sites.push(newSite)
-    }
-
-    this.saveData(data)
-    return newSites
-  }
-
   async updateSite(id: string, updates: Partial<Site>): Promise<Site | null> {
-    const data = this.getData()
-    const siteIndex = data.sites.findIndex((site) => site.id === id)
+    const sites = await this.getSites()
+    const siteIndex = sites.findIndex((site) => site.id === id)
 
     if (siteIndex === -1) return null
 
-    data.sites[siteIndex] = {
-      ...data.sites[siteIndex],
+    sites[siteIndex] = {
+      ...sites[siteIndex],
       ...updates,
       updatedAt: new Date().toISOString(),
     }
 
-    this.saveData(data)
-    return data.sites[siteIndex]
+    this.setData("sites", sites)
+    return sites[siteIndex]
   }
 
   async deleteSite(id: string): Promise<boolean> {
-    const data = this.getData()
-    const initialLength = data.sites.length
-    data.sites = data.sites.filter((site) => site.id !== id)
+    const sites = await this.getSites()
+    const filteredSites = sites.filter((site) => site.id !== id)
 
-    if (data.sites.length < initialLength) {
-      this.saveData(data)
-      return true
-    }
-    return false
+    if (filteredSites.length === sites.length) return false
+
+    this.setData("sites", filteredSites)
+    return true
   }
 
-  // Global Policy Management
-  async getGlobalPolicies(): Promise<GlobalPolicy[]> {
-    return this.getData().globalPolicies
-  }
-
-  async createGlobalPolicy(policyData: Omit<GlobalPolicy, "id" | "createdAt" | "updatedAt">): Promise<GlobalPolicy> {
-    const data = this.getData()
-    const newPolicy: GlobalPolicy = {
-      ...policyData,
-      id: `global-policy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }
-
-    data.globalPolicies.push(newPolicy)
-    this.saveData(data)
-    return newPolicy
-  }
-
-  async updateGlobalPolicy(id: string, updates: Partial<GlobalPolicy>): Promise<GlobalPolicy | null> {
-    const data = this.getData()
-    const policyIndex = data.globalPolicies.findIndex((policy) => policy.id === id)
-
-    if (policyIndex === -1) return null
-
-    data.globalPolicies[policyIndex] = {
-      ...data.globalPolicies[policyIndex],
-      ...updates,
-      updatedAt: new Date().toISOString(),
-    }
-
-    this.saveData(data)
-    return data.globalPolicies[policyIndex]
-  }
-
-  async deleteGlobalPolicy(id: string): Promise<boolean> {
-    const data = this.getData()
-    const initialLength = data.globalPolicies.length
-    data.globalPolicies = data.globalPolicies.filter((policy) => policy.id !== id)
-
-    if (data.globalPolicies.length < initialLength) {
-      this.saveData(data)
-      return true
-    }
-    return false
-  }
-
-  // Event Management
+  // Events
   async getEvents(): Promise<Event[]> {
-    return this.getData().events
+    return this.getData("events", [])
   }
 
-  async createEvent(eventData: Omit<Event, "id" | "createdAt" | "updatedAt">): Promise<Event> {
-    const data = this.getData()
+  async createEvent(event: Omit<Event, "id" | "createdAt" | "updatedAt">): Promise<Event> {
+    const events = await this.getEvents()
     const newEvent: Event = {
-      ...eventData,
+      ...event,
       id: `event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      attendees: event.attendees || [],
+      prerequisites: event.prerequisites || [],
+      deliverables: event.deliverables || [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }
-
-    data.events.push(newEvent)
-    this.saveData(data)
+    events.push(newEvent)
+    this.setData("events", events)
     return newEvent
   }
 
   async updateEvent(id: string, updates: Partial<Event>): Promise<Event | null> {
-    const data = this.getData()
-    const eventIndex = data.events.findIndex((event) => event.id === id)
+    const events = await this.getEvents()
+    const eventIndex = events.findIndex((event) => event.id === id)
 
     if (eventIndex === -1) return null
 
-    data.events[eventIndex] = {
-      ...data.events[eventIndex],
+    events[eventIndex] = {
+      ...events[eventIndex],
       ...updates,
       updatedAt: new Date().toISOString(),
     }
 
-    this.saveData(data)
-    return data.events[eventIndex]
+    this.setData("events", events)
+    return events[eventIndex]
   }
 
   async deleteEvent(id: string): Promise<boolean> {
-    const data = this.getData()
-    const initialLength = data.events.length
-    data.events = data.events.filter((event) => event.id !== id)
+    const events = await this.getEvents()
+    const filteredEvents = events.filter((event) => event.id !== id)
 
-    if (data.events.length < initialLength) {
-      this.saveData(data)
-      return true
-    }
-    return false
+    if (filteredEvents.length === events.length) return false
+
+    this.setData("events", filteredEvents)
+    return true
   }
 
-  // User Management
+  // Users
   async getUsers(): Promise<User[]> {
-    return this.getData().users
+    return this.getData("users", [])
   }
 
-  async createUser(userData: Omit<User, "id" | "createdAt" | "updatedAt">): Promise<User> {
-    const data = this.getData()
+  async createUser(user: Omit<User, "id" | "createdAt" | "updatedAt">): Promise<User> {
+    const users = await this.getUsers()
     const newUser: User = {
-      ...userData,
+      ...user,
       id: `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      title: user.title || "",
+      specialties: user.specialties || [],
+      certifications: user.certifications || [],
+      skills: user.skills || [],
+      languages: user.languages || ["English"],
+      timeZone: user.timeZone || "UTC",
+      availability: user.availability || {
+        hoursPerWeek: 40,
+        preferredSchedule: "business-hours",
+        vacationDays: [],
+      },
+      vendorRelationships: user.vendorRelationships || [],
+      projectHistory: user.projectHistory || [],
+      performanceRating: user.performanceRating || 5,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }
-
-    data.users.push(newUser)
-    this.saveData(data)
+    users.push(newUser)
+    this.setData("users", users)
     return newUser
   }
 
   async updateUser(id: string, updates: Partial<User>): Promise<User | null> {
-    const data = this.getData()
-    const userIndex = data.users.findIndex((user) => user.id === id)
+    const users = await this.getUsers()
+    const userIndex = users.findIndex((user) => user.id === id)
 
     if (userIndex === -1) return null
 
-    data.users[userIndex] = {
-      ...data.users[userIndex],
+    users[userIndex] = {
+      ...users[userIndex],
       ...updates,
       updatedAt: new Date().toISOString(),
     }
 
-    this.saveData(data)
-    return data.users[userIndex]
+    this.setData("users", users)
+    return users[userIndex]
   }
 
   async deleteUser(id: string): Promise<boolean> {
-    const data = this.getData()
-    const initialLength = data.users.length
-    data.users = data.users.filter((user) => user.id !== id)
+    const users = await this.getUsers()
+    const filteredUsers = users.filter((user) => user.id !== id)
 
-    if (data.users.length < initialLength) {
-      this.saveData(data)
-      return true
+    if (filteredUsers.length === users.length) return false
+
+    this.setData("users", filteredUsers)
+    return true
+  }
+
+  // Global Policies
+  async getGlobalPolicies(): Promise<GlobalPolicy[]> {
+    return this.getData("globalPolicies", [])
+  }
+
+  async createGlobalPolicy(policy: Omit<GlobalPolicy, "id" | "createdAt" | "updatedAt">): Promise<GlobalPolicy> {
+    const policies = await this.getGlobalPolicies()
+    const newPolicy: GlobalPolicy = {
+      ...policy,
+      id: `policy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     }
-    return false
+    policies.push(newPolicy)
+    this.setData("globalPolicies", policies)
+    return newPolicy
+  }
+
+  async updateGlobalPolicy(id: string, updates: Partial<GlobalPolicy>): Promise<GlobalPolicy | null> {
+    const policies = await this.getGlobalPolicies()
+    const policyIndex = policies.findIndex((policy) => policy.id === id)
+
+    if (policyIndex === -1) return null
+
+    policies[policyIndex] = {
+      ...policies[policyIndex],
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    }
+
+    this.setData("globalPolicies", policies)
+    return policies[policyIndex]
+  }
+
+  async deleteGlobalPolicy(id: string): Promise<boolean> {
+    const policies = await this.getGlobalPolicies()
+    const filteredPolicies = policies.filter((policy) => policy.id !== id)
+
+    if (filteredPolicies.length === policies.length) return false
+
+    this.setData("globalPolicies", filteredPolicies)
+    return true
   }
 
   // User Preferences
   async getUserPreferences(): Promise<UserPreferences> {
-    return this.getData().preferences
+    return this.getData("preferences", {
+      theme: "light",
+      companyName: "TechCorp Global",
+      defaultView: "architecture",
+      notifications: true,
+      autoSave: true,
+      demoScenario: "corporate",
+      language: "en",
+      dateFormat: "MM/DD/YYYY",
+      timeFormat: "12h",
+      currency: "USD",
+      dashboardLayout: [],
+    })
   }
 
   async updateUserPreferences(updates: Partial<UserPreferences>): Promise<UserPreferences> {
-    const data = this.getData()
-    data.preferences = {
-      ...data.preferences,
-      ...updates,
-    }
-
-    this.saveData(data)
-    return data.preferences
+    const preferences = await this.getUserPreferences()
+    const updatedPreferences = { ...preferences, ...updates }
+    this.setData("preferences", updatedPreferences)
+    return updatedPreferences
   }
 
-  // Architecture Templates
-  async getArchitectureTemplates(): Promise<ArchitectureTemplate[]> {
-    return this.getData().architectureTemplates
-  }
-
-  async createArchitectureTemplate(
-    templateData: Omit<ArchitectureTemplate, "id" | "createdAt" | "updatedAt">,
-  ): Promise<ArchitectureTemplate> {
-    const data = this.getData()
-    const newTemplate: ArchitectureTemplate = {
-      ...templateData,
-      id: `template-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }
-
-    data.architectureTemplates.push(newTemplate)
-    this.saveData(data)
-    return newTemplate
-  }
-
-  // Enhanced Demo Data Generation with Multiple Scenarios
-  async generateDemoData(
-    scenario:
-      | "corporate"
-      | "education"
-      | "healthcare"
-      | "government"
-      | "manufacturing"
-      | "retail"
-      | "technology"
-      | "financial",
-  ): Promise<void> {
-    const data = this.getDefaultData()
-
-    // Update preferences
-    data.preferences.demoScenario = scenario
-
-    switch (scenario) {
-      case "corporate":
-        data.preferences.companyName = "GlobalTech Industries"
-        data.users = this.generateCorporateUsers()
-        data.sites = this.generateCorporateSites()
-        data.events = this.generateCorporateEvents()
-        data.globalPolicies = this.generateCorporateGlobalPolicies()
-        break
-      case "financial":
-        data.preferences.companyName = "SecureBank Financial Group"
-        data.users = this.generateFinancialUsers()
-        data.sites = this.generateFinancialSites()
-        data.events = this.generateFinancialEvents()
-        data.globalPolicies = this.generateFinancialGlobalPolicies()
-        break
-      case "education":
-        data.preferences.companyName = "Riverside University System"
-        data.users = this.generateEducationUsers()
-        data.sites = this.generateEducationSites()
-        data.events = this.generateEducationEvents()
-        data.globalPolicies = this.generateEducationGlobalPolicies()
-        break
-      case "healthcare":
-        data.preferences.companyName = "Metropolitan Health Network"
-        data.users = this.generateHealthcareUsers()
-        data.sites = this.generateHealthcareSites()
-        data.events = this.generateHealthcareEvents()
-        data.globalPolicies = this.generateHealthcareGlobalPolicies()
-        break
-      case "manufacturing":
-        data.preferences.companyName = "Advanced Manufacturing Corp"
-        data.users = this.generateManufacturingUsers()
-        data.sites = this.generateManufacturingSites()
-        data.events = this.generateManufacturingEvents()
-        data.globalPolicies = this.generateManufacturingGlobalPolicies()
-        break
-      case "technology":
-        data.preferences.companyName = "InnovateTech Solutions"
-        data.users = this.generateTechnologyUsers()
-        data.sites = this.generateTechnologySites()
-        data.events = this.generateTechnologyEvents()
-        data.globalPolicies = this.generateTechnologyGlobalPolicies()
-        break
-      case "retail":
-        data.preferences.companyName = "Premium Retail Chain"
-        data.users = this.generateRetailUsers()
-        data.sites = this.generateRetailSites()
-        data.events = this.generateRetailEvents()
-        data.globalPolicies = this.generateRetailGlobalPolicies()
-        break
-      case "government":
-        data.preferences.companyName = "Federal Technology Services"
-        data.users = this.generateGovernmentUsers()
-        data.sites = this.generateGovernmentSites()
-        data.events = this.generateGovernmentEvents()
-        data.globalPolicies = this.generateGovernmentGlobalPolicies()
-        break
-    }
-
-    this.saveData(data)
-  }
-
-  // Corporate Demo Data Generators
-  private generateCorporateUsers(): User[] {
-    return [
-      {
-        id: "user-corp-1",
-        name: "Alexandra Sterling",
-        email: "alexandra.sterling@globaltech.com",
-        role: "admin",
-        department: "IT Security",
-        title: "Chief Information Security Officer",
-        phone: "+1 (555) 123-4567",
-        isActive: true,
-        specialties: ["Zero Trust", "Network Security", "Compliance", "Risk Management"],
-        certifications: ["CISSP", "CISM", "CCNP Security", "CISSP"],
-        skills: ["Strategic Planning", "Team Leadership", "Vendor Management", "Budget Planning"],
-        languages: ["English", "Spanish"],
-        timeZone: "America/New_York",
-        availability: {
-          hoursPerWeek: 45,
-          preferredSchedule: "business-hours",
-          vacationDays: ["2024-07-15", "2024-12-23", "2024-12-24"],
-        },
-        vendorRelationships: ["Portnox", "Cisco", "Microsoft"],
-        projectHistory: ["Global Security Upgrade 2023", "SASE Implementation"],
-        performanceRating: 4.8,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      {
-        id: "user-corp-2",
-        name: "Marcus Rodriguez",
-        email: "marcus.rodriguez@globaltech.com",
-        role: "project-manager",
-        department: "IT Operations",
-        title: "Senior Project Manager",
-        phone: "+1 (555) 234-5678",
-        isActive: true,
-        specialties: ["Project Management", "Infrastructure", "Change Management", "Stakeholder Communication"],
-        certifications: ["PMP", "ITIL v4", "Agile Certified", "Scrum Master"],
-        skills: ["Risk Assessment", "Resource Planning", "Quality Assurance", "Process Improvement"],
-        languages: ["English", "Portuguese"],
-        timeZone: "America/New_York",
-        availability: {
-          hoursPerWeek: 40,
-          preferredSchedule: "flexible",
-          vacationDays: ["2024-08-01", "2024-08-02", "2024-11-28"],
-        },
-        vendorRelationships: ["Portnox", "Aruba", "Palo Alto"],
-        projectHistory: ["Network Modernization 2023", "Cloud Migration Phase 2"],
-        performanceRating: 4.6,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      // Add more corporate users...
-    ]
-  }
-
-  private generateCorporateSites(): Site[] {
-    const sites = [
-      {
-        id: "site-corp-1",
-        name: "New York Headquarters",
-        location: "Manhattan, NY",
-        region: "North America",
-        country: "United States",
-        state: "New York",
-        city: "New York",
-        siteType: "headquarters" as const,
-        status: "implementation" as const,
-        priority: "critical" as const,
-        phase: "Phase 3 - Implementation",
-        users: 2500,
-        devices: 4200,
-        deviceBreakdown: {
-          windows: 1800,
-          mac: 450,
-          linux: 150,
-          ios: 850,
-          android: 420,
-          iot: 320,
-          medical: 0,
-          printers: 180,
-          cameras: 45,
-          voip: 250,
-          kiosks: 12,
-          tablets: 85,
-          chromeos: 35,
-          other: 30,
-        },
-        assignedUsers: {
-          projectManagers: ["user-corp-2"],
-          technicalOwners: ["user-corp-3"],
-          siteOwners: ["user-corp-4"],
-          systemsEngineers: ["user-corp-5"],
-          accountExecutives: ["user-corp-6"],
-          technicalAccountManagers: ["user-corp-7"],
-          technicians: ["user-corp-8", "user-corp-9"],
-          securitySpecialists: ["user-corp-1"],
-        },
-        startDate: "2024-01-15",
-        targetDate: "2024-04-30",
-        progress: 75,
-        milestones: [
-          {
-            id: "milestone-1",
-            name: "Infrastructure Assessment Complete",
-            description: "Complete network infrastructure assessment and readiness evaluation",
-            targetDate: "2024-01-30",
-            completionDate: "2024-01-28",
-            status: "completed",
-            dependencies: [],
-            assignedTo: "user-corp-3",
-          },
-        ],
-        wiredInfrastructure: {
-          vendor: "cisco",
-          switchModels: ["Catalyst 9300", "Catalyst 9500"],
-          switchCount: 48,
-          portCount: 1152,
-          stackingSupport: true,
-          poeSupport: true,
-          mgmtVlan: 100,
-          firmware: "17.09.02",
-        },
-        wirelessInfrastructure: {
-          vendor: "cisco",
-          controllerModel: "9800-CL",
-          apModels: ["Catalyst 9130AXI", "Catalyst 9120AXI"],
-          apCount: 120,
-          wifiStandards: ["802.11ax", "802.11ac"],
-          bandSupport: ["2.4GHz", "5GHz", "6GHz"],
-          meshSupport: false,
-          firmware: "17.09.04",
-        },
-        connectivity: {
-          type: "mpls",
-          bandwidth: "1Gbps",
-          provider: "Verizon Business",
-          redundancy: true,
-          backupType: "internet",
-        },
-        identityProvider: {
-          type: "azure-ad",
-          domain: "globaltech.com",
-          syncEnabled: true,
-          mfaEnabled: true,
-          conditionalAccess: true,
-        },
-        mdmProvider: {
-          type: "intune",
-          enrollmentType: "automatic",
-          complianceEnabled: true,
-          appManagement: true,
-        },
-        firewallInfrastructure: {
-          vendor: "palo-alto",
-          models: ["PA-5250", "PA-3250"],
-          haConfiguration: true,
-          userIdIntegration: true,
-          syslogEnabled: true,
-          firmware: "11.0.2",
-        },
-        radiusConfiguration: {
-          type: "cloud-radius",
-          clustering: true,
-          loadBalancing: true,
-          certificates: true,
-        },
-        deviceAdministration: {
-          type: "tacacs",
-          vendor: "cisco-ise",
-          privilegeLevels: [1, 15],
-          commandAuthorization: true,
-        },
-        vlans: 25,
-        subnets: ["10.1.0.0/16", "10.2.0.0/16"],
-        dhcpScopes: 15,
-        dnsServers: ["10.1.1.10", "10.1.1.11"],
-        globalPolicies: ["global-policy-1", "global-policy-2", "global-policy-3"],
-        sitePolicies: [],
-        policyEnforcement: {
-          dynamic_vlan: true,
-          bandwidth_control: true,
-          time_based_access: true,
-          device_compliance: true,
-          location_based: true,
-        },
-        complianceRequirements: ["SOX", "PCI-DSS", "GDPR"],
-        securityStandards: ["NIST Cybersecurity Framework", "ISO 27001"],
-        dataClassification: "confidential",
-        notes:
-          "Primary headquarters with critical business operations. High visibility deployment requiring executive oversight.",
-        deploymentChecklist: [],
-        riskAssessment: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      // Add more corporate sites...
-    ]
-
-    // Generate additional randomized sites
-    const additionalSites = this.generateRandomizedSites("corporate", 11)
-    return [...sites, ...additionalSites]
-  }
-
-  private generateCorporateGlobalPolicies(): GlobalPolicy[] {
-    return [
-      {
-        id: "global-policy-corp-1",
-        name: "Corporate Device Authentication Standard",
-        description: "Standard authentication policy for all corporate-managed devices across all sites",
-        category: "authentication",
-        type: "access",
-        priority: 1,
-        conditions: [
-          {
-            type: "device_type",
-            operator: "in",
-            value: ["Windows", "macOS", "iOS", "Android"],
-            description: "Corporate managed devices",
-          },
-          {
-            type: "certificate",
-            operator: "equals",
-            value: "valid",
-            description: "Valid corporate certificate required",
-          },
-        ],
-        actions: [
-          {
-            type: "allow",
-            parameters: { vlan: "100", qos: "standard", bandwidth: "unlimited" },
-            description: "Corporate network access with standard QoS",
-            priority: 1,
-          },
-        ],
-        enabled: true,
-        applicableSites: [], // All sites
-        schedule: {
-          type: "always",
-          timeZone: "UTC",
-        },
-        tags: ["corporate", "authentication", "standard"],
-        version: "1.0",
-        approvedBy: "user-corp-1",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      // Add more corporate global policies...
-    ]
-  }
-
-  private generateCorporateEvents(): Event[] {
-    return [
-      {
-        id: "event-corp-1",
-        title: "Global NAC Deployment Kickoff",
-        description: "Project kickoff meeting for the global NAC deployment initiative across all corporate sites",
-        startDate: "2024-01-10T09:00:00",
-        endDate: "2024-01-10T11:00:00",
-        type: "kickoff",
-        priority: "critical",
-        assignedTo: "user-corp-2",
-        siteId: "site-corp-1",
-        status: "completed",
-        attendees: ["user-corp-1", "user-corp-2", "user-corp-3", "user-corp-5"],
-        location: "New York HQ - Executive Conference Room A",
-        meetingType: "hybrid",
-        meetingUrl: "https://teams.microsoft.com/l/meetup-join/...",
-        prerequisites: ["Network assessment reports", "Budget approval"],
-        deliverables: ["Project charter", "Resource allocation plan", "Timeline approval"],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      // Add more corporate events...
-    ]
-  }
-
-  // Financial Services Demo Data Generators
-  private generateFinancialUsers(): User[] {
-    return [
-      {
-        id: "user-fin-1",
-        name: "Robert Chen",
-        email: "robert.chen@securebank.com",
-        role: "admin",
-        department: "Information Security",
-        title: "Chief Security Officer",
-        phone: "+1 (555) 987-6543",
-        isActive: true,
-        specialties: ["Financial Security", "Regulatory Compliance", "Risk Assessment", "Fraud Prevention"],
-        certifications: ["CISSP", "CISA", "FRM", "PCI-DSS QSA"],
-        skills: ["Regulatory Knowledge", "Audit Management", "Incident Response", "Vendor Risk"],
-        languages: ["English", "Mandarin"],
-        timeZone: "America/New_York",
-        availability: {
-          hoursPerWeek: 50,
-          preferredSchedule: "business-hours",
-          vacationDays: ["2024-06-15", "2024-12-25"],
-        },
-        vendorRelationships: ["Portnox", "Palo Alto", "CyberArk"],
-        projectHistory: ["PCI-DSS Compliance 2023", "Zero Trust Implementation"],
-        performanceRating: 4.9,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      // Add more financial users...
-    ]
-  }
-
-  private generateFinancialSites(): Site[] {
-    const sites = [
-      {
-        id: "site-fin-1",
-        name: "Wall Street Trading Floor",
-        location: "New York, NY",
-        region: "North America",
-        country: "United States",
-        state: "New York",
-        city: "New York",
-        siteType: "headquarters" as const,
-        status: "implementation" as const,
-        priority: "critical" as const,
-        phase: "Phase 4 - Deployment",
-        users: 850,
-        devices: 2100,
-        deviceBreakdown: {
-          windows: 600,
-          mac: 120,
-          linux: 80,
-          ios: 200,
-          android: 50,
-          iot: 150,
-          medical: 0,
-          printers: 45,
-          cameras: 25,
-          voip: 180,
-          kiosks: 30,
-          tablets: 60,
-          chromeos: 0,
-          other: 20,
-        },
-        assignedUsers: {
-          projectManagers: ["user-fin-2"],
-          technicalOwners: ["user-fin-3"],
-          siteOwners: ["user-fin-4"],
-          systemsEngineers: ["user-fin-5"],
-          accountExecutives: ["user-fin-6"],
-          technicalAccountManagers: ["user-fin-7"],
-          technicians: ["user-fin-8"],
-          securitySpecialists: ["user-fin-1"],
-        },
-        startDate: "2024-02-01",
-        targetDate: "2024-05-15",
-        progress: 85,
-        milestones: [],
-        wiredInfrastructure: {
-          vendor: "cisco",
-          switchModels: ["Catalyst 9500", "Nexus 9000"],
-          switchCount: 32,
-          portCount: 768,
-          stackingSupport: true,
-          poeSupport: true,
-          mgmtVlan: 10,
-          firmware: "17.09.02",
-        },
-        wirelessInfrastructure: {
-          vendor: "aruba",
-          controllerModel: "7240XM",
-          apModels: ["AP-635", "AP-555"],
-          apCount: 85,
-          wifiStandards: ["802.11ax"],
-          bandSupport: ["5GHz", "6GHz"],
-          meshSupport: false,
-          firmware: "10.4.0.3",
-        },
-        connectivity: {
-          type: "directconnect",
-          bandwidth: "10Gbps",
-          provider: "AWS Direct Connect",
-          redundancy: true,
-          backupType: "expressroute",
-        },
-        identityProvider: {
-          type: "azure-ad",
-          domain: "securebank.com",
-          syncEnabled: true,
-          mfaEnabled: true,
-          conditionalAccess: true,
-        },
-        mdmProvider: {
-          type: "intune",
-          enrollmentType: "automatic",
-          complianceEnabled: true,
-          appManagement: true,
-        },
-        firewallInfrastructure: {
-          vendor: "palo-alto",
-          models: ["PA-7080", "PA-5260"],
-          haConfiguration: true,
-          userIdIntegration: true,
-          syslogEnabled: true,
-          firmware: "11.1.0",
-        },
-        radiusConfiguration: {
-          type: "cloud-radius",
-          clustering: true,
-          loadBalancing: true,
-          certificates: true,
-        },
-        deviceAdministration: {
-          type: "both",
-          vendor: "cisco-ise",
-          privilegeLevels: [1, 7, 15],
-          commandAuthorization: true,
-        },
-        vlans: 45,
-        subnets: ["172.16.0.0/16", "172.17.0.0/16"],
-        dhcpScopes: 25,
-        dnsServers: ["172.16.1.10", "172.16.1.11"],
-        globalPolicies: ["global-policy-fin-1", "global-policy-fin-2"],
-        sitePolicies: [],
-        policyEnforcement: {
-          dynamic_vlan: true,
-          bandwidth_control: true,
-          time_based_access: true,
-          device_compliance: true,
-          location_based: true,
-        },
-        complianceRequirements: ["PCI-DSS", "SOX", "GLBA", "FFIEC"],
-        securityStandards: ["NIST Cybersecurity Framework", "ISO 27001", "CIS Controls"],
-        dataClassification: "restricted",
-        notes: "High-frequency trading environment requiring ultra-low latency and maximum security.",
-        deploymentChecklist: [],
-        riskAssessment: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      // Add more financial sites...
-    ]
-
-    const additionalSites = this.generateRandomizedSites("financial", 17)
-    return [...sites, ...additionalSites]
-  }
-
-  private generateFinancialGlobalPolicies(): GlobalPolicy[] {
-    return [
-      {
-        id: "global-policy-fin-1",
-        name: "PCI-DSS Compliance Policy",
-        description: "Payment card industry compliance for all payment processing systems",
-        category: "compliance",
-        type: "security",
-        priority: 1,
-        conditions: [
-          {
-            type: "device_type",
-            operator: "in",
-            value: ["Payment Terminal", "POS System"],
-            description: "Payment processing devices",
-          },
-        ],
-        actions: [
-          {
-            type: "vlan_assign",
-            parameters: { vlan: "200", isolation: true, monitoring: "enhanced" },
-            description: "Isolated PCI-DSS compliant network segment",
-            priority: 1,
-          },
-        ],
-        enabled: true,
-        applicableSites: [],
-        schedule: { type: "always", timeZone: "UTC" },
-        tags: ["financial", "pci-dss", "compliance"],
-        version: "1.0",
-        approvedBy: "user-fin-1",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ]
-  }
-
-  private generateFinancialEvents(): Event[] {
-    return [
-      {
-        id: "event-fin-1",
-        title: "PCI-DSS Compliance Assessment",
-        description: "Quarterly PCI-DSS compliance review and network security assessment",
-        startDate: "2024-03-15T10:00:00",
-        endDate: "2024-03-15T16:00:00",
-        type: "review",
-        priority: "high",
-        assignedTo: "user-fin-1",
-        siteId: "site-fin-1",
-        status: "scheduled",
-        attendees: ["user-fin-1", "user-fin-3", "user-fin-5"],
-        location: "Wall Street Trading Floor - Compliance Room",
-        meetingType: "in-person",
-        prerequisites: ["Security documentation", "Network diagrams"],
-        deliverables: ["Compliance report", "Remediation plan"],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ]
-  }
-
-  // Helper method to generate randomized sites for each scenario
-  private generateRandomizedSites(scenario: string, count: number): Site[] {
+  // Bulk operations
+  async createBulkSites(count: number, template: Partial<Site>, namingConvention: string): Promise<Site[]> {
     const sites: Site[] = []
-    const siteTypes: Site["siteType"][] = ["branch", "campus", "datacenter", "remote", "building"]
-    const statuses: Site["status"][] = ["planning", "design", "implementation", "testing", "completed", "on-hold"]
-    const priorities: Site["priority"][] = ["low", "medium", "high", "critical"]
 
-    const siteNames = {
-      corporate: [
-        "Los Angeles Office",
-        "Chicago Branch",
-        "Dallas Headquarters",
-        "Miami Operations",
-        "Seattle Tech Hub",
-        "Boston Research Center",
-        "Atlanta Regional",
-        "Denver Facility",
-        "Phoenix Branch",
-        "Detroit Operations",
-        "San Francisco Office",
-      ],
-      financial: [
-        "Downtown Branch",
-        "Investment Center",
-        "Retail Banking Hub",
-        "Corporate Banking",
-        "Wealth Management",
-        "Trading Desk",
-        "Risk Management Center",
-        "Compliance Office",
-        "Operations Center",
-        "Customer Service Hub",
-        "Private Banking",
-        "Commercial Lending",
-        "Treasury Operations",
-        "Credit Analysis",
-        "Mortgage Center",
-        "International Banking",
-        "Trust Services",
-      ],
-      healthcare: [
-        "Main Hospital",
-        "Emergency Department",
-        "Surgical Center",
-        "Outpatient Clinic",
-        "Radiology Center",
-        "Laboratory",
-        "Pharmacy",
-        "Administrative Office",
-      ],
-      education: ["Main Campus", "Library", "Student Center", "Research Lab", "Dormitory", "Athletic Center"],
-      manufacturing: [
-        "Production Facility",
-        "Quality Control",
-        "Warehouse",
-        "R&D Lab",
-        "Assembly Line",
-        "Shipping Center",
-        "Maintenance Shop",
-        "Administrative Building",
-        "Safety Office",
-        "Testing Facility",
-        "Raw Materials",
-        "Finished Goods",
-        "Equipment Storage",
-        "Training Center",
-      ],
-      technology: [
-        "Development Center",
-        "QA Lab",
-        "Cloud Operations",
-        "Security Operations",
-        "Customer Support",
-        "Sales Office",
-        "Product Management",
-        "Data Center",
-        "Innovation Lab",
-      ],
-      retail: [
-        "Flagship Store",
-        "Outlet Store",
-        "Mall Location",
-        "Strip Mall",
-        "Warehouse",
-        "Distribution Center",
-        "Customer Service",
-        "Regional Office",
-        "Pop-up Store",
-        "Seasonal Store",
-        "Concept Store",
-        "Showroom",
-        "Training Center",
-        "Call Center",
-        "E-commerce Fulfillment",
-        "Returns Processing",
-        "Loss Prevention",
-        "Store Support",
-        "Inventory Management",
-        "Category Management",
-        "Marketing Office",
-        "Finance Office",
-        "HR Office",
-        "IT Support",
-        "Vendor Relations",
-      ],
-    }
+    for (let i = 1; i <= count; i++) {
+      const siteName = namingConvention.replace("{n}", i.toString().padStart(2, "0"))
 
-    const names = siteNames[scenario as keyof typeof siteNames] || siteNames.corporate
-
-    for (let i = 0; i < count; i++) {
-      const randomName = names[i % names.length]
-      const randomCountry = COUNTRIES[Math.floor(Math.random() * COUNTRIES.length)]
-      const randomRegion = REGIONS[Math.floor(Math.random() * REGIONS.length)]
-      const randomSiteType = siteTypes[Math.floor(Math.random() * siteTypes.length)]
-      const randomStatus = statuses[Math.floor(Math.random() * statuses.length)]
-      const randomPriority = priorities[Math.floor(Math.random() * priorities.length)]
-      const randomUsers = Math.floor(Math.random() * 1000) + 50
-      const randomDevices = Math.floor(randomUsers * 1.5) + Math.floor(Math.random() * 500)
-      const randomProgress =
-        randomStatus === "completed" ? 100 : randomStatus === "planning" ? 0 : Math.floor(Math.random() * 80) + 10
-
-      sites.push({
-        id: `site-${scenario}-${i + 2}`,
-        name: `${randomName} ${i + 1}`,
-        location: `${randomCountry}`,
-        region: randomRegion,
-        country: randomCountry,
-        state: randomCountry === "United States" ? US_STATES[Math.floor(Math.random() * US_STATES.length)] : undefined,
-        city: `City ${i + 1}`,
-        siteType: randomSiteType,
-        status: randomStatus,
-        priority: randomPriority,
-        phase: PHASES[Math.floor(Math.random() * PHASES.length)],
-        users: randomUsers,
-        devices: randomDevices,
-        deviceBreakdown: {
-          windows: Math.floor(randomDevices * 0.4),
-          mac: Math.floor(randomDevices * 0.15),
-          linux: Math.floor(randomDevices * 0.05),
-          ios: Math.floor(randomDevices * 0.2),
-          android: Math.floor(randomDevices * 0.1),
-          iot: Math.floor(randomDevices * 0.05),
-          medical: scenario === "healthcare" ? Math.floor(randomDevices * 0.15) : 0,
-          printers: Math.floor(randomDevices * 0.03),
-          cameras: Math.floor(randomDevices * 0.02),
-          voip: Math.floor(randomDevices * 0.08),
-          kiosks: Math.floor(randomDevices * 0.01),
-          tablets: Math.floor(randomDevices * 0.04),
-          chromeos: Math.floor(randomDevices * 0.02),
-          other: Math.floor(randomDevices * 0.05),
+      const site = await this.createSite({
+        ...template,
+        name: siteName,
+        location: template.location || `${siteName} Location`,
+        region: template.region || "North America",
+        country: template.country || "United States",
+        siteType: template.siteType || "branch",
+        status: template.status || "planning",
+        priority: template.priority || "medium",
+        phase: template.phase || "Phase 1 - Planning",
+        users: template.users || Math.floor(Math.random() * 500) + 50,
+        devices: template.devices || Math.floor(Math.random() * 1000) + 100,
+        deviceBreakdown: template.deviceBreakdown || {
+          windows: Math.floor(Math.random() * 100) + 20,
+          mac: Math.floor(Math.random() * 50) + 10,
+          linux: Math.floor(Math.random() * 20) + 5,
+          ios: Math.floor(Math.random() * 80) + 15,
+          android: Math.floor(Math.random() * 60) + 10,
+          iot: Math.floor(Math.random() * 30) + 5,
+          medical: 0,
+          printers: Math.floor(Math.random() * 10) + 2,
+          cameras: Math.floor(Math.random() * 15) + 3,
+          voip: Math.floor(Math.random() * 25) + 5,
+          kiosks: Math.floor(Math.random() * 5) + 1,
+          tablets: Math.floor(Math.random() * 20) + 3,
+          chromeos: Math.floor(Math.random() * 15) + 2,
+          other: Math.floor(Math.random() * 10) + 2,
         },
-        assignedUsers: {
+        assignedUsers: template.assignedUsers || {
           projectManagers: [],
           technicalOwners: [],
           siteOwners: [],
@@ -1986,1505 +1096,1540 @@ class StorageManager {
           technicians: [],
           securitySpecialists: [],
         },
-        startDate: new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1)
-          .toISOString()
-          .split("T")[0],
-        targetDate: new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1)
-          .toISOString()
-          .split("T")[0],
-        progress: randomProgress,
+        startDate: template.startDate || new Date().toISOString().split("T")[0],
+        targetDate: template.targetDate || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+        progress: template.progress || 0,
         milestones: [],
-        wiredInfrastructure: {
-          vendor: WIRED_VENDORS[Math.floor(Math.random() * WIRED_VENDORS.length)].id,
-          switchModels: [WIRED_VENDORS[0].models[Math.floor(Math.random() * WIRED_VENDORS[0].models.length)]],
+        wiredInfrastructure: template.wiredInfrastructure || {
+          vendor: "cisco",
+          switchModels: ["Catalyst 9300"],
           switchCount: Math.floor(Math.random() * 20) + 5,
-          portCount: (Math.floor(Math.random() * 20) + 5) * 48,
-          stackingSupport: Math.random() > 0.5,
-          poeSupport: Math.random() > 0.3,
-          mgmtVlan: Math.floor(Math.random() * 100) + 100,
-          firmware: WIRED_VENDORS[0].firmwares[Math.floor(Math.random() * WIRED_VENDORS[0].firmwares.length)],
-        },
-        wirelessInfrastructure: {
-          vendor: WIRELESS_VENDORS[Math.floor(Math.random() * WIRELESS_VENDORS.length)].id,
-          controllerModel:
-            WIRELESS_VENDORS[0].controllers[Math.floor(Math.random() * WIRELESS_VENDORS[0].controllers.length)],
-          apModels: [WIRELESS_VENDORS[0].aps[Math.floor(Math.random() * WIRELESS_VENDORS[0].aps.length)]],
-          apCount: Math.floor(Math.random() * 50) + 10,
-          wifiStandards: ["802.11ax", "802.11ac"],
-          bandSupport: ["2.4GHz", "5GHz"],
-          meshSupport: Math.random() > 0.7,
-          firmware: WIRELESS_VENDORS[0].firmwares[Math.floor(Math.random() * WIRELESS_VENDORS[0].firmwares.length)],
-        },
-        connectivity: {
-          type: ["mpls", "sdwan", "internet", "vpn"][Math.floor(Math.random() * 4)],
-          bandwidth: ["100Mbps", "1Gbps", "500Mbps", "10Gbps"][Math.floor(Math.random() * 4)],
-          provider: ["Verizon", "AT&T", "Comcast", "Level3"][Math.floor(Math.random() * 4)],
-          redundancy: Math.random() > 0.5,
-        },
-        identityProvider: {
-          type: "azure-ad",
-          domain: `${scenario}.com`,
-          syncEnabled: true,
-          mfaEnabled: Math.random() > 0.3,
-          conditionalAccess: Math.random() > 0.4,
-        },
-        mdmProvider: {
-          type: MDM_PROVIDERS[Math.floor(Math.random() * MDM_PROVIDERS.length)].id,
-          enrollmentType: ["automatic", "manual"][Math.floor(Math.random() * 2)],
-          complianceEnabled: Math.random() > 0.4,
-          appManagement: Math.random() > 0.3,
-        },
-        firewallInfrastructure: {
-          vendor: FIREWALL_VENDORS[Math.floor(Math.random() * FIREWALL_VENDORS.length)].id,
-          models: [FIREWALL_VENDORS[0].models[Math.floor(Math.random() * FIREWALL_VENDORS[0].models.length)]],
-          haConfiguration: Math.random() > 0.6,
-          userIdIntegration: Math.random() > 0.5,
-          syslogEnabled: Math.random() > 0.4,
-          firmware: FIREWALL_VENDORS[0].firmwares[Math.floor(Math.random() * FIREWALL_VENDORS[0].firmwares.length)],
-        },
-        radiusConfiguration: {
-          type: "cloud-radius",
-          clustering: Math.random() > 0.5,
-          loadBalancing: Math.random() > 0.4,
-          certificates: Math.random() > 0.3,
-        },
-        deviceAdministration: {
-          type: ["radius", "tacacs", "both"][Math.floor(Math.random() * 3)],
-          privilegeLevels: [1, 15],
-          commandAuthorization: Math.random() > 0.5,
-        },
-        vlans: Math.floor(Math.random() * 30) + 5,
-        subnets: [`10.${i + 10}.0.0/16`],
-        dhcpScopes: Math.floor(Math.random() * 10) + 3,
-        dnsServers: [`10.${i + 10}.1.10`, `10.${i + 10}.1.11`],
-        globalPolicies: [],
-        sitePolicies: [],
-        policyEnforcement: {
-          dynamic_vlan: Math.random() > 0.5,
-          bandwidth_control: Math.random() > 0.4,
-          time_based_access: Math.random() > 0.3,
-          device_compliance: Math.random() > 0.6,
-          location_based: Math.random() > 0.4,
-        },
-        complianceRequirements: COMPLIANCE_FRAMEWORKS.slice(0, Math.floor(Math.random() * 5) + 2),
-        securityStandards: SECURITY_STANDARDS.slice(0, Math.floor(Math.random() * 4) + 2),
-        dataClassification: ["internal", "confidential", "restricted"][Math.floor(Math.random() * 3)] as const,
-        notes: `Randomized ${scenario} site with ${randomUsers} users and ${randomDevices} devices.`,
-        deploymentChecklist: [],
-        riskAssessment: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      })
-    }
-
-    return sites
-  }
-
-  // Placeholder generators for other scenarios (to be expanded)
-  private generateEducationUsers(): User[] {
-    return [
-      {
-        id: "user-edu-1",
-        name: "Dr. Sarah Johnson",
-        email: "sarah.johnson@riverside.edu",
-        role: "admin",
-        department: "IT Services",
-        title: "Chief Technology Officer",
-        phone: "+1 (555) 321-9876",
-        isActive: true,
-        specialties: ["Campus Networks", "Student Services", "Research Computing", "EdTech"],
-        certifications: ["CISSP", "CCNP", "ITIL", "EDUCAUSE"],
-        skills: ["Higher Education", "Large Scale Deployments", "Student Privacy", "Research Support"],
-        languages: ["English", "French"],
-        timeZone: "America/Los_Angeles",
-        availability: {
-          hoursPerWeek: 45,
-          preferredSchedule: "flexible",
-          vacationDays: ["2024-07-04", "2024-12-25"],
-        },
-        vendorRelationships: ["Portnox", "Cisco", "Aruba"],
-        projectHistory: ["Campus WiFi Upgrade 2023", "Student Portal Migration"],
-        performanceRating: 4.7,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ]
-  }
-
-  private generateEducationSites(): Site[] {
-    const sites = [
-      {
-        id: "site-edu-1",
-        name: "Main Campus",
-        location: "Riverside, CA",
-        region: "North America",
-        country: "United States",
-        state: "California",
-        city: "Riverside",
-        siteType: "campus" as const,
-        status: "testing" as const,
-        priority: "high" as const,
-        phase: "Phase 4 - Go-Live",
-        users: 15000,
-        devices: 28000,
-        deviceBreakdown: {
-          windows: 8000,
-          mac: 4500,
-          linux: 1200,
-          ios: 7000,
-          android: 4200,
-          iot: 1800,
-          medical: 0,
-          printers: 450,
-          cameras: 180,
-          voip: 600,
-          kiosks: 120,
-          tablets: 800,
-          chromeos: 150,
-          other: 200,
-        },
-        assignedUsers: {
-          projectManagers: ["user-edu-2"],
-          technicalOwners: ["user-edu-3"],
-          siteOwners: ["user-edu-4"],
-          systemsEngineers: ["user-edu-5"],
-          accountExecutives: ["user-edu-6"],
-          technicalAccountManagers: ["user-edu-7"],
-          technicians: ["user-edu-8", "user-edu-9"],
-          securitySpecialists: ["user-edu-1"],
-        },
-        startDate: "2024-01-08",
-        targetDate: "2024-06-15",
-        progress: 92,
-        milestones: [],
-        wiredInfrastructure: {
-          vendor: "aruba",
-          switchModels: ["CX 6300", "CX 8300"],
-          switchCount: 180,
-          portCount: 4320,
+          portCount: Math.floor(Math.random() * 500) + 100,
           stackingSupport: true,
           poeSupport: true,
-          mgmtVlan: 1,
-          firmware: "10.10.1020",
+          mgmtVlan: 100,
+          firmware: "17.09.02",
         },
-        wirelessInfrastructure: {
-          vendor: "aruba",
-          controllerModel: "9012",
-          apModels: ["AP-635", "AP-515", "AP-505"],
-          apCount: 850,
-          wifiStandards: ["802.11ax", "802.11ac"],
-          bandSupport: ["2.4GHz", "5GHz", "6GHz"],
-          meshSupport: true,
-          firmware: "10.3.1.1",
-        },
-        connectivity: {
-          type: "fiber",
-          bandwidth: "10Gbps",
-          provider: "Internet2",
-          redundancy: true,
-          backupType: "mpls",
-        },
-        identityProvider: {
-          type: "azure-ad",
-          domain: "riverside.edu",
-          syncEnabled: true,
-          mfaEnabled: true,
-          conditionalAccess: true,
-        },
-        mdmProvider: {
-          type: "jamf",
-          enrollmentType: "automatic",
-          complianceEnabled: true,
-          appManagement: true,
-        },
-        firewallInfrastructure: {
-          vendor: "palo-alto",
-          models: ["PA-5250", "PA-3250"],
-          haConfiguration: true,
-          userIdIntegration: true,
-          syslogEnabled: true,
-          firmware: "11.0.2",
-        },
-        radiusConfiguration: {
-          type: "on-premise-radius",
-          vendor: "aruba-clearpass",
-          clustering: true,
-          loadBalancing: true,
-          certificates: true,
-        },
-        deviceAdministration: {
-          type: "radius",
-          vendor: "aruba-clearpass",
-          privilegeLevels: [1, 15],
-          commandAuthorization: false,
-        },
-        vlans: 85,
-        subnets: ["172.20.0.0/16", "172.21.0.0/16", "172.22.0.0/16"],
-        dhcpScopes: 45,
-        dnsServers: ["172.20.1.10", "172.20.1.11"],
-        globalPolicies: ["global-policy-edu-1", "global-policy-edu-2"],
-        sitePolicies: [],
-        policyEnforcement: {
-          dynamic_vlan: true,
-          bandwidth_control: true,
-          time_based_access: true,
-          device_compliance: true,
-          location_based: true,
-        },
-        complianceRequirements: ["FERPA", "GDPR", "CCPA"],
-        securityStandards: ["NIST Cybersecurity Framework", "CIS Controls", "EDUCAUSE Security Framework"],
-        dataClassification: "internal",
-        notes: "Large university campus with high-density wireless requirements for dormitories and classrooms.",
-        deploymentChecklist: [],
-        riskAssessment: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ]
-
-    const additionalSites = this.generateRandomizedSites("education", 5)
-    return [...sites, ...additionalSites]
-  }
-
-  private generateEducationGlobalPolicies(): GlobalPolicy[] {
-    return [
-      {
-        id: "global-policy-edu-1",
-        name: "Student BYOD Policy",
-        description: "Bring Your Own Device policy for students with bandwidth management",
-        category: "authorization",
-        type: "bandwidth",
-        priority: 2,
-        conditions: [
-          {
-            type: "user_group",
-            operator: "equals",
-            value: "Students",
-            description: "Student user group",
-          },
-        ],
-        actions: [
-          {
-            type: "bandwidth_limit",
-            parameters: { download: "50Mbps", upload: "25Mbps", vlan: "300" },
-            description: "Student network with bandwidth limits",
-            priority: 1,
-          },
-        ],
-        enabled: true,
-        applicableSites: [],
-        schedule: { type: "always", timeZone: "America/Los_Angeles" },
-        tags: ["education", "byod", "students"],
-        version: "1.0",
-        approvedBy: "user-edu-1",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ]
-  }
-
-  private generateEducationEvents(): Event[] {
-    return [
-      {
-        id: "event-edu-1",
-        title: "Campus WiFi Upgrade",
-        description: "WiFi 6 upgrade across all dormitories and academic buildings",
-        startDate: "2024-05-15T08:00:00",
-        endDate: "2024-05-15T18:00:00",
-        type: "deployment",
-        priority: "high",
-        assignedTo: "user-edu-2",
-        siteId: "site-edu-1",
-        status: "scheduled",
-        attendees: ["user-edu-1", "user-edu-2", "user-edu-5"],
-        location: "Main Campus - IT Building",
-        meetingType: "in-person",
-        prerequisites: ["AP installations", "Controller configuration"],
-        deliverables: ["WiFi coverage validation", "Performance testing"],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ]
-  }
-
-  private generateHealthcareUsers(): User[] {
-    return [
-      {
-        id: "user-health-1",
-        name: "Dr. Maria Gonzalez",
-        email: "maria.gonzalez@metrohealthnet.org",
-        role: "admin",
-        department: "Health IT",
-        title: "Chief Medical Information Officer",
-        phone: "+1 (555) 456-7890",
-        isActive: true,
-        specialties: ["Healthcare IT", "Medical Device Security", "HIPAA Compliance", "Clinical Workflows"],
-        certifications: ["CISSP", "CPHIMS", "CHPS", "HIMSS"],
-        skills: ["Clinical Systems", "Patient Safety", "Regulatory Compliance", "Medical Informatics"],
-        languages: ["English", "Spanish"],
-        timeZone: "America/Chicago",
-        availability: {
-          hoursPerWeek: 50,
-          preferredSchedule: "24x7",
-          vacationDays: ["2024-08-15", "2024-12-24"],
-        },
-        vendorRelationships: ["Portnox", "Cisco", "Palo Alto"],
-        projectHistory: ["HIPAA Security Upgrade 2023", "Medical Device Integration"],
-        performanceRating: 4.9,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ]
-  }
-
-  private generateHealthcareSites(): Site[] {
-    const sites = [
-      {
-        id: "site-health-1",
-        name: "Metropolitan General Hospital",
-        location: "Chicago, IL",
-        region: "North America",
-        country: "United States",
-        state: "Illinois",
-        city: "Chicago",
-        siteType: "headquarters" as const,
-        status: "implementation" as const,
-        priority: "critical" as const,
-        phase: "Phase 3 - Configuration",
-        users: 1200,
-        devices: 3500,
-        deviceBreakdown: {
-          windows: 800,
-          mac: 120,
-          linux: 50,
-          ios: 350,
-          android: 180,
-          iot: 450,
-          medical: 750,
-          printers: 85,
-          cameras: 35,
-          voip: 280,
-          kiosks: 45,
-          tablets: 200,
-          chromeos: 15,
-          other: 170,
-        },
-        assignedUsers: {
-          projectManagers: ["user-health-2"],
-          technicalOwners: ["user-health-3"],
-          siteOwners: ["user-health-4"],
-          systemsEngineers: ["user-health-5"],
-          accountExecutives: ["user-health-6"],
-          technicalAccountManagers: ["user-health-7"],
-          technicians: ["user-health-8"],
-          securitySpecialists: ["user-health-1"],
-        },
-        startDate: "2024-02-01",
-        targetDate: "2024-07-30",
-        progress: 68,
-        milestones: [],
-        wiredInfrastructure: {
+        wirelessInfrastructure: template.wirelessInfrastructure || {
           vendor: "cisco",
-          switchModels: ["Catalyst 9300", "IE 5000"],
-          switchCount: 65,
-          portCount: 1560,
-          stackingSupport: true,
-          poeSupport: true,
-          mgmtVlan: 50,
-          firmware: "17.06.03",
-        },
-        wirelessInfrastructure: {
-          vendor: "cisco",
-          controllerModel: "9800-40",
-          apModels: ["Catalyst 9130AXI", "AIR-AP3800"],
-          apCount: 180,
-          wifiStandards: ["802.11ax", "802.11ac"],
+          controllerModel: "9800-CL",
+          apModels: ["Catalyst 9130AXI"],
+          apCount: Math.floor(Math.random() * 30) + 10,
+          wifiStandards: ["802.11ax"],
           bandSupport: ["2.4GHz", "5GHz"],
           meshSupport: false,
-          firmware: "17.06.05",
+          firmware: "17.09.04",
         },
-        connectivity: {
-          type: "fiber",
-          bandwidth: "1Gbps",
-          provider: "Regional Health Network",
-          redundancy: true,
-          backupType: "mpls",
+        connectivity: template.connectivity || {
+          type: "internet",
+          bandwidth: "100Mbps",
+          provider: "Local ISP",
+          redundancy: false,
         },
-        identityProvider: {
-          type: "active-directory",
-          domain: "metrohealthnet.local",
+        identityProvider: template.identityProvider || {
+          type: "azure-ad",
+          domain: "company.com",
           syncEnabled: true,
           mfaEnabled: true,
-          conditionalAccess: true,
+          conditionalAccess: false,
         },
-        mdmProvider: {
+        mdmProvider: template.mdmProvider || {
           type: "intune",
           enrollmentType: "automatic",
           complianceEnabled: true,
           appManagement: true,
         },
-        firewallInfrastructure: {
-          vendor: "fortinet",
-          models: ["FortiGate 1800F", "FortiGate 600F"],
-          haConfiguration: true,
-          userIdIntegration: true,
-          syslogEnabled: true,
-          firmware: "7.2.5",
-        },
-        radiusConfiguration: {
-          type: "cloud-radius",
-          clustering: true,
-          loadBalancing: true,
-          certificates: true,
-        },
-        deviceAdministration: {
-          type: "radius",
-          privilegeLevels: [1, 15],
-          commandAuthorization: true,
-        },
-        vlans: 35,
-        subnets: ["192.168.10.0/16", "192.168.11.0/16"],
-        dhcpScopes: 20,
-        dnsServers: ["192.168.10.10", "192.168.10.11"],
-        globalPolicies: ["global-policy-health-1"],
-        sitePolicies: [],
-        policyEnforcement: {
-          dynamic_vlan: true,
-          bandwidth_control: true,
-          time_based_access: false,
-          device_compliance: true,
-          location_based: true,
-        },
-        complianceRequirements: ["HIPAA", "HITECH", "FDA 21 CFR Part 11"],
-        securityStandards: ["NIST Cybersecurity Framework", "NIST 800-66", "HHS Security Risk Assessment"],
-        dataClassification: "restricted",
-        notes:
-          "Critical healthcare facility requiring zero-latency for life-support systems and strict HIPAA compliance.",
-        deploymentChecklist: [],
-        riskAssessment: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ]
-
-    const additionalSites = this.generateRandomizedSites("healthcare", 7)
-    return [...sites, ...additionalSites]
-  }
-
-  private generateHealthcareGlobalPolicies(): GlobalPolicy[] {
-    return [
-      {
-        id: "global-policy-health-1",
-        name: "Medical Device Priority Policy",
-        description: "Critical medical device traffic prioritization and isolation",
-        category: "security",
-        type: "qos",
-        priority: 1,
-        conditions: [
-          {
-            type: "device_type",
-            operator: "in",
-            value: ["Medical Device", "Life Support", "Patient Monitor"],
-            description: "Critical medical equipment",
-          },
-        ],
-        actions: [
-          {
-            type: "qos_apply",
-            parameters: { priority: "critical", vlan: "10", latency: "1ms" },
-            description: "Critical priority with minimal latency",
-            priority: 1,
-          },
-        ],
-        enabled: true,
-        applicableSites: [],
-        schedule: { type: "always", timeZone: "UTC" },
-        tags: ["healthcare", "medical-device", "critical"],
-        version: "1.0",
-        approvedBy: "user-health-1",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ]
-  }
-
-  private generateHealthcareEvents(): Event[] {
-    return [
-      {
-        id: "event-health-1",
-        title: "Medical Device Security Assessment",
-        description: "Quarterly security assessment of all networked medical devices",
-        startDate: "2024-04-15T09:00:00",
-        endDate: "2024-04-15T17:00:00",
-        type: "review",
-        priority: "critical",
-        assignedTo: "user-health-1",
-        siteId: "site-health-1",
-        status: "scheduled",
-        attendees: ["user-health-1", "user-health-3", "user-health-5"],
-        location: "Metropolitan General Hospital - IT Security Room",
-        meetingType: "in-person",
-        prerequisites: ["Medical device inventory", "Network documentation"],
-        deliverables: ["Security assessment report", "Remediation recommendations"],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ]
-  }
-
-  private generateManufacturingUsers(): User[] {
-    return [
-      {
-        id: "user-mfg-1",
-        name: "James Anderson",
-        email: "james.anderson@advancedmfg.com",
-        role: "admin",
-        department: "Industrial IT",
-        title: "OT/IT Security Manager",
-        phone: "+1 (555) 789-0123",
-        isActive: true,
-        specialties: ["Industrial Networks", "OT Security", "SCADA Systems", "Manufacturing IT"],
-        certifications: ["CISSP", "GICSP", "ISA/IEC 62443", "SANS ICS"],
-        skills: ["Industrial Protocols", "Network Segmentation", "Safety Systems", "Automation"],
-        languages: ["English", "German"],
-        timeZone: "America/Detroit",
-        availability: {
-          hoursPerWeek: 45,
-          preferredSchedule: "business-hours",
-          vacationDays: ["2024-07-04", "2024-12-25"],
-        },
-        vendorRelationships: ["Portnox", "Cisco", "Rockwell Automation"],
-        projectHistory: ["OT Network Segmentation 2023", "SCADA Security Upgrade"],
-        performanceRating: 4.8,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ]
-  }
-
-  private generateManufacturingSites(): Site[] {
-    const sites = [
-      {
-        id: "site-mfg-1",
-        name: "Primary Production Facility",
-        location: "Detroit, MI",
-        region: "North America",
-        country: "United States",
-        state: "Michigan",
-        city: "Detroit",
-        siteType: "building" as const,
-        status: "design" as const,
-        priority: "high" as const,
-        phase: "Phase 2 - Design",
-        users: 850,
-        devices: 4200,
-        deviceBreakdown: {
-          windows: 400,
-          mac: 50,
-          linux: 120,
-          ios: 200,
-          android: 150,
-          iot: 2800,
-          medical: 0,
-          printers: 45,
-          cameras: 85,
-          voip: 180,
-          kiosks: 25,
-          tablets: 100,
-          chromeos: 15,
-          other: 230,
-        },
-        assignedUsers: {
-          projectManagers: ["user-mfg-2"],
-          technicalOwners: ["user-mfg-3"],
-          siteOwners: ["user-mfg-4"],
-          systemsEngineers: ["user-mfg-5"],
-          accountExecutives: ["user-mfg-6"],
-          technicalAccountManagers: ["user-mfg-7"],
-          technicians: ["user-mfg-8", "user-mfg-9"],
-          securitySpecialists: ["user-mfg-1"],
-        },
-        startDate: "2024-03-01",
-        targetDate: "2024-09-30",
-        progress: 35,
-        milestones: [],
-        wiredInfrastructure: {
-          vendor: "cisco",
-          switchModels: ["IE 5000", "Catalyst 9300", "IE 3300"],
-          switchCount: 95,
-          portCount: 2280,
-          stackingSupport: true,
-          poeSupport: true,
-          mgmtVlan: 1,
-          firmware: "17.09.02",
-        },
-        wirelessInfrastructure: {
-          vendor: "cisco",
-          controllerModel: "9800-CL",
-          apModels: ["Catalyst 9164I", "AIR-AP1800"],
-          apCount: 220,
-          wifiStandards: ["802.11ax", "802.11ac"],
-          bandSupport: ["2.4GHz", "5GHz"],
-          meshSupport: true,
-          firmware: "17.09.04",
-        },
-        connectivity: {
-          type: "fiber",
-          bandwidth: "10Gbps",
-          provider: "Industrial Network Solutions",
-          redundancy: true,
-          backupType: "mpls",
-        },
-        identityProvider: {
-          type: "active-directory",
-          domain: "advancedmfg.local",
-          syncEnabled: true,
-          mfaEnabled: true,
-          conditionalAccess: true,
-        },
-        mdmProvider: {
-          type: "vmware-workspace-one",
-          enrollmentType: "automatic",
-          complianceEnabled: true,
-          appManagement: true,
-        },
-        firewallInfrastructure: {
-          vendor: "fortinet",
-          models: ["FortiGate 3000D", "FortiGate 1800F"],
-          haConfiguration: true,
-          userIdIntegration: true,
-          syslogEnabled: true,
-          firmware: "7.4.1",
-        },
-        radiusConfiguration: {
-          type: "on-premise-radius",
-          vendor: "cisco-ise",
-          clustering: true,
-          loadBalancing: true,
-          certificates: true,
-        },
-        deviceAdministration: {
-          type: "both",
-          vendor: "cisco-ise",
-          privilegeLevels: [1, 7, 15],
-          commandAuthorization: true,
-        },
-        vlans: 55,
-        subnets: ["10.100.0.0/16", "10.101.0.0/16", "10.102.0.0/16"],
-        dhcpScopes: 35,
-        dnsServers: ["10.100.1.10", "10.100.1.11"],
-        globalPolicies: ["global-policy-mfg-1"],
-        sitePolicies: [],
-        policyEnforcement: {
-          dynamic_vlan: true,
-          bandwidth_control: true,
-          time_based_access: true,
-          device_compliance: true,
-          location_based: true,
-        },
-        complianceRequirements: ["IEC 62443", "ISO 27001", "OSHA"],
-        securityStandards: ["NIST Cybersecurity Framework", "IEC 62443", "ISA/IEC 62443"],
-        dataClassification: "confidential",
-        notes: "Industrial facility with critical OT/IT convergence requiring strict network segmentation.",
-        deploymentChecklist: [],
-        riskAssessment: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ]
-
-    const additionalSites = this.generateRandomizedSites("manufacturing", 13)
-    return [...sites, ...additionalSites]
-  }
-
-  private generateManufacturingGlobalPolicies(): GlobalPolicy[] {
-    return [
-      {
-        id: "global-policy-mfg-1",
-        name: "OT/IT Network Segmentation Policy",
-        description: "Strict segmentation between operational technology and information technology networks",
-        category: "security",
-        type: "vlan",
-        priority: 1,
-        conditions: [
-          {
-            type: "device_type",
-            operator: "in",
-            value: ["PLC", "HMI", "SCADA", "Industrial Controller"],
-            description: "Operational technology devices",
-          },
-        ],
-        actions: [
-          {
-            type: "vlan_assign",
-            parameters: { vlan: "100", isolation: true, monitoring: "continuous" },
-            description: "Isolated OT network with continuous monitoring",
-            priority: 1,
-          },
-        ],
-        enabled: true,
-        applicableSites: [],
-        schedule: { type: "always", timeZone: "UTC" },
-        tags: ["manufacturing", "ot-security", "segmentation"],
-        version: "1.0",
-        approvedBy: "user-mfg-1",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ]
-  }
-
-  private generateManufacturingEvents(): Event[] {
-    return [
-      {
-        id: "event-mfg-1",
-        title: "OT Security Assessment",
-        description: "Comprehensive security assessment of operational technology networks",
-        startDate: "2024-06-10T08:00:00",
-        endDate: "2024-06-10T16:00:00",
-        type: "review",
-        priority: "high",
-        assignedTo: "user-mfg-1",
-        siteId: "site-mfg-1",
-        status: "scheduled",
-        attendees: ["user-mfg-1", "user-mfg-3", "user-mfg-5"],
-        location: "Primary Production Facility - Control Room",
-        meetingType: "in-person",
-        prerequisites: ["Network topology", "Asset inventory"],
-        deliverables: ["Security assessment report", "Risk mitigation plan"],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ]
-  }
-
-  private generateTechnologyUsers(): User[] {
-    return [
-      {
-        id: "user-tech-1",
-        name: "Priya Sharma",
-        email: "priya.sharma@innovatetech.com",
-        role: "admin",
-        department: "DevSecOps",
-        title: "Head of Security Engineering",
-        phone: "+1 (555) 654-3210",
-        isActive: true,
-        specialties: ["Cloud Security", "DevSecOps", "Container Security", "API Security"],
-        certifications: ["CISSP", "AWS Security", "CKAD", "GSEC"],
-        skills: ["Kubernetes", "Terraform", "Python", "Security Automation"],
-        languages: ["English", "Hindi"],
-        timeZone: "America/Los_Angeles",
-        availability: {
-          hoursPerWeek: 50,
-          preferredSchedule: "flexible",
-          vacationDays: ["2024-10-15", "2024-12-31"],
-        },
-        vendorRelationships: ["Portnox", "Palo Alto", "AWS"],
-        projectHistory: ["Cloud Migration Security 2023", "Zero Trust Implementation"],
-        performanceRating: 4.9,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ]
-  }
-
-  private generateTechnologySites(): Site[] {
-    const sites = [
-      {
-        id: "site-tech-1",
-        name: "Silicon Valley HQ",
-        location: "San Jose, CA",
-        region: "North America",
-        country: "United States",
-        state: "California",
-        city: "San Jose",
-        siteType: "headquarters" as const,
-        status: "implementation" as const,
-        priority: "high" as const,
-        phase: "Phase 3 - Implementation",
-        users: 1200,
-        devices: 2800,
-        deviceBreakdown: {
-          windows: 600,
-          mac: 950,
-          linux: 400,
-          ios: 450,
-          android: 200,
-          iot: 120,
-          medical: 0,
-          printers: 35,
-          cameras: 25,
-          voip: 150,
-          kiosks: 8,
-          tablets: 60,
-          chromeos: 20,
-          other: 50,
-        },
-        assignedUsers: {
-          projectManagers: ["user-tech-2"],
-          technicalOwners: ["user-tech-3"],
-          siteOwners: ["user-tech-4"],
-          systemsEngineers: ["user-tech-5"],
-          accountExecutives: ["user-tech-6"],
-          technicalAccountManagers: ["user-tech-7"],
-          technicians: ["user-tech-8"],
-          securitySpecialists: ["user-tech-1"],
-        },
-        startDate: "2024-01-15",
-        targetDate: "2024-06-30",
-        progress: 78,
-        milestones: [],
-        wiredInfrastructure: {
-          vendor: "aruba",
-          switchModels: ["CX 8320", "CX 6300"],
-          switchCount: 35,
-          portCount: 840,
-          stackingSupport: true,
-          poeSupport: true,
-          mgmtVlan: 10,
-          firmware: "10.09.1010",
-        },
-        wirelessInfrastructure: {
-          vendor: "aruba",
-          controllerModel: "9012",
-          apModels: ["AP-635", "AP-555"],
-          apCount: 120,
-          wifiStandards: ["802.11ax"],
-          bandSupport: ["5GHz", "6GHz"],
-          meshSupport: false,
-          firmware: "10.4.0.3",
-        },
-        connectivity: {
-          type: "fiber",
-          bandwidth: "10Gbps",
-          provider: "Level3",
-          redundancy: true,
-          backupType: "directconnect",
-        },
-        identityProvider: {
-          type: "okta",
-          domain: "innovatetech.com",
-          syncEnabled: true,
-          mfaEnabled: true,
-          conditionalAccess: true,
-        },
-        mdmProvider: {
-          type: "jamf",
-          enrollmentType: "automatic",
-          complianceEnabled: true,
-          appManagement: true,
-        },
-        firewallInfrastructure: {
+        firewallInfrastructure: template.firewallInfrastructure || {
           vendor: "palo-alto",
-          models: ["PA-5250", "PA-3250"],
-          haConfiguration: true,
-          userIdIntegration: true,
-          syslogEnabled: true,
-          firmware: "11.1.0",
-        },
-        radiusConfiguration: {
-          type: "cloud-radius",
-          clustering: true,
-          loadBalancing: true,
-          certificates: true,
-        },
-        deviceAdministration: {
-          type: "radius",
-          privilegeLevels: [1, 15],
-          commandAuthorization: true,
-        },
-        vlans: 25,
-        subnets: ["10.50.0.0/16", "10.51.0.0/16"],
-        dhcpScopes: 15,
-        dnsServers: ["10.50.1.10", "10.50.1.11"],
-        globalPolicies: ["global-policy-tech-1"],
-        sitePolicies: [],
-        policyEnforcement: {
-          dynamic_vlan: true,
-          bandwidth_control: true,
-          time_based_access: false,
-          device_compliance: true,
-          location_based: true,
-        },
-        complianceRequirements: ["SOC 2 Type II", "ISO 27001", "GDPR"],
-        securityStandards: ["NIST Cybersecurity Framework", "OWASP Top 10", "Cloud Security Alliance"],
-        dataClassification: "confidential",
-        notes: "Technology company headquarters with cloud-first architecture and developer-focused security.",
-        deploymentChecklist: [],
-        riskAssessment: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ]
-
-    const additionalSites = this.generateRandomizedSites("technology", 8)
-    return [...sites, ...additionalSites]
-  }
-
-  private generateTechnologyGlobalPolicies(): GlobalPolicy[] {
-    return [
-      {
-        id: "global-policy-tech-1",
-        name: "Developer Network Access Policy",
-        description: "Secure network access for development environments with appropriate isolation",
-        category: "authorization",
-        type: "vlan",
-        priority: 2,
-        conditions: [
-          {
-            type: "user_group",
-            operator: "equals",
-            value: "Developers",
-            description: "Development team members",
-          },
-        ],
-        actions: [
-          {
-            type: "vlan_assign",
-            parameters: { vlan: "200", qos: "high", isolation: "partial" },
-            description: "Development network with high QoS",
-            priority: 1,
-          },
-        ],
-        enabled: true,
-        applicableSites: [],
-        schedule: { type: "always", timeZone: "America/Los_Angeles" },
-        tags: ["technology", "development", "access"],
-        version: "1.0",
-        approvedBy: "user-tech-1",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ]
-  }
-
-  private generateTechnologyEvents(): Event[] {
-    return [
-      {
-        id: "event-tech-1",
-        title: "Cloud Security Review",
-        description: "Quarterly review of cloud infrastructure security and compliance",
-        startDate: "2024-05-20T14:00:00",
-        endDate: "2024-05-20T17:00:00",
-        type: "review",
-        priority: "high",
-        assignedTo: "user-tech-1",
-        siteId: "site-tech-1",
-        status: "scheduled",
-        attendees: ["user-tech-1", "user-tech-3", "user-tech-5"],
-        location: "Silicon Valley HQ - Security Operations Center",
-        meetingType: "hybrid",
-        prerequisites: ["Cloud architecture diagrams", "Security scan results"],
-        deliverables: ["Security review report", "Improvement recommendations"],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ]
-  }
-
-  private generateRetailUsers(): User[] {
-    return [
-      {
-        id: "user-retail-1",
-        name: "Jennifer Kim",
-        email: "jennifer.kim@premiumretail.com",
-        role: "admin",
-        department: "Retail IT",
-        title: "Director of Store Technology",
-        phone: "+1 (555) 876-5432",
-        isActive: true,
-        specialties: ["Retail Technology", "POS Security", "Guest WiFi", "Multi-Location Management"],
-        certifications: ["CISSP", "PCI-DSS QSA", "Retail Technology Certified"],
-        skills: ["Store Operations", "Customer Experience", "Loss Prevention", "Inventory Systems"],
-        languages: ["English", "Korean"],
-        timeZone: "America/Los_Angeles",
-        availability: {
-          hoursPerWeek: 45,
-          preferredSchedule: "business-hours",
-          vacationDays: ["2024-11-28", "2024-12-25"],
-        },
-        vendorRelationships: ["Portnox", "Cisco Meraki", "Square"],
-        projectHistory: ["Holiday Season WiFi Upgrade 2023", "POS Security Enhancement"],
-        performanceRating: 4.7,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ]
-  }
-
-  private generateRetailSites(): Site[] {
-    const sites = [
-      {
-        id: "site-retail-1",
-        name: "Flagship Store - Times Square",
-        location: "New York, NY",
-        region: "North America",
-        country: "United States",
-        state: "New York",
-        city: "New York",
-        siteType: "branch" as const,
-        status: "completed" as const,
-        priority: "high" as const,
-        phase: "Phase 6 - Support",
-        users: 180,
-        devices: 420,
-        deviceBreakdown: {
-          windows: 45,
-          mac: 25,
-          linux: 8,
-          ios: 85,
-          android: 65,
-          iot: 120,
-          medical: 0,
-          printers: 18,
-          cameras: 35,
-          voip: 15,
-          kiosks: 12,
-          tablets: 32,
-          chromeos: 5,
-          other: 25,
-        },
-        assignedUsers: {
-          projectManagers: ["user-retail-2"],
-          technicalOwners: ["user-retail-3"],
-          siteOwners: ["user-retail-4"],
-          systemsEngineers: ["user-retail-5"],
-          accountExecutives: ["user-retail-6"],
-          technicalAccountManagers: ["user-retail-7"],
-          technicians: ["user-retail-8"],
-          securitySpecialists: ["user-retail-1"],
-        },
-        startDate: "2024-01-02",
-        targetDate: "2024-03-15",
-        progress: 100,
-        milestones: [],
-        wiredInfrastructure: {
-          vendor: "cisco",
-          switchModels: ["Catalyst 9200", "Catalyst 9300"],
-          switchCount: 8,
-          portCount: 192,
-          stackingSupport: true,
-          poeSupport: true,
-          mgmtVlan: 99,
-          firmware: "16.12.09",
-        },
-        wirelessInfrastructure: {
-          vendor: "meraki",
-          controllerModel: "Cloud Dashboard",
-          apModels: ["MR46", "MR36"],
-          apCount: 25,
-          wifiStandards: ["802.11ax", "802.11ac"],
-          bandSupport: ["2.4GHz", "5GHz"],
-          meshSupport: true,
-          firmware: "29.6.1",
-        },
-        connectivity: {
-          type: "fiber",
-          bandwidth: "1Gbps",
-          provider: "Verizon Business",
-          redundancy: true,
-          backupType: "internet",
-        },
-        identityProvider: {
-          type: "azure-ad",
-          domain: "premiumretail.com",
-          syncEnabled: true,
-          mfaEnabled: true,
-          conditionalAccess: false,
-        },
-        mdmProvider: {
-          type: "cisco-meraki",
-          enrollmentType: "manual",
-          complianceEnabled: false,
-          appManagement: true,
-        },
-        firewallInfrastructure: {
-          vendor: "cisco",
-          models: ["ASA 5516-X"],
+          models: ["PA-220"],
           haConfiguration: false,
           userIdIntegration: false,
           syslogEnabled: true,
-          firmware: "9.19(1)",
+          firmware: "11.0.2",
         },
-        radiusConfiguration: {
+        radiusConfiguration: template.radiusConfiguration || {
           type: "cloud-radius",
           clustering: false,
           loadBalancing: false,
           certificates: true,
         },
-        deviceAdministration: {
+        deviceAdministration: template.deviceAdministration || {
           type: "radius",
           privilegeLevels: [1, 15],
           commandAuthorization: false,
         },
-        vlans: 8,
-        subnets: ["192.168.1.0/24"],
-        dhcpScopes: 5,
-        dnsServers: ["8.8.8.8", "8.8.4.4"],
-        globalPolicies: ["global-policy-retail-1"],
-        sitePolicies: [],
-        policyEnforcement: {
+        vlans: template.vlans || Math.floor(Math.random() * 15) + 5,
+        subnets: template.subnets || [`192.168.${i}.0/24`],
+        dhcpScopes: template.dhcpScopes || Math.floor(Math.random() * 8) + 3,
+        dnsServers: template.dnsServers || ["8.8.8.8", "8.8.4.4"],
+        globalPolicies: template.globalPolicies || [],
+        sitePolicies: template.sitePolicies || [],
+        policyEnforcement: template.policyEnforcement || {
           dynamic_vlan: true,
-          bandwidth_control: true,
-          time_based_access: true,
-          device_compliance: false,
+          bandwidth_control: false,
+          time_based_access: false,
+          device_compliance: true,
           location_based: false,
         },
-        complianceRequirements: ["PCI-DSS"],
-        securityStandards: ["Retail Security Standards"],
-        dataClassification: "internal",
-        notes: "High-traffic flagship store with extensive guest WiFi and POS security requirements.",
+        complianceRequirements: template.complianceRequirements || [],
+        securityStandards: template.securityStandards || [],
+        dataClassification: template.dataClassification || "internal",
+        notes: template.notes || "Bulk created site",
         deploymentChecklist: [],
         riskAssessment: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+      } as Omit<Site, "id" | "createdAt" | "updatedAt">)
+
+      sites.push(site)
+    }
+
+    return sites
+  }
+
+  // Demo data generation
+  async generateDemoData(
+    scenario: "corporate" | "education" | "healthcare" | "financial" | "manufacturing" | "retail" | "technology",
+  ): Promise<void> {
+    console.log(`Starting demo data generation for scenario: ${scenario}`)
+
+    // Clear existing data
+    await this.clearAllData()
+
+    // Update preferences with scenario
+    await this.updateUserPreferences({
+      demoScenario: scenario,
+      companyName: this.getCompanyNameForScenario(scenario),
+    })
+
+    // Generate demo users first (needed for site assignments)
+    console.log("Generating demo users...")
+    const users = await this.generateDemoUsers(scenario)
+    console.log(`Generated ${users.length} users`)
+
+    // Generate demo sites with full data
+    console.log("Generating demo sites...")
+    const sites = await this.generateDemoSites(scenario, users)
+    console.log(`Generated ${sites.length} sites`)
+
+    // Generate demo events based on sites
+    console.log("Generating demo events...")
+    const events = await this.generateDemoEvents(scenario, sites, users)
+    console.log(`Generated ${events.length} events`)
+
+    // Generate demo policies
+    console.log("Generating demo policies...")
+    const policies = await this.generateDemoPolicies(scenario)
+    console.log(`Generated ${policies.length} policies`)
+
+    console.log("Demo data generation completed successfully!")
+  }
+
+  private async generateDemoUsers(scenario: string): Promise<User[]> {
+    const users: Omit<User, "id" | "createdAt" | "updatedAt">[] = [
+      {
+        name: "Alex Rivera",
+        email: "alex.rivera@example.com",
+        role: "project-manager",
+        department: "Project Management",
+        title: "Senior Project Manager",
+        phone: "555-123-4567",
+        avatar: "https://i.pravatar.cc/150?img=1",
+        isActive: true,
+        specialties: ["NAC Deployment", "Zero Trust Architecture", "Project Planning"],
+        certifications: ["PMP", "CCNP Security", "CISSP"],
+        skills: ["Project Planning", "Risk Management", "Team Leadership", "Stakeholder Management"],
+        languages: ["English", "Spanish"],
+        timeZone: "America/New_York",
+        availability: {
+          hoursPerWeek: 40,
+          preferredSchedule: "business-hours",
+          vacationDays: [],
+        },
+        vendorRelationships: ["Cisco", "Aruba", "Portnox", "Microsoft"],
+        projectHistory: ["NAC Deployment Phase 1", "Security Infrastructure Upgrade", "Multi-Site Rollout"],
+        performanceRating: 5,
+      },
+      {
+        name: "Sarah Chen",
+        email: "sarah.chen@example.com",
+        role: "technical-owner",
+        department: "Network Engineering",
+        title: "Lead Network Architect",
+        phone: "555-987-6543",
+        avatar: "https://i.pravatar.cc/150?img=2",
+        isActive: true,
+        specialties: ["Network Architecture", "Security Design", "Wireless Infrastructure"],
+        certifications: ["CCIE Security", "CISSP", "CWNE"],
+        skills: ["Network Design", "Security Architecture", "Troubleshooting", "Automation"],
+        languages: ["English", "Mandarin"],
+        timeZone: "America/Los_Angeles",
+        availability: {
+          hoursPerWeek: 45,
+          preferredSchedule: "flexible",
+          vacationDays: [],
+        },
+        vendorRelationships: ["Cisco", "Aruba", "Juniper", "Palo Alto Networks"],
+        projectHistory: ["Enterprise Network Redesign", "Wireless Infrastructure Upgrade", "Security Modernization"],
+        performanceRating: 5,
+      },
+      {
+        name: "Michael Thompson",
+        email: "michael.thompson@example.com",
+        role: "site-owner",
+        department: "IT Operations",
+        title: "Regional IT Manager",
+        phone: "555-246-8013",
+        avatar: "https://i.pravatar.cc/150?img=3",
+        isActive: true,
+        specialties: ["Site Operations", "Infrastructure Management", "Team Leadership"],
+        certifications: ["ITIL v4", "CompTIA Network+", "Microsoft Azure Administrator"],
+        skills: ["Operations Management", "Budget Planning", "Vendor Management", "Problem Resolution"],
+        languages: ["English"],
+        timeZone: "America/Chicago",
+        availability: {
+          hoursPerWeek: 40,
+          preferredSchedule: "business-hours",
+          vacationDays: [],
+        },
+        vendorRelationships: ["Dell", "HPE", "Microsoft", "VMware"],
+        projectHistory: ["Regional Infrastructure Consolidation", "Help Desk Modernization", "Cloud Migration"],
+        performanceRating: 4,
+      },
+      {
+        name: "David Kim",
+        email: "david.kim@example.com",
+        role: "systems-engineer",
+        department: "Systems Engineering",
+        title: "Senior Systems Engineer",
+        phone: "555-135-7912",
+        avatar: "https://i.pravatar.cc/150?img=4",
+        isActive: true,
+        specialties: ["Systems Integration", "Cloud Platforms", "Automation"],
+        certifications: ["AWS Solutions Architect", "VMware VCP", "Red Hat Certified Engineer"],
+        skills: ["System Design", "Cloud Architecture", "Scripting", "DevOps"],
+        languages: ["English", "Korean"],
+        timeZone: "America/Los_Angeles",
+        availability: {
+          hoursPerWeek: 42,
+          preferredSchedule: "flexible",
+          vacationDays: [],
+        },
+        vendorRelationships: ["AWS", "Microsoft", "VMware", "Red Hat"],
+        projectHistory: ["Cloud Migration Project", "Infrastructure Automation", "Hybrid Cloud Implementation"],
+        performanceRating: 5,
+      },
+      {
+        name: "Jennifer Walsh",
+        email: "jennifer.walsh@example.com",
+        role: "account-executive",
+        department: "Sales",
+        title: "Senior Account Executive",
+        phone: "555-369-1470",
+        avatar: "https://i.pravatar.cc/150?img=5",
+        isActive: true,
+        specialties: ["Enterprise Sales", "Solution Consulting", "Customer Relations"],
+        certifications: ["Salesforce Certified", "Cisco Partner Certification"],
+        skills: ["Solution Selling", "Relationship Management", "Negotiation", "Presentation"],
+        languages: ["English", "French"],
+        timeZone: "America/New_York",
+        availability: {
+          hoursPerWeek: 45,
+          preferredSchedule: "business-hours",
+          vacationDays: [],
+        },
+        vendorRelationships: ["Cisco", "Microsoft", "Salesforce", "Oracle"],
+        projectHistory: ["Enterprise Account Growth", "Strategic Partnership Development", "Customer Success Program"],
+        performanceRating: 4,
+      },
+      {
+        name: "Robert Johnson",
+        email: "robert.johnson@example.com",
+        role: "technical-account-manager",
+        department: "Customer Success",
+        title: "Technical Account Manager",
+        phone: "555-741-2581",
+        avatar: "https://i.pravatar.cc/150?img=6",
+        isActive: true,
+        specialties: ["Customer Support", "Technical Training", "Solution Implementation"],
+        certifications: ["CompTIA Network+", "Cisco CCNA", "ITIL Foundation"],
+        skills: ["Technical Support", "Training Delivery", "Customer Communication", "Problem Solving"],
+        languages: ["English"],
+        timeZone: "America/Chicago",
+        availability: {
+          hoursPerWeek: 40,
+          preferredSchedule: "business-hours",
+          vacationDays: [],
+        },
+        vendorRelationships: ["Cisco", "Aruba", "Portnox", "Microsoft"],
+        projectHistory: ["Customer Onboarding Program", "Technical Training Initiative", "Support Process Improvement"],
+        performanceRating: 4,
+      },
+      {
+        name: "Lisa Anderson",
+        email: "lisa.anderson@example.com",
+        role: "technician",
+        department: "Field Services",
+        title: "Senior Network Technician",
+        phone: "555-852-3692",
+        avatar: "https://i.pravatar.cc/150?img=7",
+        isActive: true,
+        specialties: ["Network Installation", "Hardware Configuration", "Field Support"],
+        certifications: ["CompTIA A+", "CompTIA Network+", "Cisco CCENT"],
+        skills: ["Hardware Installation", "Network Configuration", "Troubleshooting", "Documentation"],
+        languages: ["English", "Spanish"],
+        timeZone: "America/Denver",
+        availability: {
+          hoursPerWeek: 40,
+          preferredSchedule: "business-hours",
+          vacationDays: [],
+        },
+        vendorRelationships: ["Cisco", "Dell", "HPE", "Lenovo"],
+        projectHistory: ["Multi-Site Hardware Deployment", "Network Infrastructure Installation", "Equipment Refresh"],
+        performanceRating: 4,
+      },
+      {
+        name: "Mark Wilson",
+        email: "mark.wilson@example.com",
+        role: "security-specialist",
+        department: "Information Security",
+        title: "Senior Security Analyst",
+        phone: "555-963-4703",
+        avatar: "https://i.pravatar.cc/150?img=8",
+        isActive: true,
+        specialties: ["Network Security", "Threat Analysis", "Compliance"],
+        certifications: ["CISSP", "CEH", "CISM", "SANS GIAC"],
+        skills: ["Security Assessment", "Penetration Testing", "Incident Response", "Compliance Auditing"],
+        languages: ["English"],
+        timeZone: "America/Los_Angeles",
+        availability: {
+          hoursPerWeek: 40,
+          preferredSchedule: "business-hours",
+          vacationDays: [],
+        },
+        vendorRelationships: ["Palo Alto Networks", "Fortinet", "CrowdStrike", "Splunk"],
+        projectHistory: ["Security Assessment Program", "Incident Response Framework", "Compliance Automation"],
+        performanceRating: 5,
       },
     ]
 
-    const additionalSites = this.generateRandomizedSites("retail", 24)
-    return [...sites, ...additionalSites]
+    const createdUsers: User[] = []
+    for (const userData of users) {
+      const user = await this.createUser(userData)
+      createdUsers.push(user)
+    }
+
+    return createdUsers
   }
 
-  private generateRetailGlobalPolicies(): GlobalPolicy[] {
-    return [
+  private async generateDemoSites(scenario: string, users: User[]): Promise<Site[]> {
+    const sites: Site[] = []
+    const siteTemplates = this.getSiteTemplatesForScenario(scenario, users)
+
+    for (const template of siteTemplates) {
+      const site = await this.createSite(template as Omit<Site, "id" | "createdAt" | "updatedAt">)
+      sites.push(site)
+    }
+
+    return sites
+  }
+
+  private getSiteTemplatesForScenario(scenario: string, users: User[]): Partial<Site>[] {
+    const baseDate = new Date()
+
+    // Get user IDs for assignments
+    const projectManager = users.find((u) => u.role === "project-manager")?.id || ""
+    const technicalOwner = users.find((u) => u.role === "technical-owner")?.id || ""
+    const siteOwner = users.find((u) => u.role === "site-owner")?.id || ""
+    const systemsEngineer = users.find((u) => u.role === "systems-engineer")?.id || ""
+    const accountExecutive = users.find((u) => u.role === "account-executive")?.id || ""
+    const technicalAccountManager = users.find((u) => u.role === "technical-account-manager")?.id || ""
+    const technician = users.find((u) => u.role === "technician")?.id || ""
+    const securitySpecialist = users.find((u) => u.role === "security-specialist")?.id || ""
+
+    const templates: { [key: string]: Partial<Site>[] } = {
+      corporate: [
+        {
+          name: "Global Headquarters",
+          location: "New York, NY",
+          region: "North America",
+          country: "United States",
+          state: "New York",
+          city: "New York",
+          siteType: "headquarters",
+          status: "implementation",
+          priority: "critical",
+          phase: "Phase 3 - Implementation",
+          users: 2500,
+          devices: 5000,
+          deviceBreakdown: {
+            windows: 1800,
+            mac: 400,
+            linux: 100,
+            ios: 800,
+            android: 600,
+            iot: 200,
+            medical: 0,
+            printers: 50,
+            cameras: 30,
+            voip: 150,
+            kiosks: 20,
+            tablets: 100,
+            chromeos: 50,
+            other: 50,
+          },
+          startDate: new Date(baseDate.getTime() - 15 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+          targetDate: new Date(baseDate.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+          progress: 65,
+          assignedUsers: {
+            projectManagers: [projectManager],
+            technicalOwners: [technicalOwner],
+            siteOwners: [siteOwner],
+            systemsEngineers: [systemsEngineer],
+            accountExecutives: [accountExecutive],
+            technicalAccountManagers: [technicalAccountManager],
+            technicians: [technician],
+            securitySpecialists: [securitySpecialist],
+          },
+          milestones: [
+            {
+              id: "hq-m1",
+              name: "Infrastructure Assessment Complete",
+              description: "Complete network infrastructure assessment and gap analysis",
+              targetDate: new Date(baseDate.getTime() - 10 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+              completionDate: new Date(baseDate.getTime() - 8 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+              status: "completed",
+              dependencies: [],
+              assignedTo: technicalOwner,
+            },
+            {
+              id: "hq-m2",
+              name: "NAC Platform Deployment",
+              description: "Deploy and configure Portnox NAC platform",
+              targetDate: new Date(baseDate.getTime() + 5 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+              status: "in-progress",
+              dependencies: ["hq-m1"],
+              assignedTo: systemsEngineer,
+            },
+            {
+              id: "hq-m3",
+              name: "User Acceptance Testing",
+              description: "Complete user acceptance testing and validation",
+              targetDate: new Date(baseDate.getTime() + 20 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+              status: "pending",
+              dependencies: ["hq-m2"],
+              assignedTo: siteOwner,
+            },
+          ],
+          wiredInfrastructure: {
+            vendor: "cisco",
+            switchModels: ["Catalyst 9500", "Catalyst 9300"],
+            switchCount: 48,
+            portCount: 2400,
+            stackingSupport: true,
+            poeSupport: true,
+            mgmtVlan: 100,
+            firmware: "17.09.02",
+          },
+          wirelessInfrastructure: {
+            vendor: "cisco",
+            controllerModel: "9800-CL",
+            apModels: ["Catalyst 9130AXI", "Catalyst 9120AXI"],
+            apCount: 120,
+            wifiStandards: ["802.11ax", "802.11ac"],
+            bandSupport: ["2.4GHz", "5GHz", "6GHz"],
+            meshSupport: false,
+            firmware: "17.09.04",
+          },
+          connectivity: {
+            type: "expressroute",
+            bandwidth: "1Gbps",
+            provider: "Microsoft Azure",
+            redundancy: true,
+            backupType: "internet",
+          },
+          identityProvider: {
+            type: "azure-ad",
+            domain: "globaltech.com",
+            syncEnabled: true,
+            mfaEnabled: true,
+            conditionalAccess: true,
+          },
+          mdmProvider: {
+            type: "intune",
+            enrollmentType: "automatic",
+            complianceEnabled: true,
+            appManagement: true,
+          },
+          firewallInfrastructure: {
+            vendor: "palo-alto",
+            models: ["PA-5220"],
+            haConfiguration: true,
+            userIdIntegration: true,
+            syslogEnabled: true,
+            firmware: "11.0.2",
+          },
+          radiusConfiguration: {
+            type: "cloud-radius",
+            clustering: true,
+            loadBalancing: true,
+            certificates: true,
+          },
+          deviceAdministration: {
+            type: "tacacs",
+            vendor: "portnox",
+            privilegeLevels: [1, 5, 15],
+            commandAuthorization: true,
+          },
+          vlans: 25,
+          subnets: ["10.1.0.0/16", "10.2.0.0/16"],
+          dhcpScopes: 15,
+          dnsServers: ["10.1.1.10", "10.1.1.11"],
+          globalPolicies: ["employee-access", "executive-vip", "byod-policy"],
+          sitePolicies: [],
+          policyEnforcement: {
+            dynamic_vlan: true,
+            bandwidth_control: true,
+            time_based_access: true,
+            device_compliance: true,
+            location_based: true,
+          },
+          complianceRequirements: ["SOX", "PCI-DSS"],
+          securityStandards: ["NIST", "ISO 27001"],
+          dataClassification: "confidential",
+          notes:
+            "Primary headquarters with executive offices and data center. Critical infrastructure requiring 24/7 monitoring and support.",
+          deploymentChecklist: [
+            {
+              id: "hq-c1",
+              category: "planning",
+              task: "Site Survey and Assessment",
+              description: "Complete physical and logical network assessment",
+              completed: true,
+              assignedTo: technicalOwner,
+              dueDate: new Date(baseDate.getTime() - 20 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+              completionDate: new Date(baseDate.getTime() - 18 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+              dependencies: [],
+              estimatedHours: 40,
+              actualHours: 35,
+              attachments: [],
+            },
+            {
+              id: "hq-c2",
+              category: "design",
+              task: "Architecture Design Review",
+              description: "Review and approve technical architecture design",
+              completed: true,
+              assignedTo: technicalOwner,
+              dueDate: new Date(baseDate.getTime() - 15 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+              completionDate: new Date(baseDate.getTime() - 13 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+              dependencies: ["hq-c1"],
+              estimatedHours: 24,
+              actualHours: 28,
+              attachments: [],
+            },
+            {
+              id: "hq-c3",
+              category: "implementation",
+              task: "NAC Platform Installation",
+              description: "Install and configure Portnox NAC platform",
+              completed: false,
+              assignedTo: systemsEngineer,
+              dueDate: new Date(baseDate.getTime() + 5 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+              dependencies: ["hq-c2"],
+              estimatedHours: 32,
+              attachments: [],
+            },
+          ],
+          riskAssessment: [
+            {
+              id: "hq-r1",
+              description: "Executive floor network disruption during implementation",
+              impact: "high",
+              probability: "medium",
+              mitigation: "Schedule implementation during maintenance windows and provide backup connectivity",
+              owner: projectManager,
+              status: "mitigated",
+            },
+            {
+              id: "hq-r2",
+              description: "Integration complexity with legacy systems",
+              impact: "medium",
+              probability: "high",
+              mitigation: "Phased rollout approach with extensive testing",
+              owner: technicalOwner,
+              status: "open",
+            },
+          ],
+        },
+        {
+          name: "Chicago Regional Office",
+          location: "Chicago, IL",
+          region: "North America",
+          country: "United States",
+          state: "Illinois",
+          city: "Chicago",
+          siteType: "branch",
+          status: "design",
+          priority: "high",
+          phase: "Phase 2 - Design",
+          users: 450,
+          devices: 800,
+          deviceBreakdown: {
+            windows: 320,
+            mac: 80,
+            linux: 20,
+            ios: 150,
+            android: 100,
+            iot: 50,
+            medical: 0,
+            printers: 15,
+            cameras: 10,
+            voip: 35,
+            kiosks: 5,
+            tablets: 20,
+            chromeos: 10,
+            other: 15,
+          },
+          startDate: new Date(baseDate.getTime() + 10 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+          targetDate: new Date(baseDate.getTime() + 60 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+          progress: 25,
+          assignedUsers: {
+            projectManagers: [projectManager],
+            technicalOwners: [technicalOwner],
+            siteOwners: [siteOwner],
+            systemsEngineers: [systemsEngineer],
+            accountExecutives: [accountExecutive],
+            technicalAccountManagers: [technicalAccountManager],
+            technicians: [technician],
+            securitySpecialists: [securitySpecialist],
+          },
+          milestones: [
+            {
+              id: "chi-m1",
+              name: "Site Assessment",
+              description: "Complete site assessment and requirements gathering",
+              targetDate: new Date(baseDate.getTime() + 15 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+              status: "pending",
+              dependencies: [],
+              assignedTo: technicalOwner,
+            },
+            {
+              id: "chi-m2",
+              name: "Design Approval",
+              description: "Complete technical design and obtain stakeholder approval",
+              targetDate: new Date(baseDate.getTime() + 35 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+              status: "pending",
+              dependencies: ["chi-m1"],
+              assignedTo: technicalOwner,
+            },
+          ],
+          wiredInfrastructure: {
+            vendor: "aruba",
+            switchModels: ["CX 6300", "CX 6200"],
+            switchCount: 12,
+            portCount: 576,
+            stackingSupport: true,
+            poeSupport: true,
+            mgmtVlan: 100,
+            firmware: "10.09.1010",
+          },
+          wirelessInfrastructure: {
+            vendor: "aruba",
+            controllerModel: "7030",
+            apModels: ["AP-635", "AP-555"],
+            apCount: 32,
+            wifiStandards: ["802.11ax", "802.11ac"],
+            bandSupport: ["2.4GHz", "5GHz"],
+            meshSupport: false,
+            firmware: "8.10.0.8",
+          },
+          connectivity: {
+            type: "sdwan",
+            bandwidth: "500Mbps",
+            provider: "Verizon",
+            redundancy: true,
+            backupType: "4G LTE",
+          },
+          identityProvider: {
+            type: "azure-ad",
+            domain: "globaltech.com",
+            syncEnabled: true,
+            mfaEnabled: true,
+            conditionalAccess: false,
+          },
+          mdmProvider: {
+            type: "intune",
+            enrollmentType: "automatic",
+            complianceEnabled: true,
+            appManagement: true,
+          },
+          firewallInfrastructure: {
+            vendor: "fortinet",
+            models: ["FortiGate 200F"],
+            haConfiguration: false,
+            userIdIntegration: true,
+            syslogEnabled: true,
+            firmware: "7.4.1",
+          },
+          radiusConfiguration: {
+            type: "cloud-radius",
+            clustering: false,
+            loadBalancing: false,
+            certificates: true,
+          },
+          deviceAdministration: {
+            type: "radius",
+            privilegeLevels: [1, 15],
+            commandAuthorization: false,
+          },
+          vlans: 12,
+          subnets: ["10.10.0.0/16"],
+          dhcpScopes: 8,
+          dnsServers: ["10.10.1.10", "10.10.1.11"],
+          globalPolicies: ["employee-access", "byod-policy"],
+          sitePolicies: [],
+          policyEnforcement: {
+            dynamic_vlan: true,
+            bandwidth_control: false,
+            time_based_access: false,
+            device_compliance: true,
+            location_based: false,
+          },
+          complianceRequirements: ["SOX"],
+          securityStandards: ["NIST"],
+          dataClassification: "internal",
+          notes: "Regional branch office with sales and support teams. Standard deployment with moderate complexity.",
+          deploymentChecklist: [],
+          riskAssessment: [],
+        },
+        {
+          name: "West Coast Branch",
+          location: "San Francisco, CA",
+          region: "North America",
+          country: "United States",
+          state: "California",
+          city: "San Francisco",
+          siteType: "branch",
+          status: "planning",
+          priority: "medium",
+          phase: "Phase 1 - Planning",
+          users: 280,
+          devices: 520,
+          deviceBreakdown: {
+            windows: 200,
+            mac: 120,
+            linux: 15,
+            ios: 90,
+            android: 60,
+            iot: 20,
+            medical: 0,
+            printers: 8,
+            cameras: 5,
+            voip: 20,
+            kiosks: 2,
+            tablets: 15,
+            chromeos: 8,
+            other: 7,
+          },
+          startDate: new Date(baseDate.getTime() + 45 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+          targetDate: new Date(baseDate.getTime() + 90 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+          progress: 10,
+          assignedUsers: {
+            projectManagers: [projectManager],
+            technicalOwners: [technicalOwner],
+            siteOwners: [siteOwner],
+            systemsEngineers: [systemsEngineer],
+            accountExecutives: [accountExecutive],
+            technicalAccountManagers: [technicalAccountManager],
+            technicians: [technician],
+            securitySpecialists: [securitySpecialist],
+          },
+          milestones: [],
+          wiredInfrastructure: {
+            vendor: "cisco",
+            switchModels: ["Catalyst 9300"],
+            switchCount: 8,
+            portCount: 384,
+            stackingSupport: true,
+            poeSupport: true,
+            mgmtVlan: 100,
+            firmware: "17.09.02",
+          },
+          wirelessInfrastructure: {
+            vendor: "cisco",
+            controllerModel: "9800-CL",
+            apModels: ["Catalyst 9130AXI"],
+            apCount: 20,
+            wifiStandards: ["802.11ax"],
+            bandSupport: ["2.4GHz", "5GHz"],
+            meshSupport: false,
+            firmware: "17.09.04",
+          },
+          connectivity: {
+            type: "internet",
+            bandwidth: "200Mbps",
+            provider: "Comcast Business",
+            redundancy: false,
+          },
+          identityProvider: {
+            type: "azure-ad",
+            domain: "globaltech.com",
+            syncEnabled: true,
+            mfaEnabled: true,
+            conditionalAccess: false,
+          },
+          mdmProvider: {
+            type: "intune",
+            enrollmentType: "automatic",
+            complianceEnabled: true,
+            appManagement: true,
+          },
+          firewallInfrastructure: {
+            vendor: "palo-alto",
+            models: ["PA-220"],
+            haConfiguration: false,
+            userIdIntegration: false,
+            syslogEnabled: true,
+            firmware: "11.0.2",
+          },
+          radiusConfiguration: {
+            type: "cloud-radius",
+            clustering: false,
+            loadBalancing: false,
+            certificates: true,
+          },
+          deviceAdministration: {
+            type: "radius",
+            privilegeLevels: [1, 15],
+            commandAuthorization: false,
+          },
+          vlans: 8,
+          subnets: ["10.20.0.0/16"],
+          dhcpScopes: 5,
+          dnsServers: ["10.20.1.10", "10.20.1.11"],
+          globalPolicies: ["employee-access", "byod-policy"],
+          sitePolicies: [],
+          policyEnforcement: {
+            dynamic_vlan: true,
+            bandwidth_control: false,
+            time_based_access: false,
+            device_compliance: true,
+            location_based: false,
+          },
+          complianceRequirements: ["SOX"],
+          securityStandards: ["NIST"],
+          dataClassification: "internal",
+          notes: "West coast branch office with development and sales teams.",
+          deploymentChecklist: [],
+          riskAssessment: [],
+        },
+      ],
+      healthcare: [
+        {
+          name: "Metropolitan Medical Center",
+          location: "Boston, MA",
+          region: "North America",
+          country: "United States",
+          state: "Massachusetts",
+          city: "Boston",
+          siteType: "headquarters",
+          status: "testing",
+          priority: "critical",
+          phase: "Phase 4 - Testing",
+          users: 1200,
+          devices: 3500,
+          deviceBreakdown: {
+            windows: 800,
+            mac: 150,
+            linux: 50,
+            ios: 400,
+            android: 200,
+            iot: 150,
+            medical: 600,
+            printers: 80,
+            cameras: 40,
+            voip: 120,
+            kiosks: 30,
+            tablets: 200,
+            chromeos: 20,
+            other: 50,
+          },
+          startDate: new Date(baseDate.getTime() - 45 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+          targetDate: new Date(baseDate.getTime() + 15 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+          progress: 85,
+          assignedUsers: {
+            projectManagers: [projectManager],
+            technicalOwners: [technicalOwner],
+            siteOwners: [siteOwner],
+            systemsEngineers: [systemsEngineer],
+            accountExecutives: [accountExecutive],
+            technicalAccountManagers: [technicalAccountManager],
+            technicians: [technician],
+            securitySpecialists: [securitySpecialist],
+          },
+          milestones: [
+            {
+              id: "med-m1",
+              name: "Medical Device Integration",
+              description: "Complete integration with critical medical devices",
+              targetDate: new Date(baseDate.getTime() + 5 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+              status: "in-progress",
+              dependencies: [],
+              assignedTo: technicalOwner,
+            },
+            {
+              id: "med-m2",
+              name: "HIPAA Compliance Validation",
+              description: "Complete HIPAA compliance testing and validation",
+              targetDate: new Date(baseDate.getTime() + 10 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+              status: "pending",
+              dependencies: ["med-m1"],
+              assignedTo: securitySpecialist,
+            },
+          ],
+          wiredInfrastructure: {
+            vendor: "cisco",
+            switchModels: ["Catalyst 9400", "Catalyst 9300"],
+            switchCount: 36,
+            portCount: 1728,
+            stackingSupport: true,
+            poeSupport: true,
+            mgmtVlan: 100,
+            firmware: "17.09.02",
+          },
+          wirelessInfrastructure: {
+            vendor: "cisco",
+            controllerModel: "9800-40",
+            apModels: ["MR36H", "Catalyst 9130AXI"],
+            apCount: 85,
+            wifiStandards: ["802.11ax", "802.11ac"],
+            bandSupport: ["2.4GHz", "5GHz"],
+            meshSupport: true,
+            firmware: "17.09.04",
+          },
+          connectivity: {
+            type: "expressroute",
+            bandwidth: "2Gbps",
+            provider: "Microsoft Azure",
+            redundancy: true,
+            backupType: "mpls",
+          },
+          identityProvider: {
+            type: "azure-ad",
+            domain: "metrohealth.org",
+            syncEnabled: true,
+            mfaEnabled: true,
+            conditionalAccess: true,
+          },
+          mdmProvider: {
+            type: "intune",
+            enrollmentType: "automatic",
+            complianceEnabled: true,
+            appManagement: true,
+          },
+          firewallInfrastructure: {
+            vendor: "palo-alto",
+            models: ["PA-3220"],
+            haConfiguration: true,
+            userIdIntegration: true,
+            syslogEnabled: true,
+            firmware: "11.0.2",
+          },
+          radiusConfiguration: {
+            type: "cloud-radius",
+            clustering: true,
+            loadBalancing: true,
+            certificates: true,
+          },
+          deviceAdministration: {
+            type: "tacacs",
+            vendor: "portnox",
+            privilegeLevels: [1, 5, 15],
+            commandAuthorization: true,
+          },
+          vlans: 35,
+          subnets: ["10.20.0.0/16", "10.21.0.0/16", "10.22.0.0/16"],
+          dhcpScopes: 25,
+          dnsServers: ["10.20.1.10", "10.20.1.11"],
+          globalPolicies: ["healthcare-staff", "medical-device", "hipaa-compliance"],
+          sitePolicies: [],
+          policyEnforcement: {
+            dynamic_vlan: true,
+            bandwidth_control: true,
+            time_based_access: true,
+            device_compliance: true,
+            location_based: true,
+          },
+          complianceRequirements: ["HIPAA", "HITECH"],
+          securityStandards: ["NIST", "ISO 27001"],
+          dataClassification: "restricted",
+          notes:
+            "Primary hospital facility with critical care units and medical devices requiring zero-latency access.",
+          deploymentChecklist: [],
+          riskAssessment: [],
+        },
+        {
+          name: "Outpatient Clinic Network",
+          location: "Cambridge, MA",
+          region: "North America",
+          country: "United States",
+          state: "Massachusetts",
+          city: "Cambridge",
+          siteType: "branch",
+          status: "design",
+          priority: "high",
+          phase: "Phase 2 - Design",
+          users: 180,
+          devices: 420,
+          deviceBreakdown: {
+            windows: 120,
+            mac: 30,
+            linux: 10,
+            ios: 80,
+            android: 50,
+            iot: 30,
+            medical: 80,
+            printers: 12,
+            cameras: 8,
+            voip: 20,
+            kiosks: 5,
+            tablets: 40,
+            chromeos: 5,
+            other: 10,
+          },
+          startDate: new Date(baseDate.getTime() + 20 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+          targetDate: new Date(baseDate.getTime() + 75 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+          progress: 30,
+          assignedUsers: {
+            projectManagers: [projectManager],
+            technicalOwners: [technicalOwner],
+            siteOwners: [siteOwner],
+            systemsEngineers: [systemsEngineer],
+            accountExecutives: [accountExecutive],
+            technicalAccountManagers: [technicalAccountManager],
+            technicians: [technician],
+            securitySpecialists: [securitySpecialist],
+          },
+          milestones: [],
+          wiredInfrastructure: {
+            vendor: "aruba",
+            switchModels: ["CX 6300"],
+            switchCount: 6,
+            portCount: 288,
+            stackingSupport: true,
+            poeSupport: true,
+            mgmtVlan: 100,
+            firmware: "10.09.1010",
+          },
+          wirelessInfrastructure: {
+            vendor: "aruba",
+            controllerModel: "7030",
+            apModels: ["AP-635"],
+            apCount: 15,
+            wifiStandards: ["802.11ax"],
+            bandSupport: ["2.4GHz", "5GHz"],
+            meshSupport: false,
+            firmware: "8.10.0.8",
+          },
+          connectivity: {
+            type: "vpn",
+            bandwidth: "100Mbps",
+            provider: "Verizon",
+            redundancy: false,
+          },
+          identityProvider: {
+            type: "azure-ad",
+            domain: "metrohealth.org",
+            syncEnabled: true,
+            mfaEnabled: true,
+            conditionalAccess: true,
+          },
+          mdmProvider: {
+            type: "intune",
+            enrollmentType: "automatic",
+            complianceEnabled: true,
+            appManagement: true,
+          },
+          firewallInfrastructure: {
+            vendor: "fortinet",
+            models: ["FortiGate 100F"],
+            haConfiguration: false,
+            userIdIntegration: true,
+            syslogEnabled: true,
+            firmware: "7.4.1",
+          },
+          radiusConfiguration: {
+            type: "cloud-radius",
+            clustering: false,
+            loadBalancing: false,
+            certificates: true,
+          },
+          deviceAdministration: {
+            type: "radius",
+            privilegeLevels: [1, 15],
+            commandAuthorization: false,
+          },
+          vlans: 15,
+          subnets: ["10.30.0.0/16"],
+          dhcpScopes: 10,
+          dnsServers: ["10.30.1.10", "10.30.1.11"],
+          globalPolicies: ["healthcare-staff", "medical-device"],
+          sitePolicies: [],
+          policyEnforcement: {
+            dynamic_vlan: true,
+            bandwidth_control: false,
+            time_based_access: true,
+            device_compliance: true,
+            location_based: true,
+          },
+          complianceRequirements: ["HIPAA"],
+          securityStandards: ["NIST"],
+          dataClassification: "restricted",
+          notes: "Outpatient clinic with medical devices and patient data systems.",
+          deploymentChecklist: [],
+          riskAssessment: [],
+        },
+      ],
+      // Add more scenarios...
+    }
+
+    return templates[scenario] || templates.corporate
+  }
+
+  private async generateDemoEvents(scenario: string, sites: Site[], users: User[]): Promise<Event[]> {
+    const currentDate = new Date()
+    const events: Omit<Event, "id" | "createdAt" | "updatedAt">[] = []
+
+    // Get user names for assignments
+    const projectManager = users.find((u) => u.role === "project-manager")?.name || "Alex Rivera"
+    const technicalOwner = users.find((u) => u.role === "technical-owner")?.name || "Sarah Chen"
+    const siteOwner = users.find((u) => u.role === "site-owner")?.name || "Michael Thompson"
+    const systemsEngineer = users.find((u) => u.role === "systems-engineer")?.name || "David Kim"
+
+    // Project kickoff (past event)
+    const kickoffDate = new Date(currentDate.getTime() - 30 * 24 * 60 * 60 * 1000)
+    events.push({
+      title: "NAC Deployment Project Kickoff",
+      description:
+        "Initial project planning, stakeholder alignment, and resource allocation for zero trust NAC implementation",
+      startDate: kickoffDate.toISOString(),
+      endDate: new Date(kickoffDate.getTime() + 4 * 60 * 60 * 1000).toISOString(),
+      type: "kickoff",
+      priority: "critical",
+      assignedTo: projectManager,
+      status: "completed",
+      attendees: [projectManager, technicalOwner, siteOwner, systemsEngineer],
+      location: "Conference Room A / Microsoft Teams",
+      meetingType: "hybrid",
+      prerequisites: ["Project charter approval", "Budget allocation"],
+      deliverables: ["Project plan", "Resource allocation", "Timeline approval"],
+    })
+
+    // Design phase events
+    const designStart = new Date(currentDate.getTime() - 25 * 24 * 60 * 60 * 1000)
+    events.push({
+      title: "Architecture Design Workshop",
+      description:
+        "Detailed architecture design session covering network topology, security zones, and integration points",
+      startDate: designStart.toISOString(),
+      endDate: new Date(designStart.getTime() + 8 * 60 * 60 * 1000).toISOString(),
+      type: "design",
+      priority: "high",
+      assignedTo: technicalOwner,
+      status: "completed",
+      attendees: [technicalOwner, siteOwner, systemsEngineer],
+      location: "Engineering Lab",
+      meetingType: "in-person",
+      prerequisites: ["Network assessment", "Security requirements"],
+      deliverables: ["Architecture diagrams", "Integration specifications"],
+    })
+
+    // Generate events for each site
+    sites.forEach((site, index) => {
+      const siteStartDate = new Date(currentDate.getTime() + (index * 7 + 5) * 24 * 60 * 60 * 1000)
+
+      // Site assessment
+      events.push({
+        title: `Site Assessment - ${site.name}`,
+        description: `On-site network assessment and infrastructure evaluation for ${site.name}`,
+        startDate: siteStartDate.toISOString(),
+        endDate: new Date(siteStartDate.getTime() + 6 * 60 * 60 * 1000).toISOString(),
+        type: "deployment",
+        priority: site.priority as Event["priority"],
+        assignedTo: siteOwner,
+        siteId: site.id,
+        status: index < 2 ? "completed" : index < 4 ? "in-progress" : "scheduled",
+        attendees: [siteOwner, "Site IT Team"],
+        location: site.location,
+        meetingType: "in-person",
+        prerequisites: ["Site access approval", "Network documentation"],
+        deliverables: ["Assessment report", "Implementation plan"],
+      })
+
+      // Implementation
+      const implDate = new Date(siteStartDate.getTime() + 7 * 24 * 60 * 60 * 1000)
+      events.push({
+        title: `NAC Implementation - ${site.name}`,
+        description: `Portnox NAC deployment and configuration for ${site.name}`,
+        startDate: implDate.toISOString(),
+        endDate: new Date(implDate.getTime() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+        type: "deployment",
+        priority: site.priority as Event["priority"],
+        assignedTo: systemsEngineer,
+        siteId: site.id,
+        status: index < 1 ? "completed" : index < 3 ? "in-progress" : "scheduled",
+        attendees: [systemsEngineer, technicalOwner, "Site Network Team"],
+        location: site.location,
+        meetingType: "in-person",
+        prerequisites: ["Infrastructure ready", "Certificates deployed"],
+        deliverables: ["NAC configuration", "Policy implementation"],
+      })
+
+      // Testing
+      const testDate = new Date(implDate.getTime() + 3 * 24 * 60 * 60 * 1000)
+      events.push({
+        title: `Testing & Validation - ${site.name}`,
+        description: `Comprehensive testing of NAC implementation and user acceptance testing`,
+        startDate: testDate.toISOString(),
+        endDate: new Date(testDate.getTime() + 1 * 24 * 60 * 60 * 1000).toISOString(),
+        type: "testing",
+        priority: site.priority as Event["priority"],
+        assignedTo: siteOwner,
+        siteId: site.id,
+        status: index < 1 ? "completed" : index < 2 ? "in-progress" : "scheduled",
+        attendees: [siteOwner, "End Users", "IT Support"],
+        location: site.location,
+        meetingType: "in-person",
+        prerequisites: ["Implementation complete", "Test scenarios"],
+        deliverables: ["Test results", "User feedback", "Go-live approval"],
+      })
+
+      // Go-live
+      const goLiveDate = new Date(testDate.getTime() + 2 * 24 * 60 * 60 * 1000)
+      events.push({
+        title: `Go-Live - ${site.name}`,
+        description: `Production cutover and go-live support for ${site.name}`,
+        startDate: goLiveDate.toISOString(),
+        endDate: new Date(goLiveDate.getTime() + 8 * 60 * 60 * 1000).toISOString(),
+        type: "go-live",
+        priority: site.priority as Event["priority"],
+        assignedTo: projectManager,
+        siteId: site.id,
+        status: index < 1 ? "completed" : "scheduled",
+        attendees: [projectManager, technicalOwner, siteOwner, "Site Team"],
+        location: site.location,
+        meetingType: "in-person",
+        prerequisites: ["Testing complete", "Change approval"],
+        deliverables: ["Production system", "Support handover"],
+      })
+    })
+
+    // Training events
+    const trainingDate = new Date(currentDate.getTime() + 14 * 24 * 60 * 60 * 1000)
+    events.push({
+      title: "Administrator Training Session",
+      description: "Comprehensive training for IT administrators on Portnox NAC management and troubleshooting",
+      startDate: trainingDate.toISOString(),
+      endDate: new Date(trainingDate.getTime() + 6 * 60 * 60 * 1000).toISOString(),
+      type: "training",
+      priority: "medium",
+      assignedTo: technicalOwner,
+      status: "scheduled",
+      attendees: ["IT Administrators", "Network Team", "Security Team"],
+      location: "Training Center / Virtual",
+      meetingType: "hybrid",
+      prerequisites: ["Training materials", "Lab environment"],
+      deliverables: ["Training completion certificates", "Documentation"],
+    })
+
+    // Create all events
+    const createdEvents: Event[] = []
+    for (const eventData of events) {
+      const event = await this.createEvent(eventData)
+      createdEvents.push(event)
+    }
+
+    return createdEvents
+  }
+
+  private async generateDemoPolicies(scenario: string): Promise<GlobalPolicy[]> {
+    const policies: Omit<GlobalPolicy, "id" | "createdAt" | "updatedAt">[] = [
       {
-        id: "global-policy-retail-1",
-        name: "Guest WiFi Access Policy",
-        description: "Secure guest WiFi with time-based access and bandwidth limits",
-        category: "guest_access",
-        type: "bandwidth",
-        priority: 3,
+        name: "Employee Access Policy",
+        description: "Standard access policy for authenticated employees with valid certificates",
+        category: "authentication",
+        type: "access",
+        priority: 1,
         conditions: [
           {
             type: "user_group",
             operator: "equals",
-            value: "Guest",
-            description: "Guest network users",
+            value: "employee",
+            description: "Applies to all authenticated employees",
+          },
+          {
+            type: "certificate",
+            operator: "equals",
+            value: "valid",
+            description: "Requires valid certificate authentication",
           },
         ],
         actions: [
           {
-            type: "bandwidth_limit",
-            parameters: { download: "25Mbps", upload: "5Mbps", duration: "4h" },
-            description: "Limited bandwidth for guest access",
+            type: "allow",
+            parameters: {
+              access_type: "full",
+              vlan: "corporate",
+            },
+            description: "Grants full access to corporate network resources",
             priority: 1,
           },
         ],
         enabled: true,
         applicableSites: [],
-        schedule: { type: "business_hours", timeZone: "America/New_York" },
-        tags: ["retail", "guest-wifi", "bandwidth"],
+        tags: ["access", "employee", "certificate"],
         version: "1.0",
-        approvedBy: "user-retail-1",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        approvedBy: "Alex Rivera",
+        schedule: {
+          type: "always",
+          timeZone: "UTC",
+        },
       },
-    ]
-  }
-
-  private generateRetailEvents(): Event[] {
-    return [
       {
-        id: "event-retail-1",
-        title: "Black Friday Network Preparation",
-        description: "Network capacity and security preparation for Black Friday shopping event",
-        startDate: "2024-11-20T08:00:00",
-        endDate: "2024-11-20T18:00:00",
-        type: "deployment",
-        priority: "critical",
-        assignedTo: "user-retail-1",
-        siteId: "site-retail-1",
-        status: "scheduled",
-        attendees: ["user-retail-1", "user-retail-3", "user-retail-5"],
-        location: "Flagship Store - Times Square",
-        meetingType: "in-person",
-        prerequisites: ["Capacity planning", "Performance testing"],
-        deliverables: ["Network readiness confirmation", "Monitoring setup"],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        name: "Executive VIP Policy",
+        description: "Enhanced access policy for executive users with priority network access",
+        category: "authorization",
+        type: "access",
+        priority: 0,
+        conditions: [
+          {
+            type: "user_group",
+            operator: "equals",
+            value: "executive",
+            description: "Applies to executive users",
+          },
+        ],
+        actions: [
+          {
+            type: "allow",
+            parameters: {
+              access_type: "priority",
+              vlan: "executive",
+              qos: "high",
+            },
+            description: "Grants priority access with high QoS",
+            priority: 1,
+          },
+        ],
+        enabled: true,
+        applicableSites: [],
+        tags: ["access", "executive", "priority"],
+        version: "1.0",
+        approvedBy: "Alex Rivera",
+        schedule: {
+          type: "always",
+          timeZone: "UTC",
+        },
       },
-    ]
-  }
-
-  private generateGovernmentUsers(): User[] {
-    return [
       {
-        id: "user-gov-1",
-        name: "Colonel David Mitchell",
-        email: "david.mitchell@fedtech.gov",
-        role: "admin",
-        department: "Cybersecurity",
-        title: "Chief Information Security Officer",
-        phone: "+1 (555) 234-8901",
-        isActive: true,
-        specialties: ["Government Security", "FISMA Compliance", "FedRAMP", "CMMC"],
-        certifications: ["CISSP", "CISM", "CAP", "Security+"],
-        skills: ["Risk Management Framework", "Authority to Operate", "STIG Implementation"],
-        languages: ["English"],
-        timeZone: "America/Washington",
-        availability: {
-          hoursPerWeek: 50,
-          preferredSchedule: "business-hours",
-          vacationDays: ["2024-07-04", "2024-11-11", "2024-12-25"],
-        },
-        vendorRelationships: ["Portnox", "Cisco", "Juniper"],
-        projectHistory: ["FedRAMP Authorization 2023", "CMMC Implementation"],
-        performanceRating: 4.9,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ]
-  }
-
-  private generateGovernmentSites(): Site[] {
-    const sites = [
-      {
-        id: "site-gov-1",
-        name: "Federal Building - Washington DC",
-        location: "Washington, DC",
-        region: "North America",
-        country: "United States",
-        state: "Washington DC",
-        city: "Washington",
-        siteType: "headquarters" as const,
-        status: "implementation" as const,
-        priority: "critical" as const,
-        phase: "Phase 3 - Configuration",
-        users: 2200,
-        devices: 4800,
-        deviceBreakdown: {
-          windows: 3200,
-          mac: 180,
-          linux: 250,
-          ios: 520,
-          android: 280,
-          iot: 180,
-          medical: 0,
-          printers: 120,
-          cameras: 85,
-          voip: 380,
-          kiosks: 25,
-          tablets: 180,
-          chromeos: 25,
-          other: 150,
-        },
-        assignedUsers: {
-          projectManagers: ["user-gov-2"],
-          technicalOwners: ["user-gov-3"],
-          siteOwners: ["user-gov-4"],
-          systemsEngineers: ["user-gov-5"],
-          accountExecutives: ["user-gov-6"],
-          technicalAccountManagers: ["user-gov-7"],
-          technicians: ["user-gov-8", "user-gov-9"],
-          securitySpecialists: ["user-gov-1"],
-        },
-        startDate: "2024-02-01",
-        targetDate: "2024-08-31",
-        progress: 62,
-        milestones: [],
-        wiredInfrastructure: {
-          vendor: "juniper",
-          switchModels: ["EX4650", "QFX5100"],
-          switchCount: 85,
-          portCount: 2040,
-          stackingSupport: true,
-          poeSupport: true,
-          mgmtVlan: 1,
-          firmware: "21.4R2",
-        },
-        wirelessInfrastructure: {
-          vendor: "juniper-mist",
-          controllerModel: "Cloud",
-          apModels: ["AP63", "AP43"],
-          apCount: 280,
-          wifiStandards: ["802.11ax"],
-          bandSupport: ["2.4GHz", "5GHz", "6GHz"],
-          meshSupport: false,
-          firmware: "0.16.31245",
-        },
-        connectivity: {
-          type: "mpls",
-          bandwidth: "10Gbps",
-          provider: "General Services Administration",
-          redundancy: true,
-          backupType: "fiber",
-        },
-        identityProvider: {
-          type: "active-directory",
-          domain: "fedtech.local",
-          syncEnabled: true,
-          mfaEnabled: true,
-          conditionalAccess: true,
-        },
-        mdmProvider: {
-          type: "blackberry",
-          enrollmentType: "automatic",
-          complianceEnabled: true,
-          appManagement: true,
-        },
-        firewallInfrastructure: {
-          vendor: "juniper",
-          models: ["SRX1500", "SRX4600"],
-          haConfiguration: true,
-          userIdIntegration: true,
-          syslogEnabled: true,
-          firmware: "21.2R3",
-        },
-        radiusConfiguration: {
-          type: "on-premise-radius",
-          vendor: "freeradius",
-          clustering: true,
-          loadBalancing: true,
-          certificates: true,
-        },
-        deviceAdministration: {
-          type: "both",
-          vendor: "freeradius",
-          privilegeLevels: [1, 7, 15],
-          commandAuthorization: true,
-        },
-        vlans: 45,
-        subnets: ["172.31.0.0/16", "172.32.0.0/16"],
-        dhcpScopes: 25,
-        dnsServers: ["172.31.1.10", "172.31.1.11"],
-        globalPolicies: ["global-policy-gov-1"],
-        sitePolicies: [],
-        policyEnforcement: {
-          dynamic_vlan: true,
-          bandwidth_control: true,
-          time_based_access: true,
-          device_compliance: true,
-          location_based: true,
-        },
-        complianceRequirements: ["FISMA", "FedRAMP", "NIST 800-53", "CMMC Level 3"],
-        securityStandards: ["NIST Risk Management Framework", "NIST 800-171", "DISA STIGs"],
-        dataClassification: "restricted",
-        notes: "Federal government facility requiring highest security standards and continuous monitoring.",
-        deploymentChecklist: [],
-        riskAssessment: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ]
-
-    const additionalSites = this.generateRandomizedSites("government", 7)
-    return [...sites, ...additionalSites]
-  }
-
-  private generateGovernmentGlobalPolicies(): GlobalPolicy[] {
-    return [
-      {
-        id: "global-policy-gov-1",
-        name: "FISMA Compliance Policy",
-        description: "Federal Information Security Management Act compliance for all government systems",
-        category: "compliance",
-        type: "security",
-        priority: 1,
+        name: "BYOD Policy",
+        description: "Bring Your Own Device policy with limited network access and compliance requirements",
+        category: "authentication",
+        type: "access",
+        priority: 3,
         conditions: [
           {
             type: "device_type",
             operator: "in",
-            value: ["Government Workstation", "Classified System"],
-            description: "Government managed devices",
+            value: ["mobile", "tablet", "personal"],
+            description: "Applies to personal mobile devices",
           },
         ],
         actions: [
           {
-            type: "vlan_assign",
-            parameters: { vlan: "1", encryption: "mandatory", monitoring: "continuous" },
-            description: "Secure government network with mandatory encryption",
+            type: "allow",
+            parameters: {
+              access_type: "limited",
+              vlan: "byod",
+            },
+            description: "Grants limited access to BYOD network segment",
             priority: 1,
+          },
+          {
+            type: "bandwidth_limit",
+            parameters: {
+              limit: "10Mbps",
+            },
+            description: "Limits bandwidth to 10Mbps",
+            priority: 2,
           },
         ],
         enabled: true,
         applicableSites: [],
-        schedule: { type: "always", timeZone: "UTC" },
-        tags: ["government", "fisma", "compliance"],
+        tags: ["access", "byod", "mobile"],
         version: "1.0",
-        approvedBy: "user-gov-1",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        approvedBy: "Alex Rivera",
+        schedule: {
+          type: "business_hours",
+          timeZone: "UTC",
+          businessHours: {
+            start: "08:00",
+            end: "18:00",
+            days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+          },
+        },
       },
-    ]
-  }
-
-  private generateGovernmentEvents(): Event[] {
-    return [
       {
-        id: "event-gov-1",
-        title: "Authority to Operate (ATO) Review",
-        description: "Annual security assessment for Authority to Operate renewal",
-        startDate: "2024-07-15T09:00:00",
-        endDate: "2024-07-15T17:00:00",
-        type: "review",
-        priority: "critical",
-        assignedTo: "user-gov-1",
-        siteId: "site-gov-1",
-        status: "scheduled",
-        attendees: ["user-gov-1", "user-gov-3", "user-gov-5"],
-        location: "Federal Building - SCIF Room",
-        meetingType: "in-person",
-        prerequisites: ["Security documentation", "Risk assessment"],
-        deliverables: ["ATO renewal documentation", "Security controls validation"],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        name: "Guest Access Policy",
+        description: "Temporary internet-only access for guest users with time restrictions",
+        category: "guest_access",
+        type: "access",
+        priority: 4,
+        conditions: [
+          {
+            type: "user_group",
+            operator: "equals",
+            value: "guest",
+            description: "Applies to guest users",
+          },
+        ],
+        actions: [
+          {
+            type: "allow",
+            parameters: {
+              access_type: "internet_only",
+              vlan: "guest",
+            },
+            description: "Grants internet-only access",
+            priority: 1,
+          },
+          {
+            type: "time_restrict",
+            parameters: {
+              duration: "8hours",
+            },
+            description: "Limits session to 8 hours",
+            priority: 2,
+          },
+          {
+            type: "bandwidth_limit",
+            parameters: {
+              limit: "5Mbps",
+            },
+            description: "Limits bandwidth to 5Mbps",
+            priority: 3,
+          },
+        ],
+        enabled: true,
+        applicableSites: [],
+        tags: ["access", "guest", "temporary"],
+        version: "1.0",
+        approvedBy: "Alex Rivera",
+        schedule: {
+          type: "always",
+          timeZone: "UTC",
+        },
+      },
+      {
+        name: "IoT Device Policy",
+        description: "Segmented network access for IoT devices with monitoring and restrictions",
+        category: "security",
+        type: "access",
+        priority: 2,
+        conditions: [
+          {
+            type: "device_type",
+            operator: "equals",
+            value: "iot",
+            description: "Applies to IoT devices",
+          },
+        ],
+        actions: [
+          {
+            type: "allow",
+            parameters: {
+              access_type: "segmented",
+              vlan: "iot",
+            },
+            description: "Places IoT devices in isolated network segment",
+            priority: 1,
+          },
+          {
+            type: "log_only",
+            parameters: {
+              level: "detailed",
+            },
+            description: "Enables detailed logging for security monitoring",
+            priority: 2,
+          },
+        ],
+        enabled: true,
+        applicableSites: [],
+        tags: ["access", "iot", "segmentation"],
+        version: "1.0",
+        approvedBy: "Mark Wilson",
+        schedule: {
+          type: "always",
+          timeZone: "UTC",
+        },
       },
     ]
+
+    const createdPolicies: GlobalPolicy[] = []
+    for (const policyData of policies) {
+      const policy = await this.createGlobalPolicy(policyData)
+      createdPolicies.push(policy)
+    }
+
+    return createdPolicies
   }
 
-  // Data Import/Export
-  async exportData(): Promise<string> {
-    const data = this.getData()
-    return JSON.stringify(data, null, 2)
+  private getCompanyNameForScenario(scenario: string): string {
+    const companyNames: { [key: string]: string } = {
+      corporate: "GlobalTech Solutions",
+      healthcare: "MetroHealth Systems",
+      education: "Riverside University",
+      financial: "SecureBank Financial Group",
+      manufacturing: "Advanced Manufacturing Corp",
+      retail: "Premium Retail Chain",
+      technology: "InnovateTech Solutions",
+    }
+
+    return companyNames[scenario] || "TechCorp Global"
   }
 
-  async importData(jsonData: string): Promise<void> {
+  private async clearAllData(): Promise<void> {
+    if (typeof window === "undefined") return
+
     try {
-      const importedData = JSON.parse(jsonData) as AppData
-
-      // Validate the imported data structure
-      if (!importedData.sites || !importedData.events || !importedData.users || !importedData.preferences) {
-        throw new Error("Invalid data format")
-      }
-
-      // Merge with current data or replace completely
-      this.saveData({
-        ...importedData,
-        version: this.VERSION,
-        lastUpdated: new Date().toISOString(),
+      // Clear all portnox-nac related data
+      const keys = Object.keys(localStorage)
+      keys.forEach((key) => {
+        if (key.startsWith("portnox-nac-")) {
+          localStorage.removeItem(key)
+        }
       })
+      console.log("Cleared all existing data")
     } catch (error) {
-      console.error("Error importing data:", error)
-      throw new Error("Failed to import data")
+      console.error("Error clearing data:", error)
     }
   }
 
-  // Clear all data
-  async clearAllData(): Promise<void> {
-    localStorage.removeItem(this.STORAGE_KEY)
-  }
-
-  // Get storage statistics
-  async getStorageStats(): Promise<{
-    sitesCount: number
-    eventsCount: number
-    usersCount: number
-    globalPoliciesCount: number
-    storageSize: number
-    lastUpdated: string
-  }> {
-    const data = this.getData()
-    const storageSize = new Blob([JSON.stringify(data)]).size
-
-    return {
-      sitesCount: data.sites.length,
-      eventsCount: data.events.length,
-      usersCount: data.users.length,
-      globalPoliciesCount: data.globalPolicies.length,
-      storageSize,
-      lastUpdated: data.lastUpdated,
+  // Export data
+  async exportData(): Promise<string> {
+    const data: AppData = {
+      sites: await this.getSites(),
+      events: await this.getEvents(),
+      users: await this.getUsers(),
+      globalPolicies: await this.getGlobalPolicies(),
+      architectureTemplates: [],
+      preferences: await this.getUserPreferences(),
+      version: "1.0.0",
+      lastUpdated: new Date().toISOString(),
     }
+
+    return JSON.stringify(data, null, 2)
   }
 }
 
-export const storage = new StorageManager()
+export const storage = new Storage()
+export default storage

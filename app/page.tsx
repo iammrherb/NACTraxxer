@@ -93,31 +93,10 @@ export default function NACDesigner() {
     }
   }
 
-  const handleDemoDataLoad = async (
-    scenario: "corporate" | "education" | "healthcare" | "government" | "manufacturing" | "retail",
-  ) => {
-    try {
-      await storage.generateDemoData(scenario)
-
-      // Update company name based on scenario
-      const preferences = await storage.getUserPreferences()
-      setCompanyName(preferences.companyName)
-
-      toast({
-        title: "Demo data loaded",
-        description: `${scenario.charAt(0).toUpperCase() + scenario.slice(1)} demo data has been loaded successfully.`,
-      })
-
-      // Refresh the current view
-      window.location.reload()
-    } catch (error) {
-      console.error("Error loading demo data:", error)
-      toast({
-        title: "Error",
-        description: "Failed to load demo data. Please try again.",
-        variant: "destructive",
-      })
-    }
+  const handleDemoDataLoad = async () => {
+    // This will be called after demo data is loaded
+    // Force a refresh of all components
+    window.location.reload()
   }
 
   if (!isClient) {
@@ -150,6 +129,8 @@ export default function NACDesigner() {
                     src={
                       customerLogo ||
                       "https://companieslogo.com/img/orig/ABM_BIG-47f1fb05.png?t=1720244490&download=true" ||
+                      "/placeholder.svg" ||
+                      "/placeholder.svg" ||
                       "/placeholder.svg" ||
                       "/placeholder.svg"
                     }
@@ -263,11 +244,7 @@ export default function NACDesigner() {
 
       <ThemeCustomizer open={showThemeCustomizer} onOpenChange={setShowThemeCustomizer} />
 
-      <DemoDataModal
-        open={showDemoModal}
-        onOpenChange={setShowDemoModal}
-        onDataLoaded={() => window.location.reload()}
-      />
+      <DemoDataModal open={showDemoModal} onOpenChange={setShowDemoModal} onDataLoaded={handleDemoDataLoad} />
     </div>
   )
 }
