@@ -2,12 +2,10 @@
 
 import type React from "react"
 import { useState, useEffect } from "react"
-import { useSession, signOut } from "next-auth/react"
-import { useRouter } from "next/navigation"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { Upload, Users, Palette, Network, List, BarChart3, Book, Calendar, LogOut } from "lucide-react"
+import { Upload, Users, Palette, Network, List, BarChart3, Book, Calendar, Database } from "lucide-react"
 import ArchitectureDesigner from "@/components/architecture-designer"
 import SiteManagement from "@/components/site-management"
 import ProgressTracking from "@/components/progress-tracking"
@@ -15,32 +13,24 @@ import SiteWorkbook from "@/components/site-workbook"
 import TimelineScheduler from "@/components/timeline-scheduler"
 import UserManagementModal from "@/components/UserManagementModal"
 import ThemeCustomizer from "@/components/theme-customizer"
+import DemoDataModal from "@/components/demo-data-modal"
 import { toast } from "@/components/ui/use-toast"
 import { storage } from "@/lib/storage"
 
-export default function ABMDesigner() {
-  const { data: session, status } = useSession()
-  const router = useRouter()
+export default function NACDesigner() {
   const [activeTab, setActiveTab] = useState("architecture")
   const [selectedSiteId, setSelectedSiteId] = useState<string | null>(null)
   const [showUserModal, setShowUserModal] = useState(false)
   const [showThemeCustomizer, setShowThemeCustomizer] = useState(false)
-  const [customerLogo, setCustomerLogo] = useState(
-    "https://ahorrainvierte.com/wp-content/uploads/abm-industries-inc.png",
-  )
+  const [showDemoModal, setShowDemoModal] = useState(false)
+  const [customerLogo, setCustomerLogo] = useState("")
+  const [companyName, setCompanyName] = useState("TechCorp Global")
   const [isClient, setIsClient] = useState(false)
 
   // Ensure we're on the client side
   useEffect(() => {
     setIsClient(true)
   }, [])
-
-  // Check authentication
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/login")
-    }
-  }, [status, router])
 
   // Load user preferences
   useEffect(() => {
@@ -54,6 +44,9 @@ export default function ABMDesigner() {
       const preferences = await storage.getUserPreferences()
       if (preferences.customerLogo) {
         setCustomerLogo(preferences.customerLogo)
+      }
+      if (preferences.companyName) {
+        setCompanyName(preferences.companyName)
       }
       if (preferences.defaultView) {
         setActiveTab(preferences.defaultView)
@@ -100,28 +93,42 @@ export default function ABMDesigner() {
     }
   }
 
-  const handleSignOut = async () => {
-    await signOut({ redirect: false })
-    router.push("/login")
-    toast({
-      title: "Signed out",
-      description: "You have been signed out successfully.",
-    })
+  const handleDemoDataLoad = async (
+    scenario: "corporate" | "education" | "healthcare" | "government" | "manufacturing" | "retail",
+  ) => {
+    try {
+      await storage.generateDemoData(scenario)
+
+      // Update company name based on scenario
+      const preferences = await storage.getUserPreferences()
+      setCompanyName(preferences.companyName)
+
+      toast({
+        title: "Demo data loaded",
+        description: `${scenario.charAt(0).toUpperCase() + scenario.slice(1)} demo data has been loaded successfully.`,
+      })
+
+      // Refresh the current view
+      window.location.reload()
+    } catch (error) {
+      console.error("Error loading demo data:", error)
+      toast({
+        title: "Error",
+        description: "Failed to load demo data. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
-  if (status === "loading" || !isClient) {
+  if (!isClient) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-lg text-gray-600">Loading...</p>
+          <p className="mt-4 text-lg text-gray-600">Loading NAC Designer...</p>
         </div>
       </div>
     )
-  }
-
-  if (status === "unauthenticated") {
-    return null // Will redirect in useEffect
   }
 
   return (
@@ -140,13 +147,21 @@ export default function ABMDesigner() {
                 <Separator orientation="vertical" className="h-10 bg-white/30" />
                 <div className="bg-white/10 rounded-lg p-2 hover:bg-white/20 transition-colors">
                   <img
-                    src={customerLogo || "/placeholder.svg"}
+                    src={
+                      customerLogo ||
+                      "https://companieslogo.com/img/orig/ABM_BIG-47f1fb05.png?t=1720244490&download=true" ||
+                      "/placeholder.svg" ||
+                      "/placeholder.svg"
+                    }
                     alt="Customer Logo"
                     className="h-10 max-w-[150px] object-contain"
                   />
                 </div>
               </div>
-              <h1 className="text-2xl font-bold">Zero Trust NAC Architecture Designer</h1>
+              <div>
+                <h1 className="text-2xl font-bold">Zero Trust NAC Architecture Designer</h1>
+                <p className="text-sm opacity-90">{companyName}</p>
+              </div>
             </div>
 
             <div className="flex items-center space-x-4">
@@ -160,6 +175,16 @@ export default function ABMDesigner() {
                   <span className="text-sm">Change Logo</span>
                 </label>
               </div>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowDemoModal(true)}
+                className="text-white hover:bg-white/20"
+              >
+                <Database className="h-4 w-4 mr-2" />
+                Demo Data
+              </Button>
 
               <Button
                 variant="ghost"
@@ -180,16 +205,6 @@ export default function ABMDesigner() {
                 <Palette className="h-4 w-4 mr-2" />
                 Customize
               </Button>
-
-              <div className="flex items-center space-x-2 border-l border-white/20 pl-4">
-                <div className="text-sm">
-                  <div className="font-medium">{session?.user?.name}</div>
-                  <div className="text-xs opacity-70">{session?.user?.email}</div>
-                </div>
-                <Button variant="ghost" size="sm" onClick={handleSignOut} className="text-white hover:bg-white/20">
-                  <LogOut className="h-4 w-4" />
-                </Button>
-              </div>
             </div>
           </div>
         </div>
@@ -247,6 +262,12 @@ export default function ABMDesigner() {
       <UserManagementModal open={showUserModal} onOpenChange={setShowUserModal} />
 
       <ThemeCustomizer open={showThemeCustomizer} onOpenChange={setShowThemeCustomizer} />
+
+      <DemoDataModal
+        open={showDemoModal}
+        onOpenChange={setShowDemoModal}
+        onDataLoaded={() => window.location.reload()}
+      />
     </div>
   )
 }

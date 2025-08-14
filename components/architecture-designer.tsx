@@ -8,8 +8,9 @@ import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import InteractiveDiagram from "./interactive-diagram"
-import ArchitectureLegend from "./architecture-legend"
+import InteractiveDiagram from "./InteractiveDiagram"
+import ArchitectureLegend from "./ArchitectureLegend"
+import PolicyManagement from "./policy-management"
 import {
   Cloud,
   Network,
@@ -30,6 +31,7 @@ export default function ArchitectureDesigner() {
   const [networkVendor, setNetworkVendor] = useState("cisco")
   const [connectivityType, setConnectivityType] = useState("sdwan")
   const [animationSpeed, setAnimationSpeed] = useState([1])
+  const [showPolicyDesigner, setShowPolicyDesigner] = useState(false)
 
   const architectureViews = [
     {
@@ -133,6 +135,42 @@ export default function ArchitectureDesigner() {
       label: "Mist Wireless",
       icon: <Network className="w-4 h-4" />,
       description: "Juniper Mist wireless deep-dive integration",
+    },
+    {
+      id: "multi-site",
+      label: "Multi-Site Enterprise",
+      icon: <GlobeIcon className="w-4 h-4" />,
+      description: "Enterprise deployment across multiple locations",
+    },
+    {
+      id: "healthcare",
+      label: "Healthcare Deployment",
+      icon: <Shield className="w-4 h-4" />,
+      description: "Medical device prioritization with HIPAA compliance",
+    },
+    {
+      id: "education",
+      label: "Education Campus",
+      icon: <Users className="w-4 h-4" />,
+      description: "University campus with student BYOD and research networks",
+    },
+    {
+      id: "financial",
+      label: "Financial Services",
+      icon: <Lock className="w-4 h-4" />,
+      description: "Banking and financial compliance with regulatory requirements",
+    },
+    {
+      id: "manufacturing",
+      label: "Manufacturing & Industrial",
+      icon: <Settings className="w-4 h-4" />,
+      description: "Industrial IoT and OT network segmentation",
+    },
+    {
+      id: "retail",
+      label: "Retail & Hospitality",
+      icon: <Smartphone className="w-4 h-4" />,
+      description: "Point-of-sale systems and guest access management",
     },
   ]
 
@@ -483,8 +521,9 @@ export default function ArchitectureDesigner() {
 
       {/* Main Content */}
       <Tabs defaultValue="diagram" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="diagram">Interactive Diagram</TabsTrigger>
+          <TabsTrigger value="policies">Policy Designer</TabsTrigger>
           <TabsTrigger value="legend">Components Legend</TabsTrigger>
         </TabsList>
 
@@ -542,6 +581,20 @@ export default function ArchitectureDesigner() {
                 connectivityType={connectivityType}
                 animationSpeed={animationSpeed[0]}
               />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="policies" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Shield className="h-6 w-6 text-blue-600" />
+                <span>Policy Designer & Management</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <PolicyManagement />
             </CardContent>
           </Card>
         </TabsContent>

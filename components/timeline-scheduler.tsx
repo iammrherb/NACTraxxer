@@ -1,151 +1,67 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { Calendar, Clock, Plus, Edit, Trash2, Users, CheckCircle, AlertCircle, CalendarIcon } from "lucide-react"
 import { toast } from "@/components/ui/use-toast"
 import { storage, type Event, type Site } from "@/lib/storage"
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
-import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable"
-import { useSortable } from "@dnd-kit/sortable"
-import { CSS } from "@dnd-kit/utilities"
-
-interface SortableEventProps {
-  event: Event
-  onEdit: (event: Event) => void
-  onDelete: (id: string) => void
-}
-
-function SortableEvent({ event, onEdit, onDelete }: SortableEventProps) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: event.id })
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  }
-
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case "meeting":
-        return "bg-blue-100 text-blue-800"
-      case "milestone":
-        return "bg-green-100 text-green-800"
-      case "deployment":
-        return "bg-purple-100 text-purple-800"
-      case "review":
-        return "bg-orange-100 text-orange-800"
-      case "training":
-        return "bg-indigo-100 text-indigo-800"
-      default:
-        return "bg-gray-100 text-gray-800"
-    }
-  }
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "completed":
-        return <CheckCircle className="h-4 w-4 text-green-600" />
-      case "in-progress":
-        return <AlertCircle className="h-4 w-4 text-yellow-600" />
-      default:
-        return <Clock className="h-4 w-4 text-gray-600" />
-    }
-  }
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className="bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow cursor-move"
-    >
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <div className="flex items-center space-x-2 mb-2">
-            {getStatusIcon(event.status)}
-            <h3 className="font-semibold text-gray-900">{event.title}</h3>
-            <Badge className={getTypeColor(event.type)}>{event.type}</Badge>
-          </div>
-          <p className="text-sm text-gray-600 mb-2">{event.description}</p>
-          <div className="flex items-center space-x-4 text-xs text-gray-500">
-            <span className="flex items-center space-x-1">
-              <Calendar className="h-3 w-3" />
-              <span>{event.date}</span>
-            </span>
-            <span className="flex items-center space-x-1">
-              <Clock className="h-3 w-3" />
-              <span>{event.time}</span>
-            </span>
-            <span className="flex items-center space-x-1">
-              <Users className="h-3 w-3" />
-              <span>{event.assignee}</span>
-            </span>
-          </div>
-        </div>
-        <div className="flex space-x-1 ml-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation()
-              onEdit(event)
-            }}
-          >
-            <Edit className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation()
-              onDelete(event.id)
-            }}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-    </div>
-  )
-}
+import {
+  Calendar,
+  Plus,
+  Edit,
+  Trash2,
+  Clock,
+  User,
+  MapPin,
+  Download,
+  ChevronLeft,
+  ChevronRight,
+  CheckCircle,
+  Pause,
+  Play,
+} from "lucide-react"
 
 export default function TimelineScheduler() {
   const [events, setEvents] = useState<Event[]>([])
   const [sites, setSites] = useState<Site[]>([])
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [filteredEvents, setFilteredEvents] = useState<Event[]>([])
+  const [currentDate, setCurrentDate] = useState(new Date())
+  const [viewMode, setViewMode] = useState<"timeline" | "calendar">("timeline")
+  const [showAddDialog, setShowAddDialog] = useState(false)
   const [editingEvent, setEditingEvent] = useState<Event | null>(null)
-  const [activeView, setActiveView] = useState("timeline")
+  const [typeFilter, setTypeFilter] = useState<string>("all")
+  const [statusFilter, setStatusFilter] = useState<string>("all")
   const [loading, setLoading] = useState(true)
 
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
-  )
+  // Form state
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    startDate: "",
+    endDate: "",
+    type: "deployment" as Event["type"],
+    priority: "medium" as Event["priority"],
+    assignedTo: "",
+    siteId: "",
+    status: "scheduled" as Event["status"],
+  })
 
-  // Load events and sites from storage
   useEffect(() => {
     loadData()
   }, [])
+
+  useEffect(() => {
+    filterEvents()
+  }, [events, typeFilter, statusFilter])
 
   const loadData = async () => {
     try {
@@ -157,7 +73,7 @@ export default function TimelineScheduler() {
       console.error("Error loading data:", error)
       toast({
         title: "Error",
-        description: "Failed to load data. Please try again.",
+        description: "Failed to load timeline data. Please try again.",
         variant: "destructive",
       })
     } finally {
@@ -165,65 +81,50 @@ export default function TimelineScheduler() {
     }
   }
 
-  const handleDragEnd = async (event: any) => {
-    const { active, over } = event
+  const filterEvents = () => {
+    let filtered = events
 
-    if (active.id !== over.id) {
-      const newEvents = arrayMove(
-        events,
-        events.findIndex((item) => item.id === active.id),
-        events.findIndex((item) => item.id === over.id),
-      )
-      setEvents(newEvents)
-
-      try {
-        await storage.saveEvents(newEvents)
-      } catch (error) {
-        console.error("Error saving event order:", error)
-        toast({
-          title: "Error",
-          description: "Failed to save event order.",
-          variant: "destructive",
-        })
-      }
+    if (typeFilter !== "all") {
+      filtered = filtered.filter((event) => event.type === typeFilter)
     }
+
+    if (statusFilter !== "all") {
+      filtered = filtered.filter((event) => event.status === statusFilter)
+    }
+
+    // Sort by start date
+    filtered.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+
+    setFilteredEvents(filtered)
   }
 
-  const handleSubmit = async (formData: FormData) => {
-    const eventData = {
-      title: formData.get("title") as string,
-      description: formData.get("description") as string,
-      date: formData.get("date") as string,
-      time: formData.get("time") as string,
-      type: formData.get("type") as Event["type"],
-      status: formData.get("status") as Event["status"],
-      assignee: formData.get("assignee") as string,
-      siteId: (formData.get("siteId") as string) || undefined,
-    }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
 
     try {
+      const eventData = {
+        ...formData,
+        siteId: formData.siteId || undefined,
+      }
+
       if (editingEvent) {
-        // Update existing event
-        const updatedEvent = await storage.updateEvent(editingEvent.id, eventData)
-        if (updatedEvent) {
-          setEvents(events.map((e) => (e.id === editingEvent.id ? updatedEvent : e)))
-          toast({
-            title: "Event updated",
-            description: "The event has been updated successfully.",
-          })
-        }
+        await storage.updateEvent(editingEvent.id, eventData)
+        toast({
+          title: "Event updated",
+          description: "Event has been updated successfully.",
+        })
       } else {
-        // Create new event
-        const newEvent = await storage.createEvent(eventData)
-        setEvents([...events, newEvent])
+        await storage.createEvent(eventData)
         toast({
           title: "Event created",
-          description: "The event has been created successfully.",
+          description: "New event has been created successfully.",
         })
       }
 
-      setIsDialogOpen(false)
+      setShowAddDialog(false)
       setEditingEvent(null)
+      resetForm()
+      loadData()
     } catch (error) {
       console.error("Error saving event:", error)
       toast({
@@ -236,19 +137,30 @@ export default function TimelineScheduler() {
 
   const handleEdit = (event: Event) => {
     setEditingEvent(event)
-    setIsDialogOpen(true)
+    setFormData({
+      title: event.title,
+      description: event.description,
+      startDate: event.startDate,
+      endDate: event.endDate,
+      type: event.type,
+      priority: event.priority,
+      assignedTo: event.assignedTo,
+      siteId: event.siteId || "",
+      status: event.status,
+    })
+    setShowAddDialog(true)
   }
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (eventId: string) => {
+    if (!confirm("Are you sure you want to delete this event?")) return
+
     try {
-      const success = await storage.deleteEvent(id)
-      if (success) {
-        setEvents(events.filter((e) => e.id !== id))
-        toast({
-          title: "Event deleted",
-          description: "The event has been deleted successfully.",
-        })
-      }
+      await storage.deleteEvent(eventId)
+      toast({
+        title: "Event deleted",
+        description: "Event has been deleted successfully.",
+      })
+      loadData()
     } catch (error) {
       console.error("Error deleting event:", error)
       toast({
@@ -259,33 +171,135 @@ export default function TimelineScheduler() {
     }
   }
 
-  const getEventsForDate = (date: string) => {
-    return events.filter((event) => event.date === date)
+  const resetForm = () => {
+    setFormData({
+      title: "",
+      description: "",
+      startDate: "",
+      endDate: "",
+      type: "deployment",
+      priority: "medium",
+      assignedTo: "",
+      siteId: "",
+      status: "scheduled",
+    })
   }
 
-  const generateCalendarDays = () => {
-    const today = new Date()
-    const currentMonth = today.getMonth()
-    const currentYear = today.getFullYear()
-    const firstDay = new Date(currentYear, currentMonth, 1)
-    const lastDay = new Date(currentYear, currentMonth + 1, 0)
-    const daysInMonth = lastDay.getDate()
-    const startingDayOfWeek = firstDay.getDay()
-
-    const days = []
-
-    // Add empty cells for days before the first day of the month
-    for (let i = 0; i < startingDayOfWeek; i++) {
-      days.push(null)
+  const getStatusIcon = (status: Event["status"]) => {
+    switch (status) {
+      case "completed":
+        return <CheckCircle className="h-4 w-4 text-green-600" />
+      case "in-progress":
+        return <Play className="h-4 w-4 text-blue-600" />
+      case "cancelled":
+        return <Pause className="h-4 w-4 text-red-600" />
+      default:
+        return <Clock className="h-4 w-4 text-gray-600" />
     }
+  }
 
-    // Add days of the month
-    for (let day = 1; day <= daysInMonth; day++) {
-      const date = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`
-      days.push(date)
+  const getStatusColor = (status: Event["status"]) => {
+    switch (status) {
+      case "completed":
+        return "bg-green-100 text-green-800"
+      case "in-progress":
+        return "bg-blue-100 text-blue-800"
+      case "cancelled":
+        return "bg-red-100 text-red-800"
+      default:
+        return "bg-gray-100 text-gray-800"
     }
+  }
 
-    return days
+  const getTypeColor = (type: Event["type"]) => {
+    switch (type) {
+      case "deployment":
+        return "bg-blue-100 text-blue-800"
+      case "maintenance":
+        return "bg-yellow-100 text-yellow-800"
+      case "training":
+        return "bg-green-100 text-green-800"
+      case "meeting":
+        return "bg-purple-100 text-purple-800"
+      case "milestone":
+        return "bg-orange-100 text-orange-800"
+      default:
+        return "bg-gray-100 text-gray-800"
+    }
+  }
+
+  const getPriorityColor = (priority: Event["priority"]) => {
+    switch (priority) {
+      case "critical":
+        return "bg-red-100 text-red-800"
+      case "high":
+        return "bg-orange-100 text-orange-800"
+      case "medium":
+        return "bg-blue-100 text-blue-800"
+      default:
+        return "bg-gray-100 text-gray-800"
+    }
+  }
+
+  const getSiteName = (siteId?: string) => {
+    if (!siteId) return "No site assigned"
+    const site = sites.find((s) => s.id === siteId)
+    return site ? site.name : "Unknown site"
+  }
+
+  const exportTimeline = async () => {
+    try {
+      const data = await storage.exportData()
+      const blob = new Blob([data], { type: "application/json" })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = url
+      link.download = `portnox-timeline-${new Date().toISOString().split("T")[0]}.json`
+      link.click()
+      URL.revokeObjectURL(url)
+
+      toast({
+        title: "Export successful",
+        description: "Timeline data has been exported successfully.",
+      })
+    } catch (error) {
+      console.error("Error exporting timeline:", error)
+      toast({
+        title: "Error",
+        description: "Failed to export timeline. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  // Calendar view helpers
+  const getDaysInMonth = (date: Date) => {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
+  }
+
+  const getFirstDayOfMonth = (date: Date) => {
+    return new Date(date.getFullYear(), date.getMonth(), 1).getDay()
+  }
+
+  const getEventsForDate = (date: Date) => {
+    const dateStr = date.toISOString().split("T")[0]
+    return filteredEvents.filter((event) => {
+      const eventStart = new Date(event.startDate).toISOString().split("T")[0]
+      const eventEnd = new Date(event.endDate).toISOString().split("T")[0]
+      return dateStr >= eventStart && dateStr <= eventEnd
+    })
+  }
+
+  const navigateMonth = (direction: "prev" | "next") => {
+    setCurrentDate((prev) => {
+      const newDate = new Date(prev)
+      if (direction === "prev") {
+        newDate.setMonth(prev.getMonth() - 1)
+      } else {
+        newDate.setMonth(prev.getMonth() + 1)
+      }
+      return newDate
+    })
   }
 
   if (loading) {
@@ -298,224 +312,389 @@ export default function TimelineScheduler() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Timeline & Schedule</h2>
-          <p className="text-muted-foreground">Manage project events and milestones</p>
-        </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => setEditingEvent(null)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Event
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>{editingEvent ? "Edit Event" : "Add New Event"}</DialogTitle>
-              <DialogDescription>
-                {editingEvent ? "Update the event details below." : "Create a new event for your project timeline."}
-              </DialogDescription>
-            </DialogHeader>
-            <form action={handleSubmit}>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="title" className="text-right">
-                    Title
-                  </Label>
-                  <Input
-                    id="title"
-                    name="title"
-                    defaultValue={editingEvent?.title || ""}
-                    className="col-span-3"
-                    required
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="description" className="text-right">
-                    Description
-                  </Label>
-                  <Textarea
-                    id="description"
-                    name="description"
-                    defaultValue={editingEvent?.description || ""}
-                    className="col-span-3"
-                    required
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="date" className="text-right">
-                    Date
-                  </Label>
-                  <Input
-                    id="date"
-                    name="date"
-                    type="date"
-                    defaultValue={editingEvent?.date || ""}
-                    className="col-span-3"
-                    required
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="time" className="text-right">
-                    Time
-                  </Label>
-                  <Input
-                    id="time"
-                    name="time"
-                    type="time"
-                    defaultValue={editingEvent?.time || ""}
-                    className="col-span-3"
-                    required
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="type" className="text-right">
-                    Type
-                  </Label>
-                  <Select name="type" defaultValue={editingEvent?.type || "meeting"}>
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="meeting">Meeting</SelectItem>
-                      <SelectItem value="milestone">Milestone</SelectItem>
-                      <SelectItem value="deployment">Deployment</SelectItem>
-                      <SelectItem value="review">Review</SelectItem>
-                      <SelectItem value="training">Training</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="status" className="text-right">
-                    Status
-                  </Label>
-                  <Select name="status" defaultValue={editingEvent?.status || "scheduled"}>
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="scheduled">Scheduled</SelectItem>
-                      <SelectItem value="in-progress">In Progress</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="assignee" className="text-right">
-                    Assignee
-                  </Label>
-                  <Input
-                    id="assignee"
-                    name="assignee"
-                    defaultValue={editingEvent?.assignee || ""}
-                    className="col-span-3"
-                    required
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="siteId" className="text-right">
-                    Site
-                  </Label>
-                  <Select name="siteId" defaultValue={editingEvent?.siteId || "none"}>
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder="Select a site (optional)" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">No site</SelectItem>
-                      {sites.map((site) => (
-                        <SelectItem key={site.id} value={site.id}>
-                          {site.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+      {/* Header */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center space-x-2">
+              <Calendar className="h-6 w-6 text-blue-600" />
+              <span>Timeline & Schedule</span>
+            </CardTitle>
+            <div className="flex items-center space-x-2">
+              <Button variant="outline" size="sm" onClick={exportTimeline}>
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+              <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+                <DialogTrigger asChild>
+                  <Button onClick={resetForm}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Event
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>{editingEvent ? "Edit Event" : "Add New Event"}</DialogTitle>
+                  </DialogHeader>
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="title">Event Title</Label>
+                      <Input
+                        id="title"
+                        value={formData.title}
+                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="description">Description</Label>
+                      <Textarea
+                        id="description"
+                        value={formData.description}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        rows={3}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="startDate">Start Date</Label>
+                        <Input
+                          id="startDate"
+                          type="datetime-local"
+                          value={formData.startDate}
+                          onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="endDate">End Date</Label>
+                        <Input
+                          id="endDate"
+                          type="datetime-local"
+                          value={formData.endDate}
+                          onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="type">Event Type</Label>
+                        <Select
+                          value={formData.type}
+                          onValueChange={(value: Event["type"]) => setFormData({ ...formData, type: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="deployment">Deployment</SelectItem>
+                            <SelectItem value="maintenance">Maintenance</SelectItem>
+                            <SelectItem value="training">Training</SelectItem>
+                            <SelectItem value="meeting">Meeting</SelectItem>
+                            <SelectItem value="milestone">Milestone</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="priority">Priority</Label>
+                        <Select
+                          value={formData.priority}
+                          onValueChange={(value: Event["priority"]) => setFormData({ ...formData, priority: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="low">Low</SelectItem>
+                            <SelectItem value="medium">Medium</SelectItem>
+                            <SelectItem value="high">High</SelectItem>
+                            <SelectItem value="critical">Critical</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="assignedTo">Assigned To</Label>
+                        <Input
+                          id="assignedTo"
+                          value={formData.assignedTo}
+                          onChange={(e) => setFormData({ ...formData, assignedTo: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="status">Status</Label>
+                        <Select
+                          value={formData.status}
+                          onValueChange={(value: Event["status"]) => setFormData({ ...formData, status: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="scheduled">Scheduled</SelectItem>
+                            <SelectItem value="in-progress">In Progress</SelectItem>
+                            <SelectItem value="completed">Completed</SelectItem>
+                            <SelectItem value="cancelled">Cancelled</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="siteId">Associated Site (Optional)</Label>
+                      <Select
+                        value={formData.siteId}
+                        onValueChange={(value) => setFormData({ ...formData, siteId: value === "none" ? "" : value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a site" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">No site</SelectItem>
+                          {sites.map((site) => (
+                            <SelectItem key={site.id} value={site.id}>
+                              {site.name} - {site.location}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="flex justify-end space-x-2">
+                      <Button type="button" variant="outline" onClick={() => setShowAddDialog(false)}>
+                        Cancel
+                      </Button>
+                      <Button type="submit">{editingEvent ? "Update" : "Create"} Event</Button>
+                    </div>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {/* Filters and View Toggle */}
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-4">
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Event Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="deployment">Deployment</SelectItem>
+                  <SelectItem value="maintenance">Maintenance</SelectItem>
+                  <SelectItem value="training">Training</SelectItem>
+                  <SelectItem value="meeting">Meeting</SelectItem>
+                  <SelectItem value="milestone">Milestone</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="scheduled">Scheduled</SelectItem>
+                  <SelectItem value="in-progress">In Progress</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Tabs value={viewMode} onValueChange={(value: "timeline" | "calendar") => setViewMode(value)}>
+              <TabsList>
+                <TabsTrigger value="timeline">Timeline View</TabsTrigger>
+                <TabsTrigger value="calendar">Calendar View</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+
+          {/* Content */}
+          <Tabs value={viewMode} className="space-y-4">
+            <TabsContent value="timeline" className="space-y-4">
+              {/* Timeline View */}
+              <div className="space-y-4">
+                {filteredEvents.map((event) => (
+                  <Card key={event.id} className="hover:shadow-md transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <h3 className="font-semibold text-lg">{event.title}</h3>
+                            <Badge className={getTypeColor(event.type)}>{event.type}</Badge>
+                            <Badge className={getPriorityColor(event.priority)}>{event.priority}</Badge>
+                            <Badge className={getStatusColor(event.status)}>
+                              <div className="flex items-center space-x-1">
+                                {getStatusIcon(event.status)}
+                                <span>{event.status.replace("-", " ")}</span>
+                              </div>
+                            </Badge>
+                          </div>
+
+                          <p className="text-gray-600 mb-3">{event.description}</p>
+
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                            <div className="flex items-center space-x-2">
+                              <Clock className="h-4 w-4 text-gray-400" />
+                              <div>
+                                <div className="font-medium">Start</div>
+                                <div className="text-gray-600">
+                                  {new Date(event.startDate).toLocaleDateString()}{" "}
+                                  {new Date(event.startDate).toLocaleTimeString([], {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center space-x-2">
+                              <Clock className="h-4 w-4 text-gray-400" />
+                              <div>
+                                <div className="font-medium">End</div>
+                                <div className="text-gray-600">
+                                  {new Date(event.endDate).toLocaleDateString()}{" "}
+                                  {new Date(event.endDate).toLocaleTimeString([], {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center space-x-2">
+                              <User className="h-4 w-4 text-gray-400" />
+                              <div>
+                                <div className="font-medium">Assigned To</div>
+                                <div className="text-gray-600">{event.assignedTo}</div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center space-x-2">
+                              <MapPin className="h-4 w-4 text-gray-400" />
+                              <div>
+                                <div className="font-medium">Site</div>
+                                <div className="text-gray-600">{getSiteName(event.siteId)}</div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center space-x-2 ml-4">
+                          <Button variant="ghost" size="sm" onClick={() => handleEdit(event)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => handleDelete(event.id)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+
+                {filteredEvents.length === 0 && (
+                  <div className="text-center py-12">
+                    <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No events found</h3>
+                    <p className="text-gray-600">
+                      {events.length === 0 ? "Get started by adding your first event." : "Try adjusting your filters."}
+                    </p>
+                  </div>
+                )}
               </div>
-              <DialogFooter>
-                <Button type="submit">{editingEvent ? "Update Event" : "Create Event"}</Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
+            </TabsContent>
 
-      <Tabs value={activeView} onValueChange={setActiveView} className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="timeline">Timeline View</TabsTrigger>
-          <TabsTrigger value="calendar">Calendar View</TabsTrigger>
-        </TabsList>
+            <TabsContent value="calendar" className="space-y-4">
+              {/* Calendar View */}
+              <div className="bg-white rounded-lg border">
+                {/* Calendar Header */}
+                <div className="flex items-center justify-between p-4 border-b">
+                  <h3 className="text-lg font-semibold">
+                    {currentDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+                  </h3>
+                  <div className="flex items-center space-x-2">
+                    <Button variant="outline" size="sm" onClick={() => navigateMonth("prev")}>
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => setCurrentDate(new Date())}>
+                      Today
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => navigateMonth("next")}>
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
 
-        <TabsContent value="timeline" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Project Timeline</CardTitle>
-              <CardDescription>Drag and drop events to reorder them</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                <SortableContext items={events.map((e) => e.id)} strategy={verticalListSortingStrategy}>
-                  <div className="space-y-4">
-                    {events.map((event) => (
-                      <SortableEvent key={event.id} event={event} onEdit={handleEdit} onDelete={handleDelete} />
+                {/* Calendar Grid */}
+                <div className="p-4">
+                  {/* Days of week header */}
+                  <div className="grid grid-cols-7 gap-1 mb-2">
+                    {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+                      <div key={day} className="p-2 text-center text-sm font-medium text-gray-500">
+                        {day}
+                      </div>
                     ))}
                   </div>
-                </SortableContext>
-              </DndContext>
-              {events.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
-                  <CalendarIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No events scheduled yet. Add your first event to get started.</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
 
-        <TabsContent value="calendar" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Calendar View</CardTitle>
-              <CardDescription>View events in a monthly calendar format</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-7 gap-2 mb-4">
-                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-                  <div key={day} className="p-2 text-center font-semibold text-gray-600 bg-gray-50 rounded">
-                    {day}
-                  </div>
-                ))}
-              </div>
-              <div className="grid grid-cols-7 gap-2">
-                {generateCalendarDays().map((date, index) => (
-                  <div
-                    key={index}
-                    className={`min-h-[100px] p-2 border rounded ${date ? "bg-white hover:bg-gray-50" : "bg-gray-100"}`}
-                  >
-                    {date && (
-                      <>
-                        <div className="font-semibold text-sm mb-1">{new Date(date).getDate()}</div>
-                        <div className="space-y-1">
-                          {getEventsForDate(date).map((event) => (
-                            <div
-                              key={event.id}
-                              className="text-xs p-1 rounded bg-blue-100 text-blue-800 cursor-pointer hover:bg-blue-200"
-                              onClick={() => handleEdit(event)}
-                            >
-                              {event.title}
-                            </div>
-                          ))}
+                  {/* Calendar days */}
+                  <div className="grid grid-cols-7 gap-1">
+                    {/* Empty cells for days before month starts */}
+                    {Array.from({ length: getFirstDayOfMonth(currentDate) }).map((_, index) => (
+                      <div key={`empty-${index}`} className="h-24 p-1"></div>
+                    ))}
+
+                    {/* Days of the month */}
+                    {Array.from({ length: getDaysInMonth(currentDate) }).map((_, index) => {
+                      const day = index + 1
+                      const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
+                      const dayEvents = getEventsForDate(date)
+                      const isToday = date.toDateString() === new Date().toDateString()
+
+                      return (
+                        <div
+                          key={day}
+                          className={`h-24 p-1 border rounded-lg ${
+                            isToday ? "bg-blue-50 border-blue-200" : "border-gray-200"
+                          }`}
+                        >
+                          <div className={`text-sm font-medium mb-1 ${isToday ? "text-blue-600" : "text-gray-900"}`}>
+                            {day}
+                          </div>
+                          <div className="space-y-1">
+                            {dayEvents.slice(0, 2).map((event) => (
+                              <div
+                                key={event.id}
+                                className={`text-xs p-1 rounded truncate cursor-pointer ${getTypeColor(event.type)}`}
+                                title={`${event.title} - ${event.assignedTo}`}
+                                onClick={() => handleEdit(event)}
+                              >
+                                {event.title}
+                              </div>
+                            ))}
+                            {dayEvents.length > 2 && (
+                              <div className="text-xs text-gray-500">+{dayEvents.length - 2} more</div>
+                            )}
+                          </div>
                         </div>
-                      </>
-                    )}
+                      )
+                    })}
                   </div>
-                ))}
+                </div>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   )
 }

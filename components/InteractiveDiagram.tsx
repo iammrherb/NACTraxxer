@@ -1,2743 +1,2233 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
-import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import React from "react"
+
+import { useState, useRef } from "react"
 import { Badge } from "@/components/ui/badge"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Play, Pause, RotateCcw, ZoomIn, ZoomOut, Maximize2 } from "lucide-react"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Separator } from "@/components/ui/separator"
+import {
+  Cloud,
+  Server,
+  Wifi,
+  Shield,
+  Users,
+  Smartphone,
+  Laptop,
+  Router,
+  Key,
+  Globe,
+  Activity,
+  Printer,
+  Antenna,
+  CheckCircle,
+  Info,
+  Database,
+  Network,
+  Monitor,
+  Building,
+  MapPin,
+  CheckCircle2,
+} from "lucide-react"
 
 interface InteractiveDiagramProps {
   view: string
-  cloudProvider: string
-  networkVendor: string
-  connectivityType: string
-  animationSpeed: number
+  config?: {
+    cloudProvider?: string
+    networkVendor?: string
+    connectivityType?: string
+    identityProvider?: string
+    mdmProvider?: string
+    firewallVendor?: string
+    radiusType?: string
+    pkiProvider?: string
+    wirelessVendor?: string
+    deviceTypes?: string[]
+    byodSupport?: boolean
+    guestPortal?: boolean
+  }
+  isAnimating?: boolean
+  animationSpeed?: number
+  showLegend?: boolean
+  className?: string
 }
 
 export default function InteractiveDiagram({
   view,
-  cloudProvider,
-  networkVendor,
-  connectivityType,
-  animationSpeed,
+  config = {},
+  isAnimating = true,
+  animationSpeed = 1,
+  showLegend = true,
+  className,
 }: InteractiveDiagramProps) {
-  const svgRef = useRef<SVGSVGElement>(null)
-  const [isAnimating, setIsAnimating] = useState(true)
-  const [zoom, setZoom] = useState(1)
   const [selectedComponent, setSelectedComponent] = useState<string | null>(null)
+  const [hoveredComponent, setHoveredComponent] = useState<string | null>(null)
+  const [animationPhase, setAnimationPhase] = useState(0)
+  const svgRef = useRef<SVGSVGElement>(null)
 
-  useEffect(() => {
-    if (svgRef.current) {
-      renderDiagram()
+  // Default config values
+  const safeConfig = {
+    cloudProvider: config.cloudProvider || "aws",
+    networkVendor: config.networkVendor || "cisco",
+    connectivityType: config.connectivityType || "sdwan",
+    identityProvider: config.identityProvider || "azure-ad",
+    mdmProvider: config.mdmProvider || "intune",
+    firewallVendor: config.firewallVendor || "palo-alto",
+    radiusType: config.radiusType || "cisco-ise",
+    pkiProvider: config.pkiProvider || "microsoft-ca",
+    wirelessVendor: config.wirelessVendor || "cisco-meraki",
+    deviceTypes: config.deviceTypes || ["windows", "mac", "ios", "android", "iot"],
+    byodSupport: config.byodSupport !== undefined ? config.byodSupport : true,
+    guestPortal: config.guestPortal !== undefined ? config.guestPortal : true,
+  }
+
+  const componentDetails = {
+    "portnox-cloud": {
+      name: "Portnox Cloud NAC",
+      description: "Cloud-based Network Access Control platform with global reach and enterprise-grade security",
+      specs: [
+        "99.9% SLA uptime guarantee",
+        "Global edge locations for low latency",
+        "Auto-scaling infrastructure",
+        "SOC 2 Type II certified",
+        "GDPR & HIPAA compliant",
+        "Real-time policy enforcement",
+        "Advanced threat detection",
+        "Certificate lifecycle management",
+      ],
+      ports: ["HTTPS:443", "RADIUS:1812/1813", "LDAPS:636", "SYSLOG:514"],
+      protocols: ["RADIUS", "LDAP", "SAML 2.0", "OAuth 2.0", "REST API", "GraphQL"],
+      metrics: {
+        uptime: "99.97%",
+        latency: "< 50ms",
+        throughput: "10M auth/hour",
+        users: "500K+ active",
+      },
+    },
+    "identity-provider": {
+      name: safeConfig.identityProvider === "azure-ad" ? "Microsoft Azure AD" : "Identity Provider",
+      description: "Centralized identity and access management with advanced security features",
+      specs: [
+        "Multi-factor authentication support",
+        "Conditional access policies",
+        "Single sign-on (SSO) integration",
+        "Identity governance and lifecycle",
+        "Risk-based authentication",
+        "Privileged identity management",
+        "Identity protection and monitoring",
+        "Seamless hybrid integration",
+      ],
+      ports: ["HTTPS:443", "LDAPS:636", "SAML:443", "Kerberos:88"],
+      protocols: ["SAML 2.0", "OAuth 2.0", "OpenID Connect", "LDAP", "Kerberos", "WS-Federation"],
+      metrics: {
+        users: "50K+ identities",
+        sso: "200+ apps",
+        mfa: "99.5% adoption",
+        incidents: "0 breaches",
+      },
+    },
+    "mdm-provider": {
+      name: safeConfig.mdmProvider === "intune" ? "Microsoft Intune" : "MDM Provider",
+      description: "Comprehensive mobile device management and endpoint protection platform",
+      specs: [
+        "Device enrollment automation",
+        "Compliance policy enforcement",
+        "App protection policies",
+        "Certificate deployment via SCEP",
+        "Remote device management",
+        "Conditional access integration",
+        "Zero-touch provisioning",
+        "Advanced threat protection",
+      ],
+      ports: ["HTTPS:443", "SCEP:80/443", "APNs:443", "FCM:443"],
+      protocols: ["HTTPS", "SCEP", "OMA-DM", "Apple MDM", "Android Enterprise", "Windows MDM"],
+      metrics: {
+        devices: "25K+ managed",
+        compliance: "98.5%",
+        apps: "150+ deployed",
+        certificates: "30K+ issued",
+      },
+    },
+    "network-switch": {
+      name: `${safeConfig.networkVendor.charAt(0).toUpperCase() + safeConfig.networkVendor.slice(1)} Network Switch`,
+      description: "Enterprise-grade managed network switch with advanced 802.1X authentication capabilities",
+      specs: [
+        "48 x 1GbE access ports",
+        "4 x 10GbE uplink ports",
+        "802.1X authentication support",
+        "Dynamic VLAN assignment",
+        "PoE+ support (30W per port)",
+        "Advanced QoS capabilities",
+        "Network segmentation",
+        "Real-time monitoring",
+      ],
+      ports: ["SSH:22", "HTTPS:443", "SNMP:161", "RADIUS:1812", "Telnet:23"],
+      protocols: ["802.1X", "RADIUS", "SNMP v3", "LLDP", "STP/RSTP", "LACP"],
+      metrics: {
+        ports: "48 active",
+        uptime: "99.99%",
+        throughput: "480 Gbps",
+        power: "740W PoE",
+      },
+    },
+    "wireless-controller": {
+      name: `${safeConfig.wirelessVendor.charAt(0).toUpperCase() + safeConfig.wirelessVendor.slice(1)} Wireless Controller`,
+      description: "Centralized wireless network management with enterprise security and performance",
+      specs: [
+        "Cloud-managed architecture",
+        "Up to 1000 AP management",
+        "WPA3-Enterprise support",
+        "RF optimization and planning",
+        "Guest portal integration",
+        "Bandwidth management",
+        "Rogue AP detection",
+        "Advanced analytics",
+      ],
+      ports: ["HTTPS:443", "CAPWAP:5246/5247", "SSH:22", "SNMP:161"],
+      protocols: ["CAPWAP", "802.11ax/ac", "WPA3", "RADIUS", "DNS", "DHCP"],
+      metrics: {
+        aps: "120 managed",
+        clients: "2.5K connected",
+        throughput: "2.4 Gbps",
+        coverage: "99.8%",
+      },
+    },
+    firewall: {
+      name: `${safeConfig.firewallVendor.charAt(0).toUpperCase() + safeConfig.firewallVendor.slice(1)} Next-Gen Firewall`,
+      description: "Advanced threat protection and network security with deep packet inspection",
+      specs: [
+        "Application-aware filtering",
+        "User-ID integration",
+        "Threat intelligence feeds",
+        "SSL/TLS inspection",
+        "10 Gbps throughput",
+        "Intrusion prevention system",
+        "Advanced malware protection",
+        "URL filtering and categorization",
+      ],
+      ports: ["HTTPS:443", "SSH:22", "SYSLOG:514", "SNMP:161", "RADIUS:1812"],
+      protocols: ["User-ID", "FSSO", "SAML", "LDAP", "RADIUS", "IPSec", "SSL VPN"],
+      metrics: {
+        throughput: "8.5 Gbps",
+        sessions: "2M concurrent",
+        threats: "99.9% blocked",
+        policies: "500+ rules",
+      },
+    },
+    "radius-server": {
+      name: safeConfig.radiusType === "cisco-ise" ? "Cisco Identity Services Engine" : "RADIUS Server",
+      description: "Comprehensive authentication, authorization, and accounting server with policy enforcement",
+      specs: [
+        "EAP method support (TLS, PEAP, TTLS)",
+        "Policy decision point",
+        "Certificate validation",
+        "Device profiling engine",
+        "Guest access management",
+        "BYOD onboarding",
+        "Threat-centric NAC",
+        "Compliance monitoring",
+      ],
+      ports: ["RADIUS:1812/1813", "HTTPS:443", "TACACS+:49", "LDAP:389"],
+      protocols: ["RADIUS", "TACACS+", "EAP-TLS", "PEAP", "LDAP", "SNMP", "REST API"],
+      metrics: {
+        authentications: "50K/day",
+        policies: "200+ active",
+        endpoints: "15K profiled",
+        uptime: "99.95%",
+      },
+    },
+    "certificate-authority": {
+      name: safeConfig.pkiProvider === "microsoft-ca" ? "Microsoft Certificate Authority" : "Certificate Authority",
+      description: "Enterprise PKI infrastructure for certificate lifecycle management and security",
+      specs: [
+        "X.509 certificate issuance",
+        "Certificate lifecycle management",
+        "SCEP enrollment support",
+        "CRL distribution points",
+        "Hardware security module",
+        "Certificate templates",
+        "Auto-enrollment capabilities",
+        "Certificate revocation",
+      ],
+      ports: ["HTTP:80", "HTTPS:443", "LDAP:389", "SCEP:80"],
+      protocols: ["SCEP", "CMP", "OCSP", "LDAP", "HTTP", "PKCS#10", "PKCS#7"],
+      metrics: {
+        certificates: "30K issued",
+        validity: "2 years avg",
+        revoked: "< 0.1%",
+        enrollment: "95% auto",
+      },
+    },
+  }
+
+  // Animation control
+  React.useEffect(() => {
+    if (isAnimating) {
+      const interval = setInterval(() => {
+        setAnimationPhase((prev) => (prev + 1) % 4)
+      }, 2000 / animationSpeed)
+      return () => clearInterval(interval)
     }
-  }, [view, cloudProvider, networkVendor, connectivityType, animationSpeed])
+  }, [isAnimating, animationSpeed])
 
-  const renderDiagram = () => {
-    const svg = svgRef.current
-    if (!svg) return
+  const renderCompleteArchitecture = () => (
+    <svg
+      ref={svgRef}
+      viewBox="0 0 1400 900"
+      className="w-full h-full architecture-diagram"
+      style={{ background: "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)" }}
+    >
+      {/* Enhanced Definitions */}
+      <defs>
+        <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+          <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e2e8f0" strokeWidth="0.5" opacity="0.3" />
+        </pattern>
 
-    // Clear existing content
-    svg.innerHTML = ""
+        {/* Enhanced Animated Flow Gradients */}
+        <linearGradient id="dataFlow" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#3b82f6" stopOpacity="0">
+            {isAnimating && (
+              <animate
+                attributeName="stop-opacity"
+                values="0;1;0"
+                dur={`${2 / animationSpeed}s`}
+                repeatCount="indefinite"
+              />
+            )}
+          </stop>
+          <stop offset="50%" stopColor="#3b82f6" stopOpacity="0.8">
+            {isAnimating && (
+              <animate
+                attributeName="stop-opacity"
+                values="0.8;0.2;0.8"
+                dur={`${2 / animationSpeed}s`}
+                repeatCount="indefinite"
+              />
+            )}
+          </stop>
+          <stop offset="100%" stopColor="#3b82f6" stopOpacity="0">
+            {isAnimating && (
+              <animate
+                attributeName="stop-opacity"
+                values="0;1;0"
+                dur={`${2 / animationSpeed}s`}
+                repeatCount="indefinite"
+              />
+            )}
+          </stop>
+        </linearGradient>
 
-    // Set viewBox for larger canvas
-    svg.setAttribute("viewBox", "0 0 1600 1000")
-    svg.setAttribute("width", "100%")
-    svg.setAttribute("height", "700")
+        <linearGradient id="secureFlow" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#10b981" stopOpacity="0">
+            {isAnimating && (
+              <animate
+                attributeName="stop-opacity"
+                values="0;1;0"
+                dur={`${3 / animationSpeed}s`}
+                repeatCount="indefinite"
+              />
+            )}
+          </stop>
+          <stop offset="50%" stopColor="#10b981" stopOpacity="0.9" />
+          <stop offset="100%" stopColor="#10b981" stopOpacity="0">
+            {isAnimating && (
+              <animate
+                attributeName="stop-opacity"
+                values="0;1;0"
+                dur={`${3 / animationSpeed}s`}
+                repeatCount="indefinite"
+              />
+            )}
+          </stop>
+        </linearGradient>
 
-    // Add background gradient
-    const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs")
-    const gradient = document.createElementNS("http://www.w3.org/2000/svg", "linearGradient")
-    gradient.setAttribute("id", "backgroundGradient")
-    gradient.setAttribute("x1", "0%")
-    gradient.setAttribute("y1", "0%")
-    gradient.setAttribute("x2", "100%")
-    gradient.setAttribute("y2", "100%")
+        {/* Security Zone Patterns */}
+        <pattern id="secureZone" width="6" height="6" patternUnits="userSpaceOnUse">
+          <rect width="6" height="6" fill="#dcfce7" />
+          <circle cx="3" cy="3" r="1" fill="#16a34a" opacity="0.4" />
+        </pattern>
 
-    const stop1 = document.createElementNS("http://www.w3.org/2000/svg", "stop")
-    stop1.setAttribute("offset", "0%")
-    stop1.setAttribute("stop-color", "#f8fafc")
+        <pattern id="dmzZone" width="6" height="6" patternUnits="userSpaceOnUse">
+          <rect width="6" height="6" fill="#fef3c7" />
+          <circle cx="3" cy="3" r="1" fill="#d97706" opacity="0.4" />
+        </pattern>
 
-    const stop2 = document.createElementNS("http://www.w3.org/2000/svg", "stop")
-    stop2.setAttribute("offset", "100%")
-    stop2.setAttribute("stop-color", "#e2e8f0")
+        <pattern id="accessZone" width="6" height="6" patternUnits="userSpaceOnUse">
+          <rect width="6" height="6" fill="#f1f5f9" />
+          <circle cx="3" cy="3" r="1" fill="#64748b" opacity="0.4" />
+        </pattern>
 
-    gradient.appendChild(stop1)
-    gradient.appendChild(stop2)
-    defs.appendChild(gradient)
-    svg.appendChild(defs)
+        {/* Glow effects */}
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+          <feMerge>
+            <feMergeNode in="coloredBlur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
 
-    const background = document.createElementNS("http://www.w3.org/2000/svg", "rect")
-    background.setAttribute("width", "1600")
-    background.setAttribute("height", "1000")
-    background.setAttribute("fill", "url(#backgroundGradient)")
-    svg.appendChild(background)
+        {/* Drop shadow */}
+        <filter id="dropshadow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="2" dy="2" stdDeviation="3" floodOpacity="0.3" />
+        </filter>
+      </defs>
 
-    // Render based on selected view
+      <rect width="100%" height="100%" fill="url(#grid)" />
+
+      {/* Cloud Services Zone */}
+      <g id="cloud-zone">
+        <rect
+          x="50"
+          y="50"
+          width="350"
+          height="250"
+          rx="20"
+          fill="url(#secureZone)"
+          stroke="#16a34a"
+          strokeWidth="2"
+          opacity="0.4"
+          filter="url(#dropshadow)"
+        />
+        <text x="225" y="35" textAnchor="middle" className="text-sm font-bold fill-green-700">
+          🛡️ TRUSTED CLOUD SERVICES
+        </text>
+
+        {/* Portnox Cloud - Enhanced */}
+        <g
+          id="portnox-cloud"
+          onMouseEnter={() => setHoveredComponent("portnox-cloud")}
+          onMouseLeave={() => setHoveredComponent(null)}
+          onClick={() => setSelectedComponent("portnox-cloud")}
+          className="cursor-pointer"
+          filter={hoveredComponent === "portnox-cloud" ? "url(#glow)" : ""}
+        >
+          <rect
+            x="80"
+            y="80"
+            width="140"
+            height="70"
+            rx="12"
+            fill="#3b82f6"
+            stroke="#1e40af"
+            strokeWidth="2"
+            opacity={hoveredComponent === "portnox-cloud" ? 0.9 : 0.8}
+          />
+          <Cloud className="w-8 h-8" x="140" y="105" fill="white" />
+          <text x="150" y="130" textAnchor="middle" className="text-sm fill-white font-semibold">
+            Portnox Cloud
+          </text>
+          <text x="150" y="145" textAnchor="middle" className="text-xs fill-blue-100">
+            NAC Platform
+          </text>
+          {/* Status indicator */}
+          <circle cx="210" cy="90" r="4" fill="#10b981">
+            {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="2s" repeatCount="indefinite" />}
+          </circle>
+          <text x="220" y="95" className="text-xs fill-green-600 font-medium">
+            ACTIVE
+          </text>
+        </g>
+
+        {/* Identity Provider - Enhanced */}
+        <g
+          id="identity-provider"
+          onMouseEnter={() => setHoveredComponent("identity-provider")}
+          onMouseLeave={() => setHoveredComponent(null)}
+          onClick={() => setSelectedComponent("identity-provider")}
+          className="cursor-pointer"
+          filter={hoveredComponent === "identity-provider" ? "url(#glow)" : ""}
+        >
+          <rect
+            x="250"
+            y="80"
+            width="140"
+            height="70"
+            rx="12"
+            fill="#7c3aed"
+            stroke="#5b21b6"
+            strokeWidth="2"
+            opacity={hoveredComponent === "identity-provider" ? 0.9 : 0.8}
+          />
+          <Users className="w-8 h-8" x="310" y="105" fill="white" />
+          <text x="320" y="130" textAnchor="middle" className="text-sm fill-white font-semibold">
+            {safeConfig.identityProvider === "azure-ad" ? "Azure AD" : "Identity Provider"}
+          </text>
+          <text x="320" y="145" textAnchor="middle" className="text-xs fill-purple-100">
+            Authentication
+          </text>
+          <circle cx="380" cy="90" r="4" fill="#10b981">
+            {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="2.5s" repeatCount="indefinite" />}
+          </circle>
+        </g>
+
+        {/* MDM Provider - Enhanced */}
+        <g
+          id="mdm-provider"
+          onMouseEnter={() => setHoveredComponent("mdm-provider")}
+          onMouseLeave={() => setHoveredComponent(null)}
+          onClick={() => setSelectedComponent("mdm-provider")}
+          className="cursor-pointer"
+          filter={hoveredComponent === "mdm-provider" ? "url(#glow)" : ""}
+        >
+          <rect
+            x="80"
+            y="180"
+            width="140"
+            height="70"
+            rx="12"
+            fill="#059669"
+            stroke="#047857"
+            strokeWidth="2"
+            opacity={hoveredComponent === "mdm-provider" ? 0.9 : 0.8}
+          />
+          <Smartphone className="w-8 h-8" x="140" y="205" fill="white" />
+          <text x="150" y="230" textAnchor="middle" className="text-sm fill-white font-semibold">
+            {safeConfig.mdmProvider === "intune" ? "Intune" : "MDM Provider"}
+          </text>
+          <text x="150" y="245" textAnchor="middle" className="text-xs fill-green-100">
+            Device Management
+          </text>
+          <circle cx="210" cy="190" r="4" fill="#10b981">
+            {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="1.8s" repeatCount="indefinite" />}
+          </circle>
+        </g>
+
+        {/* Certificate Authority - Enhanced */}
+        <g
+          id="certificate-authority"
+          onMouseEnter={() => setHoveredComponent("certificate-authority")}
+          onMouseLeave={() => setHoveredComponent(null)}
+          onClick={() => setSelectedComponent("certificate-authority")}
+          className="cursor-pointer"
+          filter={hoveredComponent === "certificate-authority" ? "url(#glow)" : ""}
+        >
+          <rect
+            x="250"
+            y="180"
+            width="140"
+            height="70"
+            rx="12"
+            fill="#dc2626"
+            stroke="#b91c1c"
+            strokeWidth="2"
+            opacity={hoveredComponent === "certificate-authority" ? 0.9 : 0.8}
+          />
+          <Key className="w-8 h-8" x="310" y="205" fill="white" />
+          <text x="320" y="230" textAnchor="middle" className="text-sm fill-white font-semibold">
+            Certificate Authority
+          </text>
+          <text x="320" y="245" textAnchor="middle" className="text-xs fill-red-100">
+            PKI Management
+          </text>
+          <circle cx="380" cy="190" r="4" fill="#10b981">
+            {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="2.2s" repeatCount="indefinite" />}
+          </circle>
+        </g>
+      </g>
+
+      {/* Network Infrastructure Zone */}
+      <g id="network-zone">
+        <rect
+          x="500"
+          y="50"
+          width="400"
+          height="600"
+          rx="20"
+          fill="url(#dmzZone)"
+          stroke="#d97706"
+          strokeWidth="2"
+          opacity="0.4"
+          filter="url(#dropshadow)"
+        />
+        <text x="700" y="35" textAnchor="middle" className="text-sm font-bold fill-orange-700">
+          🌐 NETWORK INFRASTRUCTURE
+        </text>
+
+        {/* Firewall - Enhanced */}
+        <g
+          id="firewall"
+          onMouseEnter={() => setHoveredComponent("firewall")}
+          onMouseLeave={() => setHoveredComponent(null)}
+          onClick={() => setSelectedComponent("firewall")}
+          className="cursor-pointer"
+          filter={hoveredComponent === "firewall" ? "url(#glow)" : ""}
+        >
+          <rect
+            x="620"
+            y="80"
+            width="120"
+            height="60"
+            rx="10"
+            fill="#ef4444"
+            stroke="#dc2626"
+            strokeWidth="2"
+            opacity={hoveredComponent === "firewall" ? 0.9 : 0.8}
+          />
+          <Shield className="w-7 h-7" x="670" y="100" fill="white" />
+          <text x="680" y="125" textAnchor="middle" className="text-sm fill-white font-semibold">
+            {safeConfig.firewallVendor === "palo-alto" ? "Palo Alto" : "Firewall"}
+          </text>
+          <text x="680" y="135" textAnchor="middle" className="text-xs fill-red-100">
+            NGFW
+          </text>
+          <circle cx="730" cy="90" r="4" fill="#10b981">
+            {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite" />}
+          </circle>
+        </g>
+
+        {/* RADIUS Server - Enhanced */}
+        <g
+          id="radius-server"
+          onMouseEnter={() => setHoveredComponent("radius-server")}
+          onMouseLeave={() => setHoveredComponent(null)}
+          onClick={() => setSelectedComponent("radius-server")}
+          className="cursor-pointer"
+          filter={hoveredComponent === "radius-server" ? "url(#glow)" : ""}
+        >
+          <rect
+            x="530"
+            y="180"
+            width="120"
+            height="60"
+            rx="10"
+            fill="#8b5cf6"
+            stroke="#7c3aed"
+            strokeWidth="2"
+            opacity={hoveredComponent === "radius-server" ? 0.9 : 0.8}
+          />
+          <Server className="w-7 h-7" x="580" y="200" fill="white" />
+          <text x="590" y="225" textAnchor="middle" className="text-sm fill-white font-semibold">
+            {safeConfig.radiusType === "cisco-ise" ? "Cisco ISE" : "RADIUS"}
+          </text>
+          <text x="590" y="235" textAnchor="middle" className="text-xs fill-purple-100">
+            Auth Server
+          </text>
+          <circle cx="640" cy="190" r="4" fill="#10b981">
+            {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="1.7s" repeatCount="indefinite" />}
+          </circle>
+        </g>
+
+        {/* Wireless Controller - Enhanced */}
+        <g
+          id="wireless-controller"
+          onMouseEnter={() => setHoveredComponent("wireless-controller")}
+          onMouseLeave={() => setHoveredComponent(null)}
+          onClick={() => setSelectedComponent("wireless-controller")}
+          className="cursor-pointer"
+          filter={hoveredComponent === "wireless-controller" ? "url(#glow)" : ""}
+        >
+          <rect
+            x="710"
+            y="180"
+            width="120"
+            height="60"
+            rx="10"
+            fill="#06b6d4"
+            stroke="#0891b2"
+            strokeWidth="2"
+            opacity={hoveredComponent === "wireless-controller" ? 0.9 : 0.8}
+          />
+          <Wifi className="w-7 h-7" x="760" y="200" fill="white" />
+          <text x="770" y="225" textAnchor="middle" className="text-sm fill-white font-semibold">
+            {safeConfig.wirelessVendor === "cisco-meraki" ? "Meraki" : "Wireless"}
+          </text>
+          <text x="770" y="235" textAnchor="middle" className="text-xs fill-cyan-100">
+            Controller
+          </text>
+          <circle cx="820" cy="190" r="4" fill="#10b981">
+            {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="2.1s" repeatCount="indefinite" />}
+          </circle>
+        </g>
+
+        {/* Network Switch - Enhanced */}
+        <g
+          id="network-switch"
+          onMouseEnter={() => setHoveredComponent("network-switch")}
+          onMouseLeave={() => setHoveredComponent(null)}
+          onClick={() => setSelectedComponent("network-switch")}
+          className="cursor-pointer"
+          filter={hoveredComponent === "network-switch" ? "url(#glow)" : ""}
+        >
+          <rect
+            x="620"
+            y="280"
+            width="120"
+            height="60"
+            rx="10"
+            fill="#10b981"
+            stroke="#059669"
+            strokeWidth="2"
+            opacity={hoveredComponent === "network-switch" ? 0.9 : 0.8}
+          />
+          <Router className="w-7 h-7" x="670" y="300" fill="white" />
+          <text x="680" y="325" textAnchor="middle" className="text-sm fill-white font-semibold">
+            {safeConfig.networkVendor === "cisco" ? "Cisco Switch" : "Switch"}
+          </text>
+          <text x="680" y="335" textAnchor="middle" className="text-xs fill-green-100">
+            L2/L3
+          </text>
+          <circle cx="730" cy="290" r="4" fill="#10b981">
+            {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="1.3s" repeatCount="indefinite" />}
+          </circle>
+        </g>
+
+        {/* Access Points - Enhanced */}
+        <g id="access-points">
+          {[0, 1, 2].map((i) => (
+            <g key={i} className="cursor-pointer" onClick={() => setSelectedComponent(`ap-${i + 1}`)}>
+              <rect
+                x={530 + i * 100}
+                y="380"
+                width="80"
+                height="50"
+                rx="8"
+                fill="#f59e0b"
+                stroke="#d97706"
+                strokeWidth="2"
+                opacity="0.8"
+              />
+              <Antenna className="w-6 h-6" x={560 + i * 100} y="395" fill="white" />
+              <text x={570 + i * 100} y="415" textAnchor="middle" className="text-sm fill-white font-medium">
+                AP-{i + 1}
+              </text>
+              <text x={570 + i * 100} y="425" textAnchor="middle" className="text-xs fill-orange-100">
+                WiFi 6E
+              </text>
+              <circle cx={600 + i * 100} cy="390" r="3" fill="#10b981">
+                {isAnimating && (
+                  <animate
+                    attributeName="opacity"
+                    values="1;0.3;1"
+                    dur={`${1.5 + i * 0.3}s`}
+                    repeatCount="indefinite"
+                  />
+                )}
+              </circle>
+            </g>
+          ))}
+        </g>
+
+        {/* Network Metrics Display */}
+        <g id="network-metrics">
+          <rect
+            x="530"
+            y="480"
+            width="300"
+            height="80"
+            rx="8"
+            fill="rgba(0,0,0,0.1)"
+            stroke="#64748b"
+            strokeWidth="1"
+          />
+          <text x="680" y="500" textAnchor="middle" className="text-sm font-semibold fill-slate-700">
+            Network Performance
+          </text>
+          <text x="550" y="520" className="text-xs fill-slate-600">
+            Throughput: 8.5 Gbps
+          </text>
+          <text x="550" y="535" className="text-xs fill-slate-600">
+            Latency: &lt; 2ms
+          </text>
+          <text x="550" y="550" className="text-xs fill-slate-600">
+            Uptime: 99.97%
+          </text>
+          <text x="720" y="520" className="text-xs fill-slate-600">
+            Active Sessions: 2.1M
+          </text>
+          <text x="720" y="535" className="text-xs fill-slate-600">
+            Threats Blocked: 1,247
+          </text>
+          <text x="720" y="550" className="text-xs fill-slate-600">
+            Policies: 342 active
+          </text>
+        </g>
+      </g>
+
+      {/* End Devices Zone */}
+      <g id="device-zone">
+        <rect
+          x="950"
+          y="50"
+          width="400"
+          height="600"
+          rx="20"
+          fill="url(#accessZone)"
+          stroke="#64748b"
+          strokeWidth="2"
+          opacity="0.4"
+          filter="url(#dropshadow)"
+        />
+        <text x="1150" y="35" textAnchor="middle" className="text-sm font-bold fill-slate-700">
+          💻 END DEVICES & USERS
+        </text>
+
+        {/* Corporate Devices - Enhanced */}
+        <g id="corporate-devices">
+          <text x="970" y="80" className="text-sm font-semibold fill-slate-700">
+            Corporate Managed Devices
+          </text>
+          {safeConfig.deviceTypes.includes("windows") && (
+            <g className="cursor-pointer" onClick={() => setSelectedComponent("windows-devices")}>
+              <rect x="980" y="90" width="70" height="50" rx="6" fill="#0078d4" stroke="#106ebe" strokeWidth="2" />
+              <Laptop className="w-6 h-6" x="1005" y="105" fill="white" />
+              <text x="1015" y="125" textAnchor="middle" className="text-sm fill-white font-medium">
+                Windows
+              </text>
+              <text x="1015" y="155" textAnchor="middle" className="text-xs fill-slate-600 font-medium">
+                1,800 devices
+              </text>
+              <circle cx="1040" cy="100" r="3" fill="#10b981">
+                {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="2s" repeatCount="indefinite" />}
+              </circle>
+            </g>
+          )}
+          {safeConfig.deviceTypes.includes("mac") && (
+            <g className="cursor-pointer" onClick={() => setSelectedComponent("mac-devices")}>
+              <rect x="1070" y="90" width="70" height="50" rx="6" fill="#000000" stroke="#333333" strokeWidth="2" />
+              <Laptop className="w-6 h-6" x="1095" y="105" fill="white" />
+              <text x="1105" y="125" textAnchor="middle" className="text-sm fill-white font-medium">
+                macOS
+              </text>
+              <text x="1105" y="155" textAnchor="middle" className="text-xs fill-slate-600 font-medium">
+                450 devices
+              </text>
+              <circle cx="1130" cy="100" r="3" fill="#10b981">
+                {isAnimating && (
+                  <animate attributeName="opacity" values="1;0.3;1" dur="2.3s" repeatCount="indefinite" />
+                )}
+              </circle>
+            </g>
+          )}
+          {safeConfig.deviceTypes.includes("ios") && (
+            <g className="cursor-pointer" onClick={() => setSelectedComponent("ios-devices")}>
+              <rect x="1160" y="90" width="70" height="50" rx="6" fill="#007aff" stroke="#0056cc" strokeWidth="2" />
+              <Smartphone className="w-6 h-6" x="1185" y="105" fill="white" />
+              <text x="1195" y="125" textAnchor="middle" className="text-sm fill-white font-medium">
+                iOS
+              </text>
+              <text x="1195" y="155" textAnchor="middle" className="text-xs fill-slate-600 font-medium">
+                850 devices
+              </text>
+              <circle cx="1220" cy="100" r="3" fill="#10b981">
+                {isAnimating && (
+                  <animate attributeName="opacity" values="1;0.3;1" dur="1.8s" repeatCount="indefinite" />
+                )}
+              </circle>
+            </g>
+          )}
+          {safeConfig.deviceTypes.includes("android") && (
+            <g className="cursor-pointer" onClick={() => setSelectedComponent("android-devices")}>
+              <rect x="1250" y="90" width="70" height="50" rx="6" fill="#3ddc84" stroke="#00c853" strokeWidth="2" />
+              <Smartphone className="w-6 h-6" x="1275" y="105" fill="white" />
+              <text x="1285" y="125" textAnchor="middle" className="text-sm fill-white font-medium">
+                Android
+              </text>
+              <text x="1285" y="155" textAnchor="middle" className="text-xs fill-slate-600 font-medium">
+                420 devices
+              </text>
+              <circle cx="1310" cy="100" r="3" fill="#10b981">
+                {isAnimating && (
+                  <animate attributeName="opacity" values="1;0.3;1" dur="2.5s" repeatCount="indefinite" />
+                )}
+              </circle>
+            </g>
+          )}
+        </g>
+
+        {/* BYOD Devices */}
+        {safeConfig.byodSupport && (
+          <g id="byod-devices">
+            <text x="970" y="200" className="text-sm font-semibold fill-slate-700">
+              BYOD / Personal Devices
+            </text>
+            <g className="cursor-pointer" onClick={() => setSelectedComponent("byod-devices")}>
+              <rect x="980" y="210" width="160" height="60" rx="8" fill="#f97316" stroke="#ea580c" strokeWidth="2" />
+              <Users className="w-8 h-8" x="1040" y="230" fill="white" />
+              <text x="1060" y="250" textAnchor="middle" className="text-sm fill-white font-semibold">
+                Personal Devices
+              </text>
+              <text x="1060" y="285" textAnchor="middle" className="text-xs fill-slate-600 font-medium">
+                1,200+ devices
+              </text>
+              <circle cx="1130" cy="220" r="4" fill="#10b981">
+                {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="3s" repeatCount="indefinite" />}
+              </circle>
+            </g>
+          </g>
+        )}
+
+        {/* IoT Devices */}
+        {safeConfig.deviceTypes.includes("iot") && (
+          <g id="iot-devices">
+            <text x="970" y="310" className="text-sm font-semibold fill-slate-700">
+              IoT & Infrastructure Devices
+            </text>
+            <g className="cursor-pointer" onClick={() => setSelectedComponent("printers")}>
+              <rect x="980" y="320" width="60" height="45" rx="6" fill="#6b7280" stroke="#4b5563" strokeWidth="2" />
+              <Printer className="w-5 h-5" x="1000" y="335" fill="white" />
+              <text x="1010" y="355" textAnchor="middle" className="text-xs fill-white font-medium">
+                Printers
+              </text>
+              <text x="1010" y="375" textAnchor="middle" className="text-xs fill-slate-600">
+                180
+              </text>
+            </g>
+            <g className="cursor-pointer" onClick={() => setSelectedComponent("iot-general")}>
+              <rect x="1060" y="320" width="60" height="45" rx="6" fill="#8b5cf6" stroke="#7c3aed" strokeWidth="2" />
+              <Router className="w-5 h-5" x="1080" y="335" fill="white" />
+              <text x="1090" y="355" textAnchor="middle" className="text-xs fill-white font-medium">
+                IoT
+              </text>
+              <text x="1090" y="375" textAnchor="middle" className="text-xs fill-slate-600">
+                320
+              </text>
+            </g>
+            <g className="cursor-pointer" onClick={() => setSelectedComponent("cameras")}>
+              <rect x="1140" y="320" width="60" height="45" rx="6" fill="#dc2626" stroke="#b91c1c" strokeWidth="2" />
+              <Monitor className="w-5 h-5" x="1160" y="335" fill="white" />
+              <text x="1170" y="355" textAnchor="middle" className="text-xs fill-white font-medium">
+                Cameras
+              </text>
+              <text x="1170" y="375" textAnchor="middle" className="text-xs fill-slate-600">
+                85
+              </text>
+            </g>
+          </g>
+        )}
+
+        {/* Guest Access */}
+        {safeConfig.guestPortal && (
+          <g id="guest-access">
+            <text x="970" y="420" className="text-sm font-semibold fill-slate-700">
+              Guest Access Portal
+            </text>
+            <g className="cursor-pointer" onClick={() => setSelectedComponent("guest-portal")}>
+              <rect x="980" y="430" width="160" height="60" rx="8" fill="#06b6d4" stroke="#0891b2" strokeWidth="2" />
+              <Globe className="w-8 h-8" x="1040" y="450" fill="white" />
+              <text x="1060" y="470" textAnchor="middle" className="text-sm fill-white font-semibold">
+                Guest Portal
+              </text>
+              <text x="1060" y="505" textAnchor="middle" className="text-xs fill-slate-600 font-medium">
+                Captive Portal & Self-Service
+              </text>
+              <circle cx="1130" cy="440" r="4" fill="#10b981">
+                {isAnimating && (
+                  <animate attributeName="opacity" values="1;0.3;1" dur="2.7s" repeatCount="indefinite" />
+                )}
+              </circle>
+            </g>
+          </g>
+        )}
+
+        {/* Device Statistics */}
+        <g id="device-stats">
+          <rect
+            x="980"
+            y="520"
+            width="300"
+            height="100"
+            rx="8"
+            fill="rgba(0,0,0,0.1)"
+            stroke="#64748b"
+            strokeWidth="1"
+          />
+          <text x="1130" y="540" textAnchor="middle" className="text-sm font-semibold fill-slate-700">
+            Device Statistics
+          </text>
+          <text x="1000" y="560" className="text-xs fill-slate-600">
+            Total Devices: 3,520
+          </text>
+          <text x="1000" y="575" className="text-xs fill-slate-600">
+            Compliant: 98.5%
+          </text>
+          <text x="1000" y="590" className="text-xs fill-slate-600">
+            Certificates: 3,247
+          </text>
+          <text x="1000" y="605" className="text-xs fill-slate-600">
+            Last Updated: 2 min ago
+          </text>
+          <text x="1180" y="560" className="text-xs fill-slate-600">
+            Online: 2,847 (81%)
+          </text>
+          <text x="1180" y="575" className="text-xs fill-slate-600">
+            Quarantined: 12
+          </text>
+          <text x="1180" y="590" className="text-xs fill-slate-600">
+            Guest Sessions: 47
+          </text>
+          <text x="1180" y="605" className="text-xs fill-slate-600">
+            Avg Session: 4.2h
+          </text>
+        </g>
+      </g>
+
+      {/* Enhanced Connection Lines with Multiple Flows */}
+      <g id="connections" stroke="#64748b" strokeWidth="2" fill="none">
+        {/* Cloud to Network connections */}
+        <path d="M 400 115 Q 450 115 500 115" stroke="url(#dataFlow)" strokeWidth="4" opacity="0.8" />
+        <path d="M 400 215 Q 450 215 500 215" stroke="url(#secureFlow)" strokeWidth="4" opacity="0.8" />
+
+        {/* Network internal connections */}
+        <path d="M 680 140 L 680 180" stroke="#64748b" strokeWidth="3" />
+        <path d="M 650 210 L 710 210" stroke="#64748b" strokeWidth="3" />
+        <path d="M 680 240 L 680 280" stroke="#64748b" strokeWidth="3" />
+
+        {/* Network to devices */}
+        <path d="M 900 200 Q 925 200 950 200" stroke="url(#dataFlow)" strokeWidth="4" opacity="0.8" />
+        <path d="M 830 405 Q 890 405 950 405" stroke="url(#secureFlow)" strokeWidth="4" opacity="0.8" />
+      </g>
+
+      {/* Enhanced Data Flow Indicators */}
+      {isAnimating && (
+        <g id="flow-indicators">
+          <circle r="6" fill="#3b82f6" opacity="0.9">
+            <animateMotion dur={`${4 / animationSpeed}s`} repeatCount="indefinite">
+              <path d="M 400 115 Q 450 115 500 115 L 680 115 L 680 180 L 650 210 L 950 200" />
+            </animateMotion>
+          </circle>
+          <circle r="6" fill="#10b981" opacity="0.9">
+            <animateMotion dur={`${5 / animationSpeed}s`} repeatCount="indefinite">
+              <path d="M 830 405 Q 890 405 950 405 L 1150 405 L 1150 200 Q 925 200 900 200" />
+            </animateMotion>
+          </circle>
+          <circle r="5" fill="#f59e0b" opacity="0.8">
+            <animateMotion dur={`${3 / animationSpeed}s`} repeatCount="indefinite">
+              <path d="M 400 215 Q 450 215 500 215 L 770 215 L 770 240 L 680 280" />
+            </animateMotion>
+          </circle>
+        </g>
+      )}
+
+      {/* Enhanced Protocol Labels */}
+      <g id="protocol-labels" className="text-xs fill-slate-600 font-medium">
+        <text x="450" y="110" textAnchor="middle">
+          RADIUS/TLS
+        </text>
+        <text x="450" y="210" textAnchor="middle">
+          LDAP/SAML
+        </text>
+        <text x="925" y="195" textAnchor="middle">
+          802.1X/EAP-TLS
+        </text>
+        <text x="890" y="400" textAnchor="middle">
+          WiFi 6E/WPA3
+        </text>
+      </g>
+
+      {/* Security Status Indicators */}
+      <g id="security-status">
+        <rect
+          x="50"
+          y="750"
+          width="300"
+          height="100"
+          rx="10"
+          fill="rgba(16, 185, 129, 0.1)"
+          stroke="#10b981"
+          strokeWidth="2"
+        />
+        <text x="200" y="770" textAnchor="middle" className="text-sm font-bold fill-green-700">
+          🛡️ Security Status: PROTECTED
+        </text>
+        <text x="70" y="790" className="text-xs fill-green-600">
+          ✓ All systems operational
+        </text>
+        <text x="70" y="805" className="text-xs fill-green-600">
+          ✓ Zero trust policies active
+        </text>
+        <text x="70" y="820" className="text-xs fill-green-600">
+          ✓ Threat detection enabled
+        </text>
+        <text x="70" y="835" className="text-xs fill-green-600">
+          ✓ Compliance verified
+        </text>
+      </g>
+    </svg>
+  )
+
+  const renderAuthenticationFlow = () => (
+    <svg
+      viewBox="0 0 1400 800"
+      className="w-full h-full architecture-diagram"
+      style={{ background: "linear-gradient(135deg, #fefbf7 0%, #fef3c7 100%)" }}
+    >
+      <defs>
+        <pattern id="authGrid" width="20" height="20" patternUnits="userSpaceOnUse">
+          <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#f59e0b" strokeWidth="0.5" opacity="0.3" />
+        </pattern>
+
+        <linearGradient id="authFlow" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#f59e0b" stopOpacity="0">
+            {isAnimating && (
+              <animate
+                attributeName="stop-opacity"
+                values="0;1;0"
+                dur={`${3 / animationSpeed}s`}
+                repeatCount="indefinite"
+              />
+            )}
+          </stop>
+          <stop offset="50%" stopColor="#f59e0b" stopOpacity="0.9" />
+          <stop offset="100%" stopColor="#f59e0b" stopOpacity="0">
+            {isAnimating && (
+              <animate
+                attributeName="stop-opacity"
+                values="0;1;0"
+                dur={`${3 / animationSpeed}s`}
+                repeatCount="indefinite"
+              />
+            )}
+          </stop>
+        </linearGradient>
+      </defs>
+
+      <rect width="100%" height="100%" fill="url(#authGrid)" />
+
+      {/* Authentication Flow Title */}
+      <text x="700" y="50" textAnchor="middle" className="text-2xl font-bold fill-amber-800">
+        🔐 802.1X Authentication Flow
+      </text>
+      <text x="700" y="75" textAnchor="middle" className="text-sm fill-amber-700">
+        EAP-TLS Certificate-Based Authentication Process
+      </text>
+
+      {/* Step 1: Device */}
+      <g id="auth-device" className="cursor-pointer" onClick={() => setSelectedComponent("auth-device")}>
+        <rect x="100" y="200" width="150" height="80" rx="10" fill="#3b82f6" stroke="#1e40af" strokeWidth="2" />
+        <Laptop className="w-8 h-8" x="165" y="225" fill="white" />
+        <text x="175" y="255" textAnchor="middle" className="text-sm fill-white font-semibold">
+          End Device
+        </text>
+        <text x="175" y="270" textAnchor="middle" className="text-xs fill-blue-100">
+          Certificate Installed
+        </text>
+        <circle cx="230" cy="210" r="4" fill="#10b981">
+          {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="2s" repeatCount="indefinite" />}
+        </circle>
+      </g>
+
+      {/* Step 2: Network Switch */}
+      <g id="auth-switch" className="cursor-pointer" onClick={() => setSelectedComponent("auth-switch")}>
+        <rect x="350" y="200" width="150" height="80" rx="10" fill="#10b981" stroke="#059669" strokeWidth="2" />
+        <Router className="w-8 h-8" x="415" y="225" fill="white" />
+        <text x="425" y="255" textAnchor="middle" className="text-sm fill-white font-semibold">
+          Network Switch
+        </text>
+        <text x="425" y="270" textAnchor="middle" className="text-xs fill-green-100">
+          802.1X Authenticator
+        </text>
+        <circle cx="480" cy="210" r="4" fill="#10b981">
+          {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="2.2s" repeatCount="indefinite" />}
+        </circle>
+      </g>
+
+      {/* Step 3: RADIUS Server */}
+      <g id="auth-radius" className="cursor-pointer" onClick={() => setSelectedComponent("auth-radius")}>
+        <rect x="600" y="200" width="150" height="80" rx="10" fill="#8b5cf6" stroke="#7c3aed" strokeWidth="2" />
+        <Server className="w-8 h-8" x="665" y="225" fill="white" />
+        <text x="675" y="255" textAnchor="middle" className="text-sm fill-white font-semibold">
+          RADIUS Server
+        </text>
+        <text x="675" y="270" textAnchor="middle" className="text-xs fill-purple-100">
+          Authentication Server
+        </text>
+        <circle cx="730" cy="210" r="4" fill="#10b981">
+          {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="2.4s" repeatCount="indefinite" />}
+        </circle>
+      </g>
+
+      {/* Step 4: Portnox Cloud */}
+      <g id="auth-cloud" className="cursor-pointer" onClick={() => setSelectedComponent("auth-cloud")}>
+        <rect x="850" y="200" width="150" height="80" rx="10" fill="#dc2626" stroke="#b91c1c" strokeWidth="2" />
+        <Cloud className="w-8 h-8" x="915" y="225" fill="white" />
+        <text x="925" y="255" textAnchor="middle" className="text-sm fill-white font-semibold">
+          Portnox Cloud
+        </text>
+        <text x="925" y="270" textAnchor="middle" className="text-xs fill-red-100">
+          Policy Decision
+        </text>
+        <circle cx="980" cy="210" r="4" fill="#10b981">
+          {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="2.6s" repeatCount="indefinite" />}
+        </circle>
+      </g>
+
+      {/* Authentication Flow Steps */}
+      <g id="auth-steps">
+        {/* Step arrows */}
+        <path d="M 250 240 L 350 240" stroke="url(#authFlow)" strokeWidth="4" markerEnd="url(#arrowhead)" />
+        <path d="M 500 240 L 600 240" stroke="url(#authFlow)" strokeWidth="4" markerEnd="url(#arrowhead)" />
+        <path d="M 750 240 L 850 240" stroke="url(#authFlow)" strokeWidth="4" markerEnd="url(#arrowhead)" />
+
+        {/* Step numbers */}
+        <circle cx="300" cy="240" r="15" fill="#f59e0b" stroke="white" strokeWidth="2" />
+        <text x="300" y="245" textAnchor="middle" className="text-sm fill-white font-bold">
+          1
+        </text>
+
+        <circle cx="550" cy="240" r="15" fill="#f59e0b" stroke="white" strokeWidth="2" />
+        <text x="550" y="245" textAnchor="middle" className="text-sm fill-white font-bold">
+          2
+        </text>
+
+        <circle cx="800" cy="240" r="15" fill="#f59e0b" stroke="white" strokeWidth="2" />
+        <text x="800" y="245" textAnchor="middle" className="text-sm fill-white font-bold">
+          3
+        </text>
+      </g>
+
+      {/* Detailed Flow Description */}
+      <g id="flow-description">
+        <rect
+          x="100"
+          y="350"
+          width="900"
+          height="300"
+          rx="15"
+          fill="rgba(245, 158, 11, 0.1)"
+          stroke="#f59e0b"
+          strokeWidth="2"
+        />
+        <text x="550" y="380" textAnchor="middle" className="text-lg font-bold fill-amber-800">
+          Authentication Process Details
+        </text>
+
+        {/* Step 1 Details */}
+        <g id="step1-details">
+          <rect
+            x="120"
+            y="400"
+            width="200"
+            height="120"
+            rx="8"
+            fill="rgba(59, 130, 246, 0.1)"
+            stroke="#3b82f6"
+            strokeWidth="1"
+          />
+          <text x="220" y="420" textAnchor="middle" className="text-sm font-bold fill-blue-800">
+            Step 1: EAP Start
+          </text>
+          <text x="130" y="440" className="text-xs fill-blue-700">
+            • Device connects to network
+          </text>
+          <text x="130" y="455" className="text-xs fill-blue-700">
+            • Switch sends EAP-Request
+          </text>
+          <text x="130" y="470" className="text-xs fill-blue-700">
+            • Device responds with Identity
+          </text>
+          <text x="130" y="485" className="text-xs fill-blue-700">
+            • Certificate presented
+          </text>
+          <text x="130" y="500" className="text-xs fill-blue-700">
+            • TLS handshake initiated
+          </text>
+        </g>
+
+        {/* Step 2 Details */}
+        <g id="step2-details">
+          <rect
+            x="340"
+            y="400"
+            width="200"
+            height="120"
+            rx="8"
+            fill="rgba(16, 185, 129, 0.1)"
+            stroke="#10b981"
+            strokeWidth="1"
+          />
+          <text x="440" y="420" textAnchor="middle" className="text-sm font-bold fill-green-800">
+            Step 2: RADIUS Request
+          </text>
+          <text x="350" y="440" className="text-xs fill-green-700">
+            • Switch forwards to RADIUS
+          </text>
+          <text x="350" y="455" className="text-xs fill-green-700">
+            • Access-Request packet sent
+          </text>
+          <text x="350" y="470" className="text-xs fill-green-700">
+            • Certificate validation
+          </text>
+          <text x="350" y="485" className="text-xs fill-green-700">
+            • User identity verified
+          </text>
+          <text x="350" y="500" className="text-xs fill-green-700">
+            • Policy lookup initiated
+          </text>
+        </g>
+
+        {/* Step 3 Details */}
+        <g id="step3-details">
+          <rect
+            x="560"
+            y="400"
+            width="200"
+            height="120"
+            rx="8"
+            fill="rgba(139, 92, 246, 0.1)"
+            stroke="#8b5cf6"
+            strokeWidth="1"
+          />
+          <text x="660" y="420" textAnchor="middle" className="text-sm font-bold fill-purple-800">
+            Step 3: Policy Decision
+          </text>
+          <text x="570" y="440" className="text-xs fill-purple-700">
+            • Portnox evaluates request
+          </text>
+          <text x="570" y="455" className="text-xs fill-purple-700">
+            • Device posture checked
+          </text>
+          <text x="570" y="470" className="text-xs fill-purple-700">
+            • Compliance verified
+          </text>
+          <text x="570" y="485" className="text-xs fill-purple-700">
+            • VLAN assignment
+          </text>
+          <text x="570" y="500" className="text-xs fill-purple-700">
+            • Access decision made
+          </text>
+        </g>
+
+        {/* Step 4 Details */}
+        <g id="step4-details">
+          <rect
+            x="780"
+            y="400"
+            width="200"
+            height="120"
+            rx="8"
+            fill="rgba(220, 38, 38, 0.1)"
+            stroke="#dc2626"
+            strokeWidth="1"
+          />
+          <text x="880" y="420" textAnchor="middle" className="text-sm font-bold fill-red-800">
+            Step 4: Access Granted
+          </text>
+          <text x="790" y="440" className="text-xs fill-red-700">
+            • Access-Accept returned
+          </text>
+          <text x="790" y="455" className="text-xs fill-red-700">
+            • VLAN attributes sent
+          </text>
+          <text x="790" y="470" className="text-xs fill-red-700">
+            • Switch configures port
+          </text>
+          <text x="790" y="485" className="text-xs fill-red-700">
+            • Network access enabled
+          </text>
+          <text x="790" y="500" className="text-xs fill-red-700">
+            • Session monitoring starts
+          </text>
+        </g>
+      </g>
+
+      {/* Timing Information */}
+      <g id="timing-info">
+        <rect
+          x="100"
+          y="680"
+          width="900"
+          height="60"
+          rx="8"
+          fill="rgba(245, 158, 11, 0.2)"
+          stroke="#f59e0b"
+          strokeWidth="1"
+        />
+        <text x="550" y="700" textAnchor="middle" className="text-sm font-bold fill-amber-800">
+          ⏱️ Authentication Timing
+        </text>
+        <text x="120" y="720" className="text-xs fill-amber-700">
+          Total Authentication Time: &lt; 3 seconds | Certificate Validation: &lt; 500ms | Policy Lookup: &lt; 200ms |
+          VLAN Assignment: &lt; 100ms
+        </text>
+        <text x="120" y="735" className="text-xs fill-amber-700">
+          Success Rate: 99.7% | Failed Authentications: 0.3% | Average Daily Authentications: 15,000+
+        </text>
+      </g>
+
+      {/* Arrow marker definition */}
+      <defs>
+        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b" />
+        </marker>
+      </defs>
+    </svg>
+  )
+
+  const renderPKIArchitecture = () => (
+    <svg
+      viewBox="0 0 1400 800"
+      className="w-full h-full architecture-diagram"
+      style={{ background: "linear-gradient(135deg, #fdf4ff 0%, #f3e8ff 100%)" }}
+    >
+      <defs>
+        <pattern id="pkiGrid" width="20" height="20" patternUnits="userSpaceOnUse">
+          <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#a855f7" strokeWidth="0.5" opacity="0.3" />
+        </pattern>
+
+        <linearGradient id="certFlow" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#a855f7" stopOpacity="0">
+            {isAnimating && (
+              <animate
+                attributeName="stop-opacity"
+                values="0;1;0"
+                dur={`${2.5 / animationSpeed}s`}
+                repeatCount="indefinite"
+              />
+            )}
+          </stop>
+          <stop offset="50%" stopColor="#a855f7" stopOpacity="0.9" />
+          <stop offset="100%" stopColor="#a855f7" stopOpacity="0">
+            {isAnimating && (
+              <animate
+                attributeName="stop-opacity"
+                values="0;1;0"
+                dur={`${2.5 / animationSpeed}s`}
+                repeatCount="indefinite"
+              />
+            )}
+          </stop>
+        </linearGradient>
+      </defs>
+
+      <rect width="100%" height="100%" fill="url(#pkiGrid)" />
+
+      {/* PKI Architecture Title */}
+      <text x="700" y="50" textAnchor="middle" className="text-2xl font-bold fill-purple-800">
+        🔐 PKI & Certificate Management Architecture
+      </text>
+      <text x="700" y="75" textAnchor="middle" className="text-sm fill-purple-700">
+        Enterprise Certificate Lifecycle Management with SCEP Integration
+      </text>
+
+      {/* Root CA */}
+      <g id="root-ca" className="cursor-pointer" onClick={() => setSelectedComponent("root-ca")}>
+        <rect x="600" y="120" width="200" height="80" rx="12" fill="#7c3aed" stroke="#5b21b6" strokeWidth="3" />
+        <Key className="w-10 h-10" x="685" y="145" fill="white" />
+        <text x="700" y="175" textAnchor="middle" className="text-lg fill-white font-bold">
+          Root CA
+        </text>
+        <text x="700" y="190" textAnchor="middle" className="text-xs fill-purple-100">
+          Certificate Authority
+        </text>
+        <circle cx="780" cy="130" r="5" fill="#10b981">
+          {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="2s" repeatCount="indefinite" />}
+        </circle>
+      </g>
+
+      {/* SCEP Server */}
+      <g id="scep-server" className="cursor-pointer" onClick={() => setSelectedComponent("scep-server")}>
+        <rect x="300" y="250" width="180" height="70" rx="10" fill="#8b5cf6" stroke="#7c3aed" strokeWidth="2" />
+        <Server className="w-8 h-8" x="380" y="270" fill="white" />
+        <text x="390" y="295" textAnchor="middle" className="text-sm fill-white font-semibold">
+          SCEP Server
+        </text>
+        <text x="390" y="310" textAnchor="middle" className="text-xs fill-purple-100">
+          Certificate Enrollment
+        </text>
+        <circle cx="460" cy="260" r="4" fill="#10b981">
+          {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="2.2s" repeatCount="indefinite" />}
+        </circle>
+      </g>
+
+      {/* OCSP Responder */}
+      <g id="ocsp-responder" className="cursor-pointer" onClick={() => setSelectedComponent("ocsp-responder")}>
+        <rect x="520" y="250" width="180" height="70" rx="10" fill="#a855f7" stroke="#9333ea" strokeWidth="2" />
+        <Activity className="w-8 h-8" x="600" y="270" fill="white" />
+        <text x="610" y="295" textAnchor="middle" className="text-sm fill-white font-semibold">
+          OCSP Responder
+        </text>
+        <text x="610" y="310" textAnchor="middle" className="text-xs fill-purple-100">
+          Certificate Validation
+        </text>
+        <circle cx="680" cy="260" r="4" fill="#10b981">
+          {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="2.4s" repeatCount="indefinite" />}
+        </circle>
+      </g>
+
+      {/* CRL Distribution */}
+      <g id="crl-distribution" className="cursor-pointer" onClick={() => setSelectedComponent("crl-distribution")}>
+        <rect x="740" y="250" width="180" height="70" rx="10" fill="#c084fc" stroke="#a855f7" strokeWidth="2" />
+        <Database className="w-8 h-8" x="820" y="270" fill="white" />
+        <text x="830" y="295" textAnchor="middle" className="text-sm fill-white font-semibold">
+          CRL Distribution
+        </text>
+        <text x="830" y="310" textAnchor="middle" className="text-xs fill-purple-100">
+          Revocation Lists
+        </text>
+        <circle cx="900" cy="260" r="4" fill="#10b981">
+          {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="2.6s" repeatCount="indefinite" />}
+        </circle>
+      </g>
+
+      {/* MDM Integration */}
+      <g id="mdm-integration" className="cursor-pointer" onClick={() => setSelectedComponent("mdm-integration")}>
+        <rect x="200" y="400" width="200" height="80" rx="10" fill="#059669" stroke="#047857" strokeWidth="2" />
+        <Smartphone className="w-8 h-8" x="290" y="425" fill="white" />
+        <text x="300" y="450" textAnchor="middle" className="text-sm fill-white font-semibold">
+          MDM Integration
+        </text>
+        <text x="300" y="465" textAnchor="middle" className="text-xs fill-green-100">
+          Automated Enrollment
+        </text>
+        <circle cx="380" cy="410" r="4" fill="#10b981">
+          {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="1.8s" repeatCount="indefinite" />}
+        </circle>
+      </g>
+
+      {/* End Devices */}
+      <g id="pki-devices" className="cursor-pointer" onClick={() => setSelectedComponent("pki-devices")}>
+        <rect x="500" y="400" width="200" height="80" rx="10" fill="#3b82f6" stroke="#1e40af" strokeWidth="2" />
+        <Laptop className="w-8 h-8" x="590" y="425" fill="white" />
+        <text x="600" y="450" textAnchor="middle" className="text-sm fill-white font-semibold">
+          End Devices
+        </text>
+        <text x="600" y="465" textAnchor="middle" className="text-xs fill-blue-100">
+          Certificate Recipients
+        </text>
+        <circle cx="680" cy="410" r="4" fill="#10b981">
+          {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="2.8s" repeatCount="indefinite" />}
+        </circle>
+      </g>
+
+      {/* Network Infrastructure */}
+      <g id="pki-network" className="cursor-pointer" onClick={() => setSelectedComponent("pki-network")}>
+        <rect x="800" y="400" width="200" height="80" rx="10" fill="#10b981" stroke="#059669" strokeWidth="2" />
+        <Network className="w-8 h-8" x="890" y="425" fill="white" />
+        <text x="900" y="450" textAnchor="middle" className="text-sm fill-white font-semibold">
+          Network Infrastructure
+        </text>
+        <text x="900" y="465" textAnchor="middle" className="text-xs fill-green-100">
+          Certificate Validation
+        </text>
+        <circle cx="980" cy="410" r="4" fill="#10b981">
+          {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="3s" repeatCount="indefinite" />}
+        </circle>
+      </g>
+
+      {/* PKI Flow Connections */}
+      <g id="pki-connections" stroke="#a855f7" strokeWidth="3" fill="none">
+        {/* Root CA to services */}
+        <path d="M 650 200 L 390 250" stroke="url(#certFlow)" strokeWidth="4" />
+        <path d="M 700 200 L 610 250" stroke="url(#certFlow)" strokeWidth="4" />
+        <path d="M 750 200 L 830 250" stroke="url(#certFlow)" strokeWidth="4" />
+
+        {/* Services to devices */}
+        <path d="M 390 320 L 300 400" stroke="url(#certFlow)" strokeWidth="4" />
+        <path d="M 610 320 L 600 400" stroke="url(#certFlow)" strokeWidth="4" />
+        <path d="M 830 320 L 900 400" stroke="url(#certFlow)" strokeWidth="4" />
+      </g>
+
+      {/* Certificate Lifecycle Process */}
+      <g id="cert-lifecycle">
+        <rect
+          x="100"
+          y="550"
+          width="1200"
+          height="200"
+          rx="15"
+          fill="rgba(168, 85, 247, 0.1)"
+          stroke="#a855f7"
+          strokeWidth="2"
+        />
+        <text x="700" y="580" textAnchor="middle" className="text-lg font-bold fill-purple-800">
+          📋 Certificate Lifecycle Management Process
+        </text>
+
+        {/* Enrollment Phase */}
+        <g id="enrollment-phase">
+          <rect
+            x="120"
+            y="600"
+            width="220"
+            height="80"
+            rx="8"
+            fill="rgba(139, 92, 246, 0.1)"
+            stroke="#8b5cf6"
+            strokeWidth="1"
+          />
+          <text x="230" y="620" textAnchor="middle" className="text-sm font-bold fill-purple-800">
+            1. Enrollment
+          </text>
+          <text x="130" y="640" className="text-xs fill-purple-700">
+            • SCEP request initiated
+          </text>
+          <text x="130" y="655" className="text-xs fill-purple-700">
+            • Device identity verified
+          </text>
+          <text x="130" y="670" className="text-xs fill-purple-700">
+            • Certificate issued & deployed
+          </text>
+        </g>
+
+        {/* Validation Phase */}
+        <g id="validation-phase">
+          <rect
+            x="360"
+            y="600"
+            width="220"
+            height="80"
+            rx="8"
+            fill="rgba(168, 85, 247, 0.1)"
+            stroke="#a855f7"
+            strokeWidth="1"
+          />
+          <text x="470" y="620" textAnchor="middle" className="text-sm font-bold fill-purple-800">
+            2. Validation
+          </text>
+          <text x="370" y="640" className="text-xs fill-purple-700">
+            • OCSP status checking
+          </text>
+          <text x="370" y="655" className="text-xs fill-purple-700">
+            • CRL verification
+          </text>
+          <text x="370" y="670" className="text-xs fill-purple-700">
+            • Real-time validation
+          </text>
+        </g>
+
+        {/* Renewal Phase */}
+        <g id="renewal-phase">
+          <rect
+            x="600"
+            y="600"
+            width="220"
+            height="80"
+            rx="8"
+            fill="rgba(196, 132, 252, 0.1)"
+            stroke="#c084fc"
+            strokeWidth="1"
+          />
+          <text x="710" y="620" textAnchor="middle" className="text-sm font-bold fill-purple-800">
+            3. Renewal
+          </text>
+          <text x="610" y="640" className="text-xs fill-purple-700">
+            • Automated renewal alerts
+          </text>
+          <text x="610" y="655" className="text-xs fill-purple-700">
+            • Pre-expiration warnings
+          </text>
+          <text x="610" y="670" className="text-xs fill-purple-700">
+            • Seamless certificate update
+          </text>
+        </g>
+
+        {/* Revocation Phase */}
+        <g id="revocation-phase">
+          <rect
+            x="840"
+            y="600"
+            width="220"
+            height="80"
+            rx="8"
+            fill="rgba(220, 38, 38, 0.1)"
+            stroke="#dc2626"
+            strokeWidth="1"
+          />
+          <text x="950" y="620" textAnchor="middle" className="text-sm font-bold fill-red-800">
+            4. Revocation
+          </text>
+          <text x="850" y="640" className="text-xs fill-red-700">
+            • Immediate revocation
+          </text>
+          <text x="850" y="655" className="text-xs fill-red-700">
+            • CRL updates
+          </text>
+          <text x="850" y="670" className="text-xs fill-red-700">
+            • Access termination
+          </text>
+        </g>
+      </g>
+
+      {/* PKI Statistics */}
+      <g id="pki-stats">
+        <rect
+          x="1100"
+          y="120"
+          width="250"
+          height="200"
+          rx="10"
+          fill="rgba(168, 85, 247, 0.1)"
+          stroke="#a855f7"
+          strokeWidth="1"
+        />
+        <text x="1225" y="145" textAnchor="middle" className="text-sm font-bold fill-purple-800">
+          📊 PKI Statistics
+        </text>
+        <text x="1120" y="170" className="text-xs fill-purple-700">
+          Active Certificates: 15,247
+        </text>
+        <text x="1120" y="185" className="text-xs fill-purple-700">
+          Issued This Month: 1,832
+        </text>
+        <text x="1120" y="200" className="text-xs fill-purple-700">
+          Renewal Rate: 98.5%
+        </text>
+        <text x="1120" y="215" className="text-xs fill-purple-700">
+          Revoked: 23 (0.15%)
+        </text>
+        <text x="1120" y="230" className="text-xs fill-purple-700">
+          Avg Validity: 2 years
+        </text>
+        <text x="1120" y="245" className="text-xs fill-purple-700">
+          OCSP Responses: 45K/day
+        </text>
+        <text x="1120" y="260" className="text-xs fill-purple-700">
+          Success Rate: 99.97%
+        </text>
+        <text x="1120" y="275" className="text-xs fill-purple-700">
+          Auto-Enrollment: 95%
+        </text>
+        <text x="1120" y="290" className="text-xs fill-purple-700">
+          Template Types: 12
+        </text>
+        <text x="1120" y="305" className="text-xs fill-purple-700">
+          Last Backup: 2h ago
+        </text>
+      </g>
+    </svg>
+  )
+
+  const renderMultiSiteArchitecture = () => (
+    <svg
+      viewBox="0 0 1400 800"
+      className="w-full h-full architecture-diagram"
+      style={{ background: "linear-gradient(135deg, #f0f9ff 0%, #dbeafe 100%)" }}
+    >
+      <defs>
+        <pattern id="multiSiteGrid" width="25" height="25" patternUnits="userSpaceOnUse">
+          <path d="M 25 0 L 0 0 0 25" fill="none" stroke="#3b82f6" strokeWidth="0.5" opacity="0.2" />
+        </pattern>
+      </defs>
+
+      <rect width="100%" height="100%" fill="url(#multiSiteGrid)" />
+
+      {/* Multi-Site Title */}
+      <text x="700" y="50" textAnchor="middle" className="text-2xl font-bold fill-blue-800">
+        🌐 Multi-Site Enterprise Architecture
+      </text>
+      <text x="700" y="75" textAnchor="middle" className="text-sm fill-blue-700">
+        Centralized Management Across Global Locations
+      </text>
+
+      {/* Central Portnox Cloud */}
+      <g id="central-cloud" className="cursor-pointer" onClick={() => setSelectedComponent("central-cloud")}>
+        <rect x="600" y="150" width="200" height="100" rx="15" fill="#3b82f6" stroke="#1e40af" strokeWidth="3" />
+        <Cloud className="w-12 h-12" x="685" y="175" fill="white" />
+        <text x="700" y="215" textAnchor="middle" className="text-lg fill-white font-bold">
+          Portnox Cloud
+        </text>
+        <text x="700" y="235" textAnchor="middle" className="text-sm fill-blue-100">
+          Global NAC Platform
+        </text>
+        <circle cx="780" cy="160" r="6" fill="#10b981">
+          {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="2s" repeatCount="indefinite" />}
+        </circle>
+      </g>
+
+      {/* Site 1: Headquarters */}
+      <g id="site-hq" className="cursor-pointer" onClick={() => setSelectedComponent("site-hq")}>
+        <rect x="100" y="350" width="250" height="150" rx="12" fill="#10b981" stroke="#059669" strokeWidth="2" />
+        <Building className="w-8 h-8" x="210" y="375" fill="white" />
+        <text x="225" y="405" textAnchor="middle" className="text-lg fill-white font-bold">
+          New York HQ
+        </text>
+        <text x="225" y="425" textAnchor="middle" className="text-sm fill-green-100">
+          2,500 Users | 4,200 Devices
+        </text>
+        <text x="225" y="445" textAnchor="middle" className="text-xs fill-green-100">
+          Cisco Infrastructure
+        </text>
+        <text x="225" y="460" textAnchor="middle" className="text-xs fill-green-100">
+          Phase 3: Implementation
+        </text>
+        <text x="225" y="475" textAnchor="middle" className="text-xs fill-green-100">
+          Progress: 75%
+        </text>
+        <circle cx="330" cy="360" r="5" fill="#10b981">
+          {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="1.8s" repeatCount="indefinite" />}
+        </circle>
+      </g>
+
+      {/* Site 2: Branch Office */}
+      <g id="site-branch" className="cursor-pointer" onClick={() => setSelectedComponent("site-branch")}>
+        <rect x="400" y="350" width="250" height="150" rx="12" fill="#f59e0b" stroke="#d97706" strokeWidth="2" />
+        <MapPin className="w-8 h-8" x="510" y="375" fill="white" />
+        <text x="525" y="405" textAnchor="middle" className="text-lg fill-white font-bold">
+          London Branch
+        </text>
+        <text x="525" y="425" textAnchor="middle" className="text-sm fill-orange-100">
+          850 Users | 1,400 Devices
+        </text>
+        <text x="525" y="445" textAnchor="middle" className="text-xs fill-orange-100">
+          Aruba Infrastructure
+        </text>
+        <text x="525" y="460" textAnchor="middle" className="text-xs fill-orange-100">
+          Phase 2: Design
+        </text>
+        <text x="525" y="475" textAnchor="middle" className="text-xs fill-orange-100">
+          Progress: 45%
+        </text>
+        <circle cx="630" cy="360" r="5" fill="#10b981">
+          {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="2.2s" repeatCount="indefinite" />}
+        </circle>
+      </g>
+
+      {/* Site 3: Remote Office */}
+      <g id="site-remote" className="cursor-pointer" onClick={() => setSelectedComponent("site-remote")}>
+        <rect x="700" y="350" width="250" height="150" rx="12" fill="#8b5cf6" stroke="#7c3aed" strokeWidth="2" />
+        <Globe className="w-8 h-8" x="810" y="375" fill="white" />
+        <text x="825" y="405" textAnchor="middle" className="text-lg fill-white font-bold">
+          Tokyo Office
+        </text>
+        <text x="825" y="425" textAnchor="middle" className="text-sm fill-purple-100">
+          650 Users | 1,100 Devices
+        </text>
+        <text x="825" y="445" textAnchor="middle" className="text-xs fill-purple-100">
+          Juniper Infrastructure
+        </text>
+        <text x="825" y="460" textAnchor="middle" className="text-xs fill-purple-100">
+          Phase 1: Planning
+        </text>
+        <text x="825" y="475" textAnchor="middle" className="text-xs fill-purple-100">
+          Progress: 15%
+        </text>
+        <circle cx="930" cy="360" r="5" fill="#f59e0b">
+          {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="2.5s" repeatCount="indefinite" />}
+        </circle>
+      </g>
+
+      {/* Site 4: Data Center */}
+      <g id="site-datacenter" className="cursor-pointer" onClick={() => setSelectedComponent("site-datacenter")}>
+        <rect x="1000" y="350" width="250" height="150" rx="12" fill="#dc2626" stroke="#b91c1c" strokeWidth="2" />
+        <Database className="w-8 h-8" x="1110" y="375" fill="white" />
+        <text x="1125" y="405" textAnchor="middle" className="text-lg fill-white font-bold">
+          AWS Data Center
+        </text>
+        <text x="1125" y="425" textAnchor="middle" className="text-sm fill-red-100">
+          200 Servers | 500 Devices
+        </text>
+        <text x="1125" y="445" textAnchor="middle" className="text-xs fill-red-100">
+          Cloud Infrastructure
+        </text>
+        <text x="1125" y="460" textAnchor="middle" className="text-xs fill-red-100">
+          Phase 4: Deployment
+        </text>
+        <text x="1125" y="475" textAnchor="middle" className="text-xs fill-red-100">
+          Progress: 90%
+        </text>
+        <circle cx="1230" cy="360" r="5" fill="#10b981">
+          {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite" />}
+        </circle>
+      </g>
+
+      {/* Connectivity Lines */}
+      <g id="site-connections" stroke="#3b82f6" strokeWidth="3" fill="none">
+        <path d="M 650 250 L 225 350" strokeDasharray="5,5" />
+        <path d="M 700 250 L 525 350" strokeDasharray="5,5" />
+        <path d="M 750 250 L 825 350" strokeDasharray="5,5" />
+        <path d="M 750 250 L 1125 350" strokeDasharray="5,5" />
+      </g>
+
+      {/* Global Statistics */}
+      <g id="global-stats">
+        <rect
+          x="100"
+          y="550"
+          width="1200"
+          height="120"
+          rx="10"
+          fill="rgba(59, 130, 246, 0.1)"
+          stroke="#3b82f6"
+          strokeWidth="2"
+        />
+        <text x="700" y="580" textAnchor="middle" className="text-lg font-bold fill-blue-800">
+          📊 Global Deployment Statistics
+        </text>
+
+        <text x="150" y="610" className="text-sm fill-blue-700 font-medium">
+          Total Sites: 47
+        </text>
+        <text x="150" y="630" className="text-sm fill-blue-700 font-medium">
+          Active Users: 15,247
+        </text>
+        <text x="150" y="650" className="text-sm fill-blue-700 font-medium">
+          Managed Devices: 28,350
+        </text>
+
+        <text x="400" y="610" className="text-sm fill-blue-700 font-medium">
+          Completed Sites: 12
+        </text>
+        <text x="400" y="630" className="text-sm fill-blue-700 font-medium">
+          In Progress: 23
+        </text>
+        <text x="400" y="650" className="text-sm fill-blue-700 font-medium">
+          Planned: 12
+        </text>
+
+        <text x="650" y="610" className="text-sm fill-blue-700 font-medium">
+          Global Uptime: 99.97%
+        </text>
+        <text x="650" y="630" className="text-sm fill-blue-700 font-medium">
+          Avg Auth Time: 1.2s
+        </text>
+        <text x="650" y="650" className="text-sm fill-blue-700 font-medium">
+          Success Rate: 99.8%
+        </text>
+
+        <text x="900" y="610" className="text-sm fill-blue-700 font-medium">
+          Regions: 6
+        </text>
+        <text x="900" y="630" className="text-sm fill-blue-700 font-medium">
+          Countries: 15
+        </text>
+        <text x="900" y="650" className="text-sm fill-blue-700 font-medium">
+          Time Zones: 12
+        </text>
+
+        <text x="1100" y="610" className="text-sm fill-blue-700 font-medium">
+          Policies: 1,247
+        </text>
+        <text x="1100" y="630" className="text-sm fill-blue-700 font-medium">
+          Certificates: 25,890
+        </text>
+        <text x="1100" y="650" className="text-sm fill-blue-700 font-medium">
+          Daily Auths: 450K
+        </text>
+      </g>
+    </svg>
+  )
+
+  const renderHealthcareArchitecture = () => (
+    <svg
+      viewBox="0 0 1400 800"
+      className="w-full h-full architecture-diagram"
+      style={{ background: "linear-gradient(135deg, #fef7f7 0%, #fee2e2 100%)" }}
+    >
+      <text x="700" y="400" textAnchor="middle" className="text-lg font-semibold fill-red-700">
+        🏥 Healthcare Deployment Architecture
+      </text>
+      <text x="700" y="420" textAnchor="middle" className="text-sm fill-red-600">
+        Medical device prioritization with HIPAA compliance and zero-latency requirements
+      </text>
+    </svg>
+  )
+
+  const renderEducationArchitecture = () => (
+    <svg
+      viewBox="0 0 1400 800"
+      className="w-full h-full architecture-diagram"
+      style={{ background: "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)" }}
+    >
+      <text x="700" y="400" textAnchor="middle" className="text-lg font-semibold fill-green-700">
+        🎓 Education Campus Architecture
+      </text>
+      <text x="700" y="420" textAnchor="middle" className="text-sm fill-green-600">
+        University campus with student BYOD, research networks, and high-density WiFi
+      </text>
+    </svg>
+  )
+
+  const renderTACACSArchitecture = () => (
+    <svg
+      viewBox="0 0 1400 800"
+      className="w-full h-full architecture-diagram"
+      style={{ background: "linear-gradient(135deg, #f0f9ff 0%, #dbeafe 100%)" }}
+    >
+      <text x="700" y="400" textAnchor="middle" className="text-lg font-semibold fill-blue-700">
+        🔧 TACACS+ Integration Architecture
+      </text>
+      <text x="700" y="420" textAnchor="middle" className="text-sm fill-blue-600">
+        Network device administration with TACACS+ authentication and authorization
+      </text>
+    </svg>
+  )
+
+  const renderWirelessArchitecture = () => (
+    <svg
+      viewBox="0 0 1400 800"
+      className="w-full h-full architecture-diagram"
+      style={{ background: "linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%)" }}
+    >
+      <text x="700" y="400" textAnchor="middle" className="text-lg font-semibold fill-teal-700">
+        📡 Wireless Integration Deep-Dive
+      </text>
+      <text x="700" y="420" textAnchor="middle" className="text-sm fill-teal-600">
+        Wireless controller integration and management with WiFi 6/6E support
+      </text>
+    </svg>
+  )
+
+  const renderUserIDArchitecture = () => (
+    <svg
+      viewBox="0 0 1400 800"
+      className="w-full h-full architecture-diagram"
+      style={{ background: "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)" }}
+    >
+      <text x="700" y="400" textAnchor="middle" className="text-lg font-semibold fill-yellow-700">
+        👤 User-ID & FSSO Integration
+      </text>
+      <text x="700" y="420" textAnchor="middle" className="text-sm fill-yellow-600">
+        Firewall Single Sign-On and User-ID integration for seamless security
+      </text>
+    </svg>
+  )
+
+  const renderDeviceOnboarding = () => (
+    <svg
+      viewBox="0 0 1400 800"
+      className="w-full h-full architecture-diagram"
+      style={{ background: "linear-gradient(135deg, #fefce8 0%, #fef9c3 100%)" }}
+    >
+      <text x="700" y="400" textAnchor="middle" className="text-lg font-semibold fill-lime-700">
+        📱 Device Onboarding Scenarios
+      </text>
+      <text x="700" y="420" textAnchor="middle" className="text-sm fill-lime-600">
+        Automated device enrollment and provisioning workflows
+      </text>
+    </svg>
+  )
+
+  const renderDiagramByView = () => {
     switch (view) {
       case "complete":
-        renderCompleteArchitecture(svg)
-        break
+        return renderCompleteArchitecture()
+      case "multi-site":
+        return renderMultiSiteArchitecture()
+      case "healthcare":
+        return renderHealthcareArchitecture()
+      case "education":
+        return renderEducationArchitecture()
+      case "authentication":
       case "auth-flow":
-        renderAuthenticationFlow(svg)
-        break
+        return renderAuthenticationFlow()
       case "pki":
-        renderPKIInfrastructure(svg)
-        break
-      case "policies":
-        renderPolicyFramework(svg)
-        break
-      case "connectivity":
-        renderConnectivityOptions(svg)
-        break
-      case "intune":
-        renderIntuneIntegration(svg)
-        break
-      case "jamf":
-        renderJAMFIntegration(svg)
-        break
+      case "pki-certificate":
+        return renderPKIArchitecture()
+      case "tacacs-plus":
+        return renderTACACSArchitecture()
+      case "wireless-integration":
+        return renderWirelessArchitecture()
+      case "user-id-integration":
+        return renderUserIDArchitecture()
+      case "device-onboarding":
       case "onboarding":
-        renderDeviceOnboarding(svg)
-        break
-      case "fortigate-tacacs":
-        renderFortiGateTACACS(svg)
-        break
-      case "palo-tacacs":
-        renderPaloAltoTACACS(svg)
-        break
-      case "cisco-tacacs":
-        renderCiscoTACACS(svg)
-        break
-      case "aruba-tacacs":
-        renderArubaTACACS(svg)
-        break
-      case "juniper-tacacs":
-        renderJuniperTACACS(svg)
-        break
-      case "palo-userid":
-        renderPaloAltoUserID(svg)
-        break
-      case "fortigate-fsso":
-        renderFortiGateFSSO(svg)
-        break
-      case "meraki-wireless":
-        renderMerakiWireless(svg)
-        break
-      case "mist-wireless":
-        renderMistWireless(svg)
-        break
+        return renderDeviceOnboarding()
       default:
-        renderCompleteArchitecture(svg)
+        return renderCompleteArchitecture()
     }
-
-    // Add animations if enabled
-    if (isAnimating) {
-      addAnimations(svg)
-    }
-  }
-
-  const renderCompleteArchitecture = (svg: SVGSVGElement) => {
-    // Add title
-    addTitle(svg, "Complete Zero Trust NAC Architecture", 800, 30)
-
-    // Layer 1: Endpoints (Left side)
-    addSectionLabel(svg, "Endpoints", 150, 80, "#4F46E5")
-    createDetailedComponent(svg, 50, 120, "Corporate Laptops", "#4F46E5", "endpoint", [
-      "Windows 10/11",
-      "macOS",
-      "802.1X Supplicant",
-    ])
-    createDetailedComponent(svg, 50, 200, "Mobile Devices", "#4F46E5", "endpoint", [
-      "iOS/Android",
-      "MDM Enrolled",
-      "Certificate Auth",
-    ])
-    createDetailedComponent(svg, 50, 280, "IoT Devices", "#4F46E5", "endpoint", ["Sensors", "Cameras", "MAB Auth"])
-    createDetailedComponent(svg, 50, 360, "Guest Devices", "#4F46E5", "endpoint", [
-      "BYOD",
-      "Captive Portal",
-      "Limited Access",
-    ])
-
-    // Layer 2: Network Infrastructure (Center-left)
-    addSectionLabel(svg, "Network Infrastructure", 450, 80, "#059669")
-    createDetailedComponent(svg, 350, 120, `${getVendorLabel(networkVendor)} Access Switch`, "#059669", "network", [
-      "48 Ports",
-      "802.1X",
-      "RADIUS Client",
-      "Port 1812/1813",
-    ])
-    createDetailedComponent(svg, 350, 200, `${getVendorLabel(networkVendor)} Core Switch`, "#059669", "network", [
-      "L3 Routing",
-      "VLAN 100-200",
-      "QoS Policies",
-    ])
-    createDetailedComponent(svg, 350, 280, `${getVendorLabel(networkVendor)} Wireless AP`, "#059669", "network", [
-      "802.11ax",
-      "WPA3-Enterprise",
-      "RADIUS Auth",
-    ])
-    createDetailedComponent(svg, 350, 360, `${getVendorLabel(networkVendor)} Controller`, "#059669", "network", [
-      "Centralized Mgmt",
-      "Policy Enforcement",
-      "Guest Portal",
-    ])
-
-    // Layer 3: NAC Platform (Center)
-    addSectionLabel(svg, "Portnox NAC Platform", 750, 80, "#00c8d7")
-    createDetailedComponent(svg, 650, 120, "Portnox Cloud", "#00c8d7", "nac", [
-      "SaaS Platform",
-      "Multi-Tenant",
-      "Global Reach",
-    ])
-    createDetailedComponent(svg, 650, 200, "RADIUS Server", "#00c8d7", "nac", [
-      "Port 1812/1813",
-      "EAP Methods",
-      "CoA/DM Support",
-    ])
-    createDetailedComponent(svg, 650, 280, "Policy Engine", "#00c8d7", "nac", [
-      "Dynamic Policies",
-      "Risk Assessment",
-      "Compliance Check",
-    ])
-    createDetailedComponent(svg, 650, 360, "Device Profiling", "#00c8d7", "nac", [
-      "Fingerprinting",
-      "Behavior Analysis",
-      "ML Classification",
-    ])
-
-    // Layer 4: Identity & MDM (Center-right)
-    addSectionLabel(svg, "Identity & Device Management", 1050, 80, "#0078D4")
-    createDetailedComponent(svg, 950, 120, "Azure Active Directory", "#0078D4", "identity", [
-      "LDAP/SAML",
-      "Conditional Access",
-      "MFA Support",
-    ])
-    createDetailedComponent(svg, 950, 200, "Active Directory", "#0078D4", "identity", [
-      "Domain Controller",
-      "Group Policies",
-      "Kerberos Auth",
-    ])
-    createDetailedComponent(svg, 950, 280, "Microsoft Intune", "#7C3AED", "mdm", [
-      "Device Compliance",
-      "App Management",
-      "Conditional Access",
-    ])
-    createDetailedComponent(svg, 950, 360, "JAMF Pro", "#7C3AED", "mdm", [
-      "Apple Devices",
-      "Configuration Profiles",
-      "Compliance Policies",
-    ])
-
-    // Layer 5: Cloud & Security (Right side)
-    addSectionLabel(svg, "Cloud & Security", 1350, 80, "#0891B2")
-    createDetailedComponent(svg, 1250, 120, getCloudProviderLabel(cloudProvider), "#0891B2", "cloud", [
-      "IaaS/PaaS",
-      "API Gateway",
-      "Global CDN",
-    ])
-    createDetailedComponent(svg, 1250, 200, "Certificate Authority", "#DC2626", "pki", [
-      "X.509 Certificates",
-      "CRL/OCSP",
-      "Auto-Enrollment",
-    ])
-    createDetailedComponent(svg, 1250, 280, "SIEM/SOC", "#F59E0B", "security", [
-      "Log Aggregation",
-      "Threat Detection",
-      "Incident Response",
-    ])
-    createDetailedComponent(svg, 1250, 360, "Backup & DR", "#6B7280", "backup", [
-      "Data Replication",
-      "RTO/RPO",
-      "Business Continuity",
-    ])
-
-    // Detailed Connections with protocols and ports
-    createDetailedConnection(svg, 170, 160, 350, 160, "#00c8d7", "802.1X EAP-TLS", [
-      "Port 802.1X",
-      "Certificate Auth",
-      "Dynamic VLAN",
-    ])
-    createDetailedConnection(svg, 170, 240, 350, 240, "#00c8d7", "802.1X EAP-PEAP", [
-      "Username/Password",
-      "Tunnel Auth",
-      "Machine Auth",
-    ])
-    createDetailedConnection(svg, 170, 320, 350, 320, "#00c8d7", "MAB Authentication", [
-      "MAC Address",
-      "Profiling",
-      "Limited Access",
-    ])
-    createDetailedConnection(svg, 170, 400, 350, 400, "#059669", "Captive Portal", [
-      "HTTP Redirect",
-      "Guest Registration",
-      "Terms Acceptance",
-    ])
-
-    createDetailedConnection(svg, 470, 180, 650, 180, "#059669", "RADIUS", [
-      "UDP 1812/1813",
-      "Access-Request",
-      "Access-Accept/Reject",
-    ])
-    createDetailedConnection(svg, 470, 260, 650, 260, "#059669", "SNMP Monitoring", [
-      "UDP 161/162",
-      "Device Status",
-      "Performance Metrics",
-    ])
-    createDetailedConnection(svg, 470, 340, 650, 340, "#059669", "Syslog", [
-      "UDP 514",
-      "Event Logging",
-      "Security Events",
-    ])
-
-    createDetailedConnection(svg, 770, 180, 950, 180, "#0078D4", "LDAP/LDAPS", [
-      "TCP 389/636",
-      "User Lookup",
-      "Group Membership",
-    ])
-    createDetailedConnection(svg, 770, 260, 950, 260, "#0078D4", "SAML 2.0", [
-      "HTTPS 443",
-      "SSO Authentication",
-      "Attribute Exchange",
-    ])
-    createDetailedConnection(svg, 770, 340, 950, 340, "#7C3AED", "REST API", [
-      "HTTPS 443",
-      "Device Compliance",
-      "Policy Sync",
-    ])
-
-    createDetailedConnection(svg, 1070, 180, 1250, 180, "#0891B2", "Cloud API", [
-      "HTTPS 443",
-      "Service Integration",
-      "Data Sync",
-    ])
-    createDetailedConnection(svg, 1070, 260, 1250, 260, "#DC2626", "Certificate Enrollment", [
-      "HTTPS 443",
-      "SCEP/EST",
-      "Auto-Renewal",
-    ])
-    createDetailedConnection(svg, 1070, 340, 1250, 340, "#F59E0B", "Security Logs", [
-      "HTTPS 443",
-      "SIEM Integration",
-      "Threat Intelligence",
-    ])
-
-    // Add network zones
-    addNetworkZone(svg, 30, 100, 200, 320, "User Network", "#4F46E5", 0.1)
-    addNetworkZone(svg, 330, 100, 200, 320, "Access Layer", "#059669", 0.1)
-    addNetworkZone(svg, 630, 100, 200, 320, "NAC Platform", "#00c8d7", 0.1)
-    addNetworkZone(svg, 930, 100, 200, 320, "Identity Layer", "#0078D4", 0.1)
-    addNetworkZone(svg, 1230, 100, 200, 320, "Cloud Services", "#0891B2", 0.1)
-  }
-
-  const renderAuthenticationFlow = (svg: SVGSVGElement) => {
-    addTitle(svg, "802.1X Authentication Flow", 800, 30)
-
-    // Authentication participants
-    createDetailedComponent(svg, 100, 150, "Supplicant", "#4F46E5", "endpoint", [
-      "802.1X Client",
-      "EAP Methods",
-      "Certificate Store",
-    ])
-    createDetailedComponent(svg, 400, 150, "Authenticator", "#059669", "network", [
-      "802.1X Switch/AP",
-      "Port Control",
-      "RADIUS Proxy",
-    ])
-    createDetailedComponent(svg, 700, 150, "Authentication Server", "#00c8d7", "nac", [
-      "RADIUS Server",
-      "EAP Processing",
-      "Policy Decision",
-    ])
-    createDetailedComponent(svg, 1000, 150, "Identity Store", "#0078D4", "identity", [
-      "User Database",
-      "Certificate Store",
-      "Group Policies",
-    ])
-    createDetailedComponent(svg, 1300, 150, "Policy Engine", "#7C3AED", "policies", [
-      "Access Control",
-      "VLAN Assignment",
-      "QoS Policies",
-    ])
-
-    // Authentication flow steps with detailed protocols
-    const flowSteps = [
-      {
-        from: { x: 220, y: 180 },
-        to: { x: 400, y: 180 },
-        label: "1. EAP-Start",
-        details: ["Link Layer", "Port Authentication", "Identity Request"],
-      },
-      {
-        from: { x: 520, y: 200 },
-        to: { x: 700, y: 200 },
-        label: "2. RADIUS Access-Request",
-        details: ["UDP 1812", "EAP-Identity", "NAS-Identifier"],
-      },
-      {
-        from: { x: 820, y: 220 },
-        to: { x: 1000, y: 220 },
-        label: "3. Identity Lookup",
-        details: ["LDAP Query", "Certificate Validation", "Group Membership"],
-      },
-      {
-        from: { x: 1000, y: 240 },
-        to: { x: 820, y: 240 },
-        label: "4. User Attributes",
-        details: ["User Groups", "Certificate Status", "Account Status"],
-      },
-      {
-        from: { x: 700, y: 260 },
-        to: { x: 520, y: 260 },
-        label: "5. EAP Challenge",
-        details: ["EAP-TLS/PEAP", "Certificate Request", "Tunnel Setup"],
-      },
-      {
-        from: { x: 400, y: 280 },
-        to: { x: 220, y: 280 },
-        label: "6. EAP Response",
-        details: ["Client Certificate", "Credentials", "Identity Proof"],
-      },
-      {
-        from: { x: 220, y: 300 },
-        to: { x: 400, y: 300 },
-        label: "7. EAP Success/Failure",
-        details: ["Authentication Result", "Session Keys", "Port Authorization"],
-      },
-      {
-        from: { x: 820, y: 320 },
-        to: { x: 1300, y: 320 },
-        label: "8. Policy Lookup",
-        details: ["User Context", "Device Profile", "Network Location"],
-      },
-      {
-        from: { x: 1300, y: 340 },
-        to: { x: 820, y: 340 },
-        label: "9. Access Policies",
-        details: ["VLAN Assignment", "ACL Rules", "QoS Parameters"],
-      },
-      {
-        from: { x: 700, y: 360 },
-        to: { x: 520, y: 360 },
-        label: "10. RADIUS Access-Accept",
-        details: ["UDP 1812", "VLAN ID", "Filter-ID"],
-      },
-      {
-        from: { x: 400, y: 380 },
-        to: { x: 220, y: 380 },
-        label: "11. Port Authorization",
-        details: ["Port State Change", "VLAN Assignment", "Network Access"],
-      },
-    ]
-
-    flowSteps.forEach((step, index) => {
-      createDetailedConnection(svg, step.from.x, step.from.y, step.to.x, step.to.y, "#DC2626", step.label, step.details)
-
-      // Add timing information
-      addLabel(svg, (step.from.x + step.to.x) / 2, step.from.y - 15, `${index * 100}ms`, "#6B7280", "10")
-    })
-
-    // Add protocol details
-    addProtocolBox(svg, 100, 450, "EAP Methods Supported", [
-      "EAP-TLS (Certificate-based)",
-      "EAP-PEAP (Username/Password)",
-      "EAP-TTLS (Tunneled Authentication)",
-      "EAP-FAST (Cisco Proprietary)",
-    ])
-
-    addProtocolBox(svg, 500, 450, "RADIUS Attributes", [
-      "User-Name (Type 1)",
-      "NAS-IP-Address (Type 4)",
-      "NAS-Port (Type 5)",
-      "Tunnel-Type (Type 64)",
-      "Tunnel-Medium-Type (Type 65)",
-      "Tunnel-Private-Group-ID (Type 81)",
-    ])
-
-    addProtocolBox(svg, 900, 450, "Policy Attributes", [
-      "VLAN-ID Assignment",
-      "Access Control Lists",
-      "Bandwidth Limitations",
-      "Session Timeout",
-      "Re-authentication Timer",
-    ])
-  }
-
-  const renderPKIInfrastructure = (svg: SVGSVGElement) => {
-    addTitle(svg, "PKI Infrastructure for Zero Trust NAC", 800, 30)
-
-    // PKI Hierarchy
-    createDetailedComponent(svg, 700, 100, "Root Certificate Authority", "#DC2626", "pki", [
-      "Offline CA",
-      "Self-Signed",
-      "20-Year Validity",
-    ])
-    createDetailedComponent(svg, 500, 200, "Issuing CA - Users", "#DC2626", "pki", [
-      "Online CA",
-      "1-Year Certificates",
-      "Auto-Enrollment",
-    ])
-    createDetailedComponent(svg, 900, 200, "Issuing CA - Devices", "#DC2626", "pki", [
-      "Online CA",
-      "2-Year Certificates",
-      "SCEP Protocol",
-    ])
-
-    // Certificate Stores
-    createDetailedComponent(svg, 300, 300, "User Certificate Store", "#4F46E5", "endpoint", [
-      "Personal Store",
-      "Trusted Root",
-      "Intermediate CA",
-    ])
-    createDetailedComponent(svg, 700, 300, "Device Certificate Store", "#4F46E5", "endpoint", [
-      "Computer Store",
-      "Machine Certificates",
-      "Service Accounts",
-    ])
-    createDetailedComponent(svg, 1100, 300, "Network Device Certs", "#059669", "network", [
-      "Switch Certificates",
-      "AP Certificates",
-      "RADIUS Certs",
-    ])
-
-    // Certificate Services
-    createDetailedComponent(svg, 200, 450, "Certificate Templates", "#7C3AED", "templates", [
-      "User Template",
-      "Computer Template",
-      "Custom Templates",
-    ])
-    createDetailedComponent(svg, 500, 450, "CRL Distribution Point", "#F59E0B", "crl", [
-      "HTTP/LDAP",
-      "Delta CRL",
-      "Revocation Check",
-    ])
-    createDetailedComponent(svg, 800, 450, "OCSP Responder", "#F59E0B", "ocsp", [
-      "Real-time Status",
-      "RFC 6960",
-      "Certificate Validation",
-    ])
-    createDetailedComponent(svg, 1100, 450, "Certificate Authority Web", "#0891B2", "web", [
-      "Web Enrollment",
-      "Certificate Request",
-      "User Portal",
-    ])
-
-    // PKI Connections
-    createDetailedConnection(svg, 750, 150, 550, 200, "#DC2626", "CA Certificate Chain", [
-      "Root → Issuing",
-      "Certificate Hierarchy",
-      "Trust Chain",
-    ])
-    createDetailedConnection(svg, 750, 150, 950, 200, "#DC2626", "CA Certificate Chain", [
-      "Root → Issuing",
-      "Certificate Hierarchy",
-      "Trust Chain",
-    ])
-
-    createDetailedConnection(svg, 550, 250, 350, 300, "#4F46E5", "Certificate Issuance", [
-      "Auto-Enrollment",
-      "Template-based",
-      "User Certificates",
-    ])
-    createDetailedConnection(svg, 950, 250, 750, 300, "#4F46E5", "Certificate Issuance", [
-      "SCEP Protocol",
-      "Device Authentication",
-      "Machine Certificates",
-    ])
-    createDetailedConnection(svg, 950, 250, 1150, 300, "#059669", "Network Device Enrollment", [
-      "Manual Enrollment",
-      "SCEP/EST",
-      "Infrastructure Certs",
-    ])
-
-    createDetailedConnection(svg, 550, 250, 550, 450, "#F59E0B", "CRL Publishing", [
-      "HTTP/LDAP",
-      "Revocation List",
-      "Periodic Updates",
-    ])
-    createDetailedConnection(svg, 950, 250, 850, 450, "#F59E0B", "OCSP Services", [
-      "Real-time Check",
-      "Certificate Status",
-      "Validation Response",
-    ])
-
-    // Certificate Lifecycle
-    addProtocolBox(svg, 50, 600, "Certificate Lifecycle", [
-      "1. Certificate Request (CSR)",
-      "2. Identity Verification",
-      "3. Certificate Issuance",
-      "4. Certificate Installation",
-      "5. Certificate Usage",
-      "6. Certificate Renewal",
-      "7. Certificate Revocation",
-    ])
-
-    addProtocolBox(svg, 400, 600, "Certificate Validation", [
-      "Chain of Trust Verification",
-      "Certificate Expiration Check",
-      "CRL/OCSP Revocation Check",
-      "Key Usage Validation",
-      "Extended Key Usage Check",
-      "Certificate Policy Validation",
-    ])
-
-    addProtocolBox(svg, 750, 600, "Security Considerations", [
-      "Private Key Protection",
-      "Hardware Security Modules",
-      "Certificate Pinning",
-      "Key Escrow Policies",
-      "Audit Logging",
-      "Compliance Requirements",
-    ])
-
-    addProtocolBox(svg, 1100, 600, "Integration Points", [
-      "802.1X EAP-TLS Authentication",
-      "WiFi WPA3-Enterprise",
-      "VPN Client Authentication",
-      "Email S/MIME Encryption",
-      "Code Signing Certificates",
-      "SSL/TLS Server Certificates",
-    ])
-  }
-
-  const renderJAMFIntegration = (svg: SVGSVGElement) => {
-    addTitle(svg, "JAMF Pro Integration for Apple Device Management", 800, 30)
-
-    // Apple Ecosystem
-    addSectionLabel(svg, "Apple Device Ecosystem", 200, 80, "#4F46E5")
-    createDetailedComponent(svg, 100, 120, "macOS Devices", "#4F46E5", "endpoint", [
-      "macOS 12+",
-      "System Extensions",
-      "Configuration Profiles",
-    ])
-    createDetailedComponent(svg, 100, 200, "iOS Devices", "#4F46E5", "endpoint", [
-      "iOS 15+",
-      "Supervised Mode",
-      "MDM Enrollment",
-    ])
-    createDetailedComponent(svg, 100, 280, "iPadOS Devices", "#4F46E5", "endpoint", [
-      "iPadOS 15+",
-      "Shared iPad",
-      "User Enrollment",
-    ])
-    createDetailedComponent(svg, 100, 360, "Apple TV", "#4F46E5", "endpoint", [
-      "tvOS",
-      "Conference Room",
-      "AirPlay Security",
-    ])
-
-    // Network Infrastructure
-    addSectionLabel(svg, "Network Access Layer", 450, 80, "#059669")
-    createDetailedComponent(svg, 350, 140, `${getVendorLabel(networkVendor)} Switch`, "#059669", "network", [
-      "802.1X Port Auth",
-      "RADIUS Client",
-      "Dynamic VLAN",
-    ])
-    createDetailedComponent(svg, 350, 220, `${getVendorLabel(networkVendor)} Wireless`, "#059669", "network", [
-      "WPA3-Enterprise",
-      "802.11ax",
-      "Fast Roaming",
-    ])
-    createDetailedComponent(svg, 350, 300, "Network Access Control", "#059669", "network", [
-      "Port Security",
-      "MAC Authentication",
-      "Guest Network",
-    ])
-
-    // Portnox NAC Platform
-    addSectionLabel(svg, "Portnox NAC Platform", 700, 80, "#00c8d7")
-    createDetailedComponent(svg, 600, 120, "Portnox Cloud RADIUS", "#00c8d7", "nac", [
-      "EAP-TLS Support",
-      "Certificate Validation",
-      "Policy Engine",
-    ])
-    createDetailedComponent(svg, 600, 200, "Device Profiling Engine", "#00c8d7", "nac", [
-      "Apple Device Detection",
-      "OS Version Check",
-      "Compliance Status",
-    ])
-    createDetailedComponent(svg, 600, 280, "Policy Decision Point", "#00c8d7", "nac", [
-      "JAMF Integration",
-      "Compliance Policies",
-      "Risk Assessment",
-    ])
-    createDetailedComponent(svg, 600, 360, "Compliance Monitoring", "#00c8d7", "nac", [
-      "Real-time Status",
-      "Policy Violations",
-      "Remediation Actions",
-    ])
-
-    // JAMF Infrastructure
-    addSectionLabel(svg, "JAMF Pro Infrastructure", 1000, 80, "#7C3AED")
-    createDetailedComponent(svg, 900, 120, "JAMF Pro Server", "#7C3AED", "mdm", [
-      "Device Management",
-      "Policy Distribution",
-      "Inventory Collection",
-    ])
-    createDetailedComponent(svg, 900, 200, "Apple Business Manager", "#7C3AED", "mdm", [
-      "Device Enrollment",
-      "Volume Purchasing",
-      "Managed Apple IDs",
-    ])
-    createDetailedComponent(svg, 900, 280, "JAMF Connect", "#7C3AED", "mdm", [
-      "Identity Integration",
-      "Password Sync",
-      "Cloud Identity",
-    ])
-    createDetailedComponent(svg, 900, 360, "JAMF Protect", "#7C3AED", "mdm", [
-      "Endpoint Security",
-      "Threat Detection",
-      "Compliance Monitoring",
-    ])
-
-    // Identity and Cloud Services
-    addSectionLabel(svg, "Identity & Cloud Services", 1300, 80, "#0078D4")
-    createDetailedComponent(svg, 1200, 140, "Azure Active Directory", "#0078D4", "identity", [
-      "Conditional Access",
-      "Device Registration",
-      "SSO Integration",
-    ])
-    createDetailedComponent(svg, 1200, 220, "Apple Push Notification", "#0078D4", "cloud", [
-      "MDM Commands",
-      "Real-time Updates",
-      "Device Wake",
-    ])
-    createDetailedComponent(svg, 1200, 300, "Certificate Authority", "#DC2626", "pki", [
-      "Device Certificates",
-      "User Certificates",
-      "SCEP Enrollment",
-    ])
-
-    // Detailed Integration Flows
-    createDetailedConnection(svg, 220, 160, 350, 160, "#00c8d7", "802.1X EAP-TLS", [
-      "Certificate Authentication",
-      "Machine/User Auth",
-      "JAMF Certificate",
-    ])
-    createDetailedConnection(svg, 220, 240, 350, 240, "#00c8d7", "WiFi Authentication", [
-      "WPA3-Enterprise",
-      "Fast Connect",
-      "Seamless Roaming",
-    ])
-    createDetailedConnection(svg, 220, 320, 350, 320, "#059669", "Network Onboarding", [
-      "Automated Enrollment",
-      "Certificate Delivery",
-      "Profile Installation",
-    ])
-
-    createDetailedConnection(svg, 470, 180, 600, 180, "#059669", "RADIUS Authentication", [
-      "UDP 1812/1813",
-      "EAP Processing",
-      "Policy Lookup",
-    ])
-    createDetailedConnection(svg, 470, 260, 600, 260, "#059669", "Device Profiling", [
-      "DHCP Fingerprinting",
-      "HTTP User-Agent",
-      "Device Classification",
-    ])
-
-    createDetailedConnection(svg, 720, 180, 900, 180, "#7C3AED", "JAMF API Integration", [
-      "REST API",
-      "Device Status",
-      "Compliance Check",
-    ])
-    createDetailedConnection(svg, 720, 260, 900, 260, "#7C3AED", "Policy Synchronization", [
-      "Compliance Policies",
-      "Configuration Profiles",
-      "Security Settings",
-    ])
-    createDetailedConnection(svg, 720, 340, 900, 340, "#7C3AED", "Real-time Monitoring", [
-      "Device Health",
-      "Policy Violations",
-      "Security Events",
-    ])
-
-    createDetailedConnection(svg, 1020, 160, 1200, 160, "#0078D4", "Identity Integration", [
-      "Azure AD Sync",
-      "User Attributes",
-      "Group Membership",
-    ])
-    createDetailedConnection(svg, 1020, 240, 1200, 240, "#0078D4", "APNs Communication", [
-      "MDM Commands",
-      "Push Notifications",
-      "Device Management",
-    ])
-    createDetailedConnection(svg, 1020, 320, 1200, 320, "#DC2626", "Certificate Management", [
-      "SCEP Enrollment",
-      "Certificate Renewal",
-      "PKI Integration",
-    ])
-
-    // JAMF Workflow Details
-    addProtocolBox(svg, 50, 500, "JAMF Enrollment Process", [
-      "1. Device Enrollment Program (DEP)",
-      "2. User-Initiated Enrollment",
-      "3. Configuration Profile Installation",
-      "4. Certificate Deployment",
-      "5. Policy Application",
-      "6. Compliance Verification",
-    ])
-
-    addProtocolBox(svg, 400, 500, "Network Access Flow", [
-      "1. Device connects to network",
-      "2. 802.1X authentication initiated",
-      "3. JAMF certificate presented",
-      "4. Portnox validates certificate",
-      "5. JAMF compliance checked",
-      "6. Network access granted/denied",
-    ])
-
-    addProtocolBox(svg, 750, 500, "Compliance Policies", [
-      "OS Version Requirements",
-      "Security Patch Level",
-      "Encryption Status",
-      "Firewall Configuration",
-      "Antivirus Status",
-      "Application Restrictions",
-    ])
-
-    addProtocolBox(svg, 1100, 500, "Integration Benefits", [
-      "Automated Certificate Deployment",
-      "Real-time Compliance Monitoring",
-      "Seamless User Experience",
-      "Centralized Policy Management",
-      "Enhanced Security Posture",
-      "Audit Trail and Reporting",
-    ])
-  }
-
-  const renderMerakiWireless = (svg: SVGSVGElement) => {
-    addTitle(svg, "Cisco Meraki Wireless Deep-Dive Integration", 800, 30)
-
-    // Client Devices
-    addSectionLabel(svg, "Wireless Clients", 150, 80, "#4F46E5")
-    createDetailedComponent(svg, 50, 120, "Corporate Devices", "#4F46E5", "endpoint", [
-      "802.11ax Capable",
-      "WPA3 Support",
-      "Fast Roaming",
-    ])
-    createDetailedComponent(svg, 50, 200, "BYOD Devices", "#4F46E5", "endpoint", [
-      "Guest Network",
-      "Captive Portal",
-      "Device Registration",
-    ])
-    createDetailedComponent(svg, 50, 280, "IoT Devices", "#4F46E5", "endpoint", [
-      "2.4GHz Only",
-      "WPA2/PSK",
-      "Device Profiling",
-    ])
-
-    // Meraki Wireless Infrastructure
-    addSectionLabel(svg, "Meraki Wireless Infrastructure", 450, 80, "#1BA0D7")
-    createDetailedComponent(svg, 350, 120, "Meraki MR46 Access Points", "#1BA0D7", "network", [
-      "WiFi 6 (802.11ax)",
-      "4x4:4 MU-MIMO",
-      "2.5 Gbps Uplink",
-    ])
-    createDetailedComponent(svg, 350, 200, "Meraki MR56 Access Points", "#1BA0D7", "network", [
-      "WiFi 6E",
-      "6 GHz Band",
-      "8x8:8 MU-MIMO",
-    ])
-    createDetailedComponent(svg, 350, 280, "Meraki Switch Stack", "#1BA0D7", "network", [
-      "MS425 Core",
-      "PoE+ Support",
-      "RADIUS Integration",
-    ])
-    createDetailedComponent(svg, 350, 360, "Meraki Security Appliance", "#1BA0D7", "firewall", [
-      "MX450 Firewall",
-      "SD-WAN",
-      "Content Filtering",
-    ])
-
-    // Meraki Cloud Management
-    addSectionLabel(svg, "Meraki Cloud Platform", 750, 80, "#1BA0D7")
-    createDetailedComponent(svg, 650, 120, "Meraki Dashboard", "#1BA0D7", "cloud", [
-      "Cloud Management",
-      "Zero-Touch Provisioning",
-      "Global Orchestration",
-    ])
-    createDetailedComponent(svg, 650, 200, "Wireless Configuration", "#1BA0D7", "cloud", [
-      "SSID Management",
-      "RF Optimization",
-      "Client Steering",
-    ])
-    createDetailedComponent(svg, 650, 280, "Security Policies", "#1BA0D7", "cloud", [
-      "Firewall Rules",
-      "Content Filtering",
-      "Threat Protection",
-    ])
-    createDetailedComponent(svg, 650, 360, "Analytics Engine", "#1BA0D7", "cloud", [
-      "Client Analytics",
-      "Application Visibility",
-      "Performance Metrics",
-    ])
-
-    // NAC Integration
-    addSectionLabel(svg, "NAC Integration Layer", 1050, 80, "#00c8d7")
-    createDetailedComponent(svg, 950, 120, "Portnox Cloud RADIUS", "#00c8d7", "nac", [
-      "Cloud RADIUS",
-      "Multi-Tenant",
-      "Global Reach",
-    ])
-    createDetailedComponent(svg, 950, 200, "Policy Engine", "#00c8d7", "nac", [
-      "Dynamic Policies",
-      "Device Profiling",
-      "Risk Assessment",
-    ])
-    createDetailedComponent(svg, 950, 280, "Guest Management", "#00c8d7", "nac", [
-      "Self-Service Portal",
-      "Sponsor Approval",
-      "Time-Limited Access",
-    ])
-    createDetailedComponent(svg, 950, 360, "Compliance Monitoring", "#00c8d7", "nac", [
-      "Device Health",
-      "Policy Violations",
-      "Remediation",
-    ])
-
-    // Identity and External Services
-    addSectionLabel(svg, "Identity & External Services", 1350, 80, "#0078D4")
-    createDetailedComponent(svg, 1250, 140, "Azure Active Directory", "#0078D4", "identity", [
-      "SAML/LDAP",
-      "Conditional Access",
-      "Multi-Factor Auth",
-    ])
-    createDetailedComponent(svg, 1250, 220, "Certificate Authority", "#DC2626", "pki", [
-      "X.509 Certificates",
-      "SCEP Enrollment",
-      "Certificate Validation",
-    ])
-    createDetailedComponent(svg, 1250, 300, "SIEM Integration", "#F59E0B", "security", [
-      "Syslog Export",
-      "Security Events",
-      "Threat Intelligence",
-    ])
-
-    // Detailed Wireless Flows
-    createDetailedConnection(svg, 170, 160, 350, 160, "#1BA0D7", "802.11 Association", [
-      "SSID: Corporate",
-      "WPA3-Enterprise",
-      "PMF Enabled",
-    ])
-    createDetailedConnection(svg, 170, 240, 350, 240, "#1BA0D7", "Guest Network", [
-      "SSID: Guest",
-      "Captive Portal",
-      "Bandwidth Limit",
-    ])
-    createDetailedConnection(svg, 170, 320, 350, 320, "#1BA0D7", "IoT Network", [
-      "SSID: IoT",
-      "WPA2-PSK",
-      "VLAN Isolation",
-    ])
-
-    createDetailedConnection(svg, 470, 160, 650, 160, "#1BA0D7", "Cloud Management", [
-      "HTTPS 443",
-      "Configuration Sync",
-      "Firmware Updates",
-    ])
-    createDetailedConnection(svg, 470, 240, 650, 240, "#1BA0D7", "RF Optimization", [
-      "Auto RF",
-      "Channel Planning",
-      "Power Control",
-    ])
-    createDetailedConnection(svg, 470, 320, 650, 320, "#1BA0D7", "Client Steering", [
-      "Band Steering",
-      "Load Balancing",
-      "Fast Roaming",
-    ])
-
-    createDetailedConnection(svg, 770, 160, 950, 160, "#00c8d7", "RADIUS Authentication", [
-      "UDP 1812/1813",
-      "EAP Processing",
-      "Policy Lookup",
-    ])
-    createDetailedConnection(svg, 770, 240, 950, 240, "#00c8d7", "Policy Enforcement", [
-      "Dynamic VLAN",
-      "Firewall Rules",
-      "QoS Policies",
-    ])
-    createDetailedConnection(svg, 770, 320, 950, 320, "#00c8d7", "Guest Portal Integration", [
-      "Captive Portal",
-      "Self-Registration",
-      "Sponsor Approval",
-    ])
-
-    createDetailedConnection(svg, 1070, 180, 1250, 180, "#0078D4", "Identity Lookup", [
-      "LDAP/SAML",
-      "User Attributes",
-      "Group Membership",
-    ])
-    createDetailedConnection(svg, 1070, 260, 1250, 260, "#DC2626", "Certificate Validation", [
-      "EAP-TLS",
-      "Certificate Chain",
-      "Revocation Check",
-    ])
-    createDetailedConnection(svg, 1070, 340, 1250, 340, "#F59E0B", "Security Logging", [
-      "Authentication Events",
-      "Policy Violations",
-      "Threat Detection",
-    ])
-
-    // Meraki-Specific Features
-    addProtocolBox(svg, 50, 500, "Meraki Wireless Features", [
-      "Auto RF Optimization",
-      "Intelligent Load Balancing",
-      "Seamless Roaming (802.11r)",
-      "Band Steering (5GHz Preference)",
-      "Airtime Fairness",
-      "Bluetooth Low Energy Beacons",
-    ])
-
-    addProtocolBox(svg, 400, 500, "Security Features", [
-      "WPA3-Enterprise Support",
-      "Protected Management Frames",
-      "Rogue AP Detection",
-      "Wireless Intrusion Prevention",
-      "Air Marshal Security",
-      "Layer 7 Firewall Rules",
-    ])
-
-    addProtocolBox(svg, 750, 500, "Integration Capabilities", [
-      "External RADIUS Server",
-      "LDAP/Active Directory",
-      "SAML Identity Providers",
-      "Syslog Export",
-      "SNMP Monitoring",
-      "REST API Management",
-    ])
-
-    addProtocolBox(svg, 1100, 500, "Analytics & Insights", [
-      "Client Connection Analytics",
-      "Application Usage Visibility",
-      "RF Environment Analysis",
-      "Capacity Planning Tools",
-      "Performance Benchmarking",
-      "Predictive Analytics",
-    ])
-  }
-
-  const renderMistWireless = (svg: SVGSVGElement) => {
-    addTitle(svg, "Juniper Mist AI-Driven Wireless Integration", 800, 30)
-
-    // Client Devices
-    addSectionLabel(svg, "Wireless Clients", 150, 80, "#4F46E5")
-    createDetailedComponent(svg, 50, 120, "Enterprise Devices", "#4F46E5", "endpoint", [
-      "WiFi 6E Capable",
-      "WPA3 Support",
-      "AI-Optimized",
-    ])
-    createDetailedComponent(svg, 50, 200, "Mobile Devices", "#4F46E5", "endpoint", [
-      "iOS/Android",
-      "Location Services",
-      "BLE Proximity",
-    ])
-    createDetailedComponent(svg, 50, 280, "IoT Sensors", "#4F46E5", "endpoint", [
-      "Environmental",
-      "Asset Tracking",
-      "Low Power",
-    ])
-
-    // Mist Wireless Infrastructure
-    addSectionLabel(svg, "Mist Wireless Infrastructure", 450, 80, "#84BD00")
-    createDetailedComponent(svg, 350, 120, "Mist AP45 Access Points", "#84BD00", "network", [
-      "WiFi 6E",
-      "16 BLE Radios",
-      "AI-Driven RF",
-    ])
-    createDetailedComponent(svg, 350, 200, "Mist AP63 Access Points", "#84BD00", "network", [
-      "Outdoor WiFi 6",
-      "Weather Resistant",
-      "Mesh Capable",
-    ])
-    createDetailedComponent(svg, 350, 280, "Juniper EX Switches", "#84BD00", "network", [
-      "Virtual Chassis",
-      "PoE++",
-      "Mist Integration",
-    ])
-    createDetailedComponent(svg, 350, 360, "Mist Edge Appliance", "#84BD00", "network", [
-      "Local Processing",
-      "AI Inference",
-      "Edge Computing",
-    ])
-
-    // Mist AI Cloud Platform
-    addSectionLabel(svg, "Mist AI Cloud Platform", 750, 80, "#84BD00")
-    createDetailedComponent(svg, 650, 120, "Mist AI Engine", "#84BD00", "ai", [
-      "Machine Learning",
-      "Predictive Analytics",
-      "Self-Healing Network",
-    ])
-    createDetailedComponent(svg, 650, 200, "Marvis Virtual Assistant", "#84BD00", "ai", [
-      "Natural Language",
-      "Proactive Insights",
-      "Automated Remediation",
-    ])
-    createDetailedComponent(svg, 650, 280, "Location Services", "#84BD00", "cloud", [
-      "Indoor Positioning",
-      "Asset Tracking",
-      "Wayfinding",
-    ])
-    createDetailedComponent(svg, 650, 360, "User Experience Analytics", "#84BD00", "analytics", [
-      "SLE Metrics",
-      "Client Journey",
-      "Performance Insights",
-    ])
-
-    // NAC and Security Integration
-    addSectionLabel(svg, "NAC & Security Integration", 1050, 80, "#00c8d7")
-    createDetailedComponent(svg, 950, 120, "Portnox Cloud Integration", "#00c8d7", "nac", [
-      "AI-Enhanced Profiling",
-      "Behavioral Analytics",
-      "Dynamic Policies",
-    ])
-    createDetailedComponent(svg, 950, 200, "Security Assurance", "#00c8d7", "security", [
-      "Threat Detection",
-      "Anomaly Detection",
-      "Security Posture",
-    ])
-    createDetailedComponent(svg, 950, 280, "Policy Automation", "#00c8d7", "automation", [
-      "AI-Driven Policies",
-      "Self-Remediation",
-      "Adaptive Security",
-    ])
-    createDetailedComponent(svg, 950, 360, "Compliance Monitoring", "#00c8d7", "compliance", [
-      "Continuous Assessment",
-      "Policy Violations",
-      "Audit Trails",
-    ])
-
-    // External Integrations
-    addSectionLabel(svg, "External Integrations", 1350, 80, "#0078D4")
-    createDetailedComponent(svg, 1250, 140, "Identity Providers", "#0078D4", "identity", [
-      "Azure AD",
-      "Okta",
-      "SAML/OIDC",
-    ])
-    createDetailedComponent(svg, 1250, 220, "SIEM Platforms", "#F59E0B", "security", ["Splunk", "QRadar", "Sentinel"])
-    createDetailedComponent(svg, 1250, 300, "ITSM Integration", "#7C3AED", "itsm", [
-      "ServiceNow",
-      "Jira",
-      "Automated Tickets",
-    ])
-
-    // AI-Driven Connections
-    createDetailedConnection(svg, 170, 160, 350, 160, "#84BD00", "AI-Optimized Connection", [
-      "Dynamic Channel",
-      "Power Optimization",
-      "Interference Mitigation",
-    ])
-    createDetailedConnection(svg, 170, 240, 350, 240, "#84BD00", "Location-Aware Services", [
-      "BLE Beacons",
-      "Indoor GPS",
-      "Proximity Services",
-    ])
-    createDetailedConnection(svg, 170, 320, 350, 320, "#84BD00", "IoT Optimization", [
-      "Low Latency",
-      "Power Management",
-      "Predictive Maintenance",
-    ])
-
-    createDetailedConnection(svg, 470, 160, 650, 160, "#84BD00", "AI Cloud Processing", [
-      "ML Models",
-      "Pattern Recognition",
-      "Predictive Analytics",
-    ])
-    createDetailedConnection(svg, 470, 240, 650, 240, "#84BD00", "Marvis AI Insights", [
-      "Natural Language",
-      "Proactive Alerts",
-      "Root Cause Analysis",
-    ])
-    createDetailedConnection(svg, 470, 320, 650, 320, "#84BD00", "Real-time Analytics", [
-      "User Experience",
-      "Network Performance",
-      "Capacity Planning",
-    ])
-
-    createDetailedConnection(svg, 770, 160, 950, 160, "#00c8d7", "AI-Enhanced NAC", [
-      "Behavioral Profiling",
-      "Anomaly Detection",
-      "Dynamic Policies",
-    ])
-    createDetailedConnection(svg, 770, 240, 950, 240, "#00c8d7", "Security Intelligence", [
-      "Threat Correlation",
-      "Risk Scoring",
-      "Automated Response",
-    ])
-    createDetailedConnection(svg, 770, 320, 950, 320, "#00c8d7", "Policy Orchestration", [
-      "AI-Driven Rules",
-      "Adaptive Enforcement",
-      "Self-Healing",
-    ])
-
-    createDetailedConnection(svg, 1070, 180, 1250, 180, "#0078D4", "Identity Intelligence", [
-      "User Behavior",
-      "Device Patterns",
-      "Risk Assessment",
-    ])
-    createDetailedConnection(svg, 1070, 260, 1250, 260, "#F59E0B", "Security Telemetry", [
-      "AI Insights",
-      "Threat Intelligence",
-      "Incident Correlation",
-    ])
-    createDetailedConnection(svg, 1070, 340, 1250, 340, "#7C3AED", "Automated Workflows", [
-      "Incident Creation",
-      "Remediation Actions",
-      "Change Management",
-    ])
-
-    // Mist AI Features
-    addProtocolBox(svg, 50, 500, "Mist AI Capabilities", [
-      "Self-Driving Network Operations",
-      "Predictive Analytics & Insights",
-      "Automated Problem Resolution",
-      "Natural Language Troubleshooting",
-      "Proactive Network Optimization",
-      "Machine Learning-Based Policies",
-    ])
-
-    addProtocolBox(svg, 400, 500, "Service Level Expectations", [
-      "Time to Connect (< 10 seconds)",
-      "Successful Connect Rate (> 99%)",
-      "Throughput Performance",
-      "Roaming Success Rate",
-      "Coverage Quality Metrics",
-      "Capacity Utilization",
-    ])
-
-    addProtocolBox(svg, 750, 500, "Location Services", [
-      "Sub-meter Indoor Positioning",
-      "Asset Tracking & Management",
-      "Wayfinding Applications",
-      "Proximity-Based Services",
-      "Occupancy Analytics",
-      "Contact Tracing Capabilities",
-    ])
-
-    addProtocolBox(svg, 1100, 500, "AI-Driven Security", [
-      "Behavioral Anomaly Detection",
-      "Predictive Threat Analysis",
-      "Automated Incident Response",
-      "Dynamic Risk Assessment",
-      "Adaptive Policy Enforcement",
-      "Continuous Compliance Monitoring",
-    ])
-  }
-
-  const renderCiscoTACACS = (svg: SVGSVGElement) => {
-    addTitle(svg, "Cisco Device Administration via TACACS+", 800, 30)
-
-    // Network Administrator
-    addSectionLabel(svg, "Network Administrators", 150, 80, "#4F46E5")
-    createDetailedComponent(svg, 50, 120, "Network Admin Workstation", "#4F46E5", "endpoint", [
-      "SSH Client",
-      "Telnet Client",
-      "HTTPS Browser",
-    ])
-    createDetailedComponent(svg, 50, 200, "Mobile Admin Device", "#4F46E5", "endpoint", [
-      "iOS/Android",
-      "SSH Apps",
-      "VPN Client",
-    ])
-    createDetailedComponent(svg, 50, 280, "Jump Server", "#4F46E5", "endpoint", [
-      "Bastion Host",
-      "Privileged Access",
-      "Session Recording",
-    ])
-
-    // Cisco Infrastructure
-    addSectionLabel(svg, "Cisco Network Infrastructure", 450, 80, "#1BA0D7")
-    createDetailedComponent(svg, 350, 120, "Cisco Catalyst 9300", "#1BA0D7", "network", [
-      "Layer 3 Switch",
-      "StackWise-480",
-      "TACACS+ Client",
-    ])
-    createDetailedComponent(svg, 350, 200, "Cisco ISR 4000", "#1BA0D7", "network", [
-      "Enterprise Router",
-      "SD-WAN",
-      "TACACS+ AAA",
-    ])
-    createDetailedComponent(svg, 350, 280, "Cisco ASA 5500-X", "#1BA0D7", "firewall", [
-      "Next-Gen Firewall",
-      "VPN Concentrator",
-      "TACACS+ Auth",
-    ])
-    createDetailedComponent(svg, 350, 360, "Cisco Nexus 9000", "#1BA0D7", "network", [
-      "Data Center Switch",
-      "ACI Fabric",
-      "Role-Based Access",
-    ])
-
-    // TACACS+ Infrastructure
-    addSectionLabel(svg, "TACACS+ Authentication", 750, 80, "#DC2626")
-    createDetailedComponent(svg, 650, 120, "Cisco ISE TACACS+", "#DC2626", "tacacs", [
-      "Policy Server",
-      "Device Admin",
-      "Command Authorization",
-    ])
-    createDetailedComponent(svg, 650, 200, "TACACS+ Proxy", "#DC2626", "tacacs", [
-      "Load Balancing",
-      "Failover",
-      "Protocol Translation",
-    ])
-    createDetailedComponent(svg, 650, 280, "Command Authorization", "#DC2626", "tacacs", [
-      "Privilege Levels",
-      "Command Sets",
-      "Role-Based Access",
-    ])
-    createDetailedComponent(svg, 650, 360, "Accounting & Auditing", "#DC2626", "tacacs", [
-      "Session Logging",
-      "Command Logging",
-      "Compliance Reports",
-    ])
-
-    // Identity and Directory Services
-    addSectionLabel(svg, "Identity & Directory Services", 1050, 80, "#0078D4")
-    createDetailedComponent(svg, 950, 120, "Active Directory", "#0078D4", "identity", [
-      "Domain Controller",
-      "Group Policies",
-      "User Authentication",
-    ])
-    createDetailedComponent(svg, 950, 200, "LDAP Directory", "#0078D4", "identity", [
-      "User Attributes",
-      "Group Membership",
-      "Role Mapping",
-    ])
-    createDetailedComponent(svg, 950, 280, "Certificate Authority", "#DC2626", "pki", [
-      "Admin Certificates",
-      "Device Certificates",
-      "PKI Authentication",
-    ])
-    createDetailedComponent(svg, 950, 360, "Multi-Factor Auth", "#7C3AED", "mfa", [
-      "RSA SecurID",
-      "Duo Security",
-      "SMS/Email OTP",
-    ])
-
-    // External Systems
-    addSectionLabel(svg, "Monitoring & Compliance", 1350, 80, "#F59E0B")
-    createDetailedComponent(svg, 1250, 140, "SIEM Platform", "#F59E0B", "security", [
-      "Splunk",
-      "Log Analysis",
-      "Security Monitoring",
-    ])
-    createDetailedComponent(svg, 1250, 220, "Configuration Management", "#6B7280", "config", [
-      "Ansible",
-      "Puppet",
-      "Change Control",
-    ])
-    createDetailedComponent(svg, 1250, 300, "Compliance Reporting", "#7C3AED", "compliance", [
-      "SOX Compliance",
-      "Audit Trails",
-      "Risk Assessment",
-    ])
-
-    // TACACS+ Authentication Flow
-    createDetailedConnection(svg, 170, 160, 350, 160, "#DC2626", "SSH/Telnet Login", [
-      "TCP 22/23",
-      "Username Prompt",
-      "Authentication Request",
-    ])
-    createDetailedConnection(svg, 170, 240, 350, 240, "#DC2626", "HTTPS Management", [
-      "TCP 443",
-      "Web Interface",
-      "Certificate Auth",
-    ])
-    createDetailedConnection(svg, 170, 320, 350, 320, "#DC2626", "Console Access", [
-      "Serial/USB",
-      "Local Authentication",
-      "Emergency Access",
-    ])
-
-    createDetailedConnection(svg, 470, 160, 650, 160, "#DC2626", "TACACS+ Authentication", [
-      "TCP 49",
-      "Authentication Request",
-      "User Validation",
-    ])
-    createDetailedConnection(svg, 470, 240, 650, 240, "#DC2626", "Authorization Request", [
-      "TCP 49",
-      "Command Authorization",
-      "Privilege Check",
-    ])
-    createDetailedConnection(svg, 470, 320, 650, 320, "#DC2626", "Accounting Records", [
-      "TCP 49",
-      "Session Start/Stop",
-      "Command Logging",
-    ])
-
-    createDetailedConnection(svg, 770, 160, 950, 160, "#0078D4", "User Authentication", [
-      "LDAP Bind",
-      "Password Validation",
-      "Group Lookup",
-    ])
-    createDetailedConnection(svg, 770, 240, 950, 240, "#0078D4", "Authorization Lookup", [
-      "Group Membership",
-      "Role Assignment",
-      "Privilege Mapping",
-    ])
-    createDetailedConnection(svg, 770, 320, 950, 320, "#DC2626", "Certificate Validation", [
-      "PKI Authentication",
-      "Certificate Chain",
-      "CRL Check",
-    ])
-
-    createDetailedConnection(svg, 1070, 180, 1250, 180, "#F59E0B", "Security Logging", [
-      "Syslog Export",
-      "Authentication Events",
-      "Failed Attempts",
-    ])
-    createDetailedConnection(svg, 1070, 260, 1250, 260, "#6B7280", "Configuration Sync", [
-      "Device Configs",
-      "Change Detection",
-      "Backup Management",
-    ])
-    createDetailedConnection(svg, 1070, 340, 1250, 340, "#7C3AED", "Compliance Data", [
-      "Access Reports",
-      "Privilege Usage",
-      "Audit Trails",
-    ])
-
-    // TACACS+ Protocol Details
-    addProtocolBox(svg, 50, 500, "TACACS+ Protocol", [
-      "TCP Port 49 (Encrypted)",
-      "Authentication (Who are you?)",
-      "Authorization (What can you do?)",
-      "Accounting (What did you do?)",
-      "Shared Secret Encryption",
-      "Per-Command Authorization",
-    ])
-
-    addProtocolBox(svg, 400, 500, "Cisco AAA Configuration", [
-      "aaa new-model",
-      "tacacs-server host 10.1.1.100",
-      "tacacs-server key SharedSecret",
-      "aaa authentication login default group tacacs+",
-      "aaa authorization exec default group tacacs+",
-      "aaa accounting exec default start-stop group tacacs+",
-    ])
-
-    addProtocolBox(svg, 750, 500, "Privilege Levels", [
-      "Level 0: User EXEC (limited)",
-      "Level 1: User EXEC (basic)",
-      "Level 15: Privileged EXEC (full)",
-      "Custom Levels 2-14",
-      "Command Authorization",
-      "Role-Based Access Control",
-    ])
-
-    addProtocolBox(svg, 1100, 500, "Security Benefits", [
-      "Centralized Authentication",
-      "Granular Authorization",
-      "Comprehensive Accounting",
-      "Encrypted Communication",
-      "Multi-Factor Authentication",
-      "Compliance & Auditing",
-    ])
-  }
-
-  const renderArubaTACACS = (svg: SVGSVGElement) => {
-    addTitle(svg, "Aruba Device Administration via TACACS+", 800, 30)
-
-    // Network Administrators
-    addSectionLabel(svg, "Network Administrators", 150, 80, "#4F46E5")
-    createDetailedComponent(svg, 50, 120, "Admin Workstation", "#4F46E5", "endpoint", [
-      "SSH Client",
-      "Web Browser",
-      "Aruba Central App",
-    ])
-    createDetailedComponent(svg, 50, 200, "Mobile Management", "#4F46E5", "endpoint", [
-      "Aruba Central Mobile",
-      "iOS/Android",
-      "Remote Access",
-    ])
-    createDetailedComponent(svg, 50, 280, "Network Operations Center", "#4F46E5", "endpoint", [
-      "NOC Workstation",
-      "Monitoring Tools",
-      "Incident Response",
-    ])
-
-    // Aruba Infrastructure
-    addSectionLabel(svg, "Aruba Network Infrastructure", 450, 80, "#FF6900")
-    createDetailedComponent(svg, 350, 120, "Aruba CX 6300", "#FF6900", "network", [
-      "Campus Switch",
-      "VSF Stack",
-      "TACACS+ Client",
-    ])
-    createDetailedComponent(svg, 350, 200, "Aruba 9000 Controller", "#FF6900", "network", [
-      "Wireless Controller",
-      "Mobility Master",
-      "Centralized Auth",
-    ])
-    createDetailedComponent(svg, 350, 280, "Aruba 7000 Gateway", "#FF6900", "network", [
-      "Branch Gateway",
-      "SD-WAN",
-      "VPN Concentrator",
-    ])
-    createDetailedComponent(svg, 350, 360, "Aruba Central Cloud", "#FF6900", "cloud", [
-      "Cloud Management",
-      "AI Insights",
-      "Zero Touch Provisioning",
-    ])
-
-    // TACACS+ Services
-    addSectionLabel(svg, "TACACS+ Services", 750, 80, "#DC2626")
-    createDetailedComponent(svg, 650, 120, "ClearPass TACACS+", "#DC2626", "tacacs", [
-      "Policy Manager",
-      "Device Administration",
-      "Role-Based Access",
-    ])
-    createDetailedComponent(svg, 650, 200, "Authentication Server", "#DC2626", "tacacs", [
-      "User Validation",
-      "Multi-Factor Auth",
-      "Certificate Support",
-    ])
-    createDetailedComponent(svg, 650, 280, "Authorization Engine", "#DC2626", "tacacs", [
-      "Command Authorization",
-      "Privilege Mapping",
-      "Policy Enforcement",
-    ])
-    createDetailedComponent(svg, 650, 360, "Accounting Services", "#DC2626", "tacacs", [
-      "Session Tracking",
-      "Command Logging",
-      "Audit Reports",
-    ])
-
-    // Identity Infrastructure
-    addSectionLabel(svg, "Identity Infrastructure", 1050, 80, "#0078D4")
-    createDetailedComponent(svg, 950, 120, "Active Directory", "#0078D4", "identity", [
-      "Domain Services",
-      "Group Policies",
-      "Kerberos Auth",
-    ])
-    createDetailedComponent(svg, 950, 200, "Azure AD Connect", "#0078D4", "identity", [
-      "Hybrid Identity",
-      "Password Sync",
-      "SSO Integration",
-    ])
-    createDetailedComponent(svg, 950, 280, "RADIUS Integration", "#00c8d7", "radius", [
-      "802.1X Auth",
-      "Network Access",
-      "Policy Sync",
-    ])
-    createDetailedComponent(svg, 950, 360, "Certificate Services", "#DC2626", "pki", [
-      "Admin Certificates",
-      "Device Trust",
-      "PKI Infrastructure",
-    ])
-
-    // Monitoring and Analytics
-    addSectionLabel(svg, "Monitoring & Analytics", 1350, 80, "#F59E0B")
-    createDetailedComponent(svg, 1250, 140, "Aruba Analytics", "#F59E0B", "analytics", [
-      "User Experience",
-      "Network Performance",
-      "Capacity Planning",
-    ])
-    createDetailedComponent(svg, 1250, 220, "SIEM Integration", "#F59E0B", "security", [
-      "Security Events",
-      "Threat Detection",
-      "Incident Response",
-    ])
-    createDetailedComponent(svg, 1250, 300, "Configuration Management", "#6B7280", "config", [
-      "Change Control",
-      "Backup Management",
-      "Compliance",
-    ])
-
-    // Aruba TACACS+ Flow
-    createDetailedConnection(svg, 170, 160, 350, 160, "#DC2626", "SSH Administrative Access", [
-      "TCP 22",
-      "Public Key Auth",
-      "Command Line Interface",
-    ])
-    createDetailedConnection(svg, 170, 240, 350, 240, "#DC2626", "Web Management", [
-      "HTTPS 443",
-      "Certificate Auth",
-      "GUI Management",
-    ])
-    createDetailedConnection(svg, 170, 320, 350, 320, "#FF6900", "Aruba Central Access", [
-      "Cloud API",
-      "OAuth 2.0",
-      "Centralized Management",
-    ])
-
-    createDetailedConnection(svg, 470, 160, 650, 160, "#DC2626", "TACACS+ Authentication", [
-      "TCP 49",
-      "Encrypted Protocol",
-      "Shared Secret",
-    ])
-    createDetailedConnection(svg, 470, 240, 650, 240, "#DC2626", "Command Authorization", [
-      "Per-Command Check",
-      "Privilege Validation",
-      "Policy Lookup",
-    ])
-    createDetailedConnection(svg, 470, 320, 650, 320, "#DC2626", "Session Accounting", [
-      "Start/Stop Records",
-      "Command History",
-      "Usage Tracking",
-    ])
-
-    createDetailedConnection(svg, 770, 160, 950, 160, "#0078D4", "AD Authentication", [
-      "LDAP/Kerberos",
-      "Domain Validation",
-      "Group Membership",
-    ])
-    createDetailedConnection(svg, 770, 240, 950, 240, "#0078D4", "Hybrid Identity", [
-      "Azure AD Sync",
-      "Cloud Integration",
-      "Federated Auth",
-    ])
-    createDetailedConnection(svg, 770, 320, 950, 320, "#00c8d7", "Policy Synchronization", [
-      "RADIUS Policies",
-      "Network Access",
-      "User Attributes",
-    ])
-
-    createDetailedConnection(svg, 1070, 180, 1250, 180, "#F59E0B", "Performance Analytics", [
-      "User Experience Metrics",
-      "Network KPIs",
-      "Capacity Data",
-    ])
-    createDetailedConnection(svg, 1070, 260, 1250, 260, "#F59E0B", "Security Telemetry", [
-      "Authentication Events",
-      "Failed Logins",
-      "Threat Indicators",
-    ])
-    createDetailedConnection(svg, 1070, 340, 1250, 340, "#6B7280", "Configuration Data", [
-      "Device Configs",
-      "Change Logs",
-      "Compliance Status",
-    ])
-
-    // Aruba-Specific Features
-    addProtocolBox(svg, 50, 500, "Aruba TACACS+ Features", [
-      "ClearPass Integration",
-      "Role-Based Administration",
-      "Multi-Factor Authentication",
-      "Certificate-Based Auth",
-      "Cloud Management Integration",
-      "Granular Command Authorization",
-    ])
-
-    addProtocolBox(svg, 400, 500, "Aruba Configuration", [
-      "tacacs-server host 10.1.1.100",
-      "tacacs-server key ArubaTacacsKey",
-      "aaa authentication mgmt-user tacacs local",
-      "aaa authorization mgmt-user tacacs local",
-      "aaa accounting mgmt-user start-stop tacacs",
-      "mgmt-user admin tacacs",
-    ])
-
-    addProtocolBox(svg, 750, 500, "Administrative Roles", [
-      "Super Administrator (Full Access)",
-      "Network Administrator (Config)",
-      "Security Administrator (Policies)",
-      "Read-Only Administrator (View)",
-      "Guest Administrator (Limited)",
-      "Custom Roles (Granular)",
-    ])
-
-    addProtocolBox(svg, 1100, 500, "Integration Benefits", [
-      "Centralized User Management",
-      "Consistent Policy Enforcement",
-      "Comprehensive Audit Trails",
-      "Reduced Administrative Overhead",
-      "Enhanced Security Posture",
-      "Compliance Reporting",
-    ])
-  }
-
-  const renderJuniperTACACS = (svg: SVGSVGElement) => {
-    addTitle(svg, "Juniper Device Administration via TACACS+", 800, 30)
-
-    // Network Administrators
-    addSectionLabel(svg, "Network Administrators", 150, 80, "#4F46E5")
-    createDetailedComponent(svg, 50, 120, "Admin Workstation", "#4F46E5", "endpoint", [
-      "SSH Client",
-      "NETCONF Client",
-      "Junos Space",
-    ])
-    createDetailedComponent(svg, 50, 200, "Network Engineer", "#4F46E5", "endpoint", [
-      "CLI Access",
-      "J-Web Interface",
-      "Juniper Networks Mobile",
-    ])
-    createDetailedComponent(svg, 50, 280, "Operations Center", "#4F46E5", "endpoint", [
-      "NOC Dashboard",
-      "Monitoring Tools",
-      "Incident Management",
-    ])
-
-    // Juniper Infrastructure
-    addSectionLabel(svg, "Juniper Network Infrastructure", 450, 80, "#84BD00")
-    createDetailedComponent(svg, 350, 120, "Juniper EX4300", "#84BD00", "network", [
-      "Campus Switch",
-      "Virtual Chassis",
-      "TACACS+ AAA",
-    ])
-    createDetailedComponent(svg, 350, 200, "Juniper MX Series", "#84BD00", "network", [
-      "Universal Router",
-      "Service Edge",
-      "MPLS/VPN",
-    ])
-    createDetailedComponent(svg, 350, 280, "Juniper SRX Series", "#84BD00", "firewall", [
-      "Security Gateway",
-      "UTM Features",
-      "VPN Concentrator",
-    ])
-    createDetailedComponent(svg, 350, 360, "Juniper QFX Series", "#84BD00", "network", [
-      "Data Center Switch",
-      "EVPN-VXLAN",
-      "Spine-Leaf",
-    ])
-
-    // TACACS+ Infrastructure
-    addSectionLabel(svg, "TACACS+ Infrastructure", 750, 80, "#DC2626")
-    createDetailedComponent(svg, 650, 120, "Juniper Steel-Belted RADIUS", "#DC2626", "tacacs", [
-      "AAA Server",
-      "Policy Engine",
-      "Multi-Protocol",
-    ])
-    createDetailedComponent(svg, 650, 200, "TACACS+ Authentication", "#DC2626", "tacacs", [
-      "User Validation",
-      "Template-Based Auth",
-      "External Proxy",
-    ])
-    createDetailedComponent(svg, 650, 280, "Authorization Services", "#DC2626", "tacacs", [
-      "Class-Based Access",
-      "Command Authorization",
-      "Privilege Levels",
-    ])
-    createDetailedComponent(svg, 650, 360, "Accounting & Logging", "#DC2626", "tacacs", [
-      "Session Records",
-      "Command Audit",
-      "Billing Records",
-    ])
-
-    // Identity and External Services
-    addSectionLabel(svg, "Identity & External Services", 1050, 80, "#0078D4")
-    createDetailedComponent(svg, 950, 120, "Active Directory", "#0078D4", "identity", [
-      "LDAP Integration",
-      "Kerberos SSO",
-      "Group Policies",
-    ])
-    createDetailedComponent(svg, 950, 200, "External RADIUS", "#00c8d7", "radius", [
-      "802.1X Integration",
-      "Network Access",
-      "Policy Sync",
-    ])
-    createDetailedComponent(svg, 950, 280, "PKI Infrastructure", "#DC2626", "pki", [
-      "Certificate Authority",
-      "X.509 Certificates",
-      "SSH Key Management",
-    ])
-    createDetailedComponent(svg, 950, 360, "Multi-Factor Auth", "#7C3AED", "mfa", [
-      "RSA Authentication",
-      "OATH Tokens",
-      "SMS/Email OTP",
-    ])
-
-    // Management and Monitoring
-    addSectionLabel(svg, "Management & Monitoring", 1350, 80, "#F59E0B")
-    createDetailedComponent(svg, 1250, 140, "Junos Space", "#F59E0B", "management", [
-      "Network Management",
-      "Configuration Templates",
-      "Software Management",
-    ])
-    createDetailedComponent(svg, 1250, 220, "Contrail Insights", "#F59E0B", "analytics", [
-      "Network Analytics",
-      "Performance Monitoring",
-      "Troubleshooting",
-    ])
-    createDetailedComponent(svg, 1250, 300, "SIEM Integration", "#F59E0B", "security", [
-      "Security Analytics",
-      "Log Correlation",
-      "Threat Detection",
-    ])
-
-    // Juniper TACACS+ Authentication Flow
-    createDetailedConnection(svg, 170, 160, 350, 160, "#DC2626", "SSH/NETCONF Access", [
-      "TCP 22/830",
-      "Public Key Auth",
-      "Junos CLI",
-    ])
-    createDetailedConnection(svg, 170, 240, 350, 240, "#DC2626", "J-Web Management", [
-      "HTTPS 443",
-      "Certificate Auth",
-      "Web Interface",
-    ])
-    createDetailedConnection(svg, 170, 320, 350, 320, "#84BD00", "SNMP Management", [
-      "UDP 161/162",
-      "Community Strings",
-      "MIB Access",
-    ])
-
-    createDetailedConnection(svg, 470, 160, 650, 160, "#DC2626", "TACACS+ Authentication", [
-      "TCP 49",
-      "Encrypted Channel",
-      "Shared Secret",
-    ])
-    createDetailedConnection(svg, 470, 240, 650, 240, "#DC2626", "Command Authorization", [
-      "Per-Command Check",
-      "Class-Based Access",
-      "Template Matching",
-    ])
-    createDetailedConnection(svg, 470, 320, 650, 320, "#DC2626", "Session Accounting", [
-      "Start/Stop/Update",
-      "Command History",
-      "Resource Usage",
-    ])
-
-    createDetailedConnection(svg, 770, 160, 950, 160, "#0078D4", "LDAP Authentication", [
-      "TCP 389/636",
-      "Bind Operations",
-      "Attribute Lookup",
-    ])
-    createDetailedConnection(svg, 770, 240, 950, 240, "#00c8d7", "RADIUS Integration", [
-      "UDP 1812/1813",
-      "Shared Policies",
-      "Attribute Exchange",
-    ])
-    createDetailedConnection(svg, 770, 320, 950, 320, "#DC2626", "Certificate Validation", [
-      "X.509 Verification",
-      "CRL/OCSP Check",
-      "Trust Chain",
-    ])
-
-    createDetailedConnection(svg, 1070, 180, 1250, 180, "#F59E0B", "Configuration Management", [
-      "NETCONF/YANG",
-      "Template Deployment",
-      "Change Control",
-    ])
-    createDetailedConnection(svg, 1070, 260, 1250, 260, "#F59E0B", "Performance Analytics", [
-      "Telemetry Data",
-      "KPI Monitoring",
-      "Capacity Planning",
-    ])
-    createDetailedConnection(svg, 1070, 340, 1250, 340, "#F59E0B", "Security Monitoring", [
-      "Authentication Logs",
-      "Failed Attempts",
-      "Anomaly Detection",
-    ])
-
-    // Juniper-Specific Configuration
-    addProtocolBox(svg, 50, 500, "Junos TACACS+ Config", [
-      "set system tacplus-server 10.1.1.100",
-      "set system tacplus-server secret JuniperSecret",
-      "set system authentication order tacplus",
-      "set system login class network-admin permissions all",
-      "set system login user admin class network-admin",
-      "set system accounting events login",
-    ])
-
-    addProtocolBox(svg, 400, 500, "Authentication Methods", [
-      "Local User Database",
-      "TACACS+ External Server",
-      "RADIUS Authentication",
-      "LDAP/Active Directory",
-      "SSH Public Key Authentication",
-      "Certificate-Based Authentication",
-    ])
-
-    addProtocolBox(svg, 750, 500, "Authorization Classes", [
-      "super-user (Full Access)",
-      "operator (Operational Commands)",
-      "read-only (View Configuration)",
-      "unauthorized (No Access)",
-      "Custom Classes (Granular)",
-      "Template-Based Permissions",
-    ])
-
-    addProtocolBox(svg, 1100, 500, "Juniper Benefits", [
-      "Centralized AAA Management",
-      "Granular Command Authorization",
-      "Comprehensive Audit Logging",
-      "Integration with Junos Space",
-      "NETCONF/YANG Support",
-      "Zero Touch Provisioning",
-    ])
-  }
-
-  const renderPaloAltoUserID = (svg: SVGSVGElement) => {
-    addTitle(svg, "Palo Alto User-ID Integration via Syslog", 800, 30)
-
-    // Corporate Users
-    addSectionLabel(svg, "Corporate Users", 150, 80, "#4F46E5")
-    createDetailedComponent(svg, 50, 120, "Domain Users", "#4F46E5", "endpoint", [
-      "Windows Workstations",
-      "Active Directory",
-      "Kerberos Auth",
-    ])
-    createDetailedComponent(svg, 50, 200, "Remote Users", "#4F46E5", "endpoint", [
-      "VPN Clients",
-      "Mobile Devices",
-      "SSL VPN",
-    ])
-    createDetailedComponent(svg, 50, 280, "Guest Users", "#4F46E5", "endpoint", [
-      "Captive Portal",
-      "Temporary Access",
-      "Limited Privileges",
-    ])
-
-    // NAC Platform
-    addSectionLabel(svg, "Portnox NAC Platform", 450, 80, "#00c8d7")
-    createDetailedComponent(svg, 350, 120, "Portnox Cloud", "#00c8d7", "nac", [
-      "Authentication Engine",
-      "Policy Decision",
-      "User Context",
-    ])
-    createDetailedComponent(svg, 350, 200, "RADIUS Server", "#00c8d7", "nac", [
-      "802.1X Authentication",
-      "User Identification",
-      "Session Tracking",
-    ])
-    createDetailedComponent(svg, 350, 280, "Policy Engine", "#00c8d7", "nac", [
-      "Dynamic Policies",
-      "User Profiling",
-      "Risk Assessment",
-    ])
-    createDetailedComponent(svg, 350, 360, "Event Correlation", "#00c8d7", "nac", [
-      "User Sessions",
-      "Network Events",
-      "Security Context",
-    ])
-
-    // Syslog Integration Layer
-    addSectionLabel(svg, "Syslog Integration", 750, 80, "#7C3AED")
-    createDetailedComponent(svg, 650, 120, "Syslog Container", "#7C3AED", "syslog", [
-      "Log Aggregation",
-      "Event Processing",
-      "Message Parsing",
-    ])
-    createDetailedComponent(svg, 650, 200, "User-ID Mapping", "#7C3AED", "syslog", [
-      "IP-to-User Mapping",
-      "Session Correlation",
-      "Real-time Updates",
-    ])
-    createDetailedComponent(svg, 650, 280, "Event Enrichment", "#7C3AED", "syslog", [
-      "User Context",
-      "Device Information",
-      "Location Data",
-    ])
-    createDetailedComponent(svg, 650, 360, "Log Forwarding", "#7C3AED", "syslog", [
-      "Syslog Protocol",
-      "Secure Transport",
-      "Message Formatting",
-    ])
-
-    // Palo Alto Infrastructure
-    addSectionLabel(svg, "Palo Alto Security Platform", 1050, 80, "#FF6B35")
-    createDetailedComponent(svg, 950, 120, "User-ID Agent", "#FF6B35", "userid", [
-      "User Mapping",
-      "Session Monitoring",
-      "Identity Correlation",
-    ])
-    createDetailedComponent(svg, 950, 200, "Palo Alto Firewall", "#FF6B35", "firewall", [
-      "Next-Gen Firewall",
-      "App-ID",
-      "User-ID Integration",
-    ])
-    createDetailedComponent(svg, 950, 280, "Panorama Management", "#FF6B35", "management", [
-      "Centralized Management",
-      "Policy Distribution",
-      "Log Collection",
-    ])
-    createDetailedComponent(svg, 950, 360, "Prisma Access", "#FF6B35", "cloud", [
-      "SASE Platform",
-      "Cloud Security",
-      "Remote Access",
-    ])
-
-    // Identity and External Services
-    addSectionLabel(svg, "Identity Services", 1350, 80, "#0078D4")
-    createDetailedComponent(svg, 1250, 140, "Active Directory", "#0078D4", "identity", [
-      "Domain Controller",
-      "User Database",
-      "Group Policies",
-    ])
-    createDetailedComponent(svg, 1250, 220, "DNS Services", "#6B7280", "dns", [
-      "Name Resolution",
-      "Reverse Lookup",
-      "IP-to-Hostname",
-    ])
-    createDetailedComponent(svg, 1250, 300, "SIEM Platform", "#F59E0B", "security", [
-      "Security Analytics",
-      "Threat Detection",
-      "Incident Response",
-    ])
-
-    // User-ID Integration Flow
-    createDetailedConnection(svg, 170, 160, 350, 160, "#00c8d7", "Network Authentication", [
-      "802.1X EAP-TLS",
-      "User Identification",
-      "IP Assignment",
-    ])
-    createDetailedConnection(svg, 170, 240, 350, 240, "#00c8d7", "VPN Authentication", [
-      "SSL/IPSec VPN",
-      "Remote Access",
-      "Tunnel Establishment",
-    ])
-    createDetailedConnection(svg, 170, 320, 350, 320, "#00c8d7", "Captive Portal", [
-      "Web Authentication",
-      "Guest Registration",
-      "Terms Acceptance",
-    ])
-
-    createDetailedConnection(svg, 470, 160, 650, 160, "#7C3AED", "Authentication Events", [
-      "Syslog UDP 514",
-      "User Login Events",
-      "Session Start/Stop",
-    ])
-    createDetailedConnection(svg, 470, 240, 650, 240, "#7C3AED", "Session Tracking", [
-      "IP-to-User Mapping",
-      "Session Duration",
-      "Bandwidth Usage",
-    ])
-    createDetailedConnection(svg, 470, 320, 650, 320, "#7C3AED", "Policy Events", [
-      "Access Decisions",
-      "Policy Violations",
-      "Risk Scores",
-    ])
-
-    createDetailedConnection(svg, 770, 160, 950, 160, "#FF6B35", "User-ID Updates", [
-      "XML API",
-      "User Mapping",
-      "Real-time Sync",
-    ])
-    createDetailedConnection(svg, 770, 240, 950, 240, "#FF6B35", "Security Policies", [
-      "User-Based Rules",
-      "Application Control",
-      "Threat Prevention",
-    ])
-    createDetailedConnection(svg, 770, 320, 950, 320, "#FF6B35", "Log Correlation", [
-      "Traffic Logs",
-      "Threat Logs",
-      "User Activity",
-    ])
-
-    createDetailedConnection(svg, 1070, 180, 1250, 180, "#0078D4", "User Lookup", [
-      "LDAP Queries",
-      "User Attributes",
-      "Group Membership",
-    ])
-    createDetailedConnection(svg, 1070, 260, 1250, 260, "#6B7280", "IP Resolution", [
-      "DNS Queries",
-      "Hostname Lookup",
-      "Network Mapping",
-    ])
-    createDetailedConnection(svg, 1070, 340, 1250, 340, "#F59E0B", "Security Intelligence", [
-      "User Behavior",
-      "Threat Correlation",
-      "Risk Analysis",
-    ])
-
-    // User-ID Configuration Details
-    addProtocolBox(svg, 50, 500, "Syslog Message Format", [
-      "Timestamp: 2024-01-15T10:30:00Z",
-      "Facility: Local0 (16)",
-      "Severity: Informational (6)",
-      "Message: User john.doe authenticated",
-      "IP Address: 192.168.1.100",
-      "Session ID: ABC123456789",
-    ])
-
-    addProtocolBox(svg, 400, 500, "User-ID Agent Config", [
-      "Syslog Sender Configuration",
-      "User Mapping Timeout (3600s)",
-      "Redistribution Settings",
-      "Monitoring Interval (60s)",
-      "Log Level Configuration",
-      "API Authentication",
-    ])
-
-    addProtocolBox(svg, 750, 500, "Security Policy Benefits", [
-      "User-Based Security Rules",
-      "Application Control per User",
-      "Bandwidth Management",
-      "Threat Prevention Policies",
-      "Data Loss Prevention",
-      "Compliance Reporting",
-    ])
-
-    addProtocolBox(svg, 1100, 500, "Integration Advantages", [
-      "Real-time User Identification",
-      "Seamless Policy Enforcement",
-      "Comprehensive Visibility",
-      "Reduced Administrative Overhead",
-      "Enhanced Security Posture",
-      "Audit Trail Correlation",
-    ])
-  }
-
-  const renderFortiGateFSSO = (svg: SVGSVGElement) => {
-    addTitle(svg, "FortiGate FSSO Integration via Syslog", 800, 30)
-
-    // Corporate Users
-    addSectionLabel(svg, "Corporate Users", 150, 80, "#4F46E5")
-    createDetailedComponent(svg, 50, 120, "Domain Workstations", "#4F46E5", "endpoint", [
-      "Windows 10/11",
-      "Domain Joined",
-      "Kerberos SSO",
-    ])
-    createDetailedComponent(svg, 50, 200, "Mobile Devices", "#4F46E5", "endpoint", [
-      "iOS/Android",
-      "VPN Clients",
-      "Certificate Auth",
-    ])
-    createDetailedComponent(svg, 50, 280, "Remote Workers", "#4F46E5", "endpoint", [
-      "Home Office",
-      "SSL VPN",
-      "Multi-Factor Auth",
-    ])
-
-    // NAC Authentication Platform
-    addSectionLabel(svg, "Portnox NAC Platform", 450, 80, "#00c8d7")
-    createDetailedComponent(svg, 350, 120, "Portnox Authentication", "#00c8d7", "nac", [
-      "User Authentication",
-      "Device Profiling",
-      "Policy Engine",
-    ])
-    createDetailedComponent(svg, 350, 200, "Session Management", "#00c8d7", "nac", [
-      "User Sessions",
-      "IP Tracking",
-      "Timeout Handling",
-    ])
-    createDetailedComponent(svg, 350, 280, "Policy Enforcement", "#00c8d7", "nac", [
-      "Access Control",
-      "VLAN Assignment",
-      "QoS Policies",
-    ])
-    createDetailedComponent(svg, 350, 360, "Event Generation", "#00c8d7", "nac", [
-      "Authentication Events",
-      "Session Events",
-      "Policy Events",
-    ])
-
-    // Syslog Integration Layer
-    addSectionLabel(svg, "Syslog Integration", 750, 80, "#7C3AED")
-    createDetailedComponent(svg, 650, 120, "Syslog Container", "#7C3AED", "syslog", [
-      "Log Collection",
-      "Event Processing",
-      "Message Parsing",
-    ])
-    createDetailedComponent(svg, 650, 200, "FSSO Mapping", "#7C3AED", "syslog", [
-      "User-to-IP Mapping",
-      "Session Correlation",
-      "Group Assignment",
-    ])
-    createDetailedComponent(svg, 650, 280, "Event Enrichment", "#7C3AED", "syslog", [
-      "User Context",
-      "Device Info",
-      "Location Data",
-    ])
-    createDetailedComponent(svg, 650, 360, "Message Forwarding", "#7C3AED", "syslog", [
-      "Fortinet Format",
-      "Secure Transport",
-      "Real-time Delivery",
-    ])
-
-    // FortiGate Infrastructure
-    addSectionLabel(svg, "FortiGate Security Platform", 1050, 80, "#EE3124")
-    createDetailedComponent(svg, 950, 120, "FSSO Agent", "#EE3124", "fsso", [
-      "User Authentication",
-      "Group Mapping",
-      "Session Tracking",
-    ])
-    createDetailedComponent(svg, 950, 200, "FortiGate Firewall", "#EE3124", "firewall", [
-      "Next-Gen Firewall",
-      "Application Control",
-      "User Identity",
-    ])
-    createDetailedComponent(svg, 950, 280, "FortiManager", "#EE3124", "management", [
-      "Centralized Management",
-      "Policy Distribution",
-      "Configuration",
-    ])
-    createDetailedComponent(svg, 950, 360, "FortiAnalyzer", "#EE3124", "analytics", [
-      "Log Analysis",
-      "Reporting",
-      "Security Analytics",
-    ])
-
-    // Identity and External Services
-    addSectionLabel(svg, "Identity & External Services", 1350, 80, "#0078D4")
-    createDetailedComponent(svg, 1250, 140, "Active Directory", "#0078D4", "identity", [
-      "Domain Controller",
-      "User Groups",
-      "Authentication",
-    ])
-    createDetailedComponent(svg, 1250, 220, "DNS Services", "#6B7280", "dns", [
-      "Name Resolution",
-      "IP-to-Hostname",
-      "Domain Lookup",
-    ])
-    createDetailedComponent(svg, 1250, 300, "Certificate Authority", "#DC2626", "pki", [
-      "User Certificates",
-      "Device Certificates",
-      "PKI Trust",
-    ])
-
-    // FSSO Integration Flow
-    createDetailedConnection(svg, 170, 160, 350, 160, "#00c8d7", "User Authentication", [
-      "802.1X/Captive Portal",
-      "Credential Validation",
-      "Session Establishment",
-    ])
-    createDetailedConnection(svg, 170, 240, 350, 240, "#00c8d7", "Device Registration", [
-      "MAC Authentication",
-      "Device Profiling",
-      "Certificate Enrollment",
-    ])
-    createDetailedConnection(svg, 170, 320, 350, 320, "#00c8d7", "VPN Authentication", [
-      "SSL/IPSec VPN",
-      "Remote Access",
-      "Tunnel Setup",
-    ])
-
-    createDetailedConnection(svg, 470, 160, 650, 160, "#7C3AED", "Authentication Logs", [
-      "Syslog UDP 514",
-      "User Login Events",
-      "Success/Failure",
-    ])
-    createDetailedConnection(svg, 470, 240, 650, 240, "#7C3AED", "Session Events", [
-      "Session Start/Stop",
-      "IP Assignment",
-      "Duration Tracking",
-    ])
-    createDetailedConnection(svg, 470, 320, 650, 320, "#7C3AED", "Policy Events", [
-      "Access Granted/Denied",
-      "VLAN Assignment",
-      "QoS Application",
-    ])
-
-    createDetailedConnection(svg, 770, 160, 950, 160, "#EE3124", "FSSO Updates", [
-      "Fortinet Protocol",
-      "User-IP Mapping",
-      "Group Information",
-    ])
-    createDetailedConnection(svg, 770, 240, 950, 240, "#EE3124", "Security Policies", [
-      "User-Based Rules",
-      "Application Control",
-      "Web Filtering",
-    ])
-    createDetailedConnection(svg, 770, 320, 950, 320, "#EE3124", "Session Monitoring", [
-      "Active Sessions",
-      "Bandwidth Usage",
-      "Application Usage",
-    ])
-
-    createDetailedConnection(svg, 1070, 180, 1250, 180, "#0078D4", "User Validation", [
-      "LDAP Lookup",
-      "Group Membership",
-      "User Attributes",
-    ])
-    createDetailedConnection(svg, 1070, 260, 1250, 260, "#6B7280", "Hostname Resolution", [
-      "DNS Queries",
-      "IP-to-Name Mapping",
-      "Network Discovery",
-    ])
-    createDetailedConnection(svg, 1070, 340, 1250, 340, "#DC2626", "Certificate Validation", [
-      "PKI Verification",
-      "Trust Chain",
-      "Revocation Check",
-    ])
-
-    // FSSO Configuration Details
-    addProtocolBox(svg, 50, 500, "FSSO Syslog Format", [
-      "Timestamp: Jan 15 10:30:00",
-      "Host: portnox-nac",
-      "Process: authentication",
-      "Message: User login successful",
-      "User: domain\\username",
-      "IP: 192.168.1.100",
-    ])
-
-    addProtocolBox(svg, 400, 500, "FortiGate FSSO Config", [
-      "config user fsso",
-      "set server 10.1.1.200",
-      "set password FssoPassword",
-      "set source-ip 10.1.1.1",
-      "config user group",
-      "set group-type fsso-service",
-      "end",
-    ])
-
-    addProtocolBox(svg, 750, 500, "Security Policy Features", [
-      "User-Based Firewall Rules",
-      "Application Control per User",
-      "Web Content Filtering",
-      "Bandwidth Management",
-      "Intrusion Prevention",
-      "Data Loss Prevention",
-    ])
-
-    addProtocolBox(svg, 1100, 500, "FSSO Benefits", [
-      "Transparent User Identification",
-      "Single Sign-On Experience",
-      "Granular Policy Control",
-      "Real-time Session Tracking",
-      "Comprehensive Logging",
-      "Simplified Administration",
-    ])
-  }
-
-  // Helper functions for creating detailed components and connections
-  const createDetailedComponent = (
-    svg: SVGSVGElement,
-    x: number,
-    y: number,
-    label: string,
-    color: string,
-    type: string,
-    details: string[],
-  ) => {
-    const group = document.createElementNS("http://www.w3.org/2000/svg", "g")
-    group.setAttribute("class", "component detailed-component")
-    group.setAttribute("data-type", type)
-    group.setAttribute("data-label", label)
-    group.style.cursor = "pointer"
-
-    // Main component rectangle
-    const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect")
-    rect.setAttribute("x", x.toString())
-    rect.setAttribute("y", y.toString())
-    rect.setAttribute("width", "160")
-    rect.setAttribute("height", "60")
-    rect.setAttribute("rx", "8")
-    rect.setAttribute("fill", color)
-    rect.setAttribute("stroke", "#ffffff")
-    rect.setAttribute("stroke-width", "2")
-    rect.setAttribute("opacity", "0.9")
-
-    // Component title
-    const title = document.createElementNS("http://www.w3.org/2000/svg", "text")
-    title.setAttribute("x", (x + 80).toString())
-    title.setAttribute("y", (y + 18).toString())
-    title.setAttribute("text-anchor", "middle")
-    title.setAttribute("fill", "white")
-    title.setAttribute("font-size", "11")
-    title.setAttribute("font-weight", "bold")
-    title.textContent = label
-
-    // Component details
-    details.forEach((detail, index) => {
-      const detailText = document.createElementNS("http://www.w3.org/2000/svg", "text")
-      detailText.setAttribute("x", (x + 80).toString())
-      detailText.setAttribute("y", (y + 32 + index * 10).toString())
-      detailText.setAttribute("text-anchor", "middle")
-      detailText.setAttribute("fill", "white")
-      detailText.setAttribute("font-size", "8")
-      detailText.setAttribute("opacity", "0.9")
-      detailText.textContent = detail
-      group.appendChild(detailText)
-    })
-
-    group.appendChild(rect)
-    group.appendChild(title)
-
-    // Add click handler
-    group.addEventListener("click", () => {
-      setSelectedComponent(label)
-    })
-
-    // Add hover effects
-    group.addEventListener("mouseenter", () => {
-      rect.setAttribute("opacity", "1")
-      rect.setAttribute("stroke-width", "3")
-    })
-
-    group.addEventListener("mouseleave", () => {
-      rect.setAttribute("opacity", "0.9")
-      rect.setAttribute("stroke-width", "2")
-    })
-
-    svg.appendChild(group)
-  }
-
-  const createDetailedConnection = (
-    svg: SVGSVGElement,
-    x1: number,
-    y1: number,
-    x2: number,
-    y2: number,
-    color: string,
-    label: string,
-    details: string[],
-  ) => {
-    const group = document.createElementNS("http://www.w3.org/2000/svg", "g")
-    group.setAttribute("class", "connection detailed-connection")
-
-    // Connection line
-    const line = document.createElementNS("http://www.w3.org/2000/svg", "line")
-    line.setAttribute("x1", x1.toString())
-    line.setAttribute("y1", y1.toString())
-    line.setAttribute("x2", x2.toString())
-    line.setAttribute("y2", y2.toString())
-    line.setAttribute("stroke", color)
-    line.setAttribute("stroke-width", "3")
-    line.setAttribute("opacity", "0.8")
-
-    // Arrow marker
-    const defs = svg.querySelector("defs") || document.createElementNS("http://www.w3.org/2000/svg", "defs")
-    if (!svg.querySelector("defs")) {
-      svg.appendChild(defs)
-    }
-
-    const markerId = `arrow-${color.replace("#", "")}`
-    if (!defs.querySelector(`#${markerId}`)) {
-      const marker = document.createElementNS("http://www.w3.org/2000/svg", "marker")
-      marker.setAttribute("id", markerId)
-      marker.setAttribute("markerWidth", "12")
-      marker.setAttribute("markerHeight", "12")
-      marker.setAttribute("refX", "10")
-      marker.setAttribute("refY", "6")
-      marker.setAttribute("orient", "auto")
-
-      const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon")
-      polygon.setAttribute("points", "0,0 0,12 12,6")
-      polygon.setAttribute("fill", color)
-
-      marker.appendChild(polygon)
-      defs.appendChild(marker)
-    }
-
-    line.setAttribute("marker-end", `url(#${markerId})`)
-
-    // Connection label background
-    const midX = (x1 + x2) / 2
-    const midY = (y1 + y2) / 2
-
-    const labelBg = document.createElementNS("http://www.w3.org/2000/svg", "rect")
-    labelBg.setAttribute("x", (midX - 40).toString())
-    labelBg.setAttribute("y", (midY - 25).toString())
-    labelBg.setAttribute("width", "80")
-    labelBg.setAttribute("height", "50")
-    labelBg.setAttribute("rx", "6")
-    labelBg.setAttribute("fill", "white")
-    labelBg.setAttribute("stroke", color)
-    labelBg.setAttribute("stroke-width", "1")
-    labelBg.setAttribute("opacity", "0.95")
-
-    // Main label
-    const labelText = document.createElementNS("http://www.w3.org/2000/svg", "text")
-    labelText.setAttribute("x", midX.toString())
-    labelText.setAttribute("y", (midY - 10).toString())
-    labelText.setAttribute("text-anchor", "middle")
-    labelText.setAttribute("fill", color)
-    labelText.setAttribute("font-size", "9")
-    labelText.setAttribute("font-weight", "bold")
-    labelText.textContent = label
-
-    // Detail labels
-    details.forEach((detail, index) => {
-      const detailText = document.createElementNS("http://www.w3.org/2000/svg", "text")
-      detailText.setAttribute("x", midX.toString())
-      detailText.setAttribute("y", (midY + index * 8).toString())
-      detailText.setAttribute("text-anchor", "middle")
-      detailText.setAttribute("fill", "#374151")
-      detailText.setAttribute("font-size", "7")
-      detailText.textContent = detail
-      group.appendChild(detailText)
-    })
-
-    group.appendChild(line)
-    group.appendChild(labelBg)
-    group.appendChild(labelText)
-
-    svg.appendChild(group)
-  }
-
-  const addTitle = (svg: SVGSVGElement, title: string, x: number, y: number) => {
-    const titleText = document.createElementNS("http://www.w3.org/2000/svg", "text")
-    titleText.setAttribute("x", x.toString())
-    titleText.setAttribute("y", y.toString())
-    titleText.setAttribute("text-anchor", "middle")
-    titleText.setAttribute("fill", "#1f2937")
-    titleText.setAttribute("font-size", "24")
-    titleText.setAttribute("font-weight", "bold")
-    titleText.textContent = title
-    svg.appendChild(titleText)
-  }
-
-  const addSectionLabel = (svg: SVGSVGElement, label: string, x: number, y: number, color: string) => {
-    const labelBg = document.createElementNS("http://www.w3.org/2000/svg", "rect")
-    labelBg.setAttribute("x", (x - 50).toString())
-    labelBg.setAttribute("y", (y - 15).toString())
-    labelBg.setAttribute("width", "200")
-    labelBg.setAttribute("height", "25")
-    labelBg.setAttribute("rx", "12")
-    labelBg.setAttribute("fill", color)
-    labelBg.setAttribute("opacity", "0.1")
-
-    const labelText = document.createElementNS("http://www.w3.org/2000/svg", "text")
-    labelText.setAttribute("x", x.toString())
-    labelText.setAttribute("y", y.toString())
-    labelText.setAttribute("text-anchor", "middle")
-    labelText.setAttribute("fill", color)
-    labelText.setAttribute("font-size", "14")
-    labelText.setAttribute("font-weight", "bold")
-    labelText.textContent = label
-
-    svg.appendChild(labelBg)
-    svg.appendChild(labelText)
-  }
-
-  const addProtocolBox = (svg: SVGSVGElement, x: number, y: number, title: string, items: string[]) => {
-    const boxHeight = 20 + items.length * 15
-
-    const box = document.createElementNS("http://www.w3.org/2000/svg", "rect")
-    box.setAttribute("x", x.toString())
-    box.setAttribute("y", y.toString())
-    box.setAttribute("width", "300")
-    box.setAttribute("height", boxHeight.toString())
-    box.setAttribute("rx", "8")
-    box.setAttribute("fill", "#f8fafc")
-    box.setAttribute("stroke", "#e2e8f0")
-    box.setAttribute("stroke-width", "1")
-
-    const titleText = document.createElementNS("http://www.w3.org/2000/svg", "text")
-    titleText.setAttribute("x", (x + 10).toString())
-    titleText.setAttribute("y", (y + 15).toString())
-    titleText.setAttribute("fill", "#1f2937")
-    titleText.setAttribute("font-size", "12")
-    titleText.setAttribute("font-weight", "bold")
-    titleText.textContent = title
-
-    svg.appendChild(box)
-    svg.appendChild(titleText)
-
-    items.forEach((item, index) => {
-      const itemText = document.createElementNS("http://www.w3.org/2000/svg", "text")
-      itemText.setAttribute("x", (x + 15).toString())
-      itemText.setAttribute("y", (y + 30 + index * 15).toString())
-      itemText.setAttribute("fill", "#4b5563")
-      itemText.setAttribute("font-size", "10")
-      itemText.textContent = `• ${item}`
-      svg.appendChild(itemText)
-    })
-  }
-
-  const addNetworkZone = (
-    svg: SVGSVGElement,
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    label: string,
-    color: string,
-    opacity: number,
-  ) => {
-    const zone = document.createElementNS("http://www.w3.org/2000/svg", "rect")
-    zone.setAttribute("x", x.toString())
-    zone.setAttribute("y", y.toString())
-    zone.setAttribute("width", width.toString())
-    zone.setAttribute("height", height.toString())
-    zone.setAttribute("rx", "12")
-    zone.setAttribute("fill", color)
-    zone.setAttribute("opacity", opacity.toString())
-    zone.setAttribute("stroke", color)
-    zone.setAttribute("stroke-width", "2")
-    zone.setAttribute("stroke-dasharray", "5,5")
-
-    const zoneLabel = document.createElementNS("http://www.w3.org/2000/svg", "text")
-    zoneLabel.setAttribute("x", (x + width / 2).toString())
-    zoneLabel.setAttribute("y", (y + height + 15).toString())
-    zoneLabel.setAttribute("text-anchor", "middle")
-    zoneLabel.setAttribute("fill", color)
-    zoneLabel.setAttribute("font-size", "12")
-    zoneLabel.setAttribute("font-weight", "bold")
-    zoneLabel.textContent = label
-
-    svg.appendChild(zone)
-    svg.appendChild(zoneLabel)
-  }
-
-  const addLabel = (svg: SVGSVGElement, x: number, y: number, text: string, color: string, fontSize = "12") => {
-    const label = document.createElementNS("http://www.w3.org/2000/svg", "text")
-    label.setAttribute("x", x.toString())
-    label.setAttribute("y", y.toString())
-    label.setAttribute("text-anchor", "middle")
-    label.setAttribute("fill", color)
-    label.setAttribute("font-size", fontSize)
-    label.textContent = text
-    svg.appendChild(label)
-  }
-
-  const addAnimations = (svg: SVGSVGElement) => {
-    if (!isAnimating) return
-
-    const connections = svg.querySelectorAll(".detailed-connection line")
-    connections.forEach((line, index) => {
-      const animateElement = document.createElementNS("http://www.w3.org/2000/svg", "animate")
-      animateElement.setAttribute("attributeName", "stroke-dasharray")
-      animateElement.setAttribute("values", "0,20;20,0;0,20")
-      animateElement.setAttribute("dur", `${3 / animationSpeed}s`)
-      animateElement.setAttribute("repeatCount", "indefinite")
-      animateElement.setAttribute("begin", `${index * 0.3}s`)
-      line.appendChild(animateElement)
-    })
-
-    // Add pulsing animation to components
-    const components = svg.querySelectorAll(".detailed-component rect")
-    components.forEach((rect, index) => {
-      const animateElement = document.createElementNS("http://www.w3.org/2000/svg", "animate")
-      animateElement.setAttribute("attributeName", "opacity")
-      animateElement.setAttribute("values", "0.9;1;0.9")
-      animateElement.setAttribute("dur", `${4 / animationSpeed}s`)
-      animateElement.setAttribute("repeatCount", "indefinite")
-      animateElement.setAttribute("begin", `${index * 0.2}s`)
-      rect.appendChild(animateElement)
-    })
-  }
-
-  // Helper functions for vendor and provider labels
-  const getVendorLabel = (vendor: string) => {
-    const vendorMap: Record<string, string> = {
-      cisco: "Cisco",
-      aruba: "Aruba",
-      juniper: "Juniper",
-      extreme: "Extreme",
-      ruckus: "Ruckus",
-      fortinet: "FortiNet",
-      paloalto: "Palo Alto",
-      meraki: "Meraki",
-      mist: "Mist",
-      ubiquiti: "Ubiquiti",
-      netgear: "Netgear",
-      dlink: "D-Link",
-      tplink: "TP-Link",
-      huawei: "Huawei",
-      alcatel: "Alcatel",
-      dell: "Dell",
-      hpe: "HPE",
-      brocade: "Brocade",
-    }
-    return vendorMap[vendor] || "Network"
-  }
-
-  const getCloudProviderLabel = (provider: string) => {
-    const providerMap: Record<string, string> = {
-      aws: "AWS Cloud",
-      azure: "Azure Cloud",
-      gcp: "Google Cloud",
-      onprem: "On-Premises",
-    }
-    return providerMap[provider] || "Cloud"
-  }
-
-  const getConnectivityLabel = (connectivity: string) => {
-    const connectivityMap: Record<string, string> = {
-      sdwan: "SD-WAN",
-      expressroute: "Express Route",
-      directconnect: "Direct Connect",
-      mpls: "MPLS",
-      vpn: "VPN Gateway",
-      internet: "Internet",
-    }
-    return connectivityMap[connectivity] || "Network"
-  }
-
-  const getConnectivityColor = (connectivity: string) => {
-    const colorMap: Record<string, string> = {
-      sdwan: "#059669",
-      expressroute: "#0078D4",
-      directconnect: "#FF9900",
-      mpls: "#7C3AED",
-      vpn: "#EF4444",
-      internet: "#6B7280",
-    }
-    return colorMap[connectivity] || "#059669"
-  }
-
-  const handleZoomIn = () => {
-    setZoom((prev) => Math.min(prev + 0.2, 2))
-  }
-
-  const handleZoomOut = () => {
-    setZoom((prev) => Math.max(prev - 0.2, 0.5))
-  }
-
-  const handleResetZoom = () => {
-    setZoom(1)
-  }
-
-  const toggleAnimation = () => {
-    setIsAnimating((prev) => !prev)
   }
 
   return (
-    <TooltipProvider>
-      <Card className="architecture-diagram">
-        <div className="flex items-center justify-between p-4 border-b">
-          <div className="flex items-center space-x-2">
-            <Badge variant="outline">{view}</Badge>
-            {selectedComponent && <Badge variant="secondary">Selected: {selectedComponent}</Badge>}
-          </div>
-          <div className="flex items-center space-x-2">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="outline" size="sm" onClick={toggleAnimation}>
-                  {isAnimating ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{isAnimating ? "Pause Animation" : "Play Animation"}</TooltipContent>
-            </Tooltip>
+    <div className={`relative ${className}`}>
+      {renderDiagramByView()}
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="outline" size="sm" onClick={handleZoomOut}>
-                  <ZoomOut className="w-4 h-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Zoom Out</TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="outline" size="sm" onClick={handleResetZoom}>
-                  <RotateCcw className="w-4 h-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Reset Zoom</TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="outline" size="sm" onClick={handleZoomIn}>
-                  <ZoomIn className="w-4 h-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Zoom In</TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Maximize2 className="w-4 h-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Fullscreen</TooltipContent>
-            </Tooltip>
-          </div>
-        </div>
-
-        <div className="p-4">
-          <div
-            className="border rounded-lg overflow-auto bg-white"
-            style={{ transform: `scale(${zoom})`, transformOrigin: "top left", maxHeight: "700px" }}
-          >
-            <svg ref={svgRef} className="w-full h-auto" style={{ minHeight: "700px" }} />
-          </div>
-        </div>
-
-        {selectedComponent && (
-          <div className="p-4 border-t bg-gray-50">
-            <h4 className="font-semibold mb-2">Component Details: {selectedComponent}</h4>
-            <p className="text-sm text-gray-600">
-              Click on components in the diagram to view detailed information and configuration options.
+      {/* Enhanced Component Details Panel */}
+      {selectedComponent && componentDetails[selectedComponent as keyof typeof componentDetails] && (
+        <Card className="absolute top-4 right-4 w-96 max-h-[500px] overflow-y-auto shadow-xl border-2 border-blue-200">
+          <CardHeader className="pb-3 bg-gradient-to-r from-blue-50 to-indigo-50">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-lg text-blue-900">
+                {componentDetails[selectedComponent as keyof typeof componentDetails].name}
+              </h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedComponent(null)}
+                className="h-8 w-8 p-0 hover:bg-blue-100"
+              >
+                ×
+              </Button>
+            </div>
+            <p className="text-sm text-blue-700 mt-1">
+              {componentDetails[selectedComponent as keyof typeof componentDetails].description}
             </p>
-          </div>
-        )}
-      </Card>
-    </TooltipProvider>
+          </CardHeader>
+          <CardContent className="space-y-4 text-sm">
+            {/* Technical Specifications */}
+            <div>
+              <h4 className="font-semibold mb-2 text-gray-800 flex items-center">
+                <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                Technical Specifications
+              </h4>
+              <ul className="space-y-1">
+                {componentDetails[selectedComponent as keyof typeof componentDetails].specs.map((spec, index) => (
+                  <li key={index} className="flex items-start space-x-2">
+                    <CheckCircle2 className="h-3 w-3 text-green-600 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">{spec}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <Separator />
+
+            {/* Network Ports */}
+            <div>
+              <h4 className="font-semibold mb-2 text-gray-800 flex items-center">
+                <Network className="h-4 w-4 text-blue-600 mr-2" />
+                Network Ports
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {componentDetails[selectedComponent as keyof typeof componentDetails].ports.map((port, index) => (
+                  <Badge key={index} variant="outline" className="text-xs bg-blue-50 border-blue-200">
+                    {port}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            {/* Protocols */}
+            <div>
+              <h4 className="font-semibold mb-2 text-gray-800 flex items-center">
+                <Shield className="h-4 w-4 text-purple-600 mr-2" />
+                Supported Protocols
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {componentDetails[selectedComponent as keyof typeof componentDetails].protocols.map(
+                  (protocol, index) => (
+                    <Badge key={index} variant="secondary" className="text-xs bg-purple-50 border-purple-200">
+                      {protocol}
+                    </Badge>
+                  ),
+                )}
+              </div>
+            </div>
+
+            {/* Performance Metrics */}
+            {componentDetails[selectedComponent as keyof typeof componentDetails].metrics && (
+              <>
+                <Separator />
+                <div>
+                  <h4 className="font-semibold mb-2 text-gray-800 flex items-center">
+                    <Activity className="h-4 w-4 text-green-600 mr-2" />
+                    Performance Metrics
+                  </h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    {Object.entries(
+                      componentDetails[selectedComponent as keyof typeof componentDetails].metrics || {},
+                    ).map(([key, value], index) => (
+                      <div key={index} className="bg-gray-50 p-2 rounded">
+                        <div className="text-xs text-gray-600 capitalize">{key.replace(/([A-Z])/g, " $1")}</div>
+                        <div className="font-medium text-gray-900">{value}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Enhanced Legend Panel */}
+      {showLegend && (
+        <Card className="absolute bottom-4 left-4 w-80 shadow-xl border-2 border-gray-200">
+          <CardHeader className="pb-3 bg-gradient-to-r from-gray-50 to-slate-50">
+            <h3 className="font-bold text-lg flex items-center space-x-2 text-gray-800">
+              <Info className="h-5 w-5 text-blue-600" />
+              <span>Architecture Legend</span>
+            </h3>
+          </CardHeader>
+          <CardContent className="space-y-4 text-sm">
+            {/* Security Zones */}
+            <div>
+              <h4 className="font-semibold mb-2 text-gray-800">Security Zones</h4>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 bg-green-100 border border-green-400 rounded"></div>
+                  <span>Trusted Zone</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 bg-yellow-100 border border-yellow-400 rounded"></div>
+                  <span>DMZ</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 bg-gray-100 border border-gray-400 rounded"></div>
+                  <span>Access Layer</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 bg-red-100 border border-red-400 rounded"></div>
+                  <span>Restricted</span>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Component Types */}
+            <div>
+              <h4 className="font-semibold mb-2 text-gray-800">Component Types</h4>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 bg-blue-500 rounded"></div>
+                  <span>Cloud Services</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 bg-purple-500 rounded"></div>
+                  <span>Identity</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 bg-red-500 rounded"></div>
+                  <span>Security</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 bg-green-500 rounded"></div>
+                  <span>Network</span>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Data Flow Indicators */}
+            <div>
+              <h4 className="font-semibold mb-2 text-gray-800">Data Flow</h4>
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <div className="w-6 h-1 bg-blue-500 rounded"></div>
+                  <span>Authentication Flow</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-6 h-1 bg-green-500 rounded"></div>
+                  <span>Secure Channel</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                  <span>Flow Indicator</span>
+                </div>
+                {isAnimating && (
+                  <div className="flex items-center space-x-2">
+                    <Activity className="h-4 w-4 text-green-600" />
+                    <span>Live Animation Active</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Status Indicators */}
+            <div>
+              <h4 className="font-semibold mb-2 text-gray-800">Status Indicators</h4>
+              <div className="space-y-1">
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <span>Online/Active</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                  <span>Warning/Maintenance</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                  <span>Error/Offline</span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   )
 }
