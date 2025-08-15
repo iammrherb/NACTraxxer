@@ -1,453 +1,250 @@
 "use client"
 
 import { useState } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { Separator } from "@/components/ui/separator"
-import { toast } from "@/components/ui/use-toast"
-import { storage } from "@/lib/storage"
 import {
   Building2,
   GraduationCap,
   Heart,
-  MapPin,
-  Calendar,
   Shield,
-  CheckCircle,
-  Loader2,
-  Database,
-  Settings,
-  Banknote,
   Factory,
-  Smartphone,
-  ShoppingBag,
+  ShoppingCart,
+  Laptop,
+  Users,
+  MapPin,
+  FileText,
+  Calendar,
 } from "lucide-react"
+import { storage } from "@/lib/storage"
+import { toast } from "@/components/ui/use-toast"
 
 interface DemoDataModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onDataLoaded?: () => void
+  onDataLoaded: () => void
 }
 
+const scenarios = [
+  {
+    id: "corporate" as const,
+    name: "Corporate Enterprise",
+    description: "Large multinational corporation with multiple offices and complex infrastructure",
+    icon: Building2,
+    color: "bg-blue-500",
+    stats: {
+      sites: 12,
+      users: 25,
+      policies: 15,
+      events: 10,
+    },
+    features: [
+      "Global office locations",
+      "Mixed device environment",
+      "Complex network topology",
+      "Compliance requirements",
+    ],
+  },
+  {
+    id: "education" as const,
+    name: "Higher Education",
+    description: "University system with campus-wide deployment and student BYOD policies",
+    icon: GraduationCap,
+    color: "bg-green-500",
+    stats: {
+      sites: 8,
+      users: 30,
+      policies: 20,
+      events: 12,
+    },
+    features: ["Campus-wide coverage", "Student BYOD support", "Research network isolation", "High-density wireless"],
+  },
+  {
+    id: "healthcare" as const,
+    name: "Healthcare System",
+    description: "Medical facilities with strict compliance and medical device integration",
+    icon: Heart,
+    color: "bg-red-500",
+    stats: {
+      sites: 6,
+      users: 20,
+      policies: 25,
+      events: 8,
+    },
+    features: ["HIPAA compliance", "Medical device support", "Critical system priority", "Patient data protection"],
+  },
+  {
+    id: "government" as const,
+    name: "Government Agency",
+    description: "Federal agency with high security requirements and compliance standards",
+    icon: Shield,
+    color: "bg-purple-500",
+    stats: {
+      sites: 10,
+      users: 15,
+      policies: 30,
+      events: 6,
+    },
+    features: ["FISMA compliance", "High security clearance", "Strict access controls", "Audit requirements"],
+  },
+  {
+    id: "manufacturing" as const,
+    name: "Manufacturing",
+    description: "Industrial facilities with OT/IT convergence and production systems",
+    icon: Factory,
+    color: "bg-orange-500",
+    stats: {
+      sites: 15,
+      users: 18,
+      policies: 18,
+      events: 14,
+    },
+    features: ["OT/IT network segmentation", "Industrial protocols", "Production system priority", "Safety compliance"],
+  },
+  {
+    id: "retail" as const,
+    name: "Retail Chain",
+    description: "Multi-location retail with POS systems and guest WiFi requirements",
+    icon: ShoppingCart,
+    color: "bg-pink-500",
+    stats: {
+      sites: 25,
+      users: 22,
+      policies: 12,
+      events: 18,
+    },
+    features: ["POS system security", "Guest WiFi management", "Multi-location deployment", "Seasonal scalability"],
+  },
+]
+
 export default function DemoDataModal({ open, onOpenChange, onDataLoaded }: DemoDataModalProps) {
-  const [loading, setLoading] = useState(false)
-  const [loadingStep, setLoadingStep] = useState("")
-  const [progress, setProgress] = useState(0)
-  const [selectedScenario, setSelectedScenario] = useState<
-    "corporate" | "education" | "healthcare" | "financial" | "manufacturing" | "retail" | "technology" | null
-  >(null)
+  const [selectedScenario, setSelectedScenario] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
 
-  const scenarios = [
-    {
-      id: "corporate" as const,
-      title: "GlobalTech Industries",
-      subtitle: "Multi-National Corporation",
-      description: "Enterprise deployment across 12 global offices with 8,750 users and 15,200 devices",
-      icon: <Building2 className="h-8 w-8 text-blue-600" />,
-      color: "bg-blue-50 border-blue-200",
-      stats: {
-        sites: 12,
-        users: 8750,
-        devices: 15200,
-        policies: 8,
-        events: 15,
-      },
-      features: [
-        "Executive VIP policies",
-        "Multi-site RADIUS deployment",
-        "Global policy management",
-        "BYOD quarantine workflows",
-        "Cisco/Aruba infrastructure",
-      ],
-    },
-    {
-      id: "financial" as const,
-      title: "SecureBank Financial Group",
-      subtitle: "Banking & Financial Services",
-      description: "Financial services deployment across 18 branches with 3,200 employees and 8,950 devices",
-      icon: <Banknote className="h-8 w-8 text-green-600" />,
-      color: "bg-green-50 border-green-200",
-      stats: {
-        sites: 18,
-        users: 3200,
-        devices: 8950,
-        policies: 12,
-        events: 22,
-      },
-      features: [
-        "PCI-DSS compliance policies",
-        "Trading floor network isolation",
-        "High-security certificate auth",
-        "Regulatory audit trails",
-        "Zero-trust architecture",
-      ],
-    },
-    {
-      id: "healthcare" as const,
-      title: "Metropolitan Health Network",
-      subtitle: "Healthcare Organization",
-      description: "Clinical deployment across 8 facilities with 2,850 staff and 6,200 medical devices",
-      icon: <Heart className="h-8 w-8 text-red-600" />,
-      color: "bg-red-50 border-red-200",
-      stats: {
-        sites: 8,
-        users: 2850,
-        devices: 6200,
-        policies: 6,
-        events: 12,
-      },
-      features: [
-        "Medical device prioritization",
-        "HIPAA compliance policies",
-        "Critical care zero-latency",
-        "Patient guest networks",
-        "Clinical workflow integration",
-      ],
-    },
-    {
-      id: "education" as const,
-      title: "Riverside University System",
-      subtitle: "Higher Education Institution",
-      description: "Campus-wide deployment across 6 locations with 28,600 students and 52,400 devices",
-      icon: <GraduationCap className="h-8 w-8 text-purple-600" />,
-      color: "bg-purple-50 border-purple-200",
-      stats: {
-        sites: 6,
-        users: 28600,
-        devices: 52400,
-        policies: 5,
-        events: 9,
-      },
-      features: [
-        "Student BYOD management",
-        "Faculty research networks",
-        "Dormitory high-density WiFi",
-        "Guest access for events",
-        "FERPA compliance policies",
-      ],
-    },
-    {
-      id: "manufacturing" as const,
-      title: "Advanced Manufacturing Corp",
-      subtitle: "Industrial & Manufacturing",
-      description: "Industrial deployment across 14 facilities with 4,200 workers and 18,500 IoT devices",
-      icon: <Factory className="h-8 w-8 text-orange-600" />,
-      color: "bg-orange-50 border-orange-200",
-      stats: {
-        sites: 14,
-        users: 4200,
-        devices: 18500,
-        policies: 10,
-        events: 18,
-      },
-      features: [
-        "Industrial IoT segmentation",
-        "OT/IT network isolation",
-        "Machine-to-machine auth",
-        "Safety system prioritization",
-        "Predictive maintenance",
-      ],
-    },
-    {
-      id: "technology" as const,
-      title: "InnovateTech Solutions",
-      subtitle: "Technology Company",
-      description: "Tech company deployment across 9 offices with 6,400 employees and 12,800 devices",
-      icon: <Smartphone className="h-8 w-8 text-cyan-600" />,
-      color: "bg-cyan-50 border-cyan-200",
-      stats: {
-        sites: 9,
-        users: 6400,
-        devices: 12800,
-        policies: 7,
-        events: 14,
-      },
-      features: [
-        "Developer environment isolation",
-        "Cloud-first architecture",
-        "Container network policies",
-        "Remote worker support",
-        "DevOps integration",
-      ],
-    },
-    {
-      id: "retail" as const,
-      title: "Premium Retail Chain",
-      subtitle: "Retail & Hospitality",
-      description: "Retail deployment across 25 stores with 1,850 staff and 4,200 POS/IoT devices",
-      icon: <ShoppingBag className="h-8 w-8 text-pink-600" />,
-      color: "bg-pink-50 border-pink-200",
-      stats: {
-        sites: 25,
-        users: 1850,
-        devices: 4200,
-        policies: 4,
-        events: 8,
-      },
-      features: [
-        "Point-of-sale security",
-        "Customer guest WiFi",
-        "Inventory system protection",
-        "Seasonal traffic handling",
-        "Multi-location management",
-      ],
-    },
-  ]
-
-  const loadingSteps = [
-    "Initializing demo environment...",
-    "Creating user accounts and roles...",
-    "Setting up site configurations...",
-    "Deploying network infrastructure...",
-    "Configuring global policies...",
-    "Scheduling deployment events...",
-    "Applying device configurations...",
-    "Generating compliance reports...",
-    "Finalizing security settings...",
-    "Demo data loaded successfully!",
-  ]
-
-  const handleLoadDemoData = async (
-    scenario: "corporate" | "education" | "healthcare" | "financial" | "manufacturing" | "retail" | "technology",
-  ) => {
-    setLoading(true)
-    setProgress(0)
-    setSelectedScenario(scenario)
+  const handleLoadDemoData = async (scenarioId: (typeof scenarios)[0]["id"]) => {
+    setIsLoading(true)
+    setSelectedScenario(scenarioId)
 
     try {
-      for (let i = 0; i < loadingSteps.length; i++) {
-        setLoadingStep(loadingSteps[i])
-        setProgress((i / (loadingSteps.length - 1)) * 100)
-
-        // Simulate realistic loading time for each step
-        await new Promise((resolve) => setTimeout(resolve, i === loadingSteps.length - 1 ? 500 : 900))
-
-        // Actually load the data on the last step
-        if (i === loadingSteps.length - 2) {
-          await storage.generateDemoData(scenario)
-        }
-      }
+      await storage.generateDemoData(scenarioId)
 
       toast({
-        title: "Demo Data Loaded",
-        description: `${scenarios.find((s) => s.id === scenario)?.title} scenario has been loaded successfully.`,
+        title: "Demo data loaded successfully",
+        description: `${scenarios.find((s) => s.id === scenarioId)?.name} scenario has been loaded.`,
       })
 
-      // Close modal and refresh data
-      setTimeout(() => {
-        onDataLoaded?.()
-        onOpenChange(false)
-        setLoading(false)
-        setSelectedScenario(null)
-        setProgress(0)
-        setLoadingStep("")
-      }, 1000)
+      onDataLoaded()
+      onOpenChange(false)
     } catch (error) {
       console.error("Error loading demo data:", error)
       toast({
-        title: "Error",
-        description: "Failed to load demo data. Please try again.",
+        title: "Error loading demo data",
+        description: "Please try again or contact support if the issue persists.",
         variant: "destructive",
       })
-      setLoading(false)
+    } finally {
+      setIsLoading(false)
       setSelectedScenario(null)
-      setProgress(0)
-      setLoadingStep("")
     }
-  }
-
-  const handleClearData = async () => {
-    if (!confirm("Are you sure you want to clear all existing data? This action cannot be undone.")) {
-      return
-    }
-
-    try {
-      setLoading(true)
-      setLoadingStep("Clearing existing data...")
-      setProgress(50)
-
-      await storage.clearAllData()
-
-      setLoadingStep("Data cleared successfully!")
-      setProgress(100)
-
-      toast({
-        title: "Data Cleared",
-        description: "All existing data has been cleared successfully.",
-      })
-
-      setTimeout(() => {
-        onDataLoaded?.()
-        onOpenChange(false)
-        setLoading(false)
-        setProgress(0)
-        setLoadingStep("")
-      }, 1000)
-    } catch (error) {
-      console.error("Error clearing data:", error)
-      toast({
-        title: "Error",
-        description: "Failed to clear data. Please try again.",
-        variant: "destructive",
-      })
-      setLoading(false)
-      setProgress(0)
-      setLoadingStep("")
-    }
-  }
-
-  if (loading) {
-    return (
-      <Dialog open={open} onOpenChange={() => {}}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center space-x-2">
-              <Database className="h-6 w-6 text-blue-600" />
-              <span>Loading Demo Data</span>
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-6 py-6">
-            {selectedScenario && (
-              <div className="text-center">
-                <div className="flex justify-center mb-4">{scenarios.find((s) => s.id === selectedScenario)?.icon}</div>
-                <h3 className="text-lg font-semibold mb-2">
-                  {scenarios.find((s) => s.id === selectedScenario)?.title}
-                </h3>
-                <p className="text-gray-600">{scenarios.find((s) => s.id === selectedScenario)?.description}</p>
-              </div>
-            )}
-
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">{loadingStep}</span>
-                <span className="text-sm text-gray-500">{Math.round(progress)}%</span>
-              </div>
-              <Progress value={progress} className="h-2" />
-            </div>
-
-            <div className="flex items-center justify-center space-x-2 text-sm text-gray-600">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span>Please wait while we set up your demo environment...</span>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    )
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
-            <Database className="h-6 w-6 text-blue-600" />
-            <span>Industry Demo Data Scenarios</span>
+            <Laptop className="h-5 w-5" />
+            <span>Load Demo Data</span>
           </DialogTitle>
+          <DialogDescription>
+            Choose a scenario to populate the application with realistic demo data. This will replace any existing data.
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
-          <div className="text-center">
-            <p className="text-gray-600 mb-4">
-              Choose an industry-specific demo scenario to populate the application with realistic data including users,
-              sites, policies, and deployment timelines.
-            </p>
-            <div className="flex items-center justify-center space-x-4 text-sm text-gray-500">
-              <div className="flex items-center space-x-1">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <span>Complete user profiles</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <MapPin className="h-4 w-4 text-blue-600" />
-                <span>Multi-site configurations</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <Calendar className="h-4 w-4 text-purple-600" />
-                <span>Deployment timelines</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <Shield className="h-4 w-4 text-orange-600" />
-                <span>Security policies</span>
-              </div>
-            </div>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+          {scenarios.map((scenario) => {
+            const Icon = scenario.icon
+            const isLoadingThis = isLoading && selectedScenario === scenario.id
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            {scenarios.map((scenario) => (
-              <Card key={scenario.id} className={`cursor-pointer transition-all hover:shadow-lg ${scenario.color}`}>
-                <CardHeader className="text-center pb-4">
-                  <div className="flex justify-center mb-3">{scenario.icon}</div>
-                  <CardTitle className="text-xl">{scenario.title}</CardTitle>
-                  <p className="text-sm text-gray-600 font-medium">{scenario.subtitle}</p>
+            return (
+              <Card key={scenario.id} className="relative overflow-hidden hover:shadow-lg transition-shadow">
+                <div className={`absolute top-0 left-0 right-0 h-1 ${scenario.color}`} />
+
+                <CardHeader className="pb-3">
+                  <div className="flex items-center space-x-3">
+                    <div className={`p-2 rounded-lg ${scenario.color} text-white`}>
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg">{scenario.name}</CardTitle>
+                    </div>
+                  </div>
+                  <CardDescription className="text-sm">{scenario.description}</CardDescription>
                 </CardHeader>
 
                 <CardContent className="space-y-4">
-                  <p className="text-sm text-gray-700 leading-relaxed">{scenario.description}</p>
-
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-600">Sites:</span>
-                      <Badge variant="outline">{scenario.stats.sites}</Badge>
+                  {/* Stats */}
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="flex items-center space-x-2">
+                      <MapPin className="h-3 w-3 text-gray-500" />
+                      <span>{scenario.stats.sites} Sites</span>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-600">Users:</span>
-                      <Badge variant="outline">{scenario.stats.users.toLocaleString()}</Badge>
+                    <div className="flex items-center space-x-2">
+                      <Users className="h-3 w-3 text-gray-500" />
+                      <span>{scenario.stats.users} Users</span>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-600">Devices:</span>
-                      <Badge variant="outline">{scenario.stats.devices.toLocaleString()}</Badge>
+                    <div className="flex items-center space-x-2">
+                      <FileText className="h-3 w-3 text-gray-500" />
+                      <span>{scenario.stats.policies} Policies</span>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-600">Events:</span>
-                      <Badge variant="outline">{scenario.stats.events}</Badge>
+                    <div className="flex items-center space-x-2">
+                      <Calendar className="h-3 w-3 text-gray-500" />
+                      <span>{scenario.stats.events} Events</span>
                     </div>
                   </div>
 
-                  <Separator />
-
+                  {/* Features */}
                   <div className="space-y-2">
-                    <h4 className="font-medium text-sm">Key Features:</h4>
-                    <ul className="text-xs space-y-1">
+                    <h4 className="text-sm font-medium text-gray-700">Key Features:</h4>
+                    <div className="flex flex-wrap gap-1">
                       {scenario.features.map((feature, index) => (
-                        <li key={index} className="flex items-center space-x-2">
-                          <CheckCircle className="h-3 w-3 text-green-600 flex-shrink-0" />
-                          <span>{feature}</span>
-                        </li>
+                        <Badge key={index} variant="secondary" className="text-xs">
+                          {feature}
+                        </Badge>
                       ))}
-                    </ul>
+                    </div>
                   </div>
 
-                  <Button className="w-full mt-4" onClick={() => handleLoadDemoData(scenario.id)}>
-                    Load {scenario.title}
+                  {/* Load Button */}
+                  <Button
+                    onClick={() => handleLoadDemoData(scenario.id)}
+                    disabled={isLoading}
+                    className="w-full"
+                    variant={selectedScenario === scenario.id ? "default" : "outline"}
+                  >
+                    {isLoadingThis ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                        Loading...
+                      </>
+                    ) : (
+                      "Load This Scenario"
+                    )}
                   </Button>
                 </CardContent>
               </Card>
-            ))}
-          </div>
+            )
+          })}
+        </div>
 
-          <Separator />
-
-          <div className="bg-gray-50 rounded-lg p-6">
-            <div className="flex items-start space-x-4">
-              <Settings className="h-6 w-6 text-gray-600 mt-1" />
-              <div className="flex-1">
-                <h3 className="font-semibold text-gray-900 mb-2">Data Management</h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  Clear all existing data to start fresh, or load demo data to replace current configuration. All data
-                  is stored locally in your browser.
-                </p>
-                <div className="flex space-x-3">
-                  <Button variant="outline" onClick={handleClearData}>
-                    Clear All Data
-                  </Button>
-                  <Button variant="outline" onClick={() => onOpenChange(false)}>
-                    Cancel
-                  </Button>
-                </div>
-              </div>
+        <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <div className="flex items-start space-x-2">
+            <div className="text-yellow-600 mt-0.5">⚠️</div>
+            <div className="text-sm text-yellow-800">
+              <strong>Warning:</strong> Loading demo data will replace all existing sites, users, policies, and events.
+              Make sure to export your current data if you want to keep it.
             </div>
           </div>
         </div>

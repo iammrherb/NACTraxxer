@@ -26,21 +26,7 @@ import {
 } from "lucide-react"
 import PolicyEditor from "./policy-editor"
 import PolicyManagement from "./policy-management"
-
-interface Site {
-  id: string
-  name: string
-  region: string
-  country: string
-  priority: "High" | "Medium" | "Low"
-  phase: string
-  users: number
-  projectManager: string
-  technicalOwners: string[]
-  status: "Planned" | "In Progress" | "Complete" | "Delayed"
-  completionPercent: number
-  notes: string
-}
+import { storage, type Site } from "@/lib/storage"
 
 interface ChecklistItem {
   id: string
@@ -78,26 +64,12 @@ export default function SiteWorkbook({ siteId, onSiteChange }: SiteWorkbookProps
   const [globalPolicies, setGlobalPolicies] = useState<Policy[]>([])
   const [sitePolicies, setSitePolicies] = useState<Policy[]>([])
   const [showPolicyManager, setShowPolicyManager] = useState(false)
-  const [policyType, setPolicyType] = useState<"global" | "site-specific">("global")
+  const [isClient, setIsClient] = useState(false)
 
   useEffect(() => {
-    const savedSites = localStorage.getItem("portnox-sites")
-    if (savedSites) {
-      const parsedSites = JSON.parse(savedSites)
-      setSites(parsedSites)
-
-      if (!siteId && parsedSites.length > 0) {
-        setSelectedSiteId(parsedSites[0].id)
-        onSiteChange?.(parsedSites[0].id)
-      }
-    }
-
-    // Load global policies
-    const savedGlobalPolicies = localStorage.getItem("portnox-global-policies")
-    if (savedGlobalPolicies) {
-      setGlobalPolicies(JSON.parse(savedGlobalPolicies))
-    }
-  }, [siteId, onSiteChange])
+    setIsClient(true)
+    loadSites()
+  }, [])
 
   useEffect(() => {
     if (siteId) {
@@ -106,7 +78,31 @@ export default function SiteWorkbook({ siteId, onSiteChange }: SiteWorkbookProps
   }, [siteId])
 
   useEffect(() => {
-    if (selectedSiteId) {
+    if (selectedSiteId && isClient) {
+      loadSiteData()
+    }
+  }, [selectedSiteId, isClient])
+
+  const loadSites = async () => {
+    if (typeof window === "undefined") return
+
+    try {
+      const sitesData = await storage.getSites()
+      setSites(sitesData || [])
+
+      if (!siteId && sitesData && sitesData.length > 0) {
+        setSelectedSiteId(sitesData[0].id)
+        onSiteChange?.(sitesData[0].id)
+      }
+    } catch (error) {
+      console.error("Error loading sites:", error)
+    }
+  }
+
+  const loadSiteData = async () => {
+    if (typeof window === "undefined" || !selectedSiteId) return
+
+    try {
       // Load custom checklist for this site
       const savedChecklist = localStorage.getItem(`portnox-checklist-${selectedSiteId}`)
       if (savedChecklist) {
@@ -117,13 +113,30 @@ export default function SiteWorkbook({ siteId, onSiteChange }: SiteWorkbookProps
         setCustomChecklist(defaultChecklist)
       }
 
+      // Load global policies
+      const globalPoliciesData = await storage.getGlobalPolicies()
+      setGlobalPolicies(
+        globalPoliciesData.map((p) => ({
+          id: p.id,
+          name: p.name,
+          condition: p.conditions.map((c) => `${c.type} ${c.operator} ${c.value}`).join(", "),
+          action: p.actions.map((a) => a.type).join(", "),
+          vlan: p.actions.find((a) => a.type === "vlan_assign")?.parameters?.vlan || "N/A",
+          priority: p.priority,
+          type: "global" as const,
+          description: p.description,
+        })),
+      )
+
       // Load site-specific policies
       const savedSitePolicies = localStorage.getItem(`portnox-site-policies-${selectedSiteId}`)
       if (savedSitePolicies) {
         setSitePolicies(JSON.parse(savedSitePolicies))
       }
+    } catch (error) {
+      console.error("Error loading site data:", error)
     }
-  }, [selectedSiteId])
+  }
 
   const siteData = sites.find((site) => site.id === selectedSiteId)
 
@@ -140,13 +153,16 @@ export default function SiteWorkbook({ siteId, onSiteChange }: SiteWorkbookProps
     }
   }
 
-  const saveChanges = () => {
+  const saveChanges = async () => {
     if (editedSite && selectedSiteId) {
-      const updatedSites = sites.map((site) => (site.id === selectedSiteId ? editedSite : site))
-      setSites(updatedSites)
-      localStorage.setItem("portnox-sites", JSON.stringify(updatedSites))
-      setIsEditing(false)
-      setEditedSite(null)
+      try {
+        await storage.updateSite(selectedSiteId, editedSite)
+        setSites(sites.map((site) => (site.id === selectedSiteId ? editedSite : site)))
+        setIsEditing(false)
+        setEditedSite(null)
+      } catch (error) {
+        console.error("Error saving site:", error)
+      }
     }
   }
 
@@ -156,12 +172,16 @@ export default function SiteWorkbook({ siteId, onSiteChange }: SiteWorkbookProps
   }
 
   const updateChecklistItem = (itemId: string, updates: Partial<ChecklistItem>) => {
+    if (typeof window === "undefined") return
+
     const updatedChecklist = customChecklist.map((item) => (item.id === itemId ? { ...item, ...updates } : item))
     setCustomChecklist(updatedChecklist)
     localStorage.setItem(`portnox-checklist-${selectedSiteId}`, JSON.stringify(updatedChecklist))
   }
 
   const addChecklistItem = () => {
+    if (typeof window === "undefined") return
+
     const newItem: ChecklistItem = {
       id: `item-${Date.now()}`,
       item: "New Task",
@@ -185,11 +205,12 @@ export default function SiteWorkbook({ siteId, onSiteChange }: SiteWorkbookProps
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case "High":
+      case "high":
+      case "critical":
         return "destructive"
-      case "Medium":
+      case "medium":
         return "default"
-      case "Low":
+      case "low":
         return "secondary"
       default:
         return "outline"
@@ -198,13 +219,14 @@ export default function SiteWorkbook({ siteId, onSiteChange }: SiteWorkbookProps
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "Complete":
+      case "completed":
         return "text-green-600"
-      case "In Progress":
+      case "implementation":
+      case "testing":
         return "text-blue-600"
-      case "Planned":
+      case "planning":
         return "text-gray-600"
-      case "Delayed":
+      case "on-hold":
         return "text-red-600"
       default:
         return "text-gray-600"
@@ -224,11 +246,9 @@ export default function SiteWorkbook({ siteId, onSiteChange }: SiteWorkbookProps
     }
   }
 
-  const handlePolicyTypeChange = (type: "global" | "site-specific") => {
-    setPolicyType(type)
-  }
-
   const handlePolicyCreate = (policy: Policy) => {
+    if (typeof window === "undefined") return
+
     if (policy.type === "global") {
       setGlobalPolicies([...globalPolicies, policy])
       localStorage.setItem("portnox-global-policies", JSON.stringify([...globalPolicies, policy]))
@@ -237,6 +257,14 @@ export default function SiteWorkbook({ siteId, onSiteChange }: SiteWorkbookProps
       localStorage.setItem(`portnox-site-policies-${selectedSiteId}`, JSON.stringify([...sitePolicies, policy]))
     }
     setShowPolicyManager(false)
+  }
+
+  if (!isClient) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    )
   }
 
   if (sites.length === 0) {
@@ -388,7 +416,7 @@ export default function SiteWorkbook({ siteId, onSiteChange }: SiteWorkbookProps
                       {isEditing ? (
                         <Select
                           value={currentSite.priority}
-                          onValueChange={(value: "High" | "Medium" | "Low") =>
+                          onValueChange={(value: Site["priority"]) =>
                             setEditedSite({ ...currentSite, priority: value })
                           }
                         >
@@ -396,9 +424,9 @@ export default function SiteWorkbook({ siteId, onSiteChange }: SiteWorkbookProps
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="High">High</SelectItem>
-                            <SelectItem value="Medium">Medium</SelectItem>
-                            <SelectItem value="Low">Low</SelectItem>
+                            <SelectItem value="high">High</SelectItem>
+                            <SelectItem value="medium">Medium</SelectItem>
+                            <SelectItem value="low">Low</SelectItem>
                           </SelectContent>
                         </Select>
                       ) : (
@@ -414,7 +442,7 @@ export default function SiteWorkbook({ siteId, onSiteChange }: SiteWorkbookProps
                           className="w-32 h-8"
                         />
                       ) : (
-                        <span>Phase {currentSite.phase}</span>
+                        <span>{currentSite.phase}</span>
                       )}
                     </div>
                     <div className="flex justify-between">
@@ -444,34 +472,20 @@ export default function SiteWorkbook({ siteId, onSiteChange }: SiteWorkbookProps
 
                   <div className="space-y-3">
                     <div className="flex justify-between">
-                      <span className="font-medium text-gray-600 dark:text-gray-400">Project Manager:</span>
-                      {isEditing ? (
-                        <Input
-                          value={currentSite.projectManager}
-                          onChange={(e) => setEditedSite({ ...currentSite, projectManager: e.target.value })}
-                          className="w-40 h-8"
-                        />
-                      ) : (
-                        <span>{currentSite.projectManager}</span>
-                      )}
-                    </div>
-                    <div className="flex justify-between">
                       <span className="font-medium text-gray-600 dark:text-gray-400">Status:</span>
                       {isEditing ? (
                         <Select
                           value={currentSite.status}
-                          onValueChange={(value: "Planned" | "In Progress" | "Complete" | "Delayed") =>
-                            setEditedSite({ ...currentSite, status: value })
-                          }
+                          onValueChange={(value: Site["status"]) => setEditedSite({ ...currentSite, status: value })}
                         >
                           <SelectTrigger className="w-32 h-8">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Planned">Planned</SelectItem>
-                            <SelectItem value="In Progress">In Progress</SelectItem>
-                            <SelectItem value="Complete">Complete</SelectItem>
-                            <SelectItem value="Delayed">Delayed</SelectItem>
+                            <SelectItem value="planning">Planning</SelectItem>
+                            <SelectItem value="implementation">Implementation</SelectItem>
+                            <SelectItem value="completed">Completed</SelectItem>
+                            <SelectItem value="on-hold">On Hold</SelectItem>
                           </SelectContent>
                         </Select>
                       ) : (
@@ -486,22 +500,22 @@ export default function SiteWorkbook({ siteId, onSiteChange }: SiteWorkbookProps
                         <div className="w-20 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                           <div
                             className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                            style={{ width: `${currentSite.completionPercent}%` }}
+                            style={{ width: `${currentSite.progress}%` }}
                           />
                         </div>
                         {isEditing ? (
                           <Input
                             type="number"
-                            value={currentSite.completionPercent}
+                            value={currentSite.progress}
                             onChange={(e) =>
-                              setEditedSite({ ...currentSite, completionPercent: Number.parseInt(e.target.value) || 0 })
+                              setEditedSite({ ...currentSite, progress: Number.parseInt(e.target.value) || 0 })
                             }
                             className="w-16 h-8"
                             min="0"
                             max="100"
                           />
                         ) : (
-                          <span className="text-sm font-medium">{currentSite.completionPercent}%</span>
+                          <span className="text-sm font-medium">{currentSite.progress}%</span>
                         )}
                       </div>
                     </div>

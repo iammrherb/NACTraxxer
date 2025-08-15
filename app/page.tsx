@@ -31,16 +31,12 @@ export default function NACDesigner() {
   // Ensure we're on the client side
   useEffect(() => {
     setIsClient(true)
+    loadUserPreferences()
   }, [])
 
-  // Load user preferences
-  useEffect(() => {
-    if (isClient) {
-      loadUserPreferences()
-    }
-  }, [isClient])
-
   const loadUserPreferences = async () => {
+    if (typeof window === "undefined") return
+
     try {
       const preferences = await storage.getUserPreferences()
       if (preferences.customerLogo) {
@@ -102,7 +98,7 @@ export default function NACDesigner() {
 
       // Update company name based on scenario
       const preferences = await storage.getUserPreferences()
-      setCompanyName(preferences.companyName)
+      setCompanyName(preferences.companyName || "TechCorp Global")
 
       toast({
         title: "Demo data loaded",
@@ -151,7 +147,6 @@ export default function NACDesigner() {
                     src={
                       customerLogo ||
                       "https://companieslogo.com/img/orig/ABM_BIG-47f1fb05.png?t=1720244490&download=true" ||
-                      "/placeholder.svg" ||
                       "/placeholder.svg"
                     }
                     alt="Customer Logo"

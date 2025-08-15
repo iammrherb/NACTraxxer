@@ -31,23 +31,22 @@ export function ThemeProvider({
   ...props
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(defaultTheme)
-  const [isClient, setIsClient] = useState(false)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    setIsClient(true)
-  }, [])
+    setMounted(true)
 
-  useEffect(() => {
-    if (isClient) {
+    // Only access localStorage after component mounts
+    if (typeof window !== "undefined") {
       const storedTheme = localStorage.getItem(storageKey) as Theme
       if (storedTheme) {
         setTheme(storedTheme)
       }
     }
-  }, [isClient, storageKey])
+  }, [storageKey])
 
   useEffect(() => {
-    if (!isClient) return
+    if (!mounted || typeof window === "undefined") return
 
     const root = window.document.documentElement
 
@@ -61,16 +60,21 @@ export function ThemeProvider({
     }
 
     root.classList.add(theme)
-  }, [theme, isClient])
+  }, [theme, mounted])
 
   const value = {
     theme,
     setTheme: (theme: Theme) => {
-      if (isClient) {
+      if (typeof window !== "undefined") {
         localStorage.setItem(storageKey, theme)
       }
       setTheme(theme)
     },
+  }
+
+  // Don't render anything until mounted to prevent hydration mismatch
+  if (!mounted) {
+    return <>{children}</>
   }
 
   return (

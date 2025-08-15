@@ -1,54 +1,65 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Switch } from "@/components/ui/switch"
-import { toast } from "@/components/ui/use-toast"
+import { Edit, Trash2, Users, UserPlus, Search } from "lucide-react"
 import { storage, type User } from "@/lib/storage"
-import { Users, Plus, Edit, Trash2, Phone, Building, Award, UserCheck, UserX, Search, Filter } from "lucide-react"
+import { toast } from "@/components/ui/use-toast"
 
 interface UserManagementModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
+const roleColors = {
+  admin: "destructive",
+  "project-manager": "default",
+  "technical-owner": "secondary",
+  "site-owner": "outline",
+  "systems-engineer": "default",
+  "account-executive": "secondary",
+  "technical-account-manager": "outline",
+  technician: "secondary",
+  "security-specialist": "destructive",
+} as const
+
+const roleLabels = {
+  admin: "Administrator",
+  "project-manager": "Project Manager",
+  "technical-owner": "Technical Owner",
+  "site-owner": "Site Owner",
+  "systems-engineer": "Systems Engineer",
+  "account-executive": "Account Executive",
+  "technical-account-manager": "Technical Account Manager",
+  technician: "Technician",
+  "security-specialist": "Security Specialist",
+}
+
 export default function UserManagementModal({ open, onOpenChange }: UserManagementModalProps) {
   const [users, setUsers] = useState<User[]>([])
   const [filteredUsers, setFilteredUsers] = useState<User[]>([])
   const [searchTerm, setSearchTerm] = useState("")
-  const [roleFilter, setRoleFilter] = useState<string>("all")
+  const [selectedRole, setSelectedRole] = useState<string>("all")
+  const [isLoading, setIsLoading] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
-  const [isCreating, setIsCreating] = useState(false)
-  const [formData, setFormData] = useState<Partial<User>>({
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [formData, setFormData] = useState({
     name: "",
     email: "",
-    role: "viewer",
+    role: "technician" as User["role"],
     department: "",
     phone: "",
-    specialties: [],
-    certifications: [],
-    isActive: true,
   })
-
-  const roles = [
-    { value: "admin", label: "Administrator", color: "bg-red-100 text-red-800" },
-    { value: "project-manager", label: "Project Manager", color: "bg-blue-100 text-blue-800" },
-    { value: "technical-owner", label: "Technical Owner", color: "bg-purple-100 text-purple-800" },
-    { value: "site-owner", label: "Site Owner", color: "bg-green-100 text-green-800" },
-    { value: "systems-engineer", label: "Systems Engineer", color: "bg-yellow-100 text-yellow-800" },
-    { value: "account-executive", label: "Account Executive", color: "bg-pink-100 text-pink-800" },
-    { value: "technical-account-manager", label: "Technical Account Manager", color: "bg-indigo-100 text-indigo-800" },
-    { value: "technician", label: "Technician", color: "bg-orange-100 text-orange-800" },
-    { value: "viewer", label: "Viewer", color: "bg-gray-100 text-gray-800" },
-  ]
 
   useEffect(() => {
     if (open) {
@@ -58,19 +69,22 @@ export default function UserManagementModal({ open, onOpenChange }: UserManageme
 
   useEffect(() => {
     filterUsers()
-  }, [users, searchTerm, roleFilter])
+  }, [users, searchTerm, selectedRole])
 
   const loadUsers = async () => {
+    setIsLoading(true)
     try {
-      const userData = await storage.getUsers()
-      setUsers(userData)
+      const usersData = await storage.getUsers()
+      setUsers(usersData)
     } catch (error) {
       console.error("Error loading users:", error)
       toast({
-        title: "Error",
-        description: "Failed to load users",
+        title: "Error loading users",
+        description: "Please try again.",
         variant: "destructive",
       })
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -82,376 +96,211 @@ export default function UserManagementModal({ open, onOpenChange }: UserManageme
         (user) =>
           user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          user.department.toLowerCase().includes(searchTerm.toLowerCase()),
+          user.department?.toLowerCase().includes(searchTerm.toLowerCase()),
       )
     }
 
-    if (roleFilter !== "all") {
-      filtered = filtered.filter((user) => user.role === roleFilter)
+    if (selectedRole !== "all") {
+      filtered = filtered.filter((user) => user.role === selectedRole)
     }
 
     setFilteredUsers(filtered)
   }
 
-  const handleCreateUser = () => {
-    setIsCreating(true)
-    setEditingUser(null)
-    setFormData({
-      name: "",
-      email: "",
-      role: "viewer",
-      department: "",
-      phone: "",
-      specialties: [],
-      certifications: [],
-      isActive: true,
-    })
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+
+    try {
+      if (editingUser) {
+        // Update existing user
+        await storage.updateUser(editingUser.id, formData)
+        toast({
+          title: "User updated",
+          description: `${formData.name} has been updated successfully.`,
+        })
+      } else {
+        // Create new user
+        await storage.createUser(formData)
+        toast({
+          title: "User created",
+          description: `${formData.name} has been added successfully.`,
+        })
+      }
+
+      // Reset form and reload users
+      setFormData({
+        name: "",
+        email: "",
+        role: "technician",
+        department: "",
+        phone: "",
+      })
+      setEditingUser(null)
+      setShowAddForm(false)
+      await loadUsers()
+    } catch (error) {
+      console.error("Error saving user:", error)
+      toast({
+        title: "Error saving user",
+        description: "Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const handleEditUser = (user: User) => {
-    setIsCreating(false)
+  const handleEdit = (user: User) => {
     setEditingUser(user)
     setFormData({
       name: user.name,
       email: user.email,
       role: user.role,
-      department: user.department,
+      department: user.department || "",
       phone: user.phone || "",
-      specialties: [...user.specialties],
-      certifications: [...user.certifications],
-      isActive: user.isActive,
     })
+    setShowAddForm(true)
   }
 
-  const handleSaveUser = async () => {
+  const handleDelete = async (user: User) => {
+    if (!confirm(`Are you sure you want to delete ${user.name}?`)) {
+      return
+    }
+
+    setIsLoading(true)
     try {
-      if (!formData.name || !formData.email || !formData.role) {
-        toast({
-          title: "Validation Error",
-          description: "Please fill in all required fields",
-          variant: "destructive",
-        })
-        return
-      }
-
-      if (isCreating) {
-        await storage.createUser({
-          name: formData.name!,
-          email: formData.email!,
-          role: formData.role as User["role"],
-          department: formData.department!,
-          phone: formData.phone,
-          specialties: formData.specialties || [],
-          certifications: formData.certifications || [],
-          isActive: formData.isActive!,
-        })
-        toast({
-          title: "User Created",
-          description: `${formData.name} has been created successfully`,
-        })
-      } else if (editingUser) {
-        await storage.updateUser(editingUser.id, {
-          name: formData.name!,
-          email: formData.email!,
-          role: formData.role as User["role"],
-          department: formData.department!,
-          phone: formData.phone,
-          specialties: formData.specialties || [],
-          certifications: formData.certifications || [],
-          isActive: formData.isActive!,
-        })
-        toast({
-          title: "User Updated",
-          description: `${formData.name} has been updated successfully`,
-        })
-      }
-
-      setIsCreating(false)
-      setEditingUser(null)
-      loadUsers()
-    } catch (error) {
-      console.error("Error saving user:", error)
+      await storage.deleteUser(user.id)
       toast({
-        title: "Error",
-        description: "Failed to save user",
+        title: "User deleted",
+        description: `${user.name} has been removed.`,
+      })
+      await loadUsers()
+    } catch (error) {
+      console.error("Error deleting user:", error)
+      toast({
+        title: "Error deleting user",
+        description: "Please try again.",
         variant: "destructive",
       })
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  const handleDeleteUser = async (userId: string, userName: string) => {
-    if (window.confirm(`Are you sure you want to delete ${userName}?`)) {
-      try {
-        await storage.deleteUser(userId)
-        toast({
-          title: "User Deleted",
-          description: `${userName} has been deleted successfully`,
-        })
-        loadUsers()
-      } catch (error) {
-        console.error("Error deleting user:", error)
-        toast({
-          title: "Error",
-          description: "Failed to delete user",
-          variant: "destructive",
-        })
-      }
-    }
-  }
-
-  const handleToggleUserStatus = async (user: User) => {
-    try {
-      await storage.updateUser(user.id, { isActive: !user.isActive })
-      toast({
-        title: "Status Updated",
-        description: `${user.name} is now ${!user.isActive ? "active" : "inactive"}`,
-      })
-      loadUsers()
-    } catch (error) {
-      console.error("Error updating user status:", error)
-      toast({
-        title: "Error",
-        description: "Failed to update user status",
-        variant: "destructive",
-      })
-    }
-  }
-
-  const getRoleInfo = (role: string) => {
-    return roles.find((r) => r.value === role) || roles[roles.length - 1]
-  }
-
-  const handleSpecialtyAdd = (specialty: string) => {
-    if (specialty.trim() && !formData.specialties?.includes(specialty.trim())) {
-      setFormData({
-        ...formData,
-        specialties: [...(formData.specialties || []), specialty.trim()],
-      })
-    }
-  }
-
-  const handleSpecialtyRemove = (specialty: string) => {
+  const resetForm = () => {
     setFormData({
-      ...formData,
-      specialties: formData.specialties?.filter((s) => s !== specialty) || [],
+      name: "",
+      email: "",
+      role: "technician",
+      department: "",
+      phone: "",
     })
+    setEditingUser(null)
+    setShowAddForm(false)
   }
 
-  const handleCertificationAdd = (certification: string) => {
-    if (certification.trim() && !formData.certifications?.includes(certification.trim())) {
-      setFormData({
-        ...formData,
-        certifications: [...(formData.certifications || []), certification.trim()],
-      })
-    }
-  }
-
-  const handleCertificationRemove = (certification: string) => {
-    setFormData({
-      ...formData,
-      certifications: formData.certifications?.filter((c) => c !== certification) || [],
+  const getRoleStats = () => {
+    const stats: Record<string, number> = {}
+    users.forEach((user) => {
+      stats[user.role] = (stats[user.role] || 0) + 1
     })
+    return stats
   }
 
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2)
-  }
+  const roleStats = getRoleStats()
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
-            <Users className="h-6 w-6 text-blue-600" />
+            <Users className="h-5 w-5" />
             <span>User Management</span>
           </DialogTitle>
+          <DialogDescription>Manage users, roles, and permissions for your NAC deployment project.</DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="users" className="flex-1 overflow-hidden">
+        <Tabs defaultValue="users" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="users">User Directory</TabsTrigger>
-            <TabsTrigger value="roles">Role Management</TabsTrigger>
+            <TabsTrigger value="users">Users</TabsTrigger>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="users" className="space-y-4 overflow-y-auto max-h-[calc(90vh-120px)]">
-            {/* Search and Filter Controls */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <TabsContent value="users" className="space-y-4">
+            {/* Controls */}
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+              <div className="flex flex-col sm:flex-row gap-2 flex-1">
+                <div className="relative flex-1 max-w-sm">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
                     placeholder="Search users..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 w-64"
+                    className="pl-10"
                   />
                 </div>
-                <Select value={roleFilter} onValueChange={setRoleFilter}>
-                  <SelectTrigger className="w-48">
-                    <Filter className="h-4 w-4 mr-2" />
+                <Select value={selectedRole} onValueChange={setSelectedRole}>
+                  <SelectTrigger className="w-full sm:w-[200px]">
                     <SelectValue placeholder="Filter by role" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Roles</SelectItem>
-                    {roles.map((role) => (
-                      <SelectItem key={role.value} value={role.value}>
-                        {role.label}
+                    {Object.entries(roleLabels).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-              <Button onClick={handleCreateUser}>
-                <Plus className="h-4 w-4 mr-2" />
+              <Button onClick={() => setShowAddForm(true)} className="w-full sm:w-auto">
+                <UserPlus className="h-4 w-4 mr-2" />
                 Add User
               </Button>
             </div>
 
-            {/* User List */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredUsers.map((user) => {
-                const roleInfo = getRoleInfo(user.role)
-                return (
-                  <Card key={user.id} className={`${!user.isActive ? "opacity-60" : ""}`}>
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <Avatar>
-                            <AvatarImage src={user.avatar || "/placeholder.svg"} />
-                            <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <h3 className="font-semibold text-sm">{user.name}</h3>
-                            <p className="text-xs text-gray-600">{user.email}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <Button variant="ghost" size="sm" onClick={() => handleEditUser(user)}>
-                            <Edit className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteUser(user.id, user.name)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <Badge className={roleInfo.color}>{roleInfo.label}</Badge>
-                        <div className="flex items-center space-x-2">
-                          <Switch
-                            checked={user.isActive}
-                            onCheckedChange={() => handleToggleUserStatus(user)}
-                            size="sm"
-                          />
-                          {user.isActive ? (
-                            <UserCheck className="h-4 w-4 text-green-600" />
-                          ) : (
-                            <UserX className="h-4 w-4 text-gray-400" />
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="space-y-2 text-xs">
-                        <div className="flex items-center space-x-2">
-                          <Building className="h-3 w-3 text-gray-400" />
-                          <span>{user.department}</span>
-                        </div>
-                        {user.phone && (
-                          <div className="flex items-center space-x-2">
-                            <Phone className="h-3 w-3 text-gray-400" />
-                            <span>{user.phone}</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {user.specialties.length > 0 && (
-                        <div>
-                          <h4 className="text-xs font-medium text-gray-700 mb-1">Specialties:</h4>
-                          <div className="flex flex-wrap gap-1">
-                            {user.specialties.slice(0, 2).map((specialty, index) => (
-                              <Badge key={index} variant="outline" className="text-xs">
-                                {specialty}
-                              </Badge>
-                            ))}
-                            {user.specialties.length > 2 && (
-                              <Badge variant="outline" className="text-xs">
-                                +{user.specialties.length - 2}
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {user.certifications.length > 0 && (
-                        <div>
-                          <h4 className="text-xs font-medium text-gray-700 mb-1">Certifications:</h4>
-                          <div className="flex items-center space-x-1">
-                            <Award className="h-3 w-3 text-yellow-600" />
-                            <span className="text-xs">{user.certifications.length} certified</span>
-                          </div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                )
-              })}
-            </div>
-
-            {/* User Form Modal */}
-            {(isCreating || editingUser) && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto m-4">
-                  <CardHeader>
-                    <CardTitle>{isCreating ? "Create New User" : "Edit User"}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
+            {/* Add/Edit Form */}
+            {showAddForm && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">{editingUser ? "Edit User" : "Add New User"}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="name">Full Name *</Label>
                         <Input
                           id="name"
-                          value={formData.name || ""}
+                          value={formData.name}
                           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                          placeholder="John Smith"
+                          required
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="email">Email Address *</Label>
+                        <Label htmlFor="email">Email *</Label>
                         <Input
                           id="email"
                           type="email"
-                          value={formData.email || ""}
+                          value={formData.email}
                           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                          placeholder="john.smith@company.com"
+                          required
                         />
                       </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="role">Role *</Label>
                         <Select
                           value={formData.role}
-                          onValueChange={(value) => setFormData({ ...formData, role: value as User["role"] })}
+                          onValueChange={(value: User["role"]) => setFormData({ ...formData, role: value })}
                         >
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {roles.map((role) => (
-                              <SelectItem key={role.value} value={role.value}>
-                                {role.label}
+                            {Object.entries(roleLabels).map(([value, label]) => (
+                              <SelectItem key={value} value={value}>
+                                {label}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -461,131 +310,146 @@ export default function UserManagementModal({ open, onOpenChange }: UserManageme
                         <Label htmlFor="department">Department</Label>
                         <Input
                           id="department"
-                          value={formData.department || ""}
+                          value={formData.department}
                           onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                          placeholder="IT Security"
+                        />
+                      </div>
+                      <div className="space-y-2 md:col-span-2">
+                        <Label htmlFor="phone">Phone</Label>
+                        <Input
+                          id="phone"
+                          type="tel"
+                          value={formData.phone}
+                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                         />
                       </div>
                     </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Phone Number</Label>
-                      <Input
-                        id="phone"
-                        value={formData.phone || ""}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        placeholder="+1 (555) 123-4567"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Specialties</Label>
-                      <div className="flex flex-wrap gap-2 mb-2">
-                        {formData.specialties?.map((specialty, index) => (
-                          <Badge
-                            key={index}
-                            variant="secondary"
-                            className="cursor-pointer"
-                            onClick={() => handleSpecialtyRemove(specialty)}
-                          >
-                            {specialty} ×
-                          </Badge>
-                        ))}
-                      </div>
-                      <Input
-                        placeholder="Add specialty (press Enter)"
-                        onKeyPress={(e) => {
-                          if (e.key === "Enter") {
-                            handleSpecialtyAdd(e.currentTarget.value)
-                            e.currentTarget.value = ""
-                          }
-                        }}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Certifications</Label>
-                      <div className="flex flex-wrap gap-2 mb-2">
-                        {formData.certifications?.map((certification, index) => (
-                          <Badge
-                            key={index}
-                            variant="secondary"
-                            className="cursor-pointer"
-                            onClick={() => handleCertificationRemove(certification)}
-                          >
-                            {certification} ×
-                          </Badge>
-                        ))}
-                      </div>
-                      <Input
-                        placeholder="Add certification (press Enter)"
-                        onKeyPress={(e) => {
-                          if (e.key === "Enter") {
-                            handleCertificationAdd(e.currentTarget.value)
-                            e.currentTarget.value = ""
-                          }
-                        }}
-                      />
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        checked={formData.isActive}
-                        onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
-                      />
-                      <Label>Active User</Label>
-                    </div>
-
-                    <div className="flex justify-end space-x-3">
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setIsCreating(false)
-                          setEditingUser(null)
-                        }}
-                      >
+                    <div className="flex space-x-2">
+                      <Button type="submit" disabled={isLoading}>
+                        {isLoading ? "Saving..." : editingUser ? "Update User" : "Add User"}
+                      </Button>
+                      <Button type="button" variant="outline" onClick={resetForm}>
                         Cancel
                       </Button>
-                      <Button onClick={handleSaveUser}>{isCreating ? "Create User" : "Update User"}</Button>
+                    </div>
+                  </form>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Users Table */}
+            <Card>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Department</TableHead>
+                      <TableHead>Phone</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredUsers.map((user) => (
+                      <TableRow key={user.id}>
+                        <TableCell className="font-medium">{user.name}</TableCell>
+                        <TableCell>{user.email}</TableCell>
+                        <TableCell>
+                          <Badge variant={roleColors[user.role] || "default"}>{roleLabels[user.role]}</Badge>
+                        </TableCell>
+                        <TableCell>{user.department || "-"}</TableCell>
+                        <TableCell>{user.phone || "-"}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end space-x-2">
+                            <Button variant="ghost" size="sm" onClick={() => handleEdit(user)}>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(user)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {filteredUsers.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                          {searchTerm || selectedRole !== "all" ? "No users match your filters" : "No users found"}
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="overview" className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-600">Total Users</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{users.length}</div>
+                </CardContent>
+              </Card>
+
+              {Object.entries(roleStats).map(([role, count]) => (
+                <Card key={role}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-gray-600">
+                      {roleLabels[role as keyof typeof roleLabels]}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between">
+                      <div className="text-2xl font-bold">{count}</div>
+                      <Badge variant={roleColors[role as keyof typeof roleColors] || "default"}>{role}</Badge>
                     </div>
                   </CardContent>
                 </Card>
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="roles" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {roles.map((role) => {
-                const userCount = users.filter((u) => u.role === role.value).length
-                return (
-                  <Card key={role.value}>
-                    <CardHeader>
-                      <CardTitle className="flex items-center justify-between">
-                        <Badge className={role.color}>{role.label}</Badge>
-                        <span className="text-sm font-normal">{userCount} users</span>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        {users
-                          .filter((u) => u.role === role.value)
-                          .slice(0, 3)
-                          .map((user) => (
-                            <div key={user.id} className="flex items-center space-x-2 text-sm">
-                              <Avatar className="h-6 w-6">
-                                <AvatarFallback className="text-xs">{getInitials(user.name)}</AvatarFallback>
-                              </Avatar>
-                              <span>{user.name}</span>
-                            </div>
-                          ))}
-                        {userCount > 3 && <div className="text-xs text-gray-500">+{userCount - 3} more</div>}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )
-              })}
+              ))}
             </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Role Descriptions</CardTitle>
+                <CardDescription>
+                  Understanding the different roles and their responsibilities in NAC deployments.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {Object.entries(roleLabels).map(([role, label]) => (
+                  <div key={role} className="flex items-start space-x-3">
+                    <Badge variant={roleColors[role as keyof typeof roleColors] || "default"} className="mt-0.5">
+                      {label}
+                    </Badge>
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-600">
+                        {role === "admin" && "Full system access and configuration management"}
+                        {role === "project-manager" && "Project oversight, timeline management, and coordination"}
+                        {role === "technical-owner" && "Technical architecture decisions and implementation oversight"}
+                        {role === "site-owner" && "Site-specific requirements and local coordination"}
+                        {role === "systems-engineer" && "Hands-on configuration and technical implementation"}
+                        {role === "account-executive" && "Customer relationship management and business alignment"}
+                        {role === "technical-account-manager" &&
+                          "Technical customer support and relationship management"}
+                        {role === "technician" && "On-site installation, maintenance, and basic troubleshooting"}
+                        {role === "security-specialist" && "Security policy design, compliance, and risk assessment"}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </DialogContent>
