@@ -1,7 +1,8 @@
 import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
+import type { NextAuthOptions } from "next-auth"
 
-const handler = NextAuth({
+const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: "credentials",
@@ -15,7 +16,7 @@ const handler = NextAuth({
         }
 
         // Demo users for testing
-        const users = [
+        const demoUsers = [
           {
             id: "1",
             email: "admin@portnox.com",
@@ -32,7 +33,7 @@ const handler = NextAuth({
           },
         ]
 
-        const user = users.find((u) => u.email === credentials.email && u.password === credentials.password)
+        const user = demoUsers.find((u) => u.email === credentials.email && u.password === credentials.password)
 
         if (user) {
           return {
@@ -47,6 +48,9 @@ const handler = NextAuth({
       },
     }),
   ],
+  pages: {
+    signIn: "/login",
+  },
   session: {
     strategy: "jwt",
   },
@@ -65,9 +69,8 @@ const handler = NextAuth({
       return session
     },
   },
-  pages: {
-    signIn: "/login",
-  },
-})
+}
+
+const handler = NextAuth(authOptions)
 
 export { handler as GET, handler as POST }

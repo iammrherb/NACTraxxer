@@ -25,6 +25,7 @@ import {
   Building,
 } from "lucide-react"
 import PolicyEditor from "./policy-editor"
+import PolicyManagement from "./policy-management"
 
 interface Site {
   id: string
@@ -76,6 +77,8 @@ export default function SiteWorkbook({ siteId, onSiteChange }: SiteWorkbookProps
   const [customChecklist, setCustomChecklist] = useState<ChecklistItem[]>([])
   const [globalPolicies, setGlobalPolicies] = useState<Policy[]>([])
   const [sitePolicies, setSitePolicies] = useState<Policy[]>([])
+  const [showPolicyManager, setShowPolicyManager] = useState(false)
+  const [policyType, setPolicyType] = useState<"global" | "site-specific">("global")
 
   useEffect(() => {
     const savedSites = localStorage.getItem("portnox-sites")
@@ -219,6 +222,21 @@ export default function SiteWorkbook({ siteId, onSiteChange }: SiteWorkbookProps
       default:
         return <XCircle className="h-4 w-4 text-gray-400" />
     }
+  }
+
+  const handlePolicyTypeChange = (type: "global" | "site-specific") => {
+    setPolicyType(type)
+  }
+
+  const handlePolicyCreate = (policy: Policy) => {
+    if (policy.type === "global") {
+      setGlobalPolicies([...globalPolicies, policy])
+      localStorage.setItem("portnox-global-policies", JSON.stringify([...globalPolicies, policy]))
+    } else if (policy.type === "site-specific") {
+      setSitePolicies([...sitePolicies, policy])
+      localStorage.setItem(`portnox-site-policies-${selectedSiteId}`, JSON.stringify([...sitePolicies, policy]))
+    }
+    setShowPolicyManager(false)
   }
 
   if (sites.length === 0) {
@@ -544,9 +562,13 @@ export default function SiteWorkbook({ siteId, onSiteChange }: SiteWorkbookProps
                   <Shield className="h-5 w-5 text-blue-600" />
                   <span>NAC Policies</span>
                 </h3>
-                <Button onClick={() => setShowPolicyEditor(true)} size="sm">
+                <Button onClick={() => setShowPolicyManager(true)} size="sm">
                   <Settings className="h-4 w-4 mr-2" />
                   Manage Policies
+                </Button>
+                <Button onClick={() => setShowPolicyEditor(true)} size="sm" variant="outline">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Policy
                 </Button>
               </div>
 
@@ -639,6 +661,23 @@ export default function SiteWorkbook({ siteId, onSiteChange }: SiteWorkbookProps
       {/* Policy Editor Modal */}
       {showPolicyEditor && (
         <PolicyEditor onClose={() => setShowPolicyEditor(false)} siteId={selectedSiteId} siteName={siteData.name} />
+      )}
+
+      {/* Policy Manager Modal */}
+      {showPolicyManager && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto m-4">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold">Policy Management</h2>
+                <Button variant="ghost" onClick={() => setShowPolicyManager(false)}>
+                  ×
+                </Button>
+              </div>
+              <PolicyManagement onClose={() => setShowPolicyManager(false)} />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

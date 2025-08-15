@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import {
   Shield,
   Cloud,
@@ -11,16 +12,22 @@ import {
   Users,
   Settings,
   Smartphone,
-  Globe,
   Eye,
-  AlertTriangle,
+  X,
+  Minimize2,
+  Maximize2,
 } from "lucide-react"
+import { useState } from "react"
 
 interface ArchitectureLegendProps {
   currentView: string
+  onClose?: () => void
 }
 
-export default function ArchitectureLegend({ currentView = "complete" }: ArchitectureLegendProps) {
+export default function ArchitectureLegend({ currentView = "complete", onClose }: ArchitectureLegendProps) {
+  const [isMinimized, setIsMinimized] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false)
+
   const componentTypes = [
     {
       type: "endpoint",
@@ -133,79 +140,6 @@ export default function ArchitectureLegend({ currentView = "complete" }: Archite
     },
   ]
 
-  const vendorInfo = [
-    {
-      vendor: "cisco",
-      label: "Cisco",
-      color: "#1BA0D7",
-      logo: "🔵",
-      description: "Network infrastructure vendor",
-    },
-    {
-      vendor: "aruba",
-      label: "Aruba (HPE)",
-      color: "#FF6900",
-      logo: "🟠",
-      description: "Wireless and switching solutions",
-    },
-    {
-      vendor: "fortinet",
-      label: "Fortinet",
-      color: "#EE3124",
-      logo: "🔴",
-      description: "Security appliances and SASE",
-    },
-    {
-      vendor: "paloalto",
-      label: "Palo Alto Networks",
-      color: "#FF6B35",
-      logo: "🟠",
-      description: "Next-generation security platform",
-    },
-    {
-      vendor: "juniper",
-      label: "Juniper Networks",
-      color: "#84BD00",
-      logo: "🟢",
-      description: "Enterprise networking solutions",
-    },
-    {
-      vendor: "extreme",
-      label: "Extreme Networks",
-      color: "#7B68EE",
-      logo: "🟣",
-      description: "Cloud-driven networking",
-    },
-    {
-      vendor: "meraki",
-      label: "Cisco Meraki",
-      color: "#1BA0D7",
-      logo: "🔵",
-      description: "Cloud-managed networking",
-    },
-    {
-      vendor: "mist",
-      label: "Juniper Mist",
-      color: "#84BD00",
-      logo: "🟢",
-      description: "AI-driven wireless",
-    },
-    {
-      vendor: "ubiquiti",
-      label: "Ubiquiti",
-      color: "#0559C4",
-      logo: "🔵",
-      description: "Enterprise wireless and routing",
-    },
-    {
-      vendor: "ruckus",
-      label: "Ruckus (CommScope)",
-      color: "#FF6B35",
-      logo: "🟠",
-      description: "Wireless networking solutions",
-    },
-  ]
-
   const getViewSpecificInfo = () => {
     if (!currentView) {
       return {
@@ -218,105 +152,45 @@ export default function ArchitectureLegend({ currentView = "complete" }: Archite
     switch (currentView.toLowerCase()) {
       case "complete":
         return {
-          title: "Complete Architecture Components",
-          description: "Full end-to-end Zero Trust NAC deployment showing all integrated components and data flows.",
-          keyComponents: ["Portnox Cloud", "Network Infrastructure", "Identity Providers", "Policy Engine"],
+          title: "Complete Architecture",
+          description: "Full end-to-end Zero Trust NAC deployment.",
+          keyComponents: ["Portnox Cloud", "Network Infrastructure", "Identity Providers"],
         }
-      case "auth-flow":
+      case "authentication":
         return {
-          title: "Authentication Flow Components",
-          description: "802.1X authentication sequence showing the complete RADIUS authentication process.",
-          keyComponents: ["Supplicant", "Authenticator", "RADIUS Server", "Identity Store"],
+          title: "Authentication Flow",
+          description: "802.1X authentication sequence.",
+          keyComponents: ["Supplicant", "Authenticator", "RADIUS Server"],
         }
       case "pki":
         return {
-          title: "PKI Infrastructure Components",
-          description: "Certificate-based authentication infrastructure for secure device and user authentication.",
-          keyComponents: ["Root CA", "Issuing CA", "Certificate Store", "CRL Distribution"],
+          title: "PKI Infrastructure",
+          description: "Certificate-based authentication infrastructure.",
+          keyComponents: ["Root CA", "Issuing CA", "Certificate Store"],
         }
       case "policies":
         return {
-          title: "Policy Framework Components",
-          description: "Dynamic policy engine with user, device, and network-based access controls.",
-          keyComponents: ["Policy Engine", "User Policies", "Device Policies", "Network Policies"],
+          title: "Policy Framework",
+          description: "Dynamic policy engine with access controls.",
+          keyComponents: ["Policy Engine", "User Policies", "Device Policies"],
         }
       case "connectivity":
         return {
           title: "Connectivity Options",
-          description: "Multi-cloud and hybrid connectivity patterns for distributed NAC deployments.",
-          keyComponents: ["SD-WAN", "Cloud Connectors", "VPN Gateways", "Direct Connect"],
+          description: "Multi-cloud and hybrid connectivity patterns.",
+          keyComponents: ["VLANs", "SSIDs", "Network Segmentation"],
         }
       case "intune":
         return {
           title: "Microsoft Intune Integration",
-          description: "Device compliance integration with Microsoft Intune for comprehensive device management.",
-          keyComponents: ["Intune MDM", "Azure AD", "Compliance Policies", "Device Enrollment"],
-        }
-      case "jamf":
-        return {
-          title: "JAMF Pro Integration",
-          description: "Apple device management integration with JAMF Pro for macOS and iOS devices.",
-          keyComponents: ["JAMF Pro", "Apple Business Manager", "Device Enrollment", "Compliance Engine"],
+          description: "Device compliance integration with Microsoft Intune.",
+          keyComponents: ["Intune MDM", "Azure AD", "Compliance Policies"],
         }
       case "onboarding":
         return {
-          title: "Device Onboarding Workflow",
-          description: "Automated device enrollment and certificate provisioning for new devices.",
-          keyComponents: ["Captive Portal", "Certificate Authority", "MDM Enrollment", "Policy Assignment"],
-        }
-      case "fortigate-tacacs":
-        return {
-          title: "FortiGate TACACS+ Integration",
-          description: "Device administration authentication for FortiGate firewalls using TACACS+.",
-          keyComponents: ["FortiGate Firewall", "TACACS+ Server", "Active Directory", "Admin Authentication"],
-        }
-      case "palo-tacacs":
-        return {
-          title: "Palo Alto TACACS+ Integration",
-          description: "Centralized device administration for Palo Alto firewalls and Panorama management.",
-          keyComponents: ["Palo Alto Firewall", "Panorama", "TACACS+ Server", "Admin Authentication"],
-        }
-      case "cisco-tacacs":
-        return {
-          title: "Cisco TACACS+ Integration",
-          description: "Centralized device administration for Cisco network devices using TACACS+.",
-          keyComponents: ["Cisco Devices", "TACACS+ Server", "Active Directory", "Admin Authentication"],
-        }
-      case "aruba-tacacs":
-        return {
-          title: "Aruba TACACS+ Integration",
-          description: "Centralized device administration for Aruba network devices using TACACS+.",
-          keyComponents: ["Aruba Devices", "TACACS+ Server", "Active Directory", "Admin Authentication"],
-        }
-      case "juniper-tacacs":
-        return {
-          title: "Juniper TACACS+ Integration",
-          description: "Centralized device administration for Juniper network devices using TACACS+.",
-          keyComponents: ["Juniper Devices", "TACACS+ Server", "Active Directory", "Admin Authentication"],
-        }
-      case "palo-userid":
-        return {
-          title: "Palo Alto User-ID Integration",
-          description: "User identity mapping for Palo Alto firewalls using syslog-based User-ID integration.",
-          keyComponents: ["User-ID Agent", "Syslog Container", "Palo Alto Firewall", "User Mapping"],
-        }
-      case "fortigate-fsso":
-        return {
-          title: "FortiGate FSSO Integration",
-          description: "Fortinet Single Sign-On integration using syslog for user session tracking.",
-          keyComponents: ["FSSO Agent", "Syslog Container", "FortiGate Firewall", "User Sessions"],
-        }
-      case "meraki-wireless":
-        return {
-          title: "Cisco Meraki Wireless Integration",
-          description: "Cloud-managed wireless infrastructure with Cisco Meraki access points.",
-          keyComponents: ["Meraki Dashboard", "Meraki APs", "Cloud RADIUS", "Wireless Policies"],
-        }
-      case "mist-wireless":
-        return {
-          title: "Juniper Mist Wireless Integration",
-          description: "AI-driven wireless infrastructure with Juniper Mist access points.",
-          keyComponents: ["Mist Cloud", "Mist APs", "AI Engine", "Wireless Analytics"],
+          title: "Device Onboarding",
+          description: "Automated device enrollment and certificate provisioning.",
+          keyComponents: ["Captive Portal", "Certificate Authority", "MDM Enrollment"],
         }
       default:
         return {
@@ -329,81 +203,84 @@ export default function ArchitectureLegend({ currentView = "complete" }: Archite
 
   const viewInfo = getViewSpecificInfo()
 
+  if (isMinimized) {
+    return (
+      <div className="fixed top-20 right-4 z-30">
+        <Button variant="outline" size="sm" onClick={() => setIsMinimized(false)} className="bg-white shadow-lg">
+          <Eye className="h-4 w-4 mr-2" />
+          Show Legend
+        </Button>
+      </div>
+    )
+  }
+
   return (
-    <div className="space-y-6">
-      {/* View Overview */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Eye className="h-5 w-5 text-blue-600" />
-            <span>{viewInfo.title}</span>
-          </CardTitle>
+    <div
+      className={`fixed top-20 right-4 z-30 ${isExpanded ? "w-96" : "w-80"} max-h-[calc(100vh-6rem)] overflow-hidden`}
+    >
+      <Card className="shadow-xl border-2">
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center space-x-2 text-sm">
+              <Eye className="h-4 w-4 text-blue-600" />
+              <span>Legend</span>
+            </CardTitle>
+            <div className="flex items-center space-x-1">
+              <Button variant="ghost" size="sm" onClick={() => setIsExpanded(!isExpanded)} className="h-6 w-6 p-0">
+                {isExpanded ? <Minimize2 className="h-3 w-3" /> : <Maximize2 className="h-3 w-3" />}
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setIsMinimized(true)} className="h-6 w-6 p-0">
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent>
-          <p className="text-gray-600 mb-4">{viewInfo.description}</p>
-          {viewInfo.keyComponents.length > 0 && (
-            <div>
-              <h4 className="font-semibold mb-2">Key Components:</h4>
-              <div className="flex flex-wrap gap-2">
+        <CardContent className="overflow-y-auto max-h-[calc(100vh-12rem)] space-y-4">
+          {/* View Overview */}
+          <div>
+            <h4 className="font-semibold text-sm mb-2">{viewInfo.title}</h4>
+            <p className="text-xs text-gray-600 mb-2">{viewInfo.description}</p>
+            {viewInfo.keyComponents.length > 0 && (
+              <div className="flex flex-wrap gap-1">
                 {viewInfo.keyComponents.map((component, index) => (
-                  <Badge key={index} variant="outline">
+                  <Badge key={index} variant="outline" className="text-xs">
                     {component}
                   </Badge>
                 ))}
               </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            )}
+          </div>
 
-      {/* Component Types */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Settings className="h-5 w-5 text-blue-600" />
-            <span>Component Types</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {componentTypes.map((component) => (
-              <div key={component.type} className="flex items-start space-x-3 p-3 border rounded-lg">
-                <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
-                  style={{ backgroundColor: component.color }}
-                >
-                  {component.icon}
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-semibold">{component.label}</h4>
-                  <p className="text-sm text-gray-600 mb-2">{component.description}</p>
-                  <div className="flex flex-wrap gap-1">
-                    {component.examples.map((example, index) => (
-                      <Badge key={index} variant="secondary" className="text-xs">
-                        {example}
-                      </Badge>
-                    ))}
+          {/* Component Types */}
+          <div>
+            <h4 className="font-semibold text-sm mb-2">Components</h4>
+            <div className="space-y-2">
+              {componentTypes.slice(0, isExpanded ? componentTypes.length : 4).map((component) => (
+                <div key={component.type} className="flex items-center space-x-2 text-xs">
+                  <div
+                    className="w-4 h-4 rounded flex items-center justify-center text-white"
+                    style={{ backgroundColor: component.color }}
+                  >
+                    {component.icon}
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-medium">{component.label}</div>
+                    {isExpanded && <div className="text-gray-500 text-xs">{component.description}</div>}
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+              {!isExpanded && componentTypes.length > 4 && (
+                <div className="text-xs text-gray-500 text-center">+{componentTypes.length - 4} more components</div>
+              )}
+            </div>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Connection Types */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Network className="h-5 w-5 text-blue-600" />
-            <span>Connection Types</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {connectionTypes.map((connection) => (
-              <div key={connection.type} className="flex items-center space-x-3 p-3 border rounded-lg">
-                <div className="flex items-center space-x-2">
+          {/* Connection Types */}
+          <div>
+            <h4 className="font-semibold text-sm mb-2">Connections</h4>
+            <div className="space-y-1">
+              {connectionTypes.slice(0, isExpanded ? connectionTypes.length : 3).map((connection) => (
+                <div key={connection.type} className="flex items-center space-x-2 text-xs">
                   <div
                     className="w-4 h-0.5"
                     style={{
@@ -418,71 +295,35 @@ export default function ArchitectureLegend({ currentView = "complete" }: Archite
                       borderColor: connection.color,
                     }}
                   />
-                  <span className="font-semibold text-sm">{connection.label}</span>
+                  <span className="font-medium">{connection.label}</span>
                 </div>
-                <p className="text-xs text-gray-600">{connection.description}</p>
-              </div>
-            ))}
+              ))}
+              {!isExpanded && connectionTypes.length > 3 && (
+                <div className="text-xs text-gray-500 text-center">+{connectionTypes.length - 3} more protocols</div>
+              )}
+            </div>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Vendor Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Globe className="h-5 w-5 text-blue-600" />
-            <span>Supported Vendors</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {vendorInfo.map((vendor) => (
-              <div key={vendor.vendor} className="flex items-center space-x-3 p-3 border rounded-lg">
-                <div className="text-2xl">{vendor.logo}</div>
-                <div>
-                  <h4 className="font-semibold" style={{ color: vendor.color }}>
-                    {vendor.label}
-                  </h4>
-                  <p className="text-sm text-gray-600">{vendor.description}</p>
+          {/* Best Practices - Only show when expanded */}
+          {isExpanded && (
+            <div>
+              <h4 className="font-semibold text-sm mb-2">Best Practices</h4>
+              <div className="space-y-1">
+                <div className="flex items-start space-x-2 text-xs">
+                  <div className="w-1 h-1 bg-blue-500 rounded-full mt-1.5 flex-shrink-0" />
+                  <p>Start with pilot deployment</p>
+                </div>
+                <div className="flex items-start space-x-2 text-xs">
+                  <div className="w-1 h-1 bg-blue-500 rounded-full mt-1.5 flex-shrink-0" />
+                  <p>Ensure proper PKI infrastructure</p>
+                </div>
+                <div className="flex items-start space-x-2 text-xs">
+                  <div className="w-1 h-1 bg-blue-500 rounded-full mt-1.5 flex-shrink-0" />
+                  <p>Configure backup authentication</p>
                 </div>
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Best Practices */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <AlertTriangle className="h-5 w-5 text-amber-600" />
-            <span>Implementation Best Practices</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <div className="flex items-start space-x-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0" />
-              <p className="text-sm">Start with a pilot deployment in a controlled environment before full rollout</p>
             </div>
-            <div className="flex items-start space-x-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0" />
-              <p className="text-sm">Ensure proper certificate management and PKI infrastructure before deployment</p>
-            </div>
-            <div className="flex items-start space-x-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0" />
-              <p className="text-sm">Configure backup authentication methods for critical network access</p>
-            </div>
-            <div className="flex items-start space-x-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0" />
-              <p className="text-sm">Implement gradual policy enforcement to minimize user disruption</p>
-            </div>
-            <div className="flex items-start space-x-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0" />
-              <p className="text-sm">Monitor and analyze authentication logs for security insights</p>
-            </div>
-          </div>
+          )}
         </CardContent>
       </Card>
     </div>
