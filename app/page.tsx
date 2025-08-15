@@ -26,6 +26,7 @@ export default function NACDesigner() {
   const [customerLogo, setCustomerLogo] = useState("")
   const [companyName, setCompanyName] = useState("TechCorp Global")
   const [isClient, setIsClient] = useState(false)
+  const [dataRefreshKey, setDataRefreshKey] = useState(0)
 
   // Ensure we're on the client side
   useEffect(() => {
@@ -94,9 +95,52 @@ export default function NACDesigner() {
   }
 
   const handleDemoDataLoad = async () => {
-    // This will be called after demo data is loaded
-    // Force a refresh of all components
-    window.location.reload()
+    try {
+      // Trigger data refresh for all components
+      setDataRefreshKey((prev) => prev + 1)
+
+      // Dispatch custom events to notify components of data changes
+      window.dispatchEvent(new CustomEvent("demoDataLoaded"))
+      window.dispatchEvent(new CustomEvent("sitesUpdated"))
+      window.dispatchEvent(new CustomEvent("usersUpdated"))
+      window.dispatchEvent(new CustomEvent("timelineUpdated"))
+
+      toast({
+        title: "Demo Data Loaded",
+        description: "All components have been updated with demo data.",
+      })
+
+      // Small delay to ensure all components have updated
+      setTimeout(() => {
+        // If we're not on the sites tab and no site is selected, auto-select first site
+        if (activeTab !== "sites" && !selectedSiteId) {
+          const sites = storage.getSites()
+          if (sites.length > 0) {
+            setSelectedSiteId(sites[0].id)
+          }
+        }
+      }, 500)
+    } catch (error) {
+      console.error("Error handling demo data load:", error)
+      toast({
+        title: "Error",
+        description: "Failed to refresh components after loading demo data.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleSiteSelect = (siteId: string) => {
+    setSelectedSiteId(siteId)
+    // Auto-switch to workbook tab when a site is selected
+    if (activeTab !== "workbook") {
+      setActiveTab("workbook")
+    }
+
+    toast({
+      title: "Site Selected",
+      description: "Switched to Site Workbook view for the selected site.",
+    })
   }
 
   if (!isClient) {
@@ -129,6 +173,7 @@ export default function NACDesigner() {
                     src={
                       customerLogo ||
                       "https://companieslogo.com/img/orig/ABM_BIG-47f1fb05.png?t=1720244490&download=true" ||
+                      "/placeholder.svg" ||
                       "/placeholder.svg" ||
                       "/placeholder.svg" ||
                       "/placeholder.svg" ||
@@ -218,23 +263,23 @@ export default function NACDesigner() {
           </TabsList>
 
           <TabsContent value="architecture">
-            <ArchitectureDesigner />
+            <ArchitectureDesigner key={`arch-${dataRefreshKey}`} />
           </TabsContent>
 
           <TabsContent value="sites">
-            <SiteManagement onSiteSelect={setSelectedSiteId} />
+            <SiteManagement key={`sites-${dataRefreshKey}`} onSiteSelect={handleSiteSelect} />
           </TabsContent>
 
           <TabsContent value="progress">
-            <ProgressTracking />
+            <ProgressTracking key={`progress-${dataRefreshKey}`} />
           </TabsContent>
 
           <TabsContent value="workbook">
-            <SiteWorkbook siteId={selectedSiteId} />
+            <SiteWorkbook key={`workbook-${dataRefreshKey}`} siteId={selectedSiteId} />
           </TabsContent>
 
           <TabsContent value="timeline">
-            <TimelineScheduler />
+            <TimelineScheduler key={`timeline-${dataRefreshKey}`} />
           </TabsContent>
         </Tabs>
       </div>

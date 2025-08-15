@@ -73,7 +73,6 @@ export default function SiteManagement({ onSiteSelect }: SiteManagementProps) {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("basic")
 
-  // Enhanced form state for comprehensive site configuration
   const [formData, setFormData] = useState<Partial<Site>>({
     name: "",
     location: "",
@@ -221,6 +220,22 @@ export default function SiteManagement({ onSiteSelect }: SiteManagementProps) {
 
   useEffect(() => {
     loadData()
+
+    const handleDemoDataLoaded = () => {
+      loadData()
+    }
+
+    const handleSitesUpdated = () => {
+      loadData()
+    }
+
+    window.addEventListener("demoDataLoaded", handleDemoDataLoaded)
+    window.addEventListener("sitesUpdated", handleSitesUpdated)
+
+    return () => {
+      window.removeEventListener("demoDataLoaded", handleDemoDataLoaded)
+      window.removeEventListener("sitesUpdated", handleSitesUpdated)
+    }
   }, [])
 
   useEffect(() => {
@@ -233,6 +248,8 @@ export default function SiteManagement({ onSiteSelect }: SiteManagementProps) {
       const [sitesData, usersData] = await Promise.all([storage.getSites(), storage.getUsers()])
       setSites(sitesData || [])
       setUsers(usersData || [])
+
+      window.dispatchEvent(new CustomEvent("sitesDataLoaded", { detail: { sites: sitesData, users: usersData } }))
     } catch (error) {
       console.error("Error loading data:", error)
       toast({
@@ -303,7 +320,9 @@ export default function SiteManagement({ onSiteSelect }: SiteManagementProps) {
       setShowAddDialog(false)
       setEditingSite(null)
       resetForm()
-      loadData()
+      await loadData()
+
+      window.dispatchEvent(new CustomEvent("sitesUpdated"))
     } catch (error) {
       console.error("Error saving site:", error)
       toast({
@@ -330,7 +349,9 @@ export default function SiteManagement({ onSiteSelect }: SiteManagementProps) {
         title: "Site deleted",
         description: "Site has been deleted successfully.",
       })
-      loadData()
+      await loadData()
+
+      window.dispatchEvent(new CustomEvent("sitesUpdated"))
     } catch (error) {
       console.error("Error deleting site:", error)
       toast({
@@ -358,7 +379,9 @@ export default function SiteManagement({ onSiteSelect }: SiteManagementProps) {
         title: "Site duplicated",
         description: "Site has been duplicated successfully.",
       })
-      loadData()
+      await loadData()
+
+      window.dispatchEvent(new CustomEvent("sitesUpdated"))
     } catch (error) {
       console.error("Error duplicating site:", error)
       toast({
@@ -561,6 +584,16 @@ export default function SiteManagement({ onSiteSelect }: SiteManagementProps) {
         return "bg-blue-100 text-blue-800"
       default:
         return "bg-gray-100 text-gray-800"
+    }
+  }
+
+  const handleSiteSelect = (site: Site) => {
+    if (onSiteSelect) {
+      onSiteSelect(site.id)
+      toast({
+        title: "Site Selected",
+        description: `Selected ${site.name} for detailed view`,
+      })
     }
   }
 
@@ -2069,7 +2102,7 @@ export default function SiteManagement({ onSiteSelect }: SiteManagementProps) {
                           size="sm"
                           onClick={(e) => {
                             e.stopPropagation()
-                            onSiteSelect?.(site.id)
+                            handleSiteSelect(site)
                           }}
                           title="View Details"
                         >
