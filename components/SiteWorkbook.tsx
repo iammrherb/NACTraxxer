@@ -1,8 +1,8 @@
-"use client"
+'use client'
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Book, MapPin, Users, Calendar, Settings, Zap, Shield, Activity } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Book, MapPin, Users, Calendar, Settings } from 'lucide-react'
 
 interface SiteWorkbookProps {
   siteId: string | null
@@ -10,48 +10,45 @@ interface SiteWorkbookProps {
 
 export default function SiteWorkbook({ siteId }: SiteWorkbookProps) {
   // Sample site data - in a real app this would be fetched based on siteId
-  const siteData = siteId
-    ? {
-        id: "ABM-HQ001",
-        name: "ABM Global Headquarters",
-        region: "North America",
-        country: "USA",
-        priority: "High",
-        phase: "1",
-        users: 2500,
-        projectManager: "Alex Rivera",
-        technicalOwners: ["John Smith", "Mark Wilson"],
-        status: "In Progress",
-        completionPercent: 35,
-        notes: "Executive network needs priority handling. Board room has custom AV equipment.",
-        wiredVendors: ["Cisco", "Juniper"],
-        wirelessVendors: ["Cisco"],
-        deviceTypes: ["Windows", "Apple", "Mobile", "IoT"],
-        radsec: "Native",
-        plannedStart: "2025-08-01",
-        plannedEnd: "2025-08-15",
-      }
-    : null
+  const siteData = siteId ? {
+    id: 'ABM-HQ001',
+    name: 'ABM Global Headquarters',
+    region: 'North America',
+    country: 'USA',
+    priority: 'High',
+    phase: '1',
+    users: 2500,
+    projectManager: 'Alex Rivera',
+    technicalOwners: ['John Smith', 'Mark Wilson'],
+    status: 'In Progress',
+    completionPercent: 35,
+    notes: 'Executive network needs priority handling. Board room has custom AV equipment.',
+    wiredVendors: ['Cisco', 'Juniper'],
+    wirelessVendors: ['Cisco'],
+    deviceTypes: ['Windows', 'Apple', 'Mobile', 'IoT'],
+    radsec: 'Native',
+    plannedStart: '2025-08-01',
+    plannedEnd: '2025-08-15'
+  } : null
 
   if (!siteId || !siteData) {
     return (
-      <Card className="cyber-card">
+      <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
-            <Book className="h-6 w-6 text-cyber-primary glow-cyber-primary" />
-            <span className="text-cyber-primary">Site Workbook</span>
+            <Book className="h-6 w-6 text-blue-600" />
+            <span>Site Workbook</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-12 relative">
-            <div className="absolute inset-0 cyber-grid opacity-20" />
-            <div className="relative z-10">
-              <Book className="h-16 w-16 text-cyber-primary/50 mx-auto mb-4 glow-cyber-primary" />
-              <h3 className="text-lg font-medium text-cyber-primary mb-2">No Site Selected</h3>
-              <p className="text-muted-foreground">
-                Please select a site from the Master List to view its detailed workbook.
-              </p>
-            </div>
+          <div className="text-center py-12">
+            <Book className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+              No Site Selected
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400">
+              Please select a site from the Master List to view its detailed workbook.
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -60,201 +57,174 @@ export default function SiteWorkbook({ siteId }: SiteWorkbookProps) {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case "High":
-        return "cyber-badge-danger"
-      case "Medium":
-        return "cyber-badge-warning"
-      case "Low":
-        return "cyber-badge-success"
-      default:
-        return "cyber-badge"
+      case 'High': return 'bg-red-100 text-red-800 border-red-200'
+      case 'Medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200'
+      case 'Low': return 'bg-green-100 text-green-800 border-green-200'
+      default: return 'bg-gray-100 text-gray-800 border-gray-200'
     }
   }
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "Complete":
-        return "text-cyber-accent"
-      case "In Progress":
-        return "text-cyber-primary"
-      case "Planned":
-        return "text-muted-foreground"
-      case "Delayed":
-        return "text-cyber-danger"
-      default:
-        return "text-muted-foreground"
+      case 'Complete': return 'text-green-600'
+      case 'In Progress': return 'text-blue-600'
+      case 'Planned': return 'text-gray-600'
+      case 'Delayed': return 'text-red-600'
+      default: return 'text-gray-600'
     }
   }
 
   return (
     <div className="space-y-6">
-      <Card className="cyber-card relative overflow-hidden">
-        <div className="absolute inset-0 cyber-grid opacity-10" />
-        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-radial from-cyber-primary/20 to-transparent" />
-        <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-radial from-cyber-secondary/20 to-transparent" />
-
-        <CardHeader className="relative z-10">
+      <Card>
+        <CardHeader>
           <CardTitle className="flex items-center space-x-2">
-            <Book className="h-6 w-6 text-cyber-primary glow-cyber-primary" />
-            <span className="text-cyber-primary">Site Workbook: {siteData.name}</span>
-            <Badge className="cyber-badge-secondary ml-auto">
-              <Activity className="w-3 h-3 mr-1" />
-              Live
-            </Badge>
+            <Book className="h-6 w-6 text-blue-600" />
+            <span>Site Workbook: {siteData.name}</span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="relative z-10">
+        <CardContent>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Basic Information */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold flex items-center space-x-2">
-                <MapPin className="h-5 w-5 text-cyber-primary glow-cyber-primary" />
-                <span className="text-cyber-primary">Site Information</span>
+                <MapPin className="h-5 w-5 text-blue-600" />
+                <span>Site Information</span>
               </h3>
-
-              <div className="space-y-3 bg-black/20 p-4 rounded-lg border border-cyber-primary/20 backdrop-blur-sm">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium text-muted-foreground">Site ID:</span>
-                  <span className="font-mono text-cyber-accent glow-cyber-accent">{siteData.id}</span>
+              
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Site ID:</span>
+                  <span className="font-mono">{siteData.id}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="font-medium text-muted-foreground">Region:</span>
-                  <span className="text-cyber-primary">{siteData.region}</span>
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Region:</span>
+                  <span>{siteData.region}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="font-medium text-muted-foreground">Country:</span>
-                  <span className="text-cyber-primary">{siteData.country}</span>
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Country:</span>
+                  <span>{siteData.country}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="font-medium text-muted-foreground">Priority:</span>
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Priority:</span>
                   <Badge className={getPriorityColor(siteData.priority)}>
-                    <Zap className="w-3 h-3 mr-1" />
                     {siteData.priority}
                   </Badge>
                 </div>
                 <div className="flex justify-between">
-                  <span className="font-medium text-muted-foreground">Phase:</span>
-                  <span className="text-cyber-secondary">Phase {siteData.phase}</span>
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Phase:</span>
+                  <span>Phase {siteData.phase}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="font-medium text-muted-foreground">Users:</span>
-                  <span className="text-cyber-accent font-mono">{siteData.users.toLocaleString()}</span>
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Users:</span>
+                  <span>{siteData.users.toLocaleString()}</span>
                 </div>
               </div>
             </div>
 
+            {/* Project Information */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold flex items-center space-x-2">
-                <Users className="h-5 w-5 text-cyber-secondary glow-cyber-secondary" />
-                <span className="text-cyber-secondary">Project Team</span>
+                <Users className="h-5 w-5 text-blue-600" />
+                <span>Project Team</span>
               </h3>
-
-              <div className="space-y-3 bg-black/20 p-4 rounded-lg border border-cyber-secondary/20 backdrop-blur-sm">
+              
+              <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="font-medium text-muted-foreground">Project Manager:</span>
-                  <span className="text-cyber-secondary">{siteData.projectManager}</span>
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Project Manager:</span>
+                  <span>{siteData.projectManager}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="font-medium text-muted-foreground">Technical Owners:</span>
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Technical Owners:</span>
                   <div className="text-right">
                     {siteData.technicalOwners.map((owner, index) => (
-                      <div key={index} className="text-cyber-secondary">
-                        {owner}
-                      </div>
+                      <div key={index}>{owner}</div>
                     ))}
                   </div>
                 </div>
                 <div className="flex justify-between">
-                  <span className="font-medium text-muted-foreground">Status:</span>
-                  <span className={`font-medium ${getStatusColor(siteData.status)}`}>{siteData.status}</span>
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Status:</span>
+                  <span className={`font-medium ${getStatusColor(siteData.status)}`}>
+                    {siteData.status}
+                  </span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="font-medium text-muted-foreground">Completion:</span>
+                <div className="flex justify-between">
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Completion:</span>
                   <div className="flex items-center space-x-2">
-                    <div className="w-20 cyber-progress h-2">
-                      <div
-                        className="cyber-progress-bar h-full transition-all duration-1000"
+                    <div className="w-20 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <div 
+                        className="bg-blue-600 h-2 rounded-full"
                         style={{ width: `${siteData.completionPercent}%` }}
                       />
                     </div>
-                    <span className="text-sm font-medium text-cyber-primary font-mono">
-                      {siteData.completionPercent}%
-                    </span>
+                    <span className="text-sm font-medium">{siteData.completionPercent}%</span>
                   </div>
                 </div>
               </div>
             </div>
 
+            {/* Timeline */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold flex items-center space-x-2">
-                <Calendar className="h-5 w-5 text-cyber-accent glow-cyber-accent" />
-                <span className="text-cyber-accent">Project Timeline</span>
+                <Calendar className="h-5 w-5 text-blue-600" />
+                <span>Project Timeline</span>
               </h3>
-
-              <div className="space-y-3 bg-black/20 p-4 rounded-lg border border-cyber-accent/20 backdrop-blur-sm">
+              
+              <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="font-medium text-muted-foreground">Planned Start:</span>
-                  <span className="text-cyber-accent font-mono">
-                    {new Date(siteData.plannedStart).toLocaleDateString()}
-                  </span>
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Planned Start:</span>
+                  <span>{new Date(siteData.plannedStart).toLocaleDateString()}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="font-medium text-muted-foreground">Planned End:</span>
-                  <span className="text-cyber-accent font-mono">
-                    {new Date(siteData.plannedEnd).toLocaleDateString()}
-                  </span>
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Planned End:</span>
+                  <span>{new Date(siteData.plannedEnd).toLocaleDateString()}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="font-medium text-muted-foreground">Duration:</span>
-                  <span className="text-cyber-accent font-mono">
-                    {Math.ceil(
-                      (new Date(siteData.plannedEnd).getTime() - new Date(siteData.plannedStart).getTime()) /
-                        (1000 * 60 * 60 * 24),
-                    )}{" "}
-                    days
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Duration:</span>
+                  <span>
+                    {Math.ceil((new Date(siteData.plannedEnd).getTime() - new Date(siteData.plannedStart).getTime()) / (1000 * 60 * 60 * 24))} days
                   </span>
                 </div>
               </div>
             </div>
 
+            {/* Technical Configuration */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold flex items-center space-x-2">
-                <Settings className="h-5 w-5 text-cyber-warning glow-cyber-warning" />
-                <span className="text-cyber-warning">Technical Configuration</span>
+                <Settings className="h-5 w-5 text-blue-600" />
+                <span>Technical Configuration</span>
               </h3>
-
-              <div className="space-y-3 bg-black/20 p-4 rounded-lg border border-cyber-warning/20 backdrop-blur-sm">
+              
+              <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="font-medium text-muted-foreground">RADSEC Implementation:</span>
-                  <Badge className="cyber-badge-warning">
-                    <Shield className="w-3 h-3 mr-1" />
-                    {siteData.radsec}
-                  </Badge>
+                  <span className="font-medium text-gray-600 dark:text-gray-400">RADSEC Implementation:</span>
+                  <Badge variant="outline">{siteData.radsec}</Badge>
                 </div>
                 <div>
-                  <span className="font-medium text-muted-foreground">Wired Vendors:</span>
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Wired Vendors:</span>
                   <div className="flex flex-wrap gap-1 mt-1">
                     {siteData.wiredVendors.map((vendor, index) => (
-                      <Badge key={index} className="cyber-badge text-xs">
+                      <Badge key={index} variant="outline" className="text-xs">
                         {vendor}
                       </Badge>
                     ))}
                   </div>
                 </div>
                 <div>
-                  <span className="font-medium text-muted-foreground">Wireless Vendors:</span>
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Wireless Vendors:</span>
                   <div className="flex flex-wrap gap-1 mt-1">
                     {siteData.wirelessVendors.map((vendor, index) => (
-                      <Badge key={index} className="cyber-badge-secondary text-xs">
+                      <Badge key={index} variant="outline" className="text-xs">
                         {vendor}
                       </Badge>
                     ))}
                   </div>
                 </div>
                 <div>
-                  <span className="font-medium text-muted-foreground">Device Types:</span>
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Device Types:</span>
                   <div className="flex flex-wrap gap-1 mt-1">
                     {siteData.deviceTypes.map((type, index) => (
-                      <Badge key={index} className="cyber-badge-accent text-xs">
+                      <Badge key={index} variant="outline" className="text-xs">
                         {type}
                       </Badge>
                     ))}
@@ -264,11 +234,13 @@ export default function SiteWorkbook({ siteId }: SiteWorkbookProps) {
             </div>
           </div>
 
-          <div className="mt-6 pt-6 border-t border-cyber-primary/20">
-            <h3 className="text-lg font-semibold mb-3 text-cyber-primary">Project Notes</h3>
-            <div className="bg-black/30 rounded-lg p-4 border border-cyber-primary/20 backdrop-blur-sm relative overflow-hidden">
-              <div className="absolute inset-0 cyber-grid opacity-10" />
-              <p className="text-muted-foreground relative z-10">{siteData.notes}</p>
+          {/* Notes Section */}
+          <div className="mt-6 pt-6 border-t">
+            <h3 className="text-lg font-semibold mb-3">Project Notes</h3>
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+              <p className="text-gray-700 dark:text-gray-300">
+                {siteData.notes}
+              </p>
             </div>
           </div>
         </CardContent>
