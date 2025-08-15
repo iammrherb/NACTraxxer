@@ -6,20 +6,40 @@ const handler = NextAuth({
     CredentialsProvider({
       name: "credentials",
       credentials: {
-        username: { label: "Username", type: "text" },
+        email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.username || !credentials?.password) {
+        if (!credentials?.email || !credentials?.password) {
           return null
         }
 
-        // Simple demo authentication - replace with real authentication
-        if (credentials.username === "admin" && credentials.password === "admin") {
-          return {
+        // Demo users for testing
+        const users = [
+          {
             id: "1",
-            name: "Admin User",
             email: "admin@portnox.com",
+            password: "password123",
+            name: "Admin User",
+            role: "admin",
+          },
+          {
+            id: "2",
+            email: "user@portnox.com",
+            password: "password123",
+            name: "Regular User",
+            role: "user",
+          },
+        ]
+
+        const user = users.find((u) => u.email === credentials.email && u.password === credentials.password)
+
+        if (user) {
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
           }
         }
 
@@ -27,27 +47,27 @@ const handler = NextAuth({
       },
     }),
   ],
-  pages: {
-    signIn: "/login",
-  },
   session: {
     strategy: "jwt",
   },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id
+        token.role = user.role
       }
       return token
     },
     async session({ session, token }) {
       if (token) {
-        session.user.id = token.id as string
+        session.user.id = token.sub
+        session.user.role = token.role
       }
       return session
     },
   },
-  debug: process.env.NODE_ENV === "development",
+  pages: {
+    signIn: "/login",
+  },
 })
 
 export { handler as GET, handler as POST }

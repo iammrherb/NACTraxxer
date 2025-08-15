@@ -227,9 +227,7 @@ export default function DemoDataModal({ open, onOpenChange, onDataLoaded }: Demo
 
         // Actually load the data on the last step
         if (i === loadingSteps.length - 2) {
-          console.log("[v0] Loading demo data for scenario:", scenario)
           await storage.generateDemoData(scenario)
-          window.dispatchEvent(new CustomEvent("demoDataLoaded", { detail: { scenario } }))
         }
       }
 
@@ -246,9 +244,6 @@ export default function DemoDataModal({ open, onOpenChange, onDataLoaded }: Demo
         setSelectedScenario(null)
         setProgress(0)
         setLoadingStep("")
-
-        // Force a page refresh to ensure all components reload with new data
-        window.location.reload()
       }, 1000)
     } catch (error) {
       console.error("Error loading demo data:", error)
@@ -274,9 +269,7 @@ export default function DemoDataModal({ open, onOpenChange, onDataLoaded }: Demo
       setLoadingStep("Clearing existing data...")
       setProgress(50)
 
-      console.log("[v0] Clearing all data")
       await storage.clearAllData()
-      window.dispatchEvent(new CustomEvent("demoDataLoaded", { detail: { scenario: "cleared" } }))
 
       setLoadingStep("Data cleared successfully!")
       setProgress(100)
@@ -292,9 +285,6 @@ export default function DemoDataModal({ open, onOpenChange, onDataLoaded }: Demo
         setLoading(false)
         setProgress(0)
         setLoadingStep("")
-
-        // Force a page refresh to ensure all components reload with new data
-        window.location.reload()
       }, 1000)
     } catch (error) {
       console.error("Error clearing data:", error)

@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Plus, Search, Download, Edit, Eye, Trash2 } from "lucide-react"
-import { storage } from "@/lib/storage"
 
 interface Site {
   id: string
@@ -36,26 +35,9 @@ export default function MasterSiteList({ onSiteSelect }: MasterSiteListProps) {
   const [sites, setSites] = useState<Site[]>([])
 
   useEffect(() => {
-    const loadSites = () => {
-      const storedSites = storage.getSites()
-      console.log("[v0] Loaded sites from storage:", storedSites.length)
-      setSites(storedSites)
-    }
-
-    loadSites()
-
-    const handleStorageChange = () => {
-      console.log("[v0] Storage changed, reloading sites")
-      loadSites()
-    }
-
-    window.addEventListener("storage", handleStorageChange)
-    // Custom event for when demo data is loaded
-    window.addEventListener("demoDataLoaded", handleStorageChange)
-
-    return () => {
-      window.removeEventListener("storage", handleStorageChange)
-      window.removeEventListener("demoDataLoaded", handleStorageChange)
+    const savedSites = localStorage.getItem("portnox-sites")
+    if (savedSites) {
+      setSites(JSON.parse(savedSites))
     }
   }, [])
 

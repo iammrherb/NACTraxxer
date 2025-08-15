@@ -1,3043 +1,2233 @@
 "use client"
 
-import type React from "react"
-import { useState, useRef } from "react"
+import React from "react"
 
-interface DiagramConfig {
-  identityProvider?: {
-    type: string
-    domain: string
-    mfaEnabled: boolean
-  }
-  mdmProvider?: {
-    type: string
-    complianceEnabled: boolean
-  }
-  firewallInfrastructure?: {
-    vendor: string
-    haConfiguration: boolean
-  }
-  wiredInfrastructure?: {
-    vendor: string
-    switchCount: number
-  }
-  wirelessInfrastructure?: {
-    vendor: string
-    apCount: number
-  }
-  radiusConfiguration?: {
-    type: string
-    clustering: boolean
-  }
-  portnoxAgent?: {
-    enabled: boolean
-    riskAssessment: boolean
-    behaviorAnalytics: boolean
-  }
-  guestPortal?: {
-    enabled: boolean
-    captivePortal: boolean
-    selfRegistration: boolean
-  }
-  iotOnboarding?: {
-    enabled: boolean
-    autoProvisioning: boolean
-    deviceProfiling: boolean
-  }
-}
+import { useState, useRef } from "react"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Separator } from "@/components/ui/separator"
+import {
+  Cloud,
+  Server,
+  Wifi,
+  Shield,
+  Users,
+  Smartphone,
+  Laptop,
+  Router,
+  Key,
+  Globe,
+  Activity,
+  Printer,
+  Antenna,
+  CheckCircle,
+  Info,
+  Database,
+  Network,
+  Monitor,
+  Building,
+  MapPin,
+  CheckCircle2,
+} from "lucide-react"
 
 interface InteractiveDiagramProps {
   view: string
-  config?: DiagramConfig
-  onExport?: (format: "svg" | "png" | "pdf") => void
+  config?: {
+    cloudProvider?: string
+    networkVendor?: string
+    connectivityType?: string
+    identityProvider?: string
+    mdmProvider?: string
+    firewallVendor?: string
+    radiusType?: string
+    pkiProvider?: string
+    wirelessVendor?: string
+    deviceTypes?: string[]
+    byodSupport?: boolean
+    guestPortal?: boolean
+  }
+  isAnimating?: boolean
+  animationSpeed?: number
+  showLegend?: boolean
+  className?: string
 }
 
-export default function InteractiveDiagram({ view, config = {}, onExport }: InteractiveDiagramProps) {
-  const [isAnimating, setIsAnimating] = useState(true)
-  const [animationSpeed, setAnimationSpeed] = useState(1)
-  const [showLegend, setShowLegend] = useState(true)
+export default function InteractiveDiagram({
+  view,
+  config = {},
+  isAnimating = true,
+  animationSpeed = 1,
+  showLegend = true,
+  className,
+}: InteractiveDiagramProps) {
+  const [selectedComponent, setSelectedComponent] = useState<string | null>(null)
   const [hoveredComponent, setHoveredComponent] = useState<string | null>(null)
-  const [showTooltip, setShowTooltip] = useState<{ x: number; y: number; content: string } | null>(null)
+  const [animationPhase, setAnimationPhase] = useState(0)
   const svgRef = useRef<SVGSVGElement>(null)
 
-  // Safe config access with defaults
+  // Default config values
   const safeConfig = {
-    identityProvider: {
-      type: "azure-ad",
-      domain: "company.com",
-      mfaEnabled: true,
-      ...config.identityProvider,
+    cloudProvider: config.cloudProvider || "aws",
+    networkVendor: config.networkVendor || "cisco",
+    connectivityType: config.connectivityType || "sdwan",
+    identityProvider: config.identityProvider || "azure-ad",
+    mdmProvider: config.mdmProvider || "intune",
+    firewallVendor: config.firewallVendor || "palo-alto",
+    radiusType: config.radiusType || "cisco-ise",
+    pkiProvider: config.pkiProvider || "microsoft-ca",
+    wirelessVendor: config.wirelessVendor || "cisco-meraki",
+    deviceTypes: config.deviceTypes || ["windows", "mac", "ios", "android", "iot"],
+    byodSupport: config.byodSupport !== undefined ? config.byodSupport : true,
+    guestPortal: config.guestPortal !== undefined ? config.guestPortal : true,
+  }
+
+  const componentDetails = {
+    "portnox-cloud": {
+      name: "Portnox Cloud NAC",
+      description: "Cloud-based Network Access Control platform with global reach and enterprise-grade security",
+      specs: [
+        "99.9% SLA uptime guarantee",
+        "Global edge locations for low latency",
+        "Auto-scaling infrastructure",
+        "SOC 2 Type II certified",
+        "GDPR & HIPAA compliant",
+        "Real-time policy enforcement",
+        "Advanced threat detection",
+        "Certificate lifecycle management",
+      ],
+      ports: ["HTTPS:443", "RADIUS:1812/1813", "LDAPS:636", "SYSLOG:514"],
+      protocols: ["RADIUS", "LDAP", "SAML 2.0", "OAuth 2.0", "REST API", "GraphQL"],
+      metrics: {
+        uptime: "99.97%",
+        latency: "< 50ms",
+        throughput: "10M auth/hour",
+        users: "500K+ active",
+      },
     },
-    mdmProvider: {
-      type: "intune",
-      complianceEnabled: true,
-      ...config.mdmProvider,
+    "identity-provider": {
+      name: safeConfig.identityProvider === "azure-ad" ? "Microsoft Azure AD" : "Identity Provider",
+      description: "Centralized identity and access management with advanced security features",
+      specs: [
+        "Multi-factor authentication support",
+        "Conditional access policies",
+        "Single sign-on (SSO) integration",
+        "Identity governance and lifecycle",
+        "Risk-based authentication",
+        "Privileged identity management",
+        "Identity protection and monitoring",
+        "Seamless hybrid integration",
+      ],
+      ports: ["HTTPS:443", "LDAPS:636", "SAML:443", "Kerberos:88"],
+      protocols: ["SAML 2.0", "OAuth 2.0", "OpenID Connect", "LDAP", "Kerberos", "WS-Federation"],
+      metrics: {
+        users: "50K+ identities",
+        sso: "200+ apps",
+        mfa: "99.5% adoption",
+        incidents: "0 breaches",
+      },
     },
-    firewallInfrastructure: {
-      vendor: "palo-alto",
-      haConfiguration: true,
-      ...config.firewallInfrastructure,
+    "mdm-provider": {
+      name: safeConfig.mdmProvider === "intune" ? "Microsoft Intune" : "MDM Provider",
+      description: "Comprehensive mobile device management and endpoint protection platform",
+      specs: [
+        "Device enrollment automation",
+        "Compliance policy enforcement",
+        "App protection policies",
+        "Certificate deployment via SCEP",
+        "Remote device management",
+        "Conditional access integration",
+        "Zero-touch provisioning",
+        "Advanced threat protection",
+      ],
+      ports: ["HTTPS:443", "SCEP:80/443", "APNs:443", "FCM:443"],
+      protocols: ["HTTPS", "SCEP", "OMA-DM", "Apple MDM", "Android Enterprise", "Windows MDM"],
+      metrics: {
+        devices: "25K+ managed",
+        compliance: "98.5%",
+        apps: "150+ deployed",
+        certificates: "30K+ issued",
+      },
     },
-    wiredInfrastructure: {
-      vendor: "cisco",
-      switchCount: 24,
-      ...config.wiredInfrastructure,
+    "network-switch": {
+      name: `${safeConfig.networkVendor.charAt(0).toUpperCase() + safeConfig.networkVendor.slice(1)} Network Switch`,
+      description: "Enterprise-grade managed network switch with advanced 802.1X authentication capabilities",
+      specs: [
+        "48 x 1GbE access ports",
+        "4 x 10GbE uplink ports",
+        "802.1X authentication support",
+        "Dynamic VLAN assignment",
+        "PoE+ support (30W per port)",
+        "Advanced QoS capabilities",
+        "Network segmentation",
+        "Real-time monitoring",
+      ],
+      ports: ["SSH:22", "HTTPS:443", "SNMP:161", "RADIUS:1812", "Telnet:23"],
+      protocols: ["802.1X", "RADIUS", "SNMP v3", "LLDP", "STP/RSTP", "LACP"],
+      metrics: {
+        ports: "48 active",
+        uptime: "99.99%",
+        throughput: "480 Gbps",
+        power: "740W PoE",
+      },
     },
-    wirelessInfrastructure: {
-      vendor: "cisco",
-      apCount: 48,
-      ...config.wirelessInfrastructure,
+    "wireless-controller": {
+      name: `${safeConfig.wirelessVendor.charAt(0).toUpperCase() + safeConfig.wirelessVendor.slice(1)} Wireless Controller`,
+      description: "Centralized wireless network management with enterprise security and performance",
+      specs: [
+        "Cloud-managed architecture",
+        "Up to 1000 AP management",
+        "WPA3-Enterprise support",
+        "RF optimization and planning",
+        "Guest portal integration",
+        "Bandwidth management",
+        "Rogue AP detection",
+        "Advanced analytics",
+      ],
+      ports: ["HTTPS:443", "CAPWAP:5246/5247", "SSH:22", "SNMP:161"],
+      protocols: ["CAPWAP", "802.11ax/ac", "WPA3", "RADIUS", "DNS", "DHCP"],
+      metrics: {
+        aps: "120 managed",
+        clients: "2.5K connected",
+        throughput: "2.4 Gbps",
+        coverage: "99.8%",
+      },
     },
-    radiusConfiguration: {
-      type: "cloud-radius",
-      clustering: true,
-      ...config.radiusConfiguration,
+    firewall: {
+      name: `${safeConfig.firewallVendor.charAt(0).toUpperCase() + safeConfig.firewallVendor.slice(1)} Next-Gen Firewall`,
+      description: "Advanced threat protection and network security with deep packet inspection",
+      specs: [
+        "Application-aware filtering",
+        "User-ID integration",
+        "Threat intelligence feeds",
+        "SSL/TLS inspection",
+        "10 Gbps throughput",
+        "Intrusion prevention system",
+        "Advanced malware protection",
+        "URL filtering and categorization",
+      ],
+      ports: ["HTTPS:443", "SSH:22", "SYSLOG:514", "SNMP:161", "RADIUS:1812"],
+      protocols: ["User-ID", "FSSO", "SAML", "LDAP", "RADIUS", "IPSec", "SSL VPN"],
+      metrics: {
+        throughput: "8.5 Gbps",
+        sessions: "2M concurrent",
+        threats: "99.9% blocked",
+        policies: "500+ rules",
+      },
     },
-    portnoxAgent: {
-      enabled: true,
-      riskAssessment: true,
-      behaviorAnalytics: true,
-      ...config.portnoxAgent,
+    "radius-server": {
+      name: safeConfig.radiusType === "cisco-ise" ? "Cisco Identity Services Engine" : "RADIUS Server",
+      description: "Comprehensive authentication, authorization, and accounting server with policy enforcement",
+      specs: [
+        "EAP method support (TLS, PEAP, TTLS)",
+        "Policy decision point",
+        "Certificate validation",
+        "Device profiling engine",
+        "Guest access management",
+        "BYOD onboarding",
+        "Threat-centric NAC",
+        "Compliance monitoring",
+      ],
+      ports: ["RADIUS:1812/1813", "HTTPS:443", "TACACS+:49", "LDAP:389"],
+      protocols: ["RADIUS", "TACACS+", "EAP-TLS", "PEAP", "LDAP", "SNMP", "REST API"],
+      metrics: {
+        authentications: "50K/day",
+        policies: "200+ active",
+        endpoints: "15K profiled",
+        uptime: "99.95%",
+      },
     },
-    guestPortal: {
-      enabled: true,
-      captivePortal: true,
-      selfRegistration: true,
-      ...config.guestPortal,
-    },
-    iotOnboarding: {
-      enabled: true,
-      autoProvisioning: true,
-      deviceProfiling: true,
-      ...config.iotOnboarding,
+    "certificate-authority": {
+      name: safeConfig.pkiProvider === "microsoft-ca" ? "Microsoft Certificate Authority" : "Certificate Authority",
+      description: "Enterprise PKI infrastructure for certificate lifecycle management and security",
+      specs: [
+        "X.509 certificate issuance",
+        "Certificate lifecycle management",
+        "SCEP enrollment support",
+        "CRL distribution points",
+        "Hardware security module",
+        "Certificate templates",
+        "Auto-enrollment capabilities",
+        "Certificate revocation",
+      ],
+      ports: ["HTTP:80", "HTTPS:443", "LDAP:389", "SCEP:80"],
+      protocols: ["SCEP", "CMP", "OCSP", "LDAP", "HTTP", "PKCS#10", "PKCS#7"],
+      metrics: {
+        certificates: "30K issued",
+        validity: "2 years avg",
+        revoked: "< 0.1%",
+        enrollment: "95% auto",
+      },
     },
   }
 
-  const handleComponentHover = (event: React.MouseEvent, componentId: string, content: string) => {
-    const rect = (event.target as Element).getBoundingClientRect()
-    setShowTooltip({
-      x: rect.left + rect.width / 2,
-      y: rect.top - 10,
-      content: content,
-    })
-    setHoveredComponent(componentId)
-  }
-
-  const handleComponentLeave = () => {
-    setShowTooltip(null)
-    setHoveredComponent(null)
-  }
-
-  const handleExport = async (format: "svg" | "png" | "pdf") => {
-    if (!svgRef.current) return
-
-    try {
-      if (format === "svg") {
-        const svgData = new XMLSerializer().serializeToString(svgRef.current)
-        const blob = new Blob([svgData], { type: "image/svg+xml" })
-        const url = URL.createObjectURL(blob)
-        const link = document.createElement("a")
-        link.href = url
-        link.download = `portnox-architecture-${view}-${Date.now()}.svg`
-        link.click()
-        URL.revokeObjectURL(url)
-      } else if (format === "png") {
-        const canvas = document.createElement("canvas")
-        const ctx = canvas.getContext("2d")
-        const img = new Image()
-
-        img.crossOrigin = "anonymous"
-        img.onload = () => {
-          canvas.width = img.width * 2
-          canvas.height = img.height * 2
-          ctx?.scale(2, 2)
-          ctx?.drawImage(img, 0, 0)
-
-          canvas.toBlob((blob) => {
-            if (blob) {
-              const url = URL.createObjectURL(blob)
-              const link = document.createElement("a")
-              link.href = url
-              link.download = `portnox-architecture-${view}-${Date.now()}.png`
-              link.click()
-              URL.revokeObjectURL(url)
-            }
-          })
-        }
-
-        const svgData = new XMLSerializer().serializeToString(svgRef.current)
-        const svgBlob = new Blob([svgData], { type: "image/svg+xml" })
-        img.src = URL.createObjectURL(svgBlob)
-      }
-
-      onExport?.(format)
-    } catch (error) {
-      console.error("Export failed:", error)
+  // Animation control
+  React.useEffect(() => {
+    if (isAnimating) {
+      const interval = setInterval(() => {
+        setAnimationPhase((prev) => (prev + 1) % 4)
+      }, 2000 / animationSpeed)
+      return () => clearInterval(interval)
     }
-  }
+  }, [isAnimating, animationSpeed])
 
   const renderCompleteArchitecture = () => (
     <svg
       ref={svgRef}
-      viewBox="0 0 1400 1000"
-      className="w-full h-full"
+      viewBox="0 0 1400 900"
+      className="w-full h-full architecture-diagram"
       style={{ background: "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)" }}
     >
+      {/* Enhanced Definitions */}
       <defs>
         <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
           <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e2e8f0" strokeWidth="0.5" opacity="0.3" />
         </pattern>
+
+        {/* Enhanced Animated Flow Gradients */}
+        <linearGradient id="dataFlow" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#3b82f6" stopOpacity="0">
+            {isAnimating && (
+              <animate
+                attributeName="stop-opacity"
+                values="0;1;0"
+                dur={`${2 / animationSpeed}s`}
+                repeatCount="indefinite"
+              />
+            )}
+          </stop>
+          <stop offset="50%" stopColor="#3b82f6" stopOpacity="0.8">
+            {isAnimating && (
+              <animate
+                attributeName="stop-opacity"
+                values="0.8;0.2;0.8"
+                dur={`${2 / animationSpeed}s`}
+                repeatCount="indefinite"
+              />
+            )}
+          </stop>
+          <stop offset="100%" stopColor="#3b82f6" stopOpacity="0">
+            {isAnimating && (
+              <animate
+                attributeName="stop-opacity"
+                values="0;1;0"
+                dur={`${2 / animationSpeed}s`}
+                repeatCount="indefinite"
+              />
+            )}
+          </stop>
+        </linearGradient>
+
+        <linearGradient id="secureFlow" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#10b981" stopOpacity="0">
+            {isAnimating && (
+              <animate
+                attributeName="stop-opacity"
+                values="0;1;0"
+                dur={`${3 / animationSpeed}s`}
+                repeatCount="indefinite"
+              />
+            )}
+          </stop>
+          <stop offset="50%" stopColor="#10b981" stopOpacity="0.9" />
+          <stop offset="100%" stopColor="#10b981" stopOpacity="0">
+            {isAnimating && (
+              <animate
+                attributeName="stop-opacity"
+                values="0;1;0"
+                dur={`${3 / animationSpeed}s`}
+                repeatCount="indefinite"
+              />
+            )}
+          </stop>
+        </linearGradient>
+
+        {/* Security Zone Patterns */}
+        <pattern id="secureZone" width="6" height="6" patternUnits="userSpaceOnUse">
+          <rect width="6" height="6" fill="#dcfce7" />
+          <circle cx="3" cy="3" r="1" fill="#16a34a" opacity="0.4" />
+        </pattern>
+
+        <pattern id="dmzZone" width="6" height="6" patternUnits="userSpaceOnUse">
+          <rect width="6" height="6" fill="#fef3c7" />
+          <circle cx="3" cy="3" r="1" fill="#d97706" opacity="0.4" />
+        </pattern>
+
+        <pattern id="accessZone" width="6" height="6" patternUnits="userSpaceOnUse">
+          <rect width="6" height="6" fill="#f1f5f9" />
+          <circle cx="3" cy="3" r="1" fill="#64748b" opacity="0.4" />
+        </pattern>
+
+        {/* Glow effects */}
         <filter id="glow">
-          <feGaussianBlur stdDeviation="4" result="coloredBlur" />
+          <feGaussianBlur stdDeviation="3" result="coloredBlur" />
           <feMerge>
             <feMergeNode in="coloredBlur" />
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
-        <filter id="shadow">
-          <feDropShadow dx="3" dy="3" stdDeviation="4" floodOpacity="0.3" />
+
+        {/* Drop shadow */}
+        <filter id="dropshadow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="2" dy="2" stdDeviation="3" floodOpacity="0.3" />
         </filter>
-        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-          <polygon points="0 0, 10 3.5, 0 7" fill="#374151" />
-        </marker>
-        <linearGradient id="cloudGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#3b82f6" />
-          <stop offset="100%" stopColor="#1d4ed8" />
-        </linearGradient>
-        <linearGradient id="securityGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#10b981" />
-          <stop offset="100%" stopColor="#059669" />
-        </linearGradient>
       </defs>
 
       <rect width="100%" height="100%" fill="url(#grid)" />
 
-      {/* Header */}
-      <rect x="0" y="0" width="1400" height="80" fill="url(#cloudGradient)" />
-      <text x="30" y="35" fill="white" fontSize="22" fontWeight="bold">
-        Portnox Zero Trust NAC - Complete Architecture
+      {/* Cloud Services Zone */}
+      <g id="cloud-zone">
+        <rect
+          x="50"
+          y="50"
+          width="350"
+          height="250"
+          rx="20"
+          fill="url(#secureZone)"
+          stroke="#16a34a"
+          strokeWidth="2"
+          opacity="0.4"
+          filter="url(#dropshadow)"
+        />
+        <text x="225" y="35" textAnchor="middle" className="text-sm font-bold fill-green-700">
+          🛡️ TRUSTED CLOUD SERVICES
+        </text>
+
+        {/* Portnox Cloud - Enhanced */}
+        <g
+          id="portnox-cloud"
+          onMouseEnter={() => setHoveredComponent("portnox-cloud")}
+          onMouseLeave={() => setHoveredComponent(null)}
+          onClick={() => setSelectedComponent("portnox-cloud")}
+          className="cursor-pointer"
+          filter={hoveredComponent === "portnox-cloud" ? "url(#glow)" : ""}
+        >
+          <rect
+            x="80"
+            y="80"
+            width="140"
+            height="70"
+            rx="12"
+            fill="#3b82f6"
+            stroke="#1e40af"
+            strokeWidth="2"
+            opacity={hoveredComponent === "portnox-cloud" ? 0.9 : 0.8}
+          />
+          <Cloud className="w-8 h-8" x="140" y="105" fill="white" />
+          <text x="150" y="130" textAnchor="middle" className="text-sm fill-white font-semibold">
+            Portnox Cloud
+          </text>
+          <text x="150" y="145" textAnchor="middle" className="text-xs fill-blue-100">
+            NAC Platform
+          </text>
+          {/* Status indicator */}
+          <circle cx="210" cy="90" r="4" fill="#10b981">
+            {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="2s" repeatCount="indefinite" />}
+          </circle>
+          <text x="220" y="95" className="text-xs fill-green-600 font-medium">
+            ACTIVE
+          </text>
+        </g>
+
+        {/* Identity Provider - Enhanced */}
+        <g
+          id="identity-provider"
+          onMouseEnter={() => setHoveredComponent("identity-provider")}
+          onMouseLeave={() => setHoveredComponent(null)}
+          onClick={() => setSelectedComponent("identity-provider")}
+          className="cursor-pointer"
+          filter={hoveredComponent === "identity-provider" ? "url(#glow)" : ""}
+        >
+          <rect
+            x="250"
+            y="80"
+            width="140"
+            height="70"
+            rx="12"
+            fill="#7c3aed"
+            stroke="#5b21b6"
+            strokeWidth="2"
+            opacity={hoveredComponent === "identity-provider" ? 0.9 : 0.8}
+          />
+          <Users className="w-8 h-8" x="310" y="105" fill="white" />
+          <text x="320" y="130" textAnchor="middle" className="text-sm fill-white font-semibold">
+            {safeConfig.identityProvider === "azure-ad" ? "Azure AD" : "Identity Provider"}
+          </text>
+          <text x="320" y="145" textAnchor="middle" className="text-xs fill-purple-100">
+            Authentication
+          </text>
+          <circle cx="380" cy="90" r="4" fill="#10b981">
+            {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="2.5s" repeatCount="indefinite" />}
+          </circle>
+        </g>
+
+        {/* MDM Provider - Enhanced */}
+        <g
+          id="mdm-provider"
+          onMouseEnter={() => setHoveredComponent("mdm-provider")}
+          onMouseLeave={() => setHoveredComponent(null)}
+          onClick={() => setSelectedComponent("mdm-provider")}
+          className="cursor-pointer"
+          filter={hoveredComponent === "mdm-provider" ? "url(#glow)" : ""}
+        >
+          <rect
+            x="80"
+            y="180"
+            width="140"
+            height="70"
+            rx="12"
+            fill="#059669"
+            stroke="#047857"
+            strokeWidth="2"
+            opacity={hoveredComponent === "mdm-provider" ? 0.9 : 0.8}
+          />
+          <Smartphone className="w-8 h-8" x="140" y="205" fill="white" />
+          <text x="150" y="230" textAnchor="middle" className="text-sm fill-white font-semibold">
+            {safeConfig.mdmProvider === "intune" ? "Intune" : "MDM Provider"}
+          </text>
+          <text x="150" y="245" textAnchor="middle" className="text-xs fill-green-100">
+            Device Management
+          </text>
+          <circle cx="210" cy="190" r="4" fill="#10b981">
+            {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="1.8s" repeatCount="indefinite" />}
+          </circle>
+        </g>
+
+        {/* Certificate Authority - Enhanced */}
+        <g
+          id="certificate-authority"
+          onMouseEnter={() => setHoveredComponent("certificate-authority")}
+          onMouseLeave={() => setHoveredComponent(null)}
+          onClick={() => setSelectedComponent("certificate-authority")}
+          className="cursor-pointer"
+          filter={hoveredComponent === "certificate-authority" ? "url(#glow)" : ""}
+        >
+          <rect
+            x="250"
+            y="180"
+            width="140"
+            height="70"
+            rx="12"
+            fill="#dc2626"
+            stroke="#b91c1c"
+            strokeWidth="2"
+            opacity={hoveredComponent === "certificate-authority" ? 0.9 : 0.8}
+          />
+          <Key className="w-8 h-8" x="310" y="205" fill="white" />
+          <text x="320" y="230" textAnchor="middle" className="text-sm fill-white font-semibold">
+            Certificate Authority
+          </text>
+          <text x="320" y="245" textAnchor="middle" className="text-xs fill-red-100">
+            PKI Management
+          </text>
+          <circle cx="380" cy="190" r="4" fill="#10b981">
+            {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="2.2s" repeatCount="indefinite" />}
+          </circle>
+        </g>
+      </g>
+
+      {/* Network Infrastructure Zone */}
+      <g id="network-zone">
+        <rect
+          x="500"
+          y="50"
+          width="400"
+          height="600"
+          rx="20"
+          fill="url(#dmzZone)"
+          stroke="#d97706"
+          strokeWidth="2"
+          opacity="0.4"
+          filter="url(#dropshadow)"
+        />
+        <text x="700" y="35" textAnchor="middle" className="text-sm font-bold fill-orange-700">
+          🌐 NETWORK INFRASTRUCTURE
+        </text>
+
+        {/* Firewall - Enhanced */}
+        <g
+          id="firewall"
+          onMouseEnter={() => setHoveredComponent("firewall")}
+          onMouseLeave={() => setHoveredComponent(null)}
+          onClick={() => setSelectedComponent("firewall")}
+          className="cursor-pointer"
+          filter={hoveredComponent === "firewall" ? "url(#glow)" : ""}
+        >
+          <rect
+            x="620"
+            y="80"
+            width="120"
+            height="60"
+            rx="10"
+            fill="#ef4444"
+            stroke="#dc2626"
+            strokeWidth="2"
+            opacity={hoveredComponent === "firewall" ? 0.9 : 0.8}
+          />
+          <Shield className="w-7 h-7" x="670" y="100" fill="white" />
+          <text x="680" y="125" textAnchor="middle" className="text-sm fill-white font-semibold">
+            {safeConfig.firewallVendor === "palo-alto" ? "Palo Alto" : "Firewall"}
+          </text>
+          <text x="680" y="135" textAnchor="middle" className="text-xs fill-red-100">
+            NGFW
+          </text>
+          <circle cx="730" cy="90" r="4" fill="#10b981">
+            {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite" />}
+          </circle>
+        </g>
+
+        {/* RADIUS Server - Enhanced */}
+        <g
+          id="radius-server"
+          onMouseEnter={() => setHoveredComponent("radius-server")}
+          onMouseLeave={() => setHoveredComponent(null)}
+          onClick={() => setSelectedComponent("radius-server")}
+          className="cursor-pointer"
+          filter={hoveredComponent === "radius-server" ? "url(#glow)" : ""}
+        >
+          <rect
+            x="530"
+            y="180"
+            width="120"
+            height="60"
+            rx="10"
+            fill="#8b5cf6"
+            stroke="#7c3aed"
+            strokeWidth="2"
+            opacity={hoveredComponent === "radius-server" ? 0.9 : 0.8}
+          />
+          <Server className="w-7 h-7" x="580" y="200" fill="white" />
+          <text x="590" y="225" textAnchor="middle" className="text-sm fill-white font-semibold">
+            {safeConfig.radiusType === "cisco-ise" ? "Cisco ISE" : "RADIUS"}
+          </text>
+          <text x="590" y="235" textAnchor="middle" className="text-xs fill-purple-100">
+            Auth Server
+          </text>
+          <circle cx="640" cy="190" r="4" fill="#10b981">
+            {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="1.7s" repeatCount="indefinite" />}
+          </circle>
+        </g>
+
+        {/* Wireless Controller - Enhanced */}
+        <g
+          id="wireless-controller"
+          onMouseEnter={() => setHoveredComponent("wireless-controller")}
+          onMouseLeave={() => setHoveredComponent(null)}
+          onClick={() => setSelectedComponent("wireless-controller")}
+          className="cursor-pointer"
+          filter={hoveredComponent === "wireless-controller" ? "url(#glow)" : ""}
+        >
+          <rect
+            x="710"
+            y="180"
+            width="120"
+            height="60"
+            rx="10"
+            fill="#06b6d4"
+            stroke="#0891b2"
+            strokeWidth="2"
+            opacity={hoveredComponent === "wireless-controller" ? 0.9 : 0.8}
+          />
+          <Wifi className="w-7 h-7" x="760" y="200" fill="white" />
+          <text x="770" y="225" textAnchor="middle" className="text-sm fill-white font-semibold">
+            {safeConfig.wirelessVendor === "cisco-meraki" ? "Meraki" : "Wireless"}
+          </text>
+          <text x="770" y="235" textAnchor="middle" className="text-xs fill-cyan-100">
+            Controller
+          </text>
+          <circle cx="820" cy="190" r="4" fill="#10b981">
+            {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="2.1s" repeatCount="indefinite" />}
+          </circle>
+        </g>
+
+        {/* Network Switch - Enhanced */}
+        <g
+          id="network-switch"
+          onMouseEnter={() => setHoveredComponent("network-switch")}
+          onMouseLeave={() => setHoveredComponent(null)}
+          onClick={() => setSelectedComponent("network-switch")}
+          className="cursor-pointer"
+          filter={hoveredComponent === "network-switch" ? "url(#glow)" : ""}
+        >
+          <rect
+            x="620"
+            y="280"
+            width="120"
+            height="60"
+            rx="10"
+            fill="#10b981"
+            stroke="#059669"
+            strokeWidth="2"
+            opacity={hoveredComponent === "network-switch" ? 0.9 : 0.8}
+          />
+          <Router className="w-7 h-7" x="670" y="300" fill="white" />
+          <text x="680" y="325" textAnchor="middle" className="text-sm fill-white font-semibold">
+            {safeConfig.networkVendor === "cisco" ? "Cisco Switch" : "Switch"}
+          </text>
+          <text x="680" y="335" textAnchor="middle" className="text-xs fill-green-100">
+            L2/L3
+          </text>
+          <circle cx="730" cy="290" r="4" fill="#10b981">
+            {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="1.3s" repeatCount="indefinite" />}
+          </circle>
+        </g>
+
+        {/* Access Points - Enhanced */}
+        <g id="access-points">
+          {[0, 1, 2].map((i) => (
+            <g key={i} className="cursor-pointer" onClick={() => setSelectedComponent(`ap-${i + 1}`)}>
+              <rect
+                x={530 + i * 100}
+                y="380"
+                width="80"
+                height="50"
+                rx="8"
+                fill="#f59e0b"
+                stroke="#d97706"
+                strokeWidth="2"
+                opacity="0.8"
+              />
+              <Antenna className="w-6 h-6" x={560 + i * 100} y="395" fill="white" />
+              <text x={570 + i * 100} y="415" textAnchor="middle" className="text-sm fill-white font-medium">
+                AP-{i + 1}
+              </text>
+              <text x={570 + i * 100} y="425" textAnchor="middle" className="text-xs fill-orange-100">
+                WiFi 6E
+              </text>
+              <circle cx={600 + i * 100} cy="390" r="3" fill="#10b981">
+                {isAnimating && (
+                  <animate
+                    attributeName="opacity"
+                    values="1;0.3;1"
+                    dur={`${1.5 + i * 0.3}s`}
+                    repeatCount="indefinite"
+                  />
+                )}
+              </circle>
+            </g>
+          ))}
+        </g>
+
+        {/* Network Metrics Display */}
+        <g id="network-metrics">
+          <rect
+            x="530"
+            y="480"
+            width="300"
+            height="80"
+            rx="8"
+            fill="rgba(0,0,0,0.1)"
+            stroke="#64748b"
+            strokeWidth="1"
+          />
+          <text x="680" y="500" textAnchor="middle" className="text-sm font-semibold fill-slate-700">
+            Network Performance
+          </text>
+          <text x="550" y="520" className="text-xs fill-slate-600">
+            Throughput: 8.5 Gbps
+          </text>
+          <text x="550" y="535" className="text-xs fill-slate-600">
+            Latency: &lt; 2ms
+          </text>
+          <text x="550" y="550" className="text-xs fill-slate-600">
+            Uptime: 99.97%
+          </text>
+          <text x="720" y="520" className="text-xs fill-slate-600">
+            Active Sessions: 2.1M
+          </text>
+          <text x="720" y="535" className="text-xs fill-slate-600">
+            Threats Blocked: 1,247
+          </text>
+          <text x="720" y="550" className="text-xs fill-slate-600">
+            Policies: 342 active
+          </text>
+        </g>
+      </g>
+
+      {/* End Devices Zone */}
+      <g id="device-zone">
+        <rect
+          x="950"
+          y="50"
+          width="400"
+          height="600"
+          rx="20"
+          fill="url(#accessZone)"
+          stroke="#64748b"
+          strokeWidth="2"
+          opacity="0.4"
+          filter="url(#dropshadow)"
+        />
+        <text x="1150" y="35" textAnchor="middle" className="text-sm font-bold fill-slate-700">
+          💻 END DEVICES & USERS
+        </text>
+
+        {/* Corporate Devices - Enhanced */}
+        <g id="corporate-devices">
+          <text x="970" y="80" className="text-sm font-semibold fill-slate-700">
+            Corporate Managed Devices
+          </text>
+          {safeConfig.deviceTypes.includes("windows") && (
+            <g className="cursor-pointer" onClick={() => setSelectedComponent("windows-devices")}>
+              <rect x="980" y="90" width="70" height="50" rx="6" fill="#0078d4" stroke="#106ebe" strokeWidth="2" />
+              <Laptop className="w-6 h-6" x="1005" y="105" fill="white" />
+              <text x="1015" y="125" textAnchor="middle" className="text-sm fill-white font-medium">
+                Windows
+              </text>
+              <text x="1015" y="155" textAnchor="middle" className="text-xs fill-slate-600 font-medium">
+                1,800 devices
+              </text>
+              <circle cx="1040" cy="100" r="3" fill="#10b981">
+                {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="2s" repeatCount="indefinite" />}
+              </circle>
+            </g>
+          )}
+          {safeConfig.deviceTypes.includes("mac") && (
+            <g className="cursor-pointer" onClick={() => setSelectedComponent("mac-devices")}>
+              <rect x="1070" y="90" width="70" height="50" rx="6" fill="#000000" stroke="#333333" strokeWidth="2" />
+              <Laptop className="w-6 h-6" x="1095" y="105" fill="white" />
+              <text x="1105" y="125" textAnchor="middle" className="text-sm fill-white font-medium">
+                macOS
+              </text>
+              <text x="1105" y="155" textAnchor="middle" className="text-xs fill-slate-600 font-medium">
+                450 devices
+              </text>
+              <circle cx="1130" cy="100" r="3" fill="#10b981">
+                {isAnimating && (
+                  <animate attributeName="opacity" values="1;0.3;1" dur="2.3s" repeatCount="indefinite" />
+                )}
+              </circle>
+            </g>
+          )}
+          {safeConfig.deviceTypes.includes("ios") && (
+            <g className="cursor-pointer" onClick={() => setSelectedComponent("ios-devices")}>
+              <rect x="1160" y="90" width="70" height="50" rx="6" fill="#007aff" stroke="#0056cc" strokeWidth="2" />
+              <Smartphone className="w-6 h-6" x="1185" y="105" fill="white" />
+              <text x="1195" y="125" textAnchor="middle" className="text-sm fill-white font-medium">
+                iOS
+              </text>
+              <text x="1195" y="155" textAnchor="middle" className="text-xs fill-slate-600 font-medium">
+                850 devices
+              </text>
+              <circle cx="1220" cy="100" r="3" fill="#10b981">
+                {isAnimating && (
+                  <animate attributeName="opacity" values="1;0.3;1" dur="1.8s" repeatCount="indefinite" />
+                )}
+              </circle>
+            </g>
+          )}
+          {safeConfig.deviceTypes.includes("android") && (
+            <g className="cursor-pointer" onClick={() => setSelectedComponent("android-devices")}>
+              <rect x="1250" y="90" width="70" height="50" rx="6" fill="#3ddc84" stroke="#00c853" strokeWidth="2" />
+              <Smartphone className="w-6 h-6" x="1275" y="105" fill="white" />
+              <text x="1285" y="125" textAnchor="middle" className="text-sm fill-white font-medium">
+                Android
+              </text>
+              <text x="1285" y="155" textAnchor="middle" className="text-xs fill-slate-600 font-medium">
+                420 devices
+              </text>
+              <circle cx="1310" cy="100" r="3" fill="#10b981">
+                {isAnimating && (
+                  <animate attributeName="opacity" values="1;0.3;1" dur="2.5s" repeatCount="indefinite" />
+                )}
+              </circle>
+            </g>
+          )}
+        </g>
+
+        {/* BYOD Devices */}
+        {safeConfig.byodSupport && (
+          <g id="byod-devices">
+            <text x="970" y="200" className="text-sm font-semibold fill-slate-700">
+              BYOD / Personal Devices
+            </text>
+            <g className="cursor-pointer" onClick={() => setSelectedComponent("byod-devices")}>
+              <rect x="980" y="210" width="160" height="60" rx="8" fill="#f97316" stroke="#ea580c" strokeWidth="2" />
+              <Users className="w-8 h-8" x="1040" y="230" fill="white" />
+              <text x="1060" y="250" textAnchor="middle" className="text-sm fill-white font-semibold">
+                Personal Devices
+              </text>
+              <text x="1060" y="285" textAnchor="middle" className="text-xs fill-slate-600 font-medium">
+                1,200+ devices
+              </text>
+              <circle cx="1130" cy="220" r="4" fill="#10b981">
+                {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="3s" repeatCount="indefinite" />}
+              </circle>
+            </g>
+          </g>
+        )}
+
+        {/* IoT Devices */}
+        {safeConfig.deviceTypes.includes("iot") && (
+          <g id="iot-devices">
+            <text x="970" y="310" className="text-sm font-semibold fill-slate-700">
+              IoT & Infrastructure Devices
+            </text>
+            <g className="cursor-pointer" onClick={() => setSelectedComponent("printers")}>
+              <rect x="980" y="320" width="60" height="45" rx="6" fill="#6b7280" stroke="#4b5563" strokeWidth="2" />
+              <Printer className="w-5 h-5" x="1000" y="335" fill="white" />
+              <text x="1010" y="355" textAnchor="middle" className="text-xs fill-white font-medium">
+                Printers
+              </text>
+              <text x="1010" y="375" textAnchor="middle" className="text-xs fill-slate-600">
+                180
+              </text>
+            </g>
+            <g className="cursor-pointer" onClick={() => setSelectedComponent("iot-general")}>
+              <rect x="1060" y="320" width="60" height="45" rx="6" fill="#8b5cf6" stroke="#7c3aed" strokeWidth="2" />
+              <Router className="w-5 h-5" x="1080" y="335" fill="white" />
+              <text x="1090" y="355" textAnchor="middle" className="text-xs fill-white font-medium">
+                IoT
+              </text>
+              <text x="1090" y="375" textAnchor="middle" className="text-xs fill-slate-600">
+                320
+              </text>
+            </g>
+            <g className="cursor-pointer" onClick={() => setSelectedComponent("cameras")}>
+              <rect x="1140" y="320" width="60" height="45" rx="6" fill="#dc2626" stroke="#b91c1c" strokeWidth="2" />
+              <Monitor className="w-5 h-5" x="1160" y="335" fill="white" />
+              <text x="1170" y="355" textAnchor="middle" className="text-xs fill-white font-medium">
+                Cameras
+              </text>
+              <text x="1170" y="375" textAnchor="middle" className="text-xs fill-slate-600">
+                85
+              </text>
+            </g>
+          </g>
+        )}
+
+        {/* Guest Access */}
+        {safeConfig.guestPortal && (
+          <g id="guest-access">
+            <text x="970" y="420" className="text-sm font-semibold fill-slate-700">
+              Guest Access Portal
+            </text>
+            <g className="cursor-pointer" onClick={() => setSelectedComponent("guest-portal")}>
+              <rect x="980" y="430" width="160" height="60" rx="8" fill="#06b6d4" stroke="#0891b2" strokeWidth="2" />
+              <Globe className="w-8 h-8" x="1040" y="450" fill="white" />
+              <text x="1060" y="470" textAnchor="middle" className="text-sm fill-white font-semibold">
+                Guest Portal
+              </text>
+              <text x="1060" y="505" textAnchor="middle" className="text-xs fill-slate-600 font-medium">
+                Captive Portal & Self-Service
+              </text>
+              <circle cx="1130" cy="440" r="4" fill="#10b981">
+                {isAnimating && (
+                  <animate attributeName="opacity" values="1;0.3;1" dur="2.7s" repeatCount="indefinite" />
+                )}
+              </circle>
+            </g>
+          </g>
+        )}
+
+        {/* Device Statistics */}
+        <g id="device-stats">
+          <rect
+            x="980"
+            y="520"
+            width="300"
+            height="100"
+            rx="8"
+            fill="rgba(0,0,0,0.1)"
+            stroke="#64748b"
+            strokeWidth="1"
+          />
+          <text x="1130" y="540" textAnchor="middle" className="text-sm font-semibold fill-slate-700">
+            Device Statistics
+          </text>
+          <text x="1000" y="560" className="text-xs fill-slate-600">
+            Total Devices: 3,520
+          </text>
+          <text x="1000" y="575" className="text-xs fill-slate-600">
+            Compliant: 98.5%
+          </text>
+          <text x="1000" y="590" className="text-xs fill-slate-600">
+            Certificates: 3,247
+          </text>
+          <text x="1000" y="605" className="text-xs fill-slate-600">
+            Last Updated: 2 min ago
+          </text>
+          <text x="1180" y="560" className="text-xs fill-slate-600">
+            Online: 2,847 (81%)
+          </text>
+          <text x="1180" y="575" className="text-xs fill-slate-600">
+            Quarantined: 12
+          </text>
+          <text x="1180" y="590" className="text-xs fill-slate-600">
+            Guest Sessions: 47
+          </text>
+          <text x="1180" y="605" className="text-xs fill-slate-600">
+            Avg Session: 4.2h
+          </text>
+        </g>
+      </g>
+
+      {/* Enhanced Connection Lines with Multiple Flows */}
+      <g id="connections" stroke="#64748b" strokeWidth="2" fill="none">
+        {/* Cloud to Network connections */}
+        <path d="M 400 115 Q 450 115 500 115" stroke="url(#dataFlow)" strokeWidth="4" opacity="0.8" />
+        <path d="M 400 215 Q 450 215 500 215" stroke="url(#secureFlow)" strokeWidth="4" opacity="0.8" />
+
+        {/* Network internal connections */}
+        <path d="M 680 140 L 680 180" stroke="#64748b" strokeWidth="3" />
+        <path d="M 650 210 L 710 210" stroke="#64748b" strokeWidth="3" />
+        <path d="M 680 240 L 680 280" stroke="#64748b" strokeWidth="3" />
+
+        {/* Network to devices */}
+        <path d="M 900 200 Q 925 200 950 200" stroke="url(#dataFlow)" strokeWidth="4" opacity="0.8" />
+        <path d="M 830 405 Q 890 405 950 405" stroke="url(#secureFlow)" strokeWidth="4" opacity="0.8" />
+      </g>
+
+      {/* Enhanced Data Flow Indicators */}
+      {isAnimating && (
+        <g id="flow-indicators">
+          <circle r="6" fill="#3b82f6" opacity="0.9">
+            <animateMotion dur={`${4 / animationSpeed}s`} repeatCount="indefinite">
+              <path d="M 400 115 Q 450 115 500 115 L 680 115 L 680 180 L 650 210 L 950 200" />
+            </animateMotion>
+          </circle>
+          <circle r="6" fill="#10b981" opacity="0.9">
+            <animateMotion dur={`${5 / animationSpeed}s`} repeatCount="indefinite">
+              <path d="M 830 405 Q 890 405 950 405 L 1150 405 L 1150 200 Q 925 200 900 200" />
+            </animateMotion>
+          </circle>
+          <circle r="5" fill="#f59e0b" opacity="0.8">
+            <animateMotion dur={`${3 / animationSpeed}s`} repeatCount="indefinite">
+              <path d="M 400 215 Q 450 215 500 215 L 770 215 L 770 240 L 680 280" />
+            </animateMotion>
+          </circle>
+        </g>
+      )}
+
+      {/* Enhanced Protocol Labels */}
+      <g id="protocol-labels" className="text-xs fill-slate-600 font-medium">
+        <text x="450" y="110" textAnchor="middle">
+          RADIUS/TLS
+        </text>
+        <text x="450" y="210" textAnchor="middle">
+          LDAP/SAML
+        </text>
+        <text x="925" y="195" textAnchor="middle">
+          802.1X/EAP-TLS
+        </text>
+        <text x="890" y="400" textAnchor="middle">
+          WiFi 6E/WPA3
+        </text>
+      </g>
+
+      {/* Security Status Indicators */}
+      <g id="security-status">
+        <rect
+          x="50"
+          y="750"
+          width="300"
+          height="100"
+          rx="10"
+          fill="rgba(16, 185, 129, 0.1)"
+          stroke="#10b981"
+          strokeWidth="2"
+        />
+        <text x="200" y="770" textAnchor="middle" className="text-sm font-bold fill-green-700">
+          🛡️ Security Status: PROTECTED
+        </text>
+        <text x="70" y="790" className="text-xs fill-green-600">
+          ✓ All systems operational
+        </text>
+        <text x="70" y="805" className="text-xs fill-green-600">
+          ✓ Zero trust policies active
+        </text>
+        <text x="70" y="820" className="text-xs fill-green-600">
+          ✓ Threat detection enabled
+        </text>
+        <text x="70" y="835" className="text-xs fill-green-600">
+          ✓ Compliance verified
+        </text>
+      </g>
+    </svg>
+  )
+
+  const renderAuthenticationFlow = () => (
+    <svg
+      viewBox="0 0 1400 800"
+      className="w-full h-full architecture-diagram"
+      style={{ background: "linear-gradient(135deg, #fefbf7 0%, #fef3c7 100%)" }}
+    >
+      <defs>
+        <pattern id="authGrid" width="20" height="20" patternUnits="userSpaceOnUse">
+          <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#f59e0b" strokeWidth="0.5" opacity="0.3" />
+        </pattern>
+
+        <linearGradient id="authFlow" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#f59e0b" stopOpacity="0">
+            {isAnimating && (
+              <animate
+                attributeName="stop-opacity"
+                values="0;1;0"
+                dur={`${3 / animationSpeed}s`}
+                repeatCount="indefinite"
+              />
+            )}
+          </stop>
+          <stop offset="50%" stopColor="#f59e0b" stopOpacity="0.9" />
+          <stop offset="100%" stopColor="#f59e0b" stopOpacity="0">
+            {isAnimating && (
+              <animate
+                attributeName="stop-opacity"
+                values="0;1;0"
+                dur={`${3 / animationSpeed}s`}
+                repeatCount="indefinite"
+              />
+            )}
+          </stop>
+        </linearGradient>
+      </defs>
+
+      <rect width="100%" height="100%" fill="url(#authGrid)" />
+
+      {/* Authentication Flow Title */}
+      <text x="700" y="50" textAnchor="middle" className="text-2xl font-bold fill-amber-800">
+        🔐 802.1X Authentication Flow
       </text>
-      <text x="30" y="55" fill="white" fontSize="14" opacity="0.9">
-        Real-time Risk Assessment • Policy Enforcement • Behavioral Analytics
+      <text x="700" y="75" textAnchor="middle" className="text-sm fill-amber-700">
+        EAP-TLS Certificate-Based Authentication Process
       </text>
 
-      {/* Security Zones */}
-      <rect
-        x="50"
-        y="100"
-        width="400"
-        height="280"
-        fill="#dcfce7"
-        stroke="#16a34a"
-        strokeWidth="3"
-        rx="15"
-        opacity="0.4"
-        filter="url(#shadow)"
-      />
-      <text x="70" y="130" fill="#16a34a" fontSize="16" fontWeight="bold">
-        🛡️ DMZ Security Zone
-      </text>
+      {/* Step 1: Device */}
+      <g id="auth-device" className="cursor-pointer" onClick={() => setSelectedComponent("auth-device")}>
+        <rect x="100" y="200" width="150" height="80" rx="10" fill="#3b82f6" stroke="#1e40af" strokeWidth="2" />
+        <Laptop className="w-8 h-8" x="165" y="225" fill="white" />
+        <text x="175" y="255" textAnchor="middle" className="text-sm fill-white font-semibold">
+          End Device
+        </text>
+        <text x="175" y="270" textAnchor="middle" className="text-xs fill-blue-100">
+          Certificate Installed
+        </text>
+        <circle cx="230" cy="210" r="4" fill="#10b981">
+          {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="2s" repeatCount="indefinite" />}
+        </circle>
+      </g>
 
-      <rect
-        x="500"
-        y="100"
-        width="450"
-        height="280"
-        fill="#fef3c7"
-        stroke="#d97706"
-        strokeWidth="3"
-        rx="15"
-        opacity="0.4"
-        filter="url(#shadow)"
-      />
-      <text x="520" y="130" fill="#d97706" fontSize="16" fontWeight="bold">
-        🏢 Corporate Network Zone
-      </text>
+      {/* Step 2: Network Switch */}
+      <g id="auth-switch" className="cursor-pointer" onClick={() => setSelectedComponent("auth-switch")}>
+        <rect x="350" y="200" width="150" height="80" rx="10" fill="#10b981" stroke="#059669" strokeWidth="2" />
+        <Router className="w-8 h-8" x="415" y="225" fill="white" />
+        <text x="425" y="255" textAnchor="middle" className="text-sm fill-white font-semibold">
+          Network Switch
+        </text>
+        <text x="425" y="270" textAnchor="middle" className="text-xs fill-green-100">
+          802.1X Authenticator
+        </text>
+        <circle cx="480" cy="210" r="4" fill="#10b981">
+          {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="2.2s" repeatCount="indefinite" />}
+        </circle>
+      </g>
 
-      <rect
-        x="1000"
-        y="100"
-        width="350"
-        height="280"
-        fill="#dbeafe"
-        stroke="#2563eb"
-        strokeWidth="3"
-        rx="15"
-        opacity="0.4"
-        filter="url(#shadow)"
-      />
-      <text x="1020" y="130" fill="#2563eb" fontSize="16" fontWeight="bold">
-        ☁️ Cloud Services Zone
-      </text>
+      {/* Step 3: RADIUS Server */}
+      <g id="auth-radius" className="cursor-pointer" onClick={() => setSelectedComponent("auth-radius")}>
+        <rect x="600" y="200" width="150" height="80" rx="10" fill="#8b5cf6" stroke="#7c3aed" strokeWidth="2" />
+        <Server className="w-8 h-8" x="665" y="225" fill="white" />
+        <text x="675" y="255" textAnchor="middle" className="text-sm fill-white font-semibold">
+          RADIUS Server
+        </text>
+        <text x="675" y="270" textAnchor="middle" className="text-xs fill-purple-100">
+          Authentication Server
+        </text>
+        <circle cx="730" cy="210" r="4" fill="#10b981">
+          {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="2.4s" repeatCount="indefinite" />}
+        </circle>
+      </g>
 
-      {/* Cloud Services */}
-      <g
-        onMouseEnter={(e) =>
-          handleComponentHover(
-            e,
-            "portnox-cloud",
-            "Portnox Cloud NAC Platform\nPorts: 443, 1812/1813\nProtocols: HTTPS, RADIUS, RADSEC",
-          )
-        }
-        onMouseLeave={handleComponentLeave}
-        style={{ cursor: "pointer" }}
-        filter={hoveredComponent === "portnox-cloud" ? "url(#glow)" : "url(#shadow)"}
-      >
-        <rect x="1050" y="160" width="140" height="100" fill="url(#cloudGradient)" rx="12" />
-        <text x="1120" y="185" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold">
+      {/* Step 4: Portnox Cloud */}
+      <g id="auth-cloud" className="cursor-pointer" onClick={() => setSelectedComponent("auth-cloud")}>
+        <rect x="850" y="200" width="150" height="80" rx="10" fill="#dc2626" stroke="#b91c1c" strokeWidth="2" />
+        <Cloud className="w-8 h-8" x="915" y="225" fill="white" />
+        <text x="925" y="255" textAnchor="middle" className="text-sm fill-white font-semibold">
           Portnox Cloud
         </text>
-        <text x="1120" y="205" textAnchor="middle" fill="white" fontSize="12">
-          NAC Platform
+        <text x="925" y="270" textAnchor="middle" className="text-xs fill-red-100">
+          Policy Decision
         </text>
-        <text x="1120" y="220" textAnchor="middle" fill="white" fontSize="10">
-          AI Risk Engine
-        </text>
-        <circle cx="1170" cy="240" r="5" fill="#10b981">
-          {isAnimating && (
-            <animate attributeName="opacity" values="1;0.3;1" dur={`${2 / animationSpeed}s`} repeatCount="indefinite" />
-          )}
+        <circle cx="980" cy="210" r="4" fill="#10b981">
+          {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="2.6s" repeatCount="indefinite" />}
         </circle>
-        <text x="1120" y="255" textAnchor="middle" fill="white" fontSize="9">
-          99.9% UP • 15.4K Sessions
+      </g>
+
+      {/* Authentication Flow Steps */}
+      <g id="auth-steps">
+        {/* Step arrows */}
+        <path d="M 250 240 L 350 240" stroke="url(#authFlow)" strokeWidth="4" markerEnd="url(#arrowhead)" />
+        <path d="M 500 240 L 600 240" stroke="url(#authFlow)" strokeWidth="4" markerEnd="url(#arrowhead)" />
+        <path d="M 750 240 L 850 240" stroke="url(#authFlow)" strokeWidth="4" markerEnd="url(#arrowhead)" />
+
+        {/* Step numbers */}
+        <circle cx="300" cy="240" r="15" fill="#f59e0b" stroke="white" strokeWidth="2" />
+        <text x="300" y="245" textAnchor="middle" className="text-sm fill-white font-bold">
+          1
+        </text>
+
+        <circle cx="550" cy="240" r="15" fill="#f59e0b" stroke="white" strokeWidth="2" />
+        <text x="550" y="245" textAnchor="middle" className="text-sm fill-white font-bold">
+          2
+        </text>
+
+        <circle cx="800" cy="240" r="15" fill="#f59e0b" stroke="white" strokeWidth="2" />
+        <text x="800" y="245" textAnchor="middle" className="text-sm fill-white font-bold">
+          3
         </text>
       </g>
 
-      {/* Identity Provider */}
-      <g
-        onMouseEnter={(e) =>
-          handleComponentHover(
-            e,
-            "identity-provider",
-            "Azure AD Identity Provider\nPorts: 443, 389/636, 88\nProtocols: HTTPS, LDAP, SAML, OAuth",
-          )
-        }
-        onMouseLeave={handleComponentLeave}
-        style={{ cursor: "pointer" }}
-        filter={hoveredComponent === "identity-provider" ? "url(#glow)" : "url(#shadow)"}
-      >
-        <rect x="1220" y="160" width="120" height="100" fill="#8b5cf6" rx="12" />
-        <text x="1280" y="185" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold">
-          {safeConfig.identityProvider.type.toUpperCase()}
+      {/* Detailed Flow Description */}
+      <g id="flow-description">
+        <rect
+          x="100"
+          y="350"
+          width="900"
+          height="300"
+          rx="15"
+          fill="rgba(245, 158, 11, 0.1)"
+          stroke="#f59e0b"
+          strokeWidth="2"
+        />
+        <text x="550" y="380" textAnchor="middle" className="text-lg font-bold fill-amber-800">
+          Authentication Process Details
         </text>
-        <text x="1280" y="205" textAnchor="middle" fill="white" fontSize="12">
-          Identity Provider
+
+        {/* Step 1 Details */}
+        <g id="step1-details">
+          <rect
+            x="120"
+            y="400"
+            width="200"
+            height="120"
+            rx="8"
+            fill="rgba(59, 130, 246, 0.1)"
+            stroke="#3b82f6"
+            strokeWidth="1"
+          />
+          <text x="220" y="420" textAnchor="middle" className="text-sm font-bold fill-blue-800">
+            Step 1: EAP Start
+          </text>
+          <text x="130" y="440" className="text-xs fill-blue-700">
+            • Device connects to network
+          </text>
+          <text x="130" y="455" className="text-xs fill-blue-700">
+            • Switch sends EAP-Request
+          </text>
+          <text x="130" y="470" className="text-xs fill-blue-700">
+            • Device responds with Identity
+          </text>
+          <text x="130" y="485" className="text-xs fill-blue-700">
+            • Certificate presented
+          </text>
+          <text x="130" y="500" className="text-xs fill-blue-700">
+            • TLS handshake initiated
+          </text>
+        </g>
+
+        {/* Step 2 Details */}
+        <g id="step2-details">
+          <rect
+            x="340"
+            y="400"
+            width="200"
+            height="120"
+            rx="8"
+            fill="rgba(16, 185, 129, 0.1)"
+            stroke="#10b981"
+            strokeWidth="1"
+          />
+          <text x="440" y="420" textAnchor="middle" className="text-sm font-bold fill-green-800">
+            Step 2: RADIUS Request
+          </text>
+          <text x="350" y="440" className="text-xs fill-green-700">
+            • Switch forwards to RADIUS
+          </text>
+          <text x="350" y="455" className="text-xs fill-green-700">
+            • Access-Request packet sent
+          </text>
+          <text x="350" y="470" className="text-xs fill-green-700">
+            • Certificate validation
+          </text>
+          <text x="350" y="485" className="text-xs fill-green-700">
+            • User identity verified
+          </text>
+          <text x="350" y="500" className="text-xs fill-green-700">
+            • Policy lookup initiated
+          </text>
+        </g>
+
+        {/* Step 3 Details */}
+        <g id="step3-details">
+          <rect
+            x="560"
+            y="400"
+            width="200"
+            height="120"
+            rx="8"
+            fill="rgba(139, 92, 246, 0.1)"
+            stroke="#8b5cf6"
+            strokeWidth="1"
+          />
+          <text x="660" y="420" textAnchor="middle" className="text-sm font-bold fill-purple-800">
+            Step 3: Policy Decision
+          </text>
+          <text x="570" y="440" className="text-xs fill-purple-700">
+            • Portnox evaluates request
+          </text>
+          <text x="570" y="455" className="text-xs fill-purple-700">
+            • Device posture checked
+          </text>
+          <text x="570" y="470" className="text-xs fill-purple-700">
+            • Compliance verified
+          </text>
+          <text x="570" y="485" className="text-xs fill-purple-700">
+            • VLAN assignment
+          </text>
+          <text x="570" y="500" className="text-xs fill-purple-700">
+            • Access decision made
+          </text>
+        </g>
+
+        {/* Step 4 Details */}
+        <g id="step4-details">
+          <rect
+            x="780"
+            y="400"
+            width="200"
+            height="120"
+            rx="8"
+            fill="rgba(220, 38, 38, 0.1)"
+            stroke="#dc2626"
+            strokeWidth="1"
+          />
+          <text x="880" y="420" textAnchor="middle" className="text-sm font-bold fill-red-800">
+            Step 4: Access Granted
+          </text>
+          <text x="790" y="440" className="text-xs fill-red-700">
+            • Access-Accept returned
+          </text>
+          <text x="790" y="455" className="text-xs fill-red-700">
+            • VLAN attributes sent
+          </text>
+          <text x="790" y="470" className="text-xs fill-red-700">
+            • Switch configures port
+          </text>
+          <text x="790" y="485" className="text-xs fill-red-700">
+            • Network access enabled
+          </text>
+          <text x="790" y="500" className="text-xs fill-red-700">
+            • Session monitoring starts
+          </text>
+        </g>
+      </g>
+
+      {/* Timing Information */}
+      <g id="timing-info">
+        <rect
+          x="100"
+          y="680"
+          width="900"
+          height="60"
+          rx="8"
+          fill="rgba(245, 158, 11, 0.2)"
+          stroke="#f59e0b"
+          strokeWidth="1"
+        />
+        <text x="550" y="700" textAnchor="middle" className="text-sm font-bold fill-amber-800">
+          ⏱️ Authentication Timing
         </text>
-        <text x="1280" y="220" textAnchor="middle" fill="white" fontSize="10">
-          {safeConfig.identityProvider.mfaEnabled ? "MFA Enabled" : "Basic Auth"}
+        <text x="120" y="720" className="text-xs fill-amber-700">
+          Total Authentication Time: &lt; 3 seconds | Certificate Validation: &lt; 500ms | Policy Lookup: &lt; 200ms |
+          VLAN Assignment: &lt; 100ms
         </text>
-        <circle cx="1320" cy="240" r="5" fill="#10b981">
-          {isAnimating && (
-            <animate
-              attributeName="opacity"
-              values="1;0.3;1"
-              dur={`${2.5 / animationSpeed}s`}
-              repeatCount="indefinite"
-            />
-          )}
-        </circle>
-        <text x="1280" y="255" textAnchor="middle" fill="white" fontSize="9">
-          8.7K Users • SSO Active
+        <text x="120" y="735" className="text-xs fill-amber-700">
+          Success Rate: 99.7% | Failed Authentications: 0.3% | Average Daily Authentications: 15,000+
         </text>
       </g>
 
-      {/* MDM Provider */}
-      <g
-        onMouseEnter={(e) =>
-          handleComponentHover(
-            e,
-            "mdm-provider",
-            "Microsoft Intune MDM\nPorts: 443, 2195/2196\nProtocols: HTTPS, SCEP, APNS",
-          )
-        }
-        onMouseLeave={handleComponentLeave}
-        style={{ cursor: "pointer" }}
-        filter={hoveredComponent === "mdm-provider" ? "url(#glow)" : "url(#shadow)"}
-      >
-        <rect x="1050" y="280" width="140" height="100" fill="#06b6d4" rx="12" />
-        <text x="1120" y="305" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold">
-          {safeConfig.mdmProvider.type.charAt(0).toUpperCase() + safeConfig.mdmProvider.type.slice(1)}
+      {/* Arrow marker definition */}
+      <defs>
+        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b" />
+        </marker>
+      </defs>
+    </svg>
+  )
+
+  const renderPKIArchitecture = () => (
+    <svg
+      viewBox="0 0 1400 800"
+      className="w-full h-full architecture-diagram"
+      style={{ background: "linear-gradient(135deg, #fdf4ff 0%, #f3e8ff 100%)" }}
+    >
+      <defs>
+        <pattern id="pkiGrid" width="20" height="20" patternUnits="userSpaceOnUse">
+          <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#a855f7" strokeWidth="0.5" opacity="0.3" />
+        </pattern>
+
+        <linearGradient id="certFlow" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#a855f7" stopOpacity="0">
+            {isAnimating && (
+              <animate
+                attributeName="stop-opacity"
+                values="0;1;0"
+                dur={`${2.5 / animationSpeed}s`}
+                repeatCount="indefinite"
+              />
+            )}
+          </stop>
+          <stop offset="50%" stopColor="#a855f7" stopOpacity="0.9" />
+          <stop offset="100%" stopColor="#a855f7" stopOpacity="0">
+            {isAnimating && (
+              <animate
+                attributeName="stop-opacity"
+                values="0;1;0"
+                dur={`${2.5 / animationSpeed}s`}
+                repeatCount="indefinite"
+              />
+            )}
+          </stop>
+        </linearGradient>
+      </defs>
+
+      <rect width="100%" height="100%" fill="url(#pkiGrid)" />
+
+      {/* PKI Architecture Title */}
+      <text x="700" y="50" textAnchor="middle" className="text-2xl font-bold fill-purple-800">
+        🔐 PKI & Certificate Management Architecture
+      </text>
+      <text x="700" y="75" textAnchor="middle" className="text-sm fill-purple-700">
+        Enterprise Certificate Lifecycle Management with SCEP Integration
+      </text>
+
+      {/* Root CA */}
+      <g id="root-ca" className="cursor-pointer" onClick={() => setSelectedComponent("root-ca")}>
+        <rect x="600" y="120" width="200" height="80" rx="12" fill="#7c3aed" stroke="#5b21b6" strokeWidth="3" />
+        <Key className="w-10 h-10" x="685" y="145" fill="white" />
+        <text x="700" y="175" textAnchor="middle" className="text-lg fill-white font-bold">
+          Root CA
         </text>
-        <text x="1120" y="325" textAnchor="middle" fill="white" fontSize="12">
-          MDM Platform
+        <text x="700" y="190" textAnchor="middle" className="text-xs fill-purple-100">
+          Certificate Authority
         </text>
-        <text x="1120" y="340" textAnchor="middle" fill="white" fontSize="10">
-          {safeConfig.mdmProvider.complianceEnabled ? "Compliance ON" : "Monitor Mode"}
-        </text>
-        <circle cx="1170" cy="360" r="5" fill="#10b981">
-          {isAnimating && (
-            <animate attributeName="opacity" values="1;0.3;1" dur={`${3 / animationSpeed}s`} repeatCount="indefinite" />
-          )}
+        <circle cx="780" cy="130" r="5" fill="#10b981">
+          {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="2s" repeatCount="indefinite" />}
         </circle>
-        <text x="1120" y="375" textAnchor="middle" fill="white" fontSize="9">
-          3.2K Devices • 98% Compliant
+      </g>
+
+      {/* SCEP Server */}
+      <g id="scep-server" className="cursor-pointer" onClick={() => setSelectedComponent("scep-server")}>
+        <rect x="300" y="250" width="180" height="70" rx="10" fill="#8b5cf6" stroke="#7c3aed" strokeWidth="2" />
+        <Server className="w-8 h-8" x="380" y="270" fill="white" />
+        <text x="390" y="295" textAnchor="middle" className="text-sm fill-white font-semibold">
+          SCEP Server
         </text>
+        <text x="390" y="310" textAnchor="middle" className="text-xs fill-purple-100">
+          Certificate Enrollment
+        </text>
+        <circle cx="460" cy="260" r="4" fill="#10b981">
+          {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="2.2s" repeatCount="indefinite" />}
+        </circle>
+      </g>
+
+      {/* OCSP Responder */}
+      <g id="ocsp-responder" className="cursor-pointer" onClick={() => setSelectedComponent("ocsp-responder")}>
+        <rect x="520" y="250" width="180" height="70" rx="10" fill="#a855f7" stroke="#9333ea" strokeWidth="2" />
+        <Activity className="w-8 h-8" x="600" y="270" fill="white" />
+        <text x="610" y="295" textAnchor="middle" className="text-sm fill-white font-semibold">
+          OCSP Responder
+        </text>
+        <text x="610" y="310" textAnchor="middle" className="text-xs fill-purple-100">
+          Certificate Validation
+        </text>
+        <circle cx="680" cy="260" r="4" fill="#10b981">
+          {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="2.4s" repeatCount="indefinite" />}
+        </circle>
+      </g>
+
+      {/* CRL Distribution */}
+      <g id="crl-distribution" className="cursor-pointer" onClick={() => setSelectedComponent("crl-distribution")}>
+        <rect x="740" y="250" width="180" height="70" rx="10" fill="#c084fc" stroke="#a855f7" strokeWidth="2" />
+        <Database className="w-8 h-8" x="820" y="270" fill="white" />
+        <text x="830" y="295" textAnchor="middle" className="text-sm fill-white font-semibold">
+          CRL Distribution
+        </text>
+        <text x="830" y="310" textAnchor="middle" className="text-xs fill-purple-100">
+          Revocation Lists
+        </text>
+        <circle cx="900" cy="260" r="4" fill="#10b981">
+          {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="2.6s" repeatCount="indefinite" />}
+        </circle>
+      </g>
+
+      {/* MDM Integration */}
+      <g id="mdm-integration" className="cursor-pointer" onClick={() => setSelectedComponent("mdm-integration")}>
+        <rect x="200" y="400" width="200" height="80" rx="10" fill="#059669" stroke="#047857" strokeWidth="2" />
+        <Smartphone className="w-8 h-8" x="290" y="425" fill="white" />
+        <text x="300" y="450" textAnchor="middle" className="text-sm fill-white font-semibold">
+          MDM Integration
+        </text>
+        <text x="300" y="465" textAnchor="middle" className="text-xs fill-green-100">
+          Automated Enrollment
+        </text>
+        <circle cx="380" cy="410" r="4" fill="#10b981">
+          {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="1.8s" repeatCount="indefinite" />}
+        </circle>
+      </g>
+
+      {/* End Devices */}
+      <g id="pki-devices" className="cursor-pointer" onClick={() => setSelectedComponent("pki-devices")}>
+        <rect x="500" y="400" width="200" height="80" rx="10" fill="#3b82f6" stroke="#1e40af" strokeWidth="2" />
+        <Laptop className="w-8 h-8" x="590" y="425" fill="white" />
+        <text x="600" y="450" textAnchor="middle" className="text-sm fill-white font-semibold">
+          End Devices
+        </text>
+        <text x="600" y="465" textAnchor="middle" className="text-xs fill-blue-100">
+          Certificate Recipients
+        </text>
+        <circle cx="680" cy="410" r="4" fill="#10b981">
+          {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="2.8s" repeatCount="indefinite" />}
+        </circle>
       </g>
 
       {/* Network Infrastructure */}
-      <g
-        onMouseEnter={(e) =>
-          handleComponentHover(
-            e,
-            "switches",
-            "Network Switches\nPorts: 22 (SSH), 161/162 (SNMP)\nProtocols: 802.1X, RADIUS, SNMP",
-          )
-        }
-        onMouseLeave={handleComponentLeave}
-        style={{ cursor: "pointer" }}
-        filter={hoveredComponent === "switches" ? "url(#glow)" : "url(#shadow)"}
-      >
-        <rect x="550" y="160" width="140" height="100" fill="#059669" rx="12" />
-        <text x="620" y="185" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold">
-          {safeConfig.wiredInfrastructure.vendor.charAt(0).toUpperCase() +
-            safeConfig.wiredInfrastructure.vendor.slice(1)}
+      <g id="pki-network" className="cursor-pointer" onClick={() => setSelectedComponent("pki-network")}>
+        <rect x="800" y="400" width="200" height="80" rx="10" fill="#10b981" stroke="#059669" strokeWidth="2" />
+        <Network className="w-8 h-8" x="890" y="425" fill="white" />
+        <text x="900" y="450" textAnchor="middle" className="text-sm fill-white font-semibold">
+          Network Infrastructure
         </text>
-        <text x="620" y="205" textAnchor="middle" fill="white" fontSize="12">
-          Core Switches
+        <text x="900" y="465" textAnchor="middle" className="text-xs fill-green-100">
+          Certificate Validation
         </text>
-        <text x="620" y="220" textAnchor="middle" fill="white" fontSize="10">
-          802.1X • RADIUS • VLAN
-        </text>
-        <circle cx="670" cy="240" r="5" fill="#10b981">
-          {isAnimating && (
-            <animate
-              attributeName="opacity"
-              values="1;0.3;1"
-              dur={`${2.2 / animationSpeed}s`}
-              repeatCount="indefinite"
-            />
-          )}
+        <circle cx="980" cy="410" r="4" fill="#10b981">
+          {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="3s" repeatCount="indefinite" />}
         </circle>
-        <text x="620" y="255" textAnchor="middle" fill="white" fontSize="9">
-          {safeConfig.wiredInfrastructure.switchCount} SW • 1.2K Ports
-        </text>
       </g>
 
-      {/* Wireless Infrastructure */}
-      <g
-        onMouseEnter={(e) =>
-          handleComponentHover(
-            e,
-            "wireless",
-            "Wireless Access Points\nPorts: 443 (HTTPS), 1812/1813 (RADIUS)\nProtocols: 802.11ax, WPA3, RADIUS",
-          )
-        }
-        onMouseLeave={handleComponentLeave}
-        style={{ cursor: "pointer" }}
-        filter={hoveredComponent === "wireless" ? "url(#glow)" : "url(#shadow)"}
-      >
-        <rect x="720" y="160" width="140" height="100" fill="#7c3aed" rx="12" />
-        <text x="790" y="185" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold">
-          {safeConfig.wirelessInfrastructure.vendor.charAt(0).toUpperCase() +
-            safeConfig.wirelessInfrastructure.vendor.slice(1)}
-        </text>
-        <text x="790" y="205" textAnchor="middle" fill="white" fontSize="12">
-          Wireless APs
-        </text>
-        <text x="790" y="220" textAnchor="middle" fill="white" fontSize="10">
-          WiFi 6 • WPA3 • RADIUS
-        </text>
-        <circle cx="840" cy="240" r="5" fill="#10b981">
-          {isAnimating && (
-            <animate
-              attributeName="opacity"
-              values="1;0.3;1"
-              dur={`${2.8 / animationSpeed}s`}
-              repeatCount="indefinite"
-            />
-          )}
-        </circle>
-        <text x="790" y="255" textAnchor="middle" fill="white" fontSize="9">
-          {safeConfig.wirelessInfrastructure.apCount} APs • 4.8K Clients
-        </text>
+      {/* PKI Flow Connections */}
+      <g id="pki-connections" stroke="#a855f7" strokeWidth="3" fill="none">
+        {/* Root CA to services */}
+        <path d="M 650 200 L 390 250" stroke="url(#certFlow)" strokeWidth="4" />
+        <path d="M 700 200 L 610 250" stroke="url(#certFlow)" strokeWidth="4" />
+        <path d="M 750 200 L 830 250" stroke="url(#certFlow)" strokeWidth="4" />
+
+        {/* Services to devices */}
+        <path d="M 390 320 L 300 400" stroke="url(#certFlow)" strokeWidth="4" />
+        <path d="M 610 320 L 600 400" stroke="url(#certFlow)" strokeWidth="4" />
+        <path d="M 830 320 L 900 400" stroke="url(#certFlow)" strokeWidth="4" />
       </g>
 
-      {/* Guest Portal */}
-      {safeConfig.guestPortal.enabled && (
-        <g
-          onMouseEnter={(e) =>
-            handleComponentHover(
-              e,
-              "guest-portal",
-              "Guest Portal & Captive Portal\nPorts: 443, 80, 8443\nProtocols: HTTPS, HTTP, SMTP",
-            )
-          }
-          onMouseLeave={handleComponentLeave}
-          style={{ cursor: "pointer" }}
-          filter={hoveredComponent === "guest-portal" ? "url(#glow)" : "url(#shadow)"}
-        >
-          <rect x="100" y="160" width="140" height="100" fill="#f59e0b" rx="12" />
-          <text x="170" y="185" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold">
-            Guest Portal
-          </text>
-          <text x="170" y="205" textAnchor="middle" fill="white" fontSize="12">
-            Captive Portal
-          </text>
-          <text x="170" y="220" textAnchor="middle" fill="white" fontSize="10">
-            Self-Registration
-          </text>
-          <circle cx="220" cy="240" r="5" fill="#10b981">
-            {isAnimating && (
-              <animate
-                attributeName="opacity"
-                values="1;0.3;1"
-                dur={`${3.5 / animationSpeed}s`}
-                repeatCount="indefinite"
-              />
-            )}
-          </circle>
-          <text x="170" y="255" textAnchor="middle" fill="white" fontSize="9">
-            850 Guests • 24h Access
-          </text>
-        </g>
-      )}
+      {/* Certificate Lifecycle Process */}
+      <g id="cert-lifecycle">
+        <rect
+          x="100"
+          y="550"
+          width="1200"
+          height="200"
+          rx="15"
+          fill="rgba(168, 85, 247, 0.1)"
+          stroke="#a855f7"
+          strokeWidth="2"
+        />
+        <text x="700" y="580" textAnchor="middle" className="text-lg font-bold fill-purple-800">
+          📋 Certificate Lifecycle Management Process
+        </text>
 
-      {/* IoT Onboarding */}
-      {safeConfig.iotOnboarding.enabled && (
-        <g
-          onMouseEnter={(e) =>
-            handleComponentHover(
-              e,
-              "iot-onboarding",
-              "IoT Device Onboarding\nPorts: 443, 161/162, 67/68\nProtocols: HTTPS, SNMP, DHCP, CDP, LLDP",
-            )
-          }
-          onMouseLeave={handleComponentLeave}
-          style={{ cursor: "pointer" }}
-          filter={hoveredComponent === "iot-onboarding" ? "url(#glow)" : "url(#shadow)"}
-        >
-          <rect x="270" y="160" width="140" height="100" fill="#8b5cf6" rx="12" />
-          <text x="340" y="185" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold">
-            IoT Onboarding
-          </text>
-          <text x="340" y="205" textAnchor="middle" fill="white" fontSize="12">
-            Auto Discovery
-          </text>
-          <text x="340" y="220" textAnchor="middle" fill="white" fontSize="10">
-            Device Profiling
-          </text>
-          <circle cx="390" cy="240" r="5" fill="#10b981">
-            {isAnimating && (
-              <animate
-                attributeName="opacity"
-                values="1;0.3;1"
-                dur={`${4 / animationSpeed}s`}
-                repeatCount="indefinite"
-              />
-            )}
-          </circle>
-          <text x="340" y="255" textAnchor="middle" fill="white" fontSize="9">
-            2.4K IoT • Segmented
-          </text>
-        </g>
-      )}
-
-      {/* Animated Data Flows */}
-      {isAnimating && (
-        <>
-          <line
-            x1="620"
-            y1="210"
-            x2="1120"
-            y2="210"
-            stroke="#10b981"
-            strokeWidth="4"
-            opacity="0.8"
-            markerEnd="url(#arrowhead)"
-          >
-            <animate
-              attributeName="stroke-dasharray"
-              values="0,1000;1000,0"
-              dur={`${2.5 / animationSpeed}s`}
-              repeatCount="indefinite"
-            />
-          </line>
-          <line
-            x1="1120"
-            y1="210"
-            x2="1280"
-            y2="210"
+        {/* Enrollment Phase */}
+        <g id="enrollment-phase">
+          <rect
+            x="120"
+            y="600"
+            width="220"
+            height="80"
+            rx="8"
+            fill="rgba(139, 92, 246, 0.1)"
             stroke="#8b5cf6"
-            strokeWidth="4"
-            opacity="0.8"
-            markerEnd="url(#arrowhead)"
-          >
-            <animate
-              attributeName="stroke-dasharray"
-              values="0,1000;1000,0"
-              dur={`${2 / animationSpeed}s`}
-              repeatCount="indefinite"
-            />
-          </line>
-        </>
-      )}
-
-      {/* Performance Metrics Dashboard */}
-      <rect
-        x="50"
-        y="420"
-        width="1300"
-        height="180"
-        fill="white"
-        stroke="#e5e7eb"
-        strokeWidth="2"
-        rx="12"
-        filter="url(#shadow)"
-      />
-      <text x="80" y="450" fill="#374151" fontSize="18" fontWeight="bold">
-        🔍 Real-Time Security & Performance Analytics
-      </text>
-
-      <g transform="translate(80, 470)">
-        <rect width="240" height="80" fill="#f8fafc" stroke="#e2e8f0" rx="8" />
-        <text x="15" y="25" fill="#374151" fontSize="14" fontWeight="bold">
-          Authentication Rate
-        </text>
-        <text x="15" y="45" fill="#059669" fontSize="20" fontWeight="bold">
-          10,247/min
-        </text>
-        <text x="15" y="65" fill="#6b7280" fontSize="11">
-          ↑ 12% from last hour • 99.7% success
-        </text>
-        <circle cx="210" cy="40" r="8" fill="#10b981">
-          {isAnimating && <animate attributeName="opacity" values="1;0.5;1" dur="2s" repeatCount="indefinite" />}
-        </circle>
-      </g>
-
-      <g transform="translate(340, 470)">
-        <rect width="240" height="80" fill="#f8fafc" stroke="#e2e8f0" rx="8" />
-        <text x="15" y="25" fill="#374151" fontSize="14" fontWeight="bold">
-          Risk Assessment
-        </text>
-        <text x="15" y="45" fill="#059669" fontSize="20" fontWeight="bold">
-          Score: 23/100
-        </text>
-        <text x="15" y="65" fill="#6b7280" fontSize="11">
-          Low Risk • 12.5K agents active
-        </text>
-        <circle cx="210" cy="40" r="8" fill="#10b981">
-          {isAnimating && <animate attributeName="opacity" values="1;0.5;1" dur="2.5s" repeatCount="indefinite" />}
-        </circle>
-      </g>
-
-      <g transform="translate(600, 470)">
-        <rect width="240" height="80" fill="#f8fafc" stroke="#e2e8f0" rx="8" />
-        <text x="15" y="25" fill="#374151" fontSize="14" fontWeight="bold">
-          Device Compliance
-        </text>
-        <text x="15" y="45" fill="#059669" fontSize="20" fontWeight="bold">
-          98.2%
-        </text>
-        <text x="15" y="65" fill="#6b7280" fontSize="11">
-          3,250 devices • 58 non-compliant
-        </text>
-        <circle cx="210" cy="40" r="8" fill="#10b981">
-          {isAnimating && <animate attributeName="opacity" values="1;0.5;1" dur="3s" repeatCount="indefinite" />}
-        </circle>
-      </g>
-
-      <g transform="translate(860, 470)">
-        <rect width="240" height="80" fill="#f8fafc" stroke="#e2e8f0" rx="8" />
-        <text x="15" y="25" fill="#374151" fontSize="14" fontWeight="bold">
-          Active Sessions
-        </text>
-        <text x="15" y="45" fill="#059669" fontSize="20" fontWeight="bold">
-          15,420
-        </text>
-        <text x="15" y="65" fill="#6b7280" fontSize="11">
-          Peak: 18,500 • Avg latency: 47ms
-        </text>
-        <circle cx="210" cy="40" r="8" fill="#10b981">
-          {isAnimating && <animate attributeName="opacity" values="1;0.5;1" dur="1.8s" repeatCount="indefinite" />}
-        </circle>
-      </g>
-
-      <g transform="translate(1120, 470)">
-        <rect width="160" height="80" fill="#f8fafc" stroke="#e2e8f0" rx="8" />
-        <text x="15" y="25" fill="#374151" fontSize="14" fontWeight="bold">
-          Threat Detection
-        </text>
-        <text x="15" y="45" fill="#dc2626" fontSize="20" fontWeight="bold">
-          247 Blocked
-        </text>
-        <text x="15" y="65" fill="#6b7280" fontSize="11">
-          Last 24h • 0 false positives
-        </text>
-        <circle cx="130" cy="40" r="8" fill="#ef4444">
-          {isAnimating && <animate attributeName="opacity" values="1;0.5;1" dur="1.5s" repeatCount="indefinite" />}
-        </circle>
-      </g>
-
-      {/* Legend */}
-      {showLegend && (
-        <g transform="translate(50, 630)">
-          <rect width="1300" height="120" fill="white" stroke="#e5e7eb" strokeWidth="2" rx="12" filter="url(#shadow)" />
-          <text x="30" y="35" fill="#374151" fontSize="18" fontWeight="bold">
-            🎯 Interactive Architecture Legend & Workflow Guide
+            strokeWidth="1"
+          />
+          <text x="230" y="620" textAnchor="middle" className="text-sm font-bold fill-purple-800">
+            1. Enrollment
           </text>
-
-          <g transform="translate(30, 50)">
-            <text x="0" y="20" fill="#374151" fontSize="14" fontWeight="bold">
-              Components:
-            </text>
-
-            <rect x="0" y="30" width="20" height="15" fill="url(#cloudGradient)" rx="3" />
-            <text x="30" y="42" fill="#374151" fontSize="12">
-              Cloud NAC Platform
-            </text>
-
-            <rect x="180" y="30" width="20" height="15" fill="#8b5cf6" rx="3" />
-            <text x="210" y="42" fill="#374151" fontSize="12">
-              Identity Provider
-            </text>
-
-            <rect x="360" y="30" width="20" height="15" fill="#06b6d4" rx="3" />
-            <text x="390" y="42" fill="#374151" fontSize="12">
-              MDM Platform
-            </text>
-
-            <rect x="540" y="30" width="20" height="15" fill="url(#securityGradient)" rx="3" />
-            <text x="570" y="42" fill="#374151" fontSize="12">
-              Network Infrastructure
-            </text>
-
-            <rect x="720" y="30" width="20" height="15" fill="#f59e0b" rx="3" />
-            <text x="750" y="42" fill="#374151" fontSize="12">
-              Guest Portal
-            </text>
-
-            <rect x="880" y="30" width="20" height="15" fill="#8b5cf6" rx="3" />
-            <text x="910" y="42" fill="#374151" fontSize="12">
-              IoT Onboarding
-            </text>
-          </g>
+          <text x="130" y="640" className="text-xs fill-purple-700">
+            • SCEP request initiated
+          </text>
+          <text x="130" y="655" className="text-xs fill-purple-700">
+            • Device identity verified
+          </text>
+          <text x="130" y="670" className="text-xs fill-purple-700">
+            • Certificate issued & deployed
+          </text>
         </g>
-      )}
+
+        {/* Validation Phase */}
+        <g id="validation-phase">
+          <rect
+            x="360"
+            y="600"
+            width="220"
+            height="80"
+            rx="8"
+            fill="rgba(168, 85, 247, 0.1)"
+            stroke="#a855f7"
+            strokeWidth="1"
+          />
+          <text x="470" y="620" textAnchor="middle" className="text-sm font-bold fill-purple-800">
+            2. Validation
+          </text>
+          <text x="370" y="640" className="text-xs fill-purple-700">
+            • OCSP status checking
+          </text>
+          <text x="370" y="655" className="text-xs fill-purple-700">
+            • CRL verification
+          </text>
+          <text x="370" y="670" className="text-xs fill-purple-700">
+            • Real-time validation
+          </text>
+        </g>
+
+        {/* Renewal Phase */}
+        <g id="renewal-phase">
+          <rect
+            x="600"
+            y="600"
+            width="220"
+            height="80"
+            rx="8"
+            fill="rgba(196, 132, 252, 0.1)"
+            stroke="#c084fc"
+            strokeWidth="1"
+          />
+          <text x="710" y="620" textAnchor="middle" className="text-sm font-bold fill-purple-800">
+            3. Renewal
+          </text>
+          <text x="610" y="640" className="text-xs fill-purple-700">
+            • Automated renewal alerts
+          </text>
+          <text x="610" y="655" className="text-xs fill-purple-700">
+            • Pre-expiration warnings
+          </text>
+          <text x="610" y="670" className="text-xs fill-purple-700">
+            • Seamless certificate update
+          </text>
+        </g>
+
+        {/* Revocation Phase */}
+        <g id="revocation-phase">
+          <rect
+            x="840"
+            y="600"
+            width="220"
+            height="80"
+            rx="8"
+            fill="rgba(220, 38, 38, 0.1)"
+            stroke="#dc2626"
+            strokeWidth="1"
+          />
+          <text x="950" y="620" textAnchor="middle" className="text-sm font-bold fill-red-800">
+            4. Revocation
+          </text>
+          <text x="850" y="640" className="text-xs fill-red-700">
+            • Immediate revocation
+          </text>
+          <text x="850" y="655" className="text-xs fill-red-700">
+            • CRL updates
+          </text>
+          <text x="850" y="670" className="text-xs fill-red-700">
+            • Access termination
+          </text>
+        </g>
+      </g>
+
+      {/* PKI Statistics */}
+      <g id="pki-stats">
+        <rect
+          x="1100"
+          y="120"
+          width="250"
+          height="200"
+          rx="10"
+          fill="rgba(168, 85, 247, 0.1)"
+          stroke="#a855f7"
+          strokeWidth="1"
+        />
+        <text x="1225" y="145" textAnchor="middle" className="text-sm font-bold fill-purple-800">
+          📊 PKI Statistics
+        </text>
+        <text x="1120" y="170" className="text-xs fill-purple-700">
+          Active Certificates: 15,247
+        </text>
+        <text x="1120" y="185" className="text-xs fill-purple-700">
+          Issued This Month: 1,832
+        </text>
+        <text x="1120" y="200" className="text-xs fill-purple-700">
+          Renewal Rate: 98.5%
+        </text>
+        <text x="1120" y="215" className="text-xs fill-purple-700">
+          Revoked: 23 (0.15%)
+        </text>
+        <text x="1120" y="230" className="text-xs fill-purple-700">
+          Avg Validity: 2 years
+        </text>
+        <text x="1120" y="245" className="text-xs fill-purple-700">
+          OCSP Responses: 45K/day
+        </text>
+        <text x="1120" y="260" className="text-xs fill-purple-700">
+          Success Rate: 99.97%
+        </text>
+        <text x="1120" y="275" className="text-xs fill-purple-700">
+          Auto-Enrollment: 95%
+        </text>
+        <text x="1120" y="290" className="text-xs fill-purple-700">
+          Template Types: 12
+        </text>
+        <text x="1120" y="305" className="text-xs fill-purple-700">
+          Last Backup: 2h ago
+        </text>
+      </g>
     </svg>
   )
 
-  const renderJuniperMistView = () => (
+  const renderMultiSiteArchitecture = () => (
     <svg
-      ref={svgRef}
-      viewBox="0 0 1600 1200"
-      className="w-full h-full"
-      style={{ background: "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)" }}
+      viewBox="0 0 1400 800"
+      className="w-full h-full architecture-diagram"
+      style={{ background: "linear-gradient(135deg, #f0f9ff 0%, #dbeafe 100%)" }}
     >
       <defs>
-        <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-          <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e2e8f0" strokeWidth="0.5" opacity="0.3" />
+        <pattern id="multiSiteGrid" width="25" height="25" patternUnits="userSpaceOnUse">
+          <path d="M 25 0 L 0 0 0 25" fill="none" stroke="#3b82f6" strokeWidth="0.5" opacity="0.2" />
         </pattern>
-        <filter id="shadow">
-          <feDropShadow dx="3" dy="3" stdDeviation="4" floodOpacity="0.3" />
-        </filter>
-        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-          <polygon points="0 0, 10 3.5, 0 7" fill="#374151" />
-        </marker>
-        <linearGradient id="mistGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#1e293b" />
-          <stop offset="50%" stopColor="#475569" />
-          <stop offset="100%" stopColor="#64748b" />
-        </linearGradient>
       </defs>
 
-      <rect width="100%" height="100%" fill="url(#grid)" />
+      <rect width="100%" height="100%" fill="url(#multiSiteGrid)" />
 
-      {/* Header */}
-      <rect x="0" y="0" width="1600" height="80" fill="url(#mistGradient)" />
-      <text x="30" y="35" fill="white" fontSize="24" fontWeight="bold">
-        Juniper Mist AI-Driven Wireless
+      {/* Multi-Site Title */}
+      <text x="700" y="50" textAnchor="middle" className="text-2xl font-bold fill-blue-800">
+        🌐 Multi-Site Enterprise Architecture
       </text>
-      <text x="30" y="55" fill="white" fontSize="14" opacity="0.9">
-        AI-Powered Automation • Cloud Management • Insights & Analytics
+      <text x="700" y="75" textAnchor="middle" className="text-sm fill-blue-700">
+        Centralized Management Across Global Locations
       </text>
 
-      {/* Juniper Mist Cloud */}
-      <g transform="translate(700, 120)">
-        <rect width="200" height="120" fill="url(#mistGradient)" rx="15" filter="url(#shadow)" />
-        <text x="100" y="35" textAnchor="middle" fill="white" fontSize="16" fontWeight="bold">
-          Juniper Mist Cloud
+      {/* Central Portnox Cloud */}
+      <g id="central-cloud" className="cursor-pointer" onClick={() => setSelectedComponent("central-cloud")}>
+        <rect x="600" y="150" width="200" height="100" rx="15" fill="#3b82f6" stroke="#1e40af" strokeWidth="3" />
+        <Cloud className="w-12 h-12" x="685" y="175" fill="white" />
+        <text x="700" y="215" textAnchor="middle" className="text-lg fill-white font-bold">
+          Portnox Cloud
         </text>
-        <text x="100" y="55" textAnchor="middle" fill="white" fontSize="12">
-          AI-Driven Management
+        <text x="700" y="235" textAnchor="middle" className="text-sm fill-blue-100">
+          Global NAC Platform
         </text>
-        <text x="100" y="75" textAnchor="middle" fill="white" fontSize="10">
-          Automation & Analytics
-        </text>
-        <text x="100" y="95" textAnchor="middle" fill="white" fontSize="10">
-          Centralized Control
-        </text>
-        <circle cx="180" cy="100" r="6" fill="#10b981">
-          {isAnimating && (
-            <animate attributeName="opacity" values="1;0.3;1" dur={`${2 / animationSpeed}s`} repeatCount="indefinite" />
-          )}
+        <circle cx="780" cy="160" r="6" fill="#10b981">
+          {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="2s" repeatCount="indefinite" />}
         </circle>
       </g>
 
-      {/* Juniper Mist Wireless Network */}
-      <g transform="translate(100, 300)">
-        <rect width="300" height="200" fill="#e5e7eb" stroke="#64748b" strokeWidth="2" rx="10" opacity="0.9" />
-        <text x="15" y="25" fill="#1e293b" fontSize="16" fontWeight="bold">
-          Juniper Mist Wireless Network
+      {/* Site 1: Headquarters */}
+      <g id="site-hq" className="cursor-pointer" onClick={() => setSelectedComponent("site-hq")}>
+        <rect x="100" y="350" width="250" height="150" rx="12" fill="#10b981" stroke="#059669" strokeWidth="2" />
+        <Building className="w-8 h-8" x="210" y="375" fill="white" />
+        <text x="225" y="405" textAnchor="middle" className="text-lg fill-white font-bold">
+          New York HQ
         </text>
-        <text x="15" y="45" fill="#1e293b" fontSize="12">
-          AI-Driven Wireless Infrastructure
+        <text x="225" y="425" textAnchor="middle" className="text-sm fill-green-100">
+          2,500 Users | 4,200 Devices
         </text>
-
-        <rect x="20" y="60" width="80" height="60" fill="#64748b" rx="8" />
-        <text x="60" y="85" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">
-          Mist AP45
+        <text x="225" y="445" textAnchor="middle" className="text-xs fill-green-100">
+          Cisco Infrastructure
         </text>
-        <text x="60" y="100" textAnchor="middle" fill="white" fontSize="9">
-          802.11ax
+        <text x="225" y="460" textAnchor="middle" className="text-xs fill-green-100">
+          Phase 3: Implementation
         </text>
-        <text x="60" y="115" textAnchor="middle" fill="white" fontSize="8">
-          AI-Driven
+        <text x="225" y="475" textAnchor="middle" className="text-xs fill-green-100">
+          Progress: 75%
         </text>
-
-        <rect x="120" y="60" width="80" height="60" fill="#64748b" rx="8" />
-        <text x="160" y="85" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">
-          Mist AP43
-        </text>
-        <text x="160" y="100" textAnchor="middle" fill="white" fontSize="9">
-          802.11ac Wave 2
-        </text>
-        <text x="160" y="115" textAnchor="middle" fill="white" fontSize="8">
-          Location Services
-        </text>
-
-        <rect x="220" y="60" width="60" height="60" fill="#64748b" rx="8" />
-        <text x="250" y="85" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">
-          BT11
-        </text>
-        <text x="250" y="100" textAnchor="middle" fill="white" fontSize="9">
-          Bluetooth
-        </text>
-        <text x="250" y="115" textAnchor="middle" fill="white" fontSize="8">
-          IoT Sensors
-        </text>
-
-        <text x="20" y="150" fill="#1e293b" fontSize="11">
-          • Cloud Management
-        </text>
-        <text x="20" y="165" fill="#1e293b" fontSize="11">
-          • AI-Driven Automation
-        </text>
-        <text x="20" y="180" fill="#1e293b" fontSize="11">
-          • Location Services
-        </text>
-        <circle cx="270" cy="180" r="5" fill="#10b981" />
+        <circle cx="330" cy="360" r="5" fill="#10b981">
+          {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="1.8s" repeatCount="indefinite" />}
+        </circle>
       </g>
 
-      {/* Wireless Clients */}
-      <g transform="translate(450, 300)">
-        <rect width="300" height="200" fill="#f8fafc" stroke="#475569" strokeWidth="2" rx="10" opacity="0.9" />
-        <text x="15" y="25" fill="#1e293b" fontSize="16" fontWeight="bold">
-          Wireless Clients
+      {/* Site 2: Branch Office */}
+      <g id="site-branch" className="cursor-pointer" onClick={() => setSelectedComponent("site-branch")}>
+        <rect x="400" y="350" width="250" height="150" rx="12" fill="#f59e0b" stroke="#d97706" strokeWidth="2" />
+        <MapPin className="w-8 h-8" x="510" y="375" fill="white" />
+        <text x="525" y="405" textAnchor="middle" className="text-lg fill-white font-bold">
+          London Branch
         </text>
-        <text x="15" y="45" fill="#1e293b" fontSize="12">
-          Connected Devices
+        <text x="525" y="425" textAnchor="middle" className="text-sm fill-orange-100">
+          850 Users | 1,400 Devices
         </text>
-
-        <rect x="20" y="60" width="80" height="60" fill="#475569" rx="8" />
-        <text x="60" y="85" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">
-          Laptops
+        <text x="525" y="445" textAnchor="middle" className="text-xs fill-orange-100">
+          Aruba Infrastructure
         </text>
-        <text x="60" y="100" textAnchor="middle" fill="white" fontSize="9">
-          Corporate
+        <text x="525" y="460" textAnchor="middle" className="text-xs fill-orange-100">
+          Phase 2: Design
         </text>
-        <text x="60" y="115" textAnchor="middle" fill="white" fontSize="8">
-          802.1X
+        <text x="525" y="475" textAnchor="middle" className="text-xs fill-orange-100">
+          Progress: 45%
         </text>
-
-        <rect x="120" y="60" width="80" height="60" fill="#475569" rx="8" />
-        <text x="160" y="85" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">
-          Smartphones
-        </text>
-        <text x="160" y="100" textAnchor="middle" fill="white" fontSize="9">
-          BYOD
-        </text>
-        <text x="160" y="115" textAnchor="middle" fill="white" fontSize="8">
-          WPA2
-        </text>
-
-        <rect x="220" y="60" width="60" height="60" fill="#475569" rx="8" />
-        <text x="250" y="85" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">
-          Tablets
-        </text>
-        <text x="250" y="100" textAnchor="middle" fill="white" fontSize="9">
-          Guest
-        </text>
-        <text x="250" y="115" textAnchor="middle" fill="white" fontSize="8">
-          Captive Portal
-        </text>
-
-        <text x="20" y="150" fill="#1e293b" fontSize="11">
-          • Secure Access
-        </text>
-        <text x="20" y="165" fill="#1e293b" fontSize="11">
-          • Policy Enforcement
-        </text>
-        <text x="20" y="180" fill="#1e293b" fontSize="11">
-          • Guest Access
-        </text>
-        <circle cx="270" cy="180" r="5" fill="#10b981" />
+        <circle cx="630" cy="360" r="5" fill="#10b981">
+          {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="2.2s" repeatCount="indefinite" />}
+        </circle>
       </g>
 
-      {/* Portnox Integration */}
-      <g transform="translate(800, 300)">
-        <rect width="300" height="200" fill="#f0fdfa" stroke="#10b981" strokeWidth="2" rx="10" opacity="0.9" />
-        <text x="15" y="25" fill="#065f46" fontSize="16" fontWeight="bold">
-          Portnox Integration
+      {/* Site 3: Remote Office */}
+      <g id="site-remote" className="cursor-pointer" onClick={() => setSelectedComponent("site-remote")}>
+        <rect x="700" y="350" width="250" height="150" rx="12" fill="#8b5cf6" stroke="#7c3aed" strokeWidth="2" />
+        <Globe className="w-8 h-8" x="810" y="375" fill="white" />
+        <text x="825" y="405" textAnchor="middle" className="text-lg fill-white font-bold">
+          Tokyo Office
         </text>
-        <text x="15" y="45" fill="#065f46" fontSize="12">
-          Zero Trust NAC
+        <text x="825" y="425" textAnchor="middle" className="text-sm fill-purple-100">
+          650 Users | 1,100 Devices
         </text>
-
-        <rect x="20" y="60" width="80" height="60" fill="#10b981" rx="8" />
-        <text x="60" y="85" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">
-          Visibility
+        <text x="825" y="445" textAnchor="middle" className="text-xs fill-purple-100">
+          Juniper Infrastructure
         </text>
-        <text x="60" y="100" textAnchor="middle" fill="white" fontSize="9">
-          Device Profiling
+        <text x="825" y="460" textAnchor="middle" className="text-xs fill-purple-100">
+          Phase 1: Planning
         </text>
-        <text x="60" y="115" textAnchor="middle" fill="white" fontSize="8">
-          Context
+        <text x="825" y="475" textAnchor="middle" className="text-xs fill-purple-100">
+          Progress: 15%
         </text>
-
-        <rect x="120" y="60" width="80" height="60" fill="#10b981" rx="8" />
-        <text x="160" y="85" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">
-          Control
-        </text>
-        <text x="160" y="100" textAnchor="middle" fill="white" fontSize="9">
-          Policy Enforcement
-        </text>
-        <text x="160" y="115" textAnchor="middle" fill="white" fontSize="8">
-          Segmentation
-        </text>
-
-        <rect x="220" y="60" width="60" height="60" fill="#10b981" rx="8" />
-        <text x="250" y="85" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">
-          Automation
-        </text>
-        <text x="250" y="100" textAnchor="middle" fill="white" fontSize="9">
-          Remediation
-        </text>
-        <text x="250" y="115" textAnchor="middle" fill="white" fontSize="8">
-          Response
-        </text>
-
-        <text x="20" y="150" fill="#065f46" fontSize="11">
-          • Enhanced Security
-        </text>
-        <text x="20" y="165" fill="#065f46" fontSize="11">
-          • Automated Response
-        </text>
-        <text x="20" y="180" fill="#065f46" fontSize="11">
-          • Zero Trust
-        </text>
-        <circle cx="270" cy="180" r="5" fill="#10b981" />
+        <circle cx="930" cy="360" r="5" fill="#f59e0b">
+          {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="2.5s" repeatCount="indefinite" />}
+        </circle>
       </g>
 
-      {/* Integration Flow */}
-      <g transform="translate(200, 550)">
-        <rect width="1200" height="200" fill="white" stroke="#e5e7eb" strokeWidth="2" rx="15" filter="url(#shadow)" />
-        <text x="30" y="35" fill="#374151" fontSize="18" fontWeight="bold">
-          Integration Flow
+      {/* Site 4: Data Center */}
+      <g id="site-datacenter" className="cursor-pointer" onClick={() => setSelectedComponent("site-datacenter")}>
+        <rect x="1000" y="350" width="250" height="150" rx="12" fill="#dc2626" stroke="#b91c1c" strokeWidth="2" />
+        <Database className="w-8 h-8" x="1110" y="375" fill="white" />
+        <text x="1125" y="405" textAnchor="middle" className="text-lg fill-white font-bold">
+          AWS Data Center
         </text>
-
-        <g transform="translate(50, 60)">
-          <rect width="180" height="100" fill="#dbeafe" rx="10" />
-          <text x="90" y="25" textAnchor="middle" fill="#1e293b" fontSize="14" fontWeight="bold">
-            1. Device Connects
-          </text>
-          <text x="90" y="45" textAnchor="middle" fill="#1e293b" fontSize="11">
-            Wireless Client
-          </text>
-          <text x="90" y="60" textAnchor="middle" fill="#1e293b" fontSize="10">
-            Association
-          </text>
-          <text x="90" y="75" textAnchor="middle" fill="#1e293b" fontSize="10">
-            Authentication
-          </text>
-          <text x="90" y="90" textAnchor="middle" fill="#1e293b" fontSize="9">
-            DHCP
-          </text>
-        </g>
-
-        <g transform="translate(260, 60)">
-          <rect width="180" height="100" fill="#ede9fe" rx="10" />
-          <text x="90" y="25" textAnchor="middle" fill="#1e293b" fontSize="14" fontWeight="bold">
-            2. Meraki Cloud
-          </text>
-          <text x="90" y="45" textAnchor="middle" fill="#1e293b" fontSize="11">
-            Device Profiling
-          </text>
-          <text x="90" y="60" textAnchor="middle" fill="#1e293b" fontSize="10">
-            Context Collection
-          </text>
-          <text x="90" y="75" textAnchor="middle" fill="#1e293b" fontSize="10">
-            API Integration
-          </text>
-          <text x="90" y="90" textAnchor="middle" fill="#1e293b" fontSize="9">
-            Analytics
-          </text>
-        </g>
-
-        <g transform="translate(470, 60)">
-          <rect width="180" height="100" fill="#f0fdfa" rx="10" />
-          <text x="90" y="25" textAnchor="middle" fill="#065f46" fontSize="14" fontWeight="bold">
-            3. Portnox NAC
-          </text>
-          <text x="90" y="45" textAnchor="middle" fill="#065f46" fontSize="11">
-            Policy Evaluation
-          </text>
-          <text x="90" y="60" textAnchor="middle" fill="#065f46" fontSize="10">
-            Risk Assessment
-          </text>
-          <text x="90" y="75" textAnchor="middle" fill="#065f46" fontSize="10">
-            Contextual Analysis
-          </text>
-          <text x="90" y="90" fill="#065f46" fontSize="9">
-            Dynamic Rules
-          </text>
-        </g>
-
-        <g transform="translate(680, 60)">
-          <rect width="180" height="100" fill="#e5e7eb" rx="10" />
-          <text x="90" y="25" textAnchor="middle" fill="#1e293b" fontSize="14" fontWeight="bold">
-            4. Policy Enforcement
-          </text>
-          <text x="90" y="45" textAnchor="middle" fill="#1e293b" fontSize="11">
-            Access Control
-          </text>
-          <text x="90" y="60" fill="#1e293b" fontSize="10">
-            VLAN Assignment
-          </text>
-          <text x="90" y="75" fill="#1e293b" fontSize="10">
-            QoS Prioritization
-          </text>
-          <text x="90" y="90" fill="#1e293b" fontSize="9">
-            Traffic Shaping
-          </text>
-        </g>
-
-        <g transform="translate(890, 60)">
-          <rect width="180" height="100" fill="#f0fdfa" rx="10" />
-          <text x="90" y="25" textAnchor="middle" fill="#065f46" fontSize="14" fontWeight="bold">
-            5. Automated Response
-          </text>
-          <text x="90" y="45" fill="#065f46" fontSize="11">
-            Remediation Actions
-          </text>
-          <text x="90" y="60" fill="#065f46" fontSize="10">
-            Quarantine
-          </text>
-          <text x="90" y="75" fill="#065f46" fontSize="10">
-            Block Access
-          </text>
-          <text x="90" y="90" fill="#065f46" fontSize="9">
-            Alerting
-          </text>
-        </g>
-
-        {/* Flow Arrows */}
-        {isAnimating && (
-          <>
-            <line x1="230" y1="110" x2="260" y2="110" stroke="#374151" strokeWidth="3" markerEnd="url(#arrowhead)">
-              <animate
-                attributeName="stroke-dasharray"
-                values="0,50;50,0"
-                dur={`${1 / animationSpeed}s`}
-                repeatCount="indefinite"
-              />
-            </line>
-            <line x1="440" y1="110" x2="470" y2="110" stroke="#374151" strokeWidth="3" markerEnd="url(#arrowhead)">
-              <animate
-                attributeName="stroke-dasharray"
-                values="0,50;50,0"
-                dur={`${1.2 / animationSpeed}s`}
-                repeatCount="indefinite"
-              />
-            </line>
-            <line x1="650" y1="110" x2="680" y2="110" stroke="#374151" strokeWidth="3" markerEnd="url(#arrowhead)">
-              <animate
-                attributeName="stroke-dasharray"
-                values="0,50;50,0"
-                dur={`${1.4 / animationSpeed}s`}
-                repeatCount="indefinite"
-              />
-            </line>
-            <line x1="860" y1="110" x2="890" y2="110" stroke="#374151" strokeWidth="3" markerEnd="url(#arrowhead)">
-              <animate
-                attributeName="stroke-dasharray"
-                values="0,50;50,0"
-                dur={`${1.6 / animationSpeed}s`}
-                repeatCount="indefinite"
-              />
-            </line>
-          </>
-        )}
-
-        <text x="600" y="180" textAnchor="middle" fill="#374151" fontSize="12">
-          Complete Integration Flow: Device → Meraki Cloud → Portnox NAC → Policy Enforcement
+        <text x="1125" y="425" textAnchor="middle" className="text-sm fill-red-100">
+          200 Servers | 500 Devices
         </text>
+        <text x="1125" y="445" textAnchor="middle" className="text-xs fill-red-100">
+          Cloud Infrastructure
+        </text>
+        <text x="1125" y="460" textAnchor="middle" className="text-xs fill-red-100">
+          Phase 4: Deployment
+        </text>
+        <text x="1125" y="475" textAnchor="middle" className="text-xs fill-red-100">
+          Progress: 90%
+        </text>
+        <circle cx="1230" cy="360" r="5" fill="#10b981">
+          {isAnimating && <animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite" />}
+        </circle>
       </g>
 
-      {/* Statistics */}
-      <rect
-        x="50"
-        y="800"
-        width="1500"
-        height="180"
-        fill="white"
-        stroke="#e5e7eb"
-        strokeWidth="2"
-        rx="12"
-        filter="url(#shadow)"
-      />
-      <text x="80" y="830" fill="#374151" fontSize="18" fontWeight="bold">
-        📊 Meraki Wireless Network Analytics & Performance
-      </text>
-
-      <g transform="translate(80, 850)">
-        <rect width="280" height="100" fill="#f8fafc" stroke="#e2e8f0" rx="8" />
-        <text x="15" y="25" fill="#374151" fontSize="14" fontWeight="bold">
-          Wireless Performance
-        </text>
-        <text x="15" y="45" fill="#10b981" fontSize="12">
-          ✅ Average Throughput: 500 Mbps
-        </text>
-        <text x="15" y="60" fill="#374151" fontSize="12">
-          📶 Signal Strength: -65 dBm
-        </text>
-        <text x="15" y="75" fill="#374151" fontSize="12">
-          Client Count: 4,800
-        </text>
-        <text x="15" y="90" fill="#6b7280" fontSize="11">
-          Channel Utilization: 60%
-        </text>
+      {/* Connectivity Lines */}
+      <g id="site-connections" stroke="#3b82f6" strokeWidth="3" fill="none">
+        <path d="M 650 250 L 225 350" strokeDasharray="5,5" />
+        <path d="M 700 250 L 525 350" strokeDasharray="5,5" />
+        <path d="M 750 250 L 825 350" strokeDasharray="5,5" />
+        <path d="M 750 250 L 1125 350" strokeDasharray="5,5" />
       </g>
 
-      <g transform="translate(380, 850)">
-        <rect width="280" height="100" fill="#f8fafc" stroke="#e2e8f0" rx="8" />
-        <text x="15" y="25" fill="#374151" fontSize="14" fontWeight="bold">
-          Client Distribution
+      {/* Global Statistics */}
+      <g id="global-stats">
+        <rect
+          x="100"
+          y="550"
+          width="1200"
+          height="120"
+          rx="10"
+          fill="rgba(59, 130, 246, 0.1)"
+          stroke="#3b82f6"
+          strokeWidth="2"
+        />
+        <text x="700" y="580" textAnchor="middle" className="text-lg font-bold fill-blue-800">
+          📊 Global Deployment Statistics
         </text>
-        <text x="15" y="45" fill="#374151" fontSize="12">
-          Corporate Laptops: 2,500
-        </text>
-        <text x="15" y="60" fill="#374151" fontSize="12">
-          BYOD Smartphones: 1,200
-        </text>
-        <text x="15" y="75" fill="#374151" fontSize="12">
-          Guest Tablets: 600
-        </text>
-        <text x="15" y="90" fill="#6b7280" fontSize="11">
-          IoT Devices: 500
-        </text>
-      </g>
 
-      <g transform="translate(680, 850)">
-        <rect width="280" height="100" fill="#f8fafc" stroke="#e2e8f0" rx="8" />
-        <text x="15" y="25" fill="#374151" fontSize="14" fontWeight="bold">
-          Security Metrics
+        <text x="150" y="610" className="text-sm fill-blue-700 font-medium">
+          Total Sites: 47
         </text>
-        <text x="15" y="45" fill="#10b981" fontSize="12">
-          ✅ WPA3 Encryption: 100%
+        <text x="150" y="630" className="text-sm fill-blue-700 font-medium">
+          Active Users: 15,247
         </text>
-        <text x="15" y="60" fill="#f59e0b" fontSize="12">
-          ⚠️ Rogue APs Detected: 2
+        <text x="150" y="650" className="text-sm fill-blue-700 font-medium">
+          Managed Devices: 28,350
         </text>
-        <text x="15" y="75" fill="#ef4444" fontSize="12">
-          🚫 Blocked Threats: 15
-        </text>
-        <text x="15" y="90" fill="#6b7280" fontSize="11">
-          Intrusion Attempts: 32
-        </text>
-      </g>
 
-      <g transform="translate(980, 850)">
-        <rect width="280" height="100" fill="#f8fafc" stroke="#e2e8f0" rx="8" />
-        <text x="15" y="25" fill="#374151" fontSize="14" fontWeight="bold">
-          Guest Access
+        <text x="400" y="610" className="text-sm fill-blue-700 font-medium">
+          Completed Sites: 12
         </text>
-        <text x="15" y="45" fill="#374151" fontSize="12">
-          Active Guest Sessions: 850
+        <text x="400" y="630" className="text-sm fill-blue-700 font-medium">
+          In Progress: 23
         </text>
-        <text x="15" y="60" fill="#374151" fontSize="12">
-          Average Session Time: 4h
+        <text x="400" y="650" className="text-sm fill-blue-700 font-medium">
+          Planned: 12
         </text>
-        <text x="15" y="75" fill="#374151" fontSize="12">
-          Bandwidth Usage: 500 Mbps
+
+        <text x="650" y="610" className="text-sm fill-blue-700 font-medium">
+          Global Uptime: 99.97%
         </text>
-        <text x="15" y="90" fill="#6b7280" fontSize="11">
-          Captive Portal: Enabled
+        <text x="650" y="630" className="text-sm fill-blue-700 font-medium">
+          Avg Auth Time: 1.2s
+        </text>
+        <text x="650" y="650" className="text-sm fill-blue-700 font-medium">
+          Success Rate: 99.8%
+        </text>
+
+        <text x="900" y="610" className="text-sm fill-blue-700 font-medium">
+          Regions: 6
+        </text>
+        <text x="900" y="630" className="text-sm fill-blue-700 font-medium">
+          Countries: 15
+        </text>
+        <text x="900" y="650" className="text-sm fill-blue-700 font-medium">
+          Time Zones: 12
+        </text>
+
+        <text x="1100" y="610" className="text-sm fill-blue-700 font-medium">
+          Policies: 1,247
+        </text>
+        <text x="1100" y="630" className="text-sm fill-blue-700 font-medium">
+          Certificates: 25,890
+        </text>
+        <text x="1100" y="650" className="text-sm fill-blue-700 font-medium">
+          Daily Auths: 450K
         </text>
       </g>
     </svg>
   )
 
-  const renderPolicyFrameworkView = () => (
+  const renderHealthcareArchitecture = () => (
     <svg
-      ref={svgRef}
-      viewBox="0 0 1600 1200"
-      className="w-full h-full"
-      style={{ background: "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)" }}
+      viewBox="0 0 1400 800"
+      className="w-full h-full architecture-diagram"
+      style={{ background: "linear-gradient(135deg, #fef7f7 0%, #fee2e2 100%)" }}
     >
-      <defs>
-        <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-          <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e2e8f0" strokeWidth="0.5" opacity="0.3" />
-        </pattern>
-        <filter id="shadow">
-          <feDropShadow dx="3" dy="3" stdDeviation="4" floodOpacity="0.3" />
-        </filter>
-        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-          <polygon points="0 0, 10 3.5, 0 7" fill="#374151" />
-        </marker>
-        <linearGradient id="policyGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#7c3aed" />
-          <stop offset="50%" stopColor="#3b82f6" />
-          <stop offset="100%" stopColor="#10b981" />
-        </linearGradient>
-      </defs>
-
-      <rect width="100%" height="100%" fill="url(#grid)" />
-
-      {/* Header */}
-      <rect x="0" y="0" width="1600" height="80" fill="url(#policyGradient)" />
-      <text x="30" y="35" fill="white" fontSize="24" fontWeight="bold">
-        🎯 Policy Framework & Risk Assessment Engine
+      <text x="700" y="400" textAnchor="middle" className="text-lg font-semibold fill-red-700">
+        🏥 Healthcare Deployment Architecture
       </text>
-      <text x="30" y="55" fill="white" fontSize="14" opacity="0.9">
-        Dynamic Policy Engine • Risk-Based Access Control • Behavioral Analytics • Automated Remediation
+      <text x="700" y="420" textAnchor="middle" className="text-sm fill-red-600">
+        Medical device prioritization with HIPAA compliance and zero-latency requirements
       </text>
-
-      {/* Policy Engine Core */}
-      <g transform="translate(650, 120)">
-        <rect width="300" height="150" fill="url(#policyGradient)" rx="20" filter="url(#shadow)" />
-        <text x="150" y="35" textAnchor="middle" fill="white" fontSize="18" fontWeight="bold">
-          🧠 Portnox Policy Engine
-        </text>
-        <text x="150" y="60" textAnchor="middle" fill="white" fontSize="14">
-          AI-Powered Decision Making
-        </text>
-        <text x="150" y="80" textAnchor="middle" fill="white" fontSize="12">
-          Real-time Risk Assessment
-        </text>
-        <text x="150" y="100" textAnchor="middle" fill="white" fontSize="12">
-          Dynamic Policy Enforcement
-        </text>
-        <text x="150" y="120" textAnchor="middle" fill="white" fontSize="12">
-          Behavioral Analytics
-        </text>
-        <circle cx="270" cy="130" r="8" fill="#10b981">
-          {isAnimating && (
-            <animate
-              attributeName="opacity"
-              values="1;0.3;1"
-              dur={`${1.5 / animationSpeed}s`}
-              repeatCount="indefinite"
-            />
-          )}
-        </circle>
-        <text x="150" y="145" textAnchor="middle" fill="white" fontSize="10">
-          Processing: 15,420 policies/sec
-        </text>
-      </g>
-
-      {/* Policy Categories */}
-      <g transform="translate(50, 320)">
-        <rect width="220" height="140" fill="#7c3aed" rx="12" filter="url(#shadow)" />
-        <text x="110" y="25" textAnchor="middle" fill="white" fontSize="16" fontWeight="bold">
-          👤 User Policies
-        </text>
-        <text x="110" y="50" textAnchor="middle" fill="white" fontSize="12">
-          Identity-Based Access Control
-        </text>
-        <text x="20" y="75" fill="white" fontSize="10">
-          • Role-based access (RBAC)
-        </text>
-        <text x="20" y="90" fill="white" fontSize="10">
-          • Attribute-based access (ABAC)
-        </text>
-        <text x="20" y="105" fill="white" fontSize="10">
-          • Time-based restrictions
-        </text>
-        <text x="20" y="120" fill="white" fontSize="10">
-          • Location-based controls
-        </text>
-        <text x="110" y="135" textAnchor="middle" fill="white" fontSize="9">
-          Active Policies: 1,247
-        </text>
-      </g>
-
-      <g transform="translate(300, 320)">
-        <rect width="220" height="140" fill="#3b82f6" rx="12" filter="url(#shadow)" />
-        <text x="110" y="25" textAnchor="middle" fill="white" fontSize="16" fontWeight="bold">
-          💻 Device Policies
-        </text>
-        <text x="110" y="50" textAnchor="middle" fill="white" fontSize="12">
-          Device-Based Access Control
-        </text>
-        <text x="20" y="75" fill="white" fontSize="10">
-          • Device compliance checks
-        </text>
-        <text x="20" y="90" fill="white" fontSize="10">
-          • OS version requirements
-        </text>
-        <text x="20" y="105" fill="white" fontSize="10">
-          • Encryption status validation
-        </text>
-        <text x="20" y="120" fill="white" fontSize="10">
-          • Certificate-based auth
-        </text>
-        <text x="110" y="135" textAnchor="middle" fill="white" fontSize="9">
-          Active Policies: 2,156
-        </text>
-      </g>
-
-      <g transform="translate(550, 320)">
-        <rect width="220" height="140" fill="#10b981" rx="12" filter="url(#shadow)" />
-        <text x="110" y="25" textAnchor="middle" fill="white" fontSize="16" fontWeight="bold">
-          🌐 Network Policies
-        </text>
-        <text x="110" y="50" textAnchor="middle" fill="white" fontSize="12">
-          Network-Based Access Control
-        </text>
-        <text x="20" y="75" fill="white" fontSize="10">
-          • VLAN assignment rules
-        </text>
-        <text x="20" y="90" fill="white" fontSize="10">
-          • Bandwidth limitations
-        </text>
-        <text x="20" y="105" fill="white" fontSize="10">
-          • QoS prioritization
-        </text>
-        <text x="20" y="120" fill="white" fontSize="10">
-          • Firewall rule injection
-        </text>
-        <text x="110" y="135" textAnchor="middle" fill="white" fontSize="9">
-          Active Policies: 3,892
-        </text>
-      </g>
-
-      <g transform="translate(800, 320)">
-        <rect width="220" height="140" fill="#f59e0b" rx="12" filter="url(#shadow)" />
-        <text x="110" y="25" textAnchor="middle" fill="white" fontSize="16" fontWeight="bold">
-          🛡️ Security Policies
-        </text>
-        <text x="110" y="50" textAnchor="middle" fill="white" fontSize="12">
-          Risk-Based Security Controls
-        </text>
-        <text x="20" y="75" fill="white" fontSize="10">
-          • Threat detection rules
-        </text>
-        <text x="20" y="90" fill="white" fontSize="10">
-          • Anomaly detection
-        </text>
-        <text x="20" y="105" fill="white" fontSize="10">
-          • Quarantine triggers
-        </text>
-        <text x="20" y="120" fill="white" fontSize="10">
-          • Incident response
-        </text>
-        <text x="110" y="135" textAnchor="middle" fill="white" fontSize="9">
-          Active Policies: 1,789
-        </text>
-      </g>
-
-      <g transform="translate(1050, 320)">
-        <rect width="220" height="140" fill="#dc2626" rx="12" filter="url(#shadow)" />
-        <text x="110" y="25" textAnchor="middle" fill="white" fontSize="16" fontWeight="bold">
-          📋 Compliance Policies
-        </text>
-        <text x="110" y="50" textAnchor="middle" fill="white" fontSize="12">
-          Regulatory Compliance Controls
-        </text>
-        <text x="20" y="75" fill="white" fontSize="10">
-          • HIPAA compliance
-        </text>
-        <text x="20" y="90" fill="white" fontSize="10">
-          • PCI-DSS requirements
-        </text>
-        <text x="20" y="105" fill="white" fontSize="10">
-          • SOX controls
-        </text>
-        <text x="20" y="120" fill="white" fontSize="10">
-          • GDPR privacy rules
-        </text>
-        <text x="110" y="135" textAnchor="middle" fill="white" fontSize="9">
-          Active Policies: 892
-        </text>
-      </g>
-
-      <g transform="translate(1300, 320)">
-        <rect width="220" height="140" fill="#8b5cf6" rx="12" filter="url(#shadow)" />
-        <text x="110" y="25" textAnchor="middle" fill="white" fontSize="16" fontWeight="bold">
-          🎮 Guest Policies
-        </text>
-        <text x="110" y="50" textAnchor="middle" fill="white" fontSize="12">
-          Guest Access Management
-        </text>
-        <text x="20" y="75" fill="white" fontSize="10">
-          • Sponsor approval workflow
-        </text>
-        <text x="20" y="90" fill="white" fontSize="10">
-          • Time-limited access
-        </text>
-        <text x="20" y="105" fill="white" fontSize="10">
-          • Bandwidth restrictions
-        </text>
-        <text x="20" y="120" fill="white" fontSize="10">
-          • Internet-only access
-        </text>
-        <text x="110" y="135" textAnchor="middle" fill="white" fontSize="9">
-          Active Policies: 456
-        </text>
-      </g>
-
-      {/* Risk Assessment Engine */}
-      <rect
-        x="100"
-        y="500"
-        width="1400"
-        height="200"
-        fill="white"
-        stroke="#e5e7eb"
-        strokeWidth="2"
-        rx="15"
-        filter="url(#shadow)"
-      />
-      <text x="130" y="535" fill="#374151" fontSize="18" fontWeight="bold">
-        🎯 Advanced Risk Assessment & Behavioral Analytics Engine
-      </text>
-
-      <g transform="translate(150, 560)">
-        <rect width="250" height="120" fill="#ef4444" rx="10" />
-        <text x="125" y="25" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold">
-          🔴 Critical Risk Factors
-        </text>
-        <text x="125" y="45" textAnchor="middle" fill="white" fontSize="11">
-          Immediate Action Required
-        </text>
-        <text x="15" y="65" fill="white" fontSize="10">
-          • Malware detection (Score: +40)
-        </text>
-        <text x="15" y="80" fill="white" fontSize="10">
-          • Compromised credentials (+35)
-        </text>
-        <text x="15" y="95" fill="white" fontSize="10">
-          • Suspicious behavior (+30)
-        </text>
-        <text x="15" y="110" fill="white" fontSize="9">
-          Devices affected: 23 (0.15%)
-        </text>
-      </g>
-
-      <g transform="translate(420, 560)">
-        <rect width="250" height="120" fill="#f59e0b" rx="10" />
-        <text x="125" y="25" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold">
-          🟠 High Risk Factors
-        </text>
-        <text x="125" y="45" textAnchor="middle" fill="white" fontSize="11">
-          Enhanced Monitoring
-        </text>
-        <text x="15" y="65" fill="white" fontSize="10">
-          • Non-compliant device (+25)
-        </text>
-        <text x="15" y="80" fill="white" fontSize="10">
-          • Outdated OS version (+20)
-        </text>
-        <text x="15" y="95" fill="white" fontSize="10">
-          • Failed authentication (+15)
-        </text>
-        <text x="15" y="110" fill="white" fontSize="9">
-          Devices affected: 187 (1.2%)
-        </text>
-      </g>
-
-      <g transform="translate(690, 560)">
-        <rect width="250" height="120" fill="#fbbf24" rx="10" />
-        <text x="125" y="25" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold">
-          🟡 Medium Risk Factors
-        </text>
-        <text x="125" y="45" textAnchor="middle" fill="white" fontSize="11">
-          Standard Monitoring
-        </text>
-        <text x="15" y="65" fill="white" fontSize="10">
-          • BYOD device (+10)
-        </text>
-        <text x="15" y="80" fill="white" fontSize="10">
-          • Guest network access (+8)
-        </text>
-        <text x="15" y="95" fill="white" fontSize="10">
-          • Off-hours access (+5)
-        </text>
-        <text x="15" y="110" fill="white" fontSize="9">
-          Devices affected: 1,456 (9.4%)
-        </text>
-      </g>
-
-      <g transform="translate(960, 560)">
-        <rect width="250" height="120" fill="#10b981" rx="10" />
-        <text x="125" y="25" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold">
-          🟢 Low Risk Factors
-        </text>
-        <text x="125" y="45" textAnchor="middle" fill="white" fontSize="11">
-          Normal Operations
-        </text>
-        <text x="15" y="65" fill="white" fontSize="10">
-          • Compliant corporate device
-        </text>
-        <text x="15" y="80" fill="white" fontSize="10">
-          • Valid certificates
-        </text>
-        <text x="15" y="95" fill="white" fontSize="10">
-          • Normal behavior patterns
-        </text>
-        <text x="15" y="110" fill="white" fontSize="9">
-          Devices affected: 13,754 (89.2%)
-        </text>
-      </g>
-
-      <g transform="translate(1230, 560)">
-        <rect width="220" height="120" fill="#6366f1" rx="10" />
-        <text x="110" y="25" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold">
-          🤖 AI Analytics
-        </text>
-        <text x="110" y="45" textAnchor="middle" fill="white" fontSize="11">
-          Machine Learning Insights
-        </text>
-        <text x="15" y="65" fill="white" fontSize="10">
-          • Behavioral anomalies
-        </text>
-        <text x="15" y="80" fill="white" fontSize="10">
-          • Pattern recognition
-        </text>
-        <text x="15" y="95" fill="white" fontSize="10">
-          • Predictive scoring
-        </text>
-        <text x="15" y="110" fill="white" fontSize="9">
-          ML Accuracy: 94.7%
-        </text>
-      </g>
-
-      {/* Real-time Policy Execution */}
-      <rect
-        x="100"
-        y="750"
-        width="1400"
-        height="180"
-        fill="white"
-        stroke="#e5e7eb"
-        strokeWidth="2"
-        rx="12"
-        filter="url(#shadow)"
-      />
-      <text x="130" y="785" fill="#374151" fontSize="18" fontWeight="bold">
-        ⚡ Real-Time Policy Execution & Performance Metrics
-      </text>
-
-      <g transform="translate(150, 800)">
-        <rect width="320" height="100" fill="#f8fafc" stroke="#e2e8f0" rx="8" />
-        <text x="15" y="25" fill="#374151" fontSize="14" fontWeight="bold">
-          Policy Execution Performance
-        </text>
-        <text x="15" y="45" fill="#10b981" fontSize="12">
-          ⚡ Average Decision Time: 47ms
-        </text>
-        <text x="15" y="60" fill="#10b981" fontSize="12">
-          📊 Policy Evaluations: 15,420/sec
-        </text>
-        <text x="15" y="75" fill="#10b981" fontSize="12">
-          🎯 Success Rate: 99.7%
-        </text>
-        <text x="15" y="90" fill="#6b7280" fontSize="11">
-          Peak Load: 25,000/sec handled
-        </text>
-      </g>
-
-      <g transform="translate(490, 800)">
-        <rect width="320" height="100" fill="#f8fafc" stroke="#e2e8f0" rx="8" />
-        <text x="15" y="25" fill="#374151" fontSize="14" fontWeight="bold">
-          Risk Assessment Metrics
-        </text>
-        <text x="15" y="45" fill="#10b981" fontSize="12">
-          🧠 AI Model Accuracy: 94.7%
-        </text>
-        <text x="15" y="60" fill="#f59e0b" fontSize="12">
-          ⚠️ False Positives: 0.3%
-        </text>
-        <text x="15" y="75" fill="#ef4444" fontSize="12">
-          🚨 Critical Alerts: 23 (24h)
-        </text>
-        <text x="15" y="90" fill="#6b7280" fontSize="11">
-          Behavioral Patterns: 1.2M analyzed
-        </text>
-      </g>
-
-      <g transform="translate(830, 800)">
-        <rect width="320" height="100" fill="#f8fafc" stroke="#e2e8f0" rx="8" />
-        <text x="15" y="25" fill="#374151" fontSize="14" fontWeight="bold">
-          Policy Compliance Status
-        </text>
-        <text x="15" y="45" fill="#10b981" fontSize="12">
-          ✅ HIPAA Compliance: 100%
-        </text>
-        <text x="15" y="60" fill="#10b981" fontSize="12">
-          ✅ PCI-DSS Compliance: 98.7%
-        </text>
-        <text x="15" y="75" fill="#10b981" fontSize="12">
-          ✅ SOX Controls: Active
-        </text>
-        <text x="15" y="90" fill="#6b7280" fontSize="11">
-          Last Audit: Passed
-        </text>
-      </g>
-
-      <g transform="translate(1170, 800)">
-        <rect width="280" height="100" fill="#f8fafc" stroke="#e2e8f0" rx="8" />
-        <text x="15" y="25" fill="#374151" fontSize="14" fontWeight="bold">
-          Automated Remediation
-        </text>
-        <text x="15" y="45" fill="#10b981" fontSize="12">
-          🔄 Auto-remediated: 1,247
-        </text>
-        <text x="15" y="60" fill="#3b82f6" fontSize="12">
-          🎯 Quarantined: 89 devices
-        </text>
-        <text x="15" y="75" fill="#dc2626" fontSize="12">
-          🚫 Blocked: 156 attempts
-        </text>
-        <text x="15" y="90" fill="#6b7280" fontSize="11">
-          Response Time: Avg 2.3s
-        </text>
-      </g>
     </svg>
   )
 
-  const renderView = () => {
+  const renderEducationArchitecture = () => (
+    <svg
+      viewBox="0 0 1400 800"
+      className="w-full h-full architecture-diagram"
+      style={{ background: "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)" }}
+    >
+      <text x="700" y="400" textAnchor="middle" className="text-lg font-semibold fill-green-700">
+        🎓 Education Campus Architecture
+      </text>
+      <text x="700" y="420" textAnchor="middle" className="text-sm fill-green-600">
+        University campus with student BYOD, research networks, and high-density WiFi
+      </text>
+    </svg>
+  )
+
+  const renderTACACSArchitecture = () => (
+    <svg
+      viewBox="0 0 1400 800"
+      className="w-full h-full architecture-diagram"
+      style={{ background: "linear-gradient(135deg, #f0f9ff 0%, #dbeafe 100%)" }}
+    >
+      <text x="700" y="400" textAnchor="middle" className="text-lg font-semibold fill-blue-700">
+        🔧 TACACS+ Integration Architecture
+      </text>
+      <text x="700" y="420" textAnchor="middle" className="text-sm fill-blue-600">
+        Network device administration with TACACS+ authentication and authorization
+      </text>
+    </svg>
+  )
+
+  const renderWirelessArchitecture = () => (
+    <svg
+      viewBox="0 0 1400 800"
+      className="w-full h-full architecture-diagram"
+      style={{ background: "linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%)" }}
+    >
+      <text x="700" y="400" textAnchor="middle" className="text-lg font-semibold fill-teal-700">
+        📡 Wireless Integration Deep-Dive
+      </text>
+      <text x="700" y="420" textAnchor="middle" className="text-sm fill-teal-600">
+        Wireless controller integration and management with WiFi 6/6E support
+      </text>
+    </svg>
+  )
+
+  const renderUserIDArchitecture = () => (
+    <svg
+      viewBox="0 0 1400 800"
+      className="w-full h-full architecture-diagram"
+      style={{ background: "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)" }}
+    >
+      <text x="700" y="400" textAnchor="middle" className="text-lg font-semibold fill-yellow-700">
+        👤 User-ID & FSSO Integration
+      </text>
+      <text x="700" y="420" textAnchor="middle" className="text-sm fill-yellow-600">
+        Firewall Single Sign-On and User-ID integration for seamless security
+      </text>
+    </svg>
+  )
+
+  const renderDeviceOnboarding = () => (
+    <svg
+      viewBox="0 0 1400 800"
+      className="w-full h-full architecture-diagram"
+      style={{ background: "linear-gradient(135deg, #fefce8 0%, #fef9c3 100%)" }}
+    >
+      <text x="700" y="400" textAnchor="middle" className="text-lg font-semibold fill-lime-700">
+        📱 Device Onboarding Scenarios
+      </text>
+      <text x="700" y="420" textAnchor="middle" className="text-sm fill-lime-600">
+        Automated device enrollment and provisioning workflows
+      </text>
+    </svg>
+  )
+
+  const renderDiagramByView = () => {
     switch (view) {
       case "complete":
         return renderCompleteArchitecture()
+      case "multi-site":
+        return renderMultiSiteArchitecture()
+      case "healthcare":
+        return renderHealthcareArchitecture()
+      case "education":
+        return renderEducationArchitecture()
       case "authentication":
+      case "auth-flow":
         return renderAuthenticationFlow()
       case "pki":
-        return renderPKIView()
-      case "policy-framework":
-        return renderPolicyFrameworkView()
-      case "meraki-wireless":
-        return renderMerakiWirelessView()
-      case "cisco-tacacs":
-        return renderTacacsView()
+      case "pki-certificate":
+        return renderPKIArchitecture()
+      case "tacacs-plus":
+        return renderTACACSArchitecture()
+      case "wireless-integration":
+        return renderWirelessArchitecture()
+      case "user-id-integration":
+        return renderUserIDArchitecture()
+      case "device-onboarding":
+      case "onboarding":
+        return renderDeviceOnboarding()
       default:
         return renderCompleteArchitecture()
     }
   }
 
-  const renderAuthenticationFlow = () => {
-    return (
-      <svg
-        ref={svgRef}
-        viewBox="0 0 1600 1200"
-        className="w-full h-full"
-        style={{ background: "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)" }}
-      >
-        <defs>
-          <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e2e8f0" strokeWidth="0.5" opacity="0.3" />
-          </pattern>
-          <filter id="shadow">
-            <feDropShadow dx="3" dy="3" stdDeviation="4" floodOpacity="0.3" />
-          </filter>
-          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill="#374151" />
-          </marker>
-          <linearGradient id="authGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#6366f1" />
-            <stop offset="50%" stopColor="#8b5cf6" />
-            <stop offset="100%" stopColor="#a78bfa" />
-          </linearGradient>
-        </defs>
-
-        <rect width="100%" height="100%" fill="url(#grid)" />
-
-        {/* Header */}
-        <rect x="0" y="0" width="1600" height="80" fill="url(#authGradient)" />
-        <text x="30" y="35" fill="white" fontSize="24" fontWeight="bold">
-          🔑 Authentication Flow
-        </text>
-        <text x="30" y="55" fill="white" fontSize="14" opacity="0.9">
-          Device Authentication • User Authentication • Policy Enforcement
-        </text>
-
-        {/* Device */}
-        <g transform="translate(100, 200)">
-          <rect width="200" height="150" fill="#e5e7eb" rx="15" filter="url(#shadow)" />
-          <text x="100" y="35" textAnchor="middle" fill="#374151" fontSize="18" fontWeight="bold">
-            Device
-          </text>
-          <text x="100" y="60" textAnchor="middle" fill="#374151" fontSize="14">
-            Endpoint
-          </text>
-          <text x="100" y="80" textAnchor="middle" fill="#374151" fontSize="12">
-            Laptops, Smartphones, IoT
-          </text>
-          <text x="100" y="100" textAnchor="middle" fill="#374151" fontSize="12">
-            802.1X, MAB, Captive Portal
-          </text>
-        </g>
-
-        {/* Network Access Layer */}
-        <g transform="translate(400, 200)">
-          <rect width="200" height="150" fill="#dbeafe" rx="15" filter="url(#shadow)" />
-          <text x="100" y="35" textAnchor="middle" fill="#374151" fontSize="18" fontWeight="bold">
-            Network
-          </text>
-          <text x="100" y="60" textAnchor="middle" fill="#374151" fontSize="14">
-            Access Layer
-          </text>
-          <text x="100" y="80" textAnchor="middle" fill="#374151" fontSize="12">
-            Switches, Wireless APs
-          </text>
-          <text x="100" y="100" textAnchor="middle" fill="#374151" fontSize="12">
-            RADIUS, TACACS+
-          </text>
-        </g>
-
-        {/* Portnox Cloud NAC */}
-        <g transform="translate(700, 200)">
-          <rect width="200" height="150" fill="#ede9fe" rx="15" filter="url(#shadow)" />
-          <text x="100" y="35" textAnchor="middle" fill="#374151" fontSize="18" fontWeight="bold">
-            Portnox Cloud
-          </text>
-          <text x="100" y="60" textAnchor="middle" fill="#374151" fontSize="14">
-            NAC Platform
-          </text>
-          <text x="100" y="80" textAnchor="middle" fill="#374151" fontSize="12">
-            Policy Engine
-          </text>
-          <text x="100" y="100" textAnchor="middle" fill="#374151" fontSize="12">
-            Risk Assessment
-          </text>
-        </g>
-
-        {/* Identity Provider */}
-        <g transform="translate(1000, 200)">
-          <rect width="200" height="150" fill="#f0fdfa" rx="15" filter="url(#shadow)" />
-          <text x="100" y="35" textAnchor="middle" fill="#374151" fontSize="18" fontWeight="bold">
-            Identity Provider
-          </text>
-          <text x="100" y="60" textAnchor="middle" fill="#374151" fontSize="14">
-            Azure AD, Okta
-          </text>
-          <text x="100" y="80" textAnchor="middle" fill="#374151" fontSize="12">
-            Authentication
-          </text>
-          <text x="100" y="100" textAnchor="middle" fill="#374151" fontSize="12">
-            Authorization
-          </text>
-        </g>
-
-        {/* Policy Enforcement */}
-        <g transform="translate(1300, 200)">
-          <rect width="200" height="150" fill="#f8fafc" rx="15" filter="url(#shadow)" />
-          <text x="100" y="35" textAnchor="middle" fill="#374151" fontSize="18" fontWeight="bold">
-            Policy Enforcement
-          </text>
-          <text x="100" y="60" textAnchor="middle" fill="#374151" fontSize="14">
-            Access Control
-          </text>
-          <text x="100" y="80" textAnchor="middle" fill="#374151" fontSize="12">
-            VLAN Assignment
-          </text>
-          <text x="100" y="100" textAnchor="middle" fill="#374151" fontSize="12">
-            QoS, Traffic Shaping
-          </text>
-        </g>
-
-        {/* Authentication Flow Steps */}
-        <g transform="translate(100, 400)">
-          <rect width="250" height="120" fill="#e5e7eb" rx="10" />
-          <text x="125" y="25" textAnchor="middle" fill="#374151" fontSize="14" fontWeight="bold">
-            1. Device Connection
-          </text>
-          <text x="125" y="45" textAnchor="middle" fill="#374151" fontSize="12">
-            Device connects to the network
-          </text>
-          <text x="125" y="65" textAnchor="middle" fill="#374151" fontSize="12">
-            802.1X, MAB, Captive Portal
-          </text>
-        </g>
-
-        <g transform="translate(400, 400)">
-          <rect width="250" height="120" fill="#dbeafe" rx="10" />
-          <text x="125" y="25" textAnchor="middle" fill="#374151" fontSize="14" fontWeight="bold">
-            2. Authentication Request
-          </text>
-          <text x="125" y="45" textAnchor="middle" fill="#374151" fontSize="12">
-            Network device sends authentication request
-          </text>
-          <text x="125" y="65" textAnchor="middle" fill="#374151" fontSize="12">
-            RADIUS, TACACS+
-          </text>
-        </g>
-
-        <g transform="translate(700, 400)">
-          <rect width="250" height="120" fill="#ede9fe" rx="10" />
-          <text x="125" y="25" textAnchor="middle" fill="#374151" fontSize="14" fontWeight="bold">
-            3. Policy Evaluation
-          </text>
-          <text x="125" y="45" textAnchor="middle" fill="#374151" fontSize="12">
-            Portnox Cloud evaluates device and user
-          </text>
-          <text x="125" y="65" textAnchor="middle" fill="#374151" fontSize="12">
-            Risk assessment, compliance checks
-          </text>
-        </g>
-
-        <g transform="translate(1000, 400)">
-          <rect width="250" height="120" fill="#f0fdfa" rx="10" />
-          <text x="125" y="25" textAnchor="middle" fill="#374151" fontSize="14" fontWeight="bold">
-            4. Identity Verification
-          </text>
-          <text x="125" y="45" textAnchor="middle" fill="#374151" fontSize="12">
-            Portnox Cloud verifies identity
-          </text>
-          <text x="125" y="65" textAnchor="middle" fill="#374151" fontSize="12">
-            Azure AD, Okta
-          </text>
-        </g>
-
-        <g transform="translate(1300, 400)">
-          <rect width="250" height="120" fill="#f8fafc" rx="10" />
-          <text x="125" y="25" textAnchor="middle" fill="#374151" fontSize="14" fontWeight="bold">
-            5. Policy Enforcement
-          </text>
-          <text x="125" y="45" textAnchor="middle" fill="#374151" fontSize="12">
-            Network device enforces access policies
-          </text>
-          <text x="125" y="65" textAnchor="middle" fill="#374151" fontSize="12">
-            VLAN assignment, QoS
-          </text>
-        </g>
-
-        {/* Flow Arrows */}
-        {isAnimating && (
-          <>
-            <line x1="350" y1="460" x2="400" y2="460" stroke="#374151" strokeWidth="3" markerEnd="url(#arrowhead)">
-              <animate
-                attributeName="stroke-dasharray"
-                values="0,50;50,0"
-                dur={`${1 / animationSpeed}s`}
-                repeatCount="indefinite"
-              />
-            </line>
-            <line x1="650" y1="460" x2="700" y2="460" stroke="#374151" strokeWidth="3" markerEnd="url(#arrowhead)">
-              <animate
-                attributeName="stroke-dasharray"
-                values="0,50;50,0"
-                dur={`${1.2 / animationSpeed}s`}
-                repeatCount="indefinite"
-              />
-            </line>
-            <line x1="950" y1="460" x2="1000" y2="460" stroke="#374151" strokeWidth="3" markerEnd="url(#arrowhead)">
-              <animate
-                attributeName="stroke-dasharray"
-                values="0,50;50,0"
-                dur={`${1.4 / animationSpeed}s`}
-                repeatCount="indefinite"
-              />
-            </line>
-            <line x1="1250" y1="460" x2="1300" y2="460" stroke="#374151" strokeWidth="3" markerEnd="url(#arrowhead)">
-              <animate
-                attributeName="stroke-dasharray"
-                values="0,50;50,0"
-                dur={`${1.6 / animationSpeed}s`}
-                repeatCount="indefinite"
-              />
-            </line>
-          </>
-        )}
-
-        {/* Statistics */}
-        <rect
-          x="50"
-          y="600"
-          width="1500"
-          height="180"
-          fill="white"
-          stroke="#e5e7eb"
-          strokeWidth="2"
-          rx="12"
-          filter="url(#shadow)"
-        />
-        <text x="80" y="630" fill="#374151" fontSize="18" fontWeight="bold">
-          📊 Authentication Metrics & Performance
-        </text>
-
-        <g transform="translate(80, 650)">
-          <rect width="280" height="100" fill="#f8fafc" stroke="#e2e8f0" rx="8" />
-          <text x="15" y="25" fill="#374151" fontSize="14" fontWeight="bold">
-            Authentication Rate
-          </text>
-          <text x="15" y="45" fill="#10b981" fontSize="12">
-            ✅ Successful: 10,247/min
-          </text>
-          <text x="15" y="60" fill="#ef4444" fontSize="12">
-            🚫 Failed: 23/min
-          </text>
-          <text x="15" y="75" fill="#374151" fontSize="12">
-            Total: 10,270/min
-          </text>
-          <text x="15" y="90" fill="#6b7280" fontSize="11">
-            Success Rate: 99.7%
-          </text>
-        </g>
-
-        <g transform="translate(380, 650)">
-          <rect width="280" height="100" fill="#f8fafc" stroke="#e2e8f0" rx="8" />
-          <text x="15" y="25" fill="#374151" fontSize="14" fontWeight="bold">
-            Authentication Methods
-          </text>
-          <text x="15" y="45" fill="#374151" fontSize="12">
-            802.1X: 6,500
-          </text>
-          <text x="15" y="60" fill="#374151" fontSize="12">
-            MAB: 2,500
-          </text>
-          <text x="15" y="75" fill="#374151" fontSize="12">
-            Captive Portal: 1,270
-          </text>
-          <text x="15" y="90" fill="#6b7280" fontSize="11">
-            Total: 10,270
-          </text>
-        </g>
-
-        <g transform="translate(680, 650)">
-          <rect width="280" height="100" fill="#f8fafc" stroke="#e2e8f0" rx="8" />
-          <text x="15" y="25" fill="#374151" fontSize="14" fontWeight="bold">
-            Identity Providers
-          </text>
-          <text x="15" y="45" fill="#374151" fontSize="12">
-            Azure AD: 7,500
-          </text>
-          <text x="15" y="60" fill="#374151" fontSize="12">
-            Okta: 2,000
-          </text>
-          <text x="15" y="75" fill="#374151" fontSize="12">
-            Local DB: 770
-          </text>
-          <text x="15" y="90" fill="#6b7280" fontSize="11">
-            Total: 10,270
-          </text>
-        </g>
-
-        <g transform="translate(980, 650)">
-          <rect width="280" height="100" fill="#f8fafc" stroke="#e2e8f0" rx="8" />
-          <text x="15" y="25" fill="#374151" fontSize="14" fontWeight="bold">
-            Policy Enforcement
-          </text>
-          <text x="15" y="45" fill="#10b981" fontSize="12">
-            ✅ Compliant: 9,800
-          </text>
-          <text x="15" y="60" fill="#f59e0b" fontSize="12">
-            ⚠️ Limited Access: 300
-          </text>
-          <text x="15" y="75" fill="#ef4444" fontSize="12">
-            🚫 Blocked: 170
-          </text>
-          <text x="15" y="90" fill="#6b7280" fontSize="11">
-            Total: 10,270
-          </text>
-        </g>
-
-        <g transform="translate(1280, 650)">
-          <rect width="220" height="100" fill="#f8fafc" stroke="#e2e8f0" rx="8" />
-          <text x="15" y="25" fill="#374151" fontSize="14" fontWeight="bold">
-            Avg. Auth Time
-          </text>
-          <text x="15" y="45" fill="#374151" fontSize="12">
-            ⏱️ 47ms
-          </text>
-          <text x="15" y="60" fill="#374151" fontSize="12">
-            Peak: 65ms
-          </text>
-          <text x="15" y="75" fill="#374151" fontSize="12">
-            Min: 23ms
-          </text>
-          <text x="15" y="90" fill="#6b7280" fontSize="11">
-            Last 24h
-          </text>
-        </g>
-      </svg>
-    )
-  }
-
-  const renderPKIView = () => {
-    return (
-      <svg
-        ref={svgRef}
-        viewBox="0 0 1600 1200"
-        className="w-full h-full"
-        style={{ background: "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)" }}
-      >
-        <defs>
-          <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e2e8f0" strokeWidth="0.5" opacity="0.3" />
-          </pattern>
-          <filter id="shadow">
-            <feDropShadow dx="3" dy="3" stdDeviation="4" floodOpacity="0.3" />
-          </filter>
-          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill="#374151" />
-          </marker>
-          <linearGradient id="pkiGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#10b981" />
-            <stop offset="50%" stopColor="#34d399" />
-            <stop offset="100%" stopColor="#6ee7b7" />
-          </linearGradient>
-        </defs>
-
-        <rect width="100%" height="100%" fill="url(#grid)" />
-
-        {/* Header */}
-        <rect x="0" y="0" width="1600" height="80" fill="url(#pkiGradient)" />
-        <text x="30" y="35" fill="white" fontSize="24" fontWeight="bold">
-          🔒 Public Key Infrastructure (PKI)
-        </text>
-        <text x="30" y="55" fill="white" fontSize="14" opacity="0.9">
-          Certificate Authority • Digital Certificates • Secure Communication
-        </text>
-
-        {/* Certificate Authority */}
-        <g transform="translate(100, 200)">
-          <rect width="250" height="150" fill="#f0fdfa" rx="15" filter="url(#shadow)" />
-          <text x="125" y="35" textAnchor="middle" fill="#065f46" fontSize="18" fontWeight="bold">
-            Certificate Authority
-          </text>
-          <text x="125" y="60" textAnchor="middle" fill="#065f46" fontSize="14">
-            Root CA
-          </text>
-          <text x="125" y="80" textAnchor="middle" fill="#065f46" fontSize="12">
-            Issues Digital Certificates
-          </text>
-          <text x="125" y="100" textAnchor="middle" fill="#065f46" fontSize="12">
-            Secure Key Storage
-          </text>
-        </g>
-
-        {/* Intermediate CA */}
-        <g transform="translate(400, 200)">
-          <rect width="250" height="150" fill="#dcfce7" rx="15" filter="url(#shadow)" />
-          <text x="125" y="35" textAnchor="middle" fill="#065f46" fontSize="18" fontWeight="bold">
-            Intermediate CA
-          </text>
-          <text x="125" y="60" textAnchor="middle" fill="#065f46" fontSize="14">
-            Subordinate CA
-          </text>
-          <text x="125" y="80" textAnchor="middle" fill="#065f46" fontSize="12">
-            Delegated Certificate Issuance
-          </text>
-          <text x="125" y="100" textAnchor="middle" fill="#065f46" fontSize="12">
-            Enhanced Security
-          </text>
-        </g>
-
-        {/* Devices */}
-        <g transform="translate(700, 200)">
-          <rect width="250" height="150" fill="#f8fafc" rx="15" filter="url(#shadow)" />
-          <text x="125" y="35" textAnchor="middle" fill="#374151" fontSize="18" fontWeight="bold">
-            Devices
-          </text>
-          <text x="125" y="60" textAnchor="middle" fill="#374151" fontSize="14">
-            Endpoints
-          </text>
-          <text x="125" y="80" textAnchor="middle" fill="#374151" fontSize="12">
-            Laptops, Servers, IoT
-          </text>
-          <text x="125" y="100" textAnchor="middle" fill="#374151" fontSize="12">
-            Digital Certificates
-          </text>
-        </g>
-
-        {/* Validation */}
-        <g transform="translate(1000, 200)">
-          <rect width="250" height="150" fill="#f0fdfa" rx="15" filter="url(#shadow)" />
-          <text x="125" y="35" textAnchor="middle" fill="#065f46" fontSize="18" fontWeight="bold">
-            Validation
-          </text>
-          <text x="125" y="60" textAnchor="middle" fill="#065f46" fontSize="14">
-            Certificate Revocation
-          </text>
-          <text x="125" y="80" textAnchor="middle" fill="#065f46" fontSize="12">
-            OCSP, CRL
-          </text>
-          <text x="125" y="100" textAnchor="middle" fill="#065f46" fontSize="12">
-            Trust Chain Verification
-          </text>
-        </g>
-
-        {/* Applications */}
-        <g transform="translate(1300, 200)">
-          <rect width="250" height="150" fill="#f8fafc" rx="15" filter="url(#shadow)" />
-          <text x="125" y="35" textAnchor="middle" fill="#374151" fontSize="18" fontWeight="bold">
-            Applications
-          </text>
-          <text x="125" y="60" textAnchor="middle" fill="#374151" fontSize="14">
-            Secure Communication
-          </text>
-          <text x="125" y="80" textAnchor="middle" fill="#374151" fontSize="12">
-            HTTPS, TLS, VPN
-          </text>
-          <text x="125" y="100" textAnchor="middle" fill="#374151" fontSize="12">
-            Data Encryption
-          </text>
-        </g>
-
-        {/* PKI Workflow */}
-        <g transform="translate(100, 400)">
-          <rect width="250" height="120" fill="#f0fdfa" rx="10" />
-          <text x="125" y="25" textAnchor="middle" fill="#065f46" fontSize="14" fontWeight="bold">
-            1. Certificate Request
-          </text>
-          <text x="125" y="45" textAnchor="middle" fill="#065f46" fontSize="12">
-            Device requests a certificate
-          </text>
-          <text x="125" y="65" textAnchor="middle" fill="#065f46" fontSize="12">
-            CSR Generation
-          </text>
-        </g>
-
-        <g transform="translate(400, 400)">
-          <rect width="250" height="120" fill="#dcfce7" rx="10" />
-          <text x="125" y="25" textAnchor="middle" fill="#065f46" fontSize="14" fontWeight="bold">
-            2. Certificate Issuance
-          </text>
-          <text x="125" y="45" textAnchor="middle" fill="#065f46" fontSize="12">
-            CA issues a digital certificate
-          </text>
-          <text x="125" y="65" textAnchor="middle" fill="#065f46" fontSize="12">
-            Signing with Private Key
-          </text>
-        </g>
-
-        <g transform="translate(700, 400)">
-          <rect width="250" height="120" fill="#f8fafc" rx="10" />
-          <text x="125" y="25" textAnchor="middle" fill="#374151" fontSize="14" fontWeight="bold">
-            3. Certificate Installation
-          </text>
-          <text x="125" y="45" textAnchor="middle" fill="#374151" fontSize="12">
-            Device installs the certificate
-          </text>
-          <text x="125" y="65" textAnchor="middle" fill="#374151" fontSize="12">
-            Secure Storage
-          </text>
-        </g>
-
-        <g transform="translate(1000, 400)">
-          <rect width="250" height="120" fill="#f0fdfa" rx="10" />
-          <text x="125" y="25" textAnchor="middle" fill="#065f46" fontSize="14" fontWeight="bold">
-            4. Certificate Validation
-          </text>
-          <text x="125" y="45" textAnchor="middle" fill="#065f46" fontSize="12">
-            Application validates the certificate
-          </text>
-          <text x="125" y="65" textAnchor="middle" fill="#065f46" fontSize="12">
-            OCSP, CRL Checks
-          </text>
-        </g>
-
-        <g transform="translate(1300, 400)">
-          <rect width="250" height="120" fill="#f8fafc" rx="10" />
-          <text x="125" y="25" textAnchor="middle" fill="#374151" fontSize="14" fontWeight="bold">
-            5. Secure Communication
-          </text>
-          <text x="125" y="45" textAnchor="middle" fill="#374151" fontSize="12">
-            Application uses certificate for secure communication
-          </text>
-          <text x="125" y="65" textAnchor="middle" fill="#374151" fontSize="12">
-            HTTPS, TLS
-          </text>
-        </g>
-
-        {/* Flow Arrows */}
-        {isAnimating && (
-          <>
-            <line x1="350" y1="460" x2="400" y2="460" stroke="#374151" strokeWidth="3" markerEnd="url(#arrowhead)">
-              <animate
-                attributeName="stroke-dasharray"
-                values="0,50;50,0"
-                dur={`${1 / animationSpeed}s`}
-                repeatCount="indefinite"
-              />
-            </line>
-            <line x1="650" y1="460" x2="700" y2="460" stroke="#374151" strokeWidth="3" markerEnd="url(#arrowhead)">
-              <animate
-                attributeName="stroke-dasharray"
-                values="0,50;50,0"
-                dur={`${1.2 / animationSpeed}s`}
-                repeatCount="indefinite"
-              />
-            </line>
-            <line x1="950" y1="460" x2="1000" y2="460" stroke="#374151" strokeWidth="3" markerEnd="url(#arrowhead)">
-              <animate
-                attributeName="stroke-dasharray"
-                values="0,50;50,0"
-                dur={`${1.4 / animationSpeed}s`}
-                repeatCount="indefinite"
-              />
-            </line>
-            <line x1="1250" y1="460" x2="1300" y2="460" stroke="#374151" strokeWidth="3" markerEnd="url(#arrowhead)">
-              <animate
-                attributeName="stroke-dasharray"
-                values="0,50;50,0"
-                dur={`${1.6 / animationSpeed}s`}
-                repeatCount="indefinite"
-              />
-            </line>
-          </>
-        )}
-
-        {/* Statistics */}
-        <rect
-          x="50"
-          y="600"
-          width="1500"
-          height="180"
-          fill="white"
-          stroke="#e5e7eb"
-          strokeWidth="2"
-          rx="12"
-          filter="url(#shadow)"
-        />
-        <text x="80" y="630" fill="#374151" fontSize="18" fontWeight="bold">
-          📊 PKI Metrics & Performance
-        </text>
-
-        <g transform="translate(80, 650)">
-          <rect width="280" height="100" fill="#f8fafc" stroke="#e2e8f0" rx="8" />
-          <text x="15" y="25" fill="#374151" fontSize="14" fontWeight="bold">
-            Certificate Issuance
-          </text>
-          <text x="15" y="45" fill="#10b981" fontSize="12">
-            ✅ Issued: 12,450
-          </text>
-          <text x="15" y="60" fill="#f59e0b" fontSize="12">
-            ⚠️ Pending: 23
-          </text>
-          <text x="15" y="75" fill="#ef4444" fontSize="12">
-            🚫 Failed: 2
-          </text>
-          <text x="15" y="90" fill="#6b7280" fontSize="11">
-            Last 24h
-          </text>
-        </g>
-
-        <g transform="translate(380, 650)">
-          <rect width="280" height="100" fill="#f8fafc" stroke="#e2e8f0" rx="8" />
-          <text x="15" y="25" fill="#374151" fontSize="14" fontWeight="bold">
-            Certificate Revocation
-          </text>
-          <text x="15" y="45" fill="#ef4444" fontSize="12">
-            🚫 Revoked: 15
-          </text>
-          <text x="15" y="60" fill="#374151" fontSize="12">
-            Reason: Compromised Key
-          </text>
-          <text x="15" y="75" fill="#374151" fontSize="12">
-            OCSP Response Time: 2ms
-          </text>
-          <text x="15" y="90" fill="#6b7280" fontSize="11">
-            CRL Updated
-          </text>
-        </g>
-
-        <g transform="translate(680, 650)">
-          <rect width="280" height="100" fill="#f8fafc" stroke="#e2e8f0" rx="8" />
-          <text x="15" y="25" fill="#374151" fontSize="14" fontWeight="bold">
-            Certificate Types
-          </text>
-          <text x="15" y="45" fill="#374151" fontSize="12">
-            Server Certificates: 6,200
-          </text>
-          <text x="15" y="60" fill="#374151" fontSize="12">
-            Client Certificates: 4,500
-          </text>
-          <text x="15" y="75" fill="#374151" fontSize="12">
-            Code Signing: 1,750
-          </text>
-          <text x="15" y="90" fill="#6b7280" fontSize="11">
-            Total: 12,450
-          </text>
-        </g>
-
-        <g transform="translate(980, 650)">
-          <rect width="280" height="100" fill="#f8fafc" stroke="#e2e8f0" rx="8" />
-          <text x="15" y="25" fill="#374151" fontSize="14" fontWeight="bold">
-            Key Length
-          </text>
-          <text x="15" y="45" fill="#374151" fontSize="12">
-            RSA 2048: 9,500
-          </text>
-          <text x="15" y="60" fill="#374151" fontSize="12">
-            RSA 4096: 2,950
-          </text>
-          <text x="15" y="75" fill="#374151" fontSize="12">
-            ECC: 0
-          </text>
-          <text x="15" y="90" fill="#6b7280" fontSize="11">
-            Total: 12,450
-          </text>
-        </g>
-
-        <g transform="translate(1280, 650)">
-          <rect width="220" height="100" fill="#f8fafc" stroke="#e2e8f0" rx="8" />
-          <text x="15" y="25" fill="#374151" fontSize="14" fontWeight="bold">
-            CA Uptime
-          </text>
-          <text x="15" y="45" fill="#10b981" fontSize="12">
-            ✅ 99.99%
-          </text>
-          <text x="15" y="60" fill="#374151" fontSize="12">
-            Last Incident: None
-          </text>
-          <text x="15" y="75" fill="#374151" fontSize="12">
-            Monitoring: Active
-          </text>
-          <text x="15" y="90" fill="#6b7280" fontSize="11">
-            24/7
-          </text>
-        </g>
-      </svg>
-    )
-  }
-
-  const renderMerakiWirelessView = () => {
-    return (
-      <svg
-        ref={svgRef}
-        viewBox="0 0 1600 1200"
-        className="w-full h-full"
-        style={{ background: "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)" }}
-      >
-        <defs>
-          <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e2e8f0" strokeWidth="0.5" opacity="0.3" />
-          </pattern>
-          <filter id="shadow">
-            <feDropShadow dx="3" dy="3" stdDeviation="4" floodOpacity="0.3" />
-          </filter>
-          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill="#374151" />
-          </marker>
-          <linearGradient id="merakiGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#0369a1" />
-            <stop offset="50%" stopColor="#22d3ee" />
-            <stop offset="100%" stopColor="#67e8f9" />
-          </linearGradient>
-        </defs>
-
-        <rect width="100%" height="100%" fill="url(#grid)" />
-
-        {/* Header */}
-        <rect x="0" y="0" width="1600" height="80" fill="url(#merakiGradient)" />
-        <text x="30" y="35" fill="white" fontSize="24" fontWeight="bold">
-          Meraki Wireless Network
-        </text>
-        <text x="30" y="55" fill="white" fontSize="14" opacity="0.9">
-          Cloud Management • Wireless Access Points • Network Analytics
-        </text>
-
-        {/* Meraki Cloud */}
-        <g transform="translate(100, 200)">
-          <rect width="250" height="150" fill="#f0fdfa" rx="15" filter="url(#shadow)" />
-          <text x="125" y="35" textAnchor="middle" fill="#065f46" fontSize="18" fontWeight="bold">
-            Meraki Cloud
-          </text>
-          <text x="125" y="60" textAnchor="middle" fill="#065f46" fontSize="14">
-            Centralized Management
-          </text>
-          <text x="125" y="80" textAnchor="middle" fill="#065f46" fontSize="12">
-            Network Analytics
-          </text>
-          <text x="125" y="100" textAnchor="middle" fill="#065f46" fontSize="12">
-            API Integration
-          </text>
-        </g>
-
-        {/* Meraki Access Points */}
-        <g transform="translate(400, 200)">
-          <rect width="250" height="150" fill="#dcfce7" rx="15" filter="url(#shadow)" />
-          <text x="125" y="35" textAnchor="middle" fill="#065f46" fontSize="18" fontWeight="bold">
-            Meraki Access Points
-          </text>
-          <text x="125" y="60" textAnchor="middle" fill="#065f46" fontSize="14">
-            Wireless Infrastructure
-          </text>
-          <text x="125" y="80" textAnchor="middle" fill="#065f46" fontSize="12">
-            802.11ax, WPA3
-          </text>
-          <text x="125" y="100" textAnchor="middle" fill="#065f46" fontSize="12">
-            Location Services
-          </text>
-        </g>
-
-        {/* Wireless Clients */}
-        <g transform="translate(700, 200)">
-          <rect width="250" height="150" fill="#f8fafc" rx="15" filter="url(#shadow)" />
-          <text x="125" y="35" textAnchor="middle" fill="#374151" fontSize="18" fontWeight="bold">
-            Wireless Clients
-          </text>
-          <text x="125" y="60" textAnchor="middle" fill="#374151" fontSize="14">
-            Connected Devices
-          </text>
-          <text x="125" y="80" textAnchor="middle" fill="#374151" fontSize="12">
-            Laptops, Smartphones, IoT
-          </text>
-          <text x="125" y="100" textAnchor="middle" fill="#374151" fontSize="12">
-            802.1X, Captive Portal
-          </text>
-        </g>
-
-        {/* Portnox Integration */}
-        <g transform="translate(1000, 200)">
-          <rect width="250" height="150" fill="#f0fdfa" rx="15" filter="url(#shadow)" />
-          <text x="125" y="35" textAnchor="middle" fill="#065f46" fontSize="18" fontWeight="bold">
-            Portnox Integration
-          </text>
-          <text x="125" y="60" textAnchor="middle" fill="#065f46" fontSize="14">
-            Zero Trust NAC
-          </text>
-          <text x="125" y="80" textAnchor="middle" fill="#065f46" fontSize="12">
-            Device Profiling
-          </text>
-          <text x="125" y="100" textAnchor="middle" fill="#065f46" fontSize="12">
-            Policy Enforcement
-          </text>
-        </g>
-
-        {/* Security Policies */}
-        <g transform="translate(1300, 200)">
-          <rect width="250" height="150" fill="#f8fafc" rx="15" filter="url(#shadow)" />
-          <text x="125" y="35" textAnchor="middle" fill="#374151" fontSize="18" fontWeight="bold">
-            Security Policies
-          </text>
-          <text x="125" y="60" textAnchor="middle" fill="#374151" fontSize="14">
-            Access Control
-          </text>
-          <text x="125" y="80" textAnchor="middle" fill="#374151" fontSize="12">
-            VLAN Assignment
-          </text>
-          <text x="125" y="100" textAnchor="middle" fill="#374151" fontSize="12">
-            Threat Detection
-          </text>
-        </g>
-
-        {/* Meraki Workflow */}
-        <g transform="translate(100, 400)">
-          <rect width="250" height="120" fill="#f0fdfa" rx="10" />
-          <text x="125" y="25" textAnchor="middle" fill="#065f46" fontSize="14" fontWeight="bold">
-            1. Device Connection
-          </text>
-          <text x="125" y="45" textAnchor="middle" fill="#065f46" fontSize="12">
-            Device connects to Meraki AP
-          </text>
-          <text x="125" y="65" textAnchor="middle" fill="#065f46" fontSize="12">
-            802.11, DHCP
-          </text>
-        </g>
-
-        <g transform="translate(400, 400)">
-          <rect width="250" height="120" fill="#dcfce7" rx="10" />
-          <text x="125" y="25" textAnchor="middle" fill="#065f46" fontSize="14" fontWeight="bold">
-            2. Authentication
-          </text>
-          <text x="125" y="45" textAnchor="middle" fill="#065f46" fontSize="12">
-            Meraki AP authenticates device
-          </text>
-          <text x="125" y="65" textAnchor="middle" fill="#065f46" fontSize="12">
-            802.1X, Captive Portal
-          </text>
-        </g>
-
-        <g transform="translate(700, 400)">
-          <rect width="250" height="120" fill="#f8fafc" rx="10" />
-          <text x="125" y="25" textAnchor="middle" fill="#374151" fontSize="14" fontWeight="bold">
-            3. Context Sharing
-          </text>
-          <text x="125" y="45" textAnchor="middle" fill="#374151" fontSize="12">
-            Meraki shares context with Portnox
-          </text>
-          <text x="125" y="65" textAnchor="middle" fill="#374151" fontSize="12">
-            API Integration
-          </text>
-        </g>
-
-        <g transform="translate(1000, 400)">
-          <rect width="250" height="120" fill="#f0fdfa" rx="10" />
-          <text x="125" y="25" textAnchor="middle" fill="#065f46" fontSize="14" fontWeight="bold">
-            4. Policy Enforcement
-          </text>
-          <text x="125" y="45" textAnchor="middle" fill="#065f46" fontSize="12">
-            Portnox enforces access policies
-          </text>
-          <text x="125" y="65" textAnchor="middle" fill="#065f46" fontSize="12">
-            VLAN Assignment
-          </text>
-        </g>
-
-        <g transform="translate(1300, 400)">
-          <rect width="250" height="120" fill="#f8fafc" rx="10" />
-          <text x="125" y="25" textAnchor="middle" fill="#374151" fontSize="14" fontWeight="bold">
-            5. Secure Access
-          </text>
-          <text x="125" y="45" textAnchor="middle" fill="#374151" fontSize="12">
-            Device gains secure network access
-          </text>
-          <text x="125" y="65" textAnchor="middle" fill="#374151" fontSize="12">
-            Policy-Based Access
-          </text>
-        </g>
-
-        {/* Flow Arrows */}
-        {isAnimating && (
-          <>
-            <line x1="350" y1="460" x2="400" y2="460" stroke="#374151" strokeWidth="3" markerEnd="url(#arrowhead)">
-              <animate
-                attributeName="stroke-dasharray"
-                values="0,50;50,0"
-                dur={`${1 / animationSpeed}s`}
-                repeatCount="indefinite"
-              />
-            </line>
-            <line x1="650" y1="460" x2="700" y2="460" stroke="#374151" strokeWidth="3" markerEnd="url(#arrowhead)">
-              <animate
-                attributeName="stroke-dasharray"
-                values="0,50;50,0"
-                dur={`${1.2 / animationSpeed}s`}
-                repeatCount="indefinite"
-              />
-            </line>
-            <line x1="950" y1="460" x2="1000" y2="460" stroke="#374151" strokeWidth="3" markerEnd="url(#arrowhead)">
-              <animate
-                attributeName="stroke-dasharray"
-                values="0,50;50,0"
-                dur={`${1.4 / animationSpeed}s`}
-                repeatCount="indefinite"
-              />
-            </line>
-            <line x1="1250" y1="460" x2="1300" y2="460" stroke="#374151" strokeWidth="3" markerEnd="url(#arrowhead)">
-              <animate
-                attributeName="stroke-dasharray"
-                values="0,50;50,0"
-                dur={`${1.6 / animationSpeed}s`}
-                repeatCount="indefinite"
-              />
-            </line>
-          </>
-        )}
-
-        {/* Statistics */}
-        <rect
-          x="50"
-          y="600"
-          width="1500"
-          height="180"
-          fill="white"
-          stroke="#e5e7eb"
-          strokeWidth="2"
-          rx="12"
-          filter="url(#shadow)"
-        />
-        <text x="80" y="630" fill="#374151" fontSize="18" fontWeight="bold">
-          📊 Meraki Wireless Metrics & Performance
-        </text>
-
-        <g transform="translate(80, 650)">
-          <rect width="280" height="100" fill="#f8fafc" stroke="#e2e8f0" rx="8" />
-          <text x="15" y="25" fill="#374151" fontSize="14" fontWeight="bold">
-            Wireless Performance
-          </text>
-          <text x="15" y="45" fill="#10b981" fontSize="12">
-            ✅ Average Throughput: 500 Mbps
-          </text>
-          <text x="15" y="60" fill="#374151" fontSize="12">
-            📶 Signal Strength: -65 dBm
-          </text>
-          <text x="15" y="75" fill="#374151" fontSize="12">
-            Client Count: 4,800
-          </text>
-          <text x="15" y="90" fill="#6b7280" fontSize="11">
-            Channel Utilization: 60%
-          </text>
-        </g>
-
-        <g transform="translate(380, 650)">
-          <rect width="280" height="100" fill="#f8fafc" stroke="#e2e8f0" rx="8" />
-          <text x="15" y="25" fill="#374151" fontSize="14" fontWeight="bold">
-            Client Distribution
-          </text>
-          <text x="15" y="45" fill="#374151" fontSize="12">
-            Corporate Laptops: 2,500
-          </text>
-          <text x="15" y="60" fill="#374151" fontSize="12">
-            BYOD Smartphones: 1,200
-          </text>
-          <text x="15" y="75" fill="#374151" fontSize="12">
-            Guest Tablets: 600
-          </text>
-          <text x="15" y="90" fill="#6b7280" fontSize="11">
-            IoT Devices: 500
-          </text>
-        </g>
-
-        <g transform="translate(680, 650)">
-          <rect width="280" height="100" fill="#f8fafc" stroke="#e2e8f0" rx="8" />
-          <text x="15" y="25" fill="#374151" fontSize="14" fontWeight="bold">
-            Security Metrics
-          </text>
-          <text x="15" y="45" fill="#10b981" fontSize="12">
-            ✅ WPA3 Encryption: 100%
-          </text>
-          <text x="15" y="60" fill="#f59e0b" fontSize="12">
-            ⚠️ Rogue APs Detected: 2
-          </text>
-          <text x="15" y="75" fill="#ef4444" fontSize="12">
-            🚫 Blocked Threats: 15
-          </text>
-          <text x="15" y="90" fill="#6b7280" fontSize="11">
-            Intrusion Attempts: 32
-          </text>
-        </g>
-
-        <g transform="translate(980, 650)">
-          <rect width="280" height="100" fill="#f8fafc" stroke="#e2e8f0" rx="8" />
-          <text x="15" y="25" fill="#374151" fontSize="14" fontWeight="bold">
-            Guest Access
-          </text>
-          <text x="15" y="45" fill="#374151" fontSize="12">
-            Active Guest Sessions: 850
-          </text>
-          <text x="15" y="60" fill="#374151" fontSize="12">
-            Average Session Time: 4h
-          </text>
-          <text x="15" y="75" fill="#374151" fontSize="12">
-            Bandwidth Usage: 500 Mbps
-          </text>
-          <text x="15" y="90" fill="#6b7280" fontSize="11">
-            Captive Portal: Enabled
-          </text>
-        </g>
-
-        <g transform="translate(1280, 650)">
-          <rect width="220" height="100" fill="#f8fafc" stroke="#e2e8f0" rx="8" />
-          <text x="15" y="25" fill="#374151" fontSize="14" fontWeight="bold">
-            Portnox Integration
-          </text>
-          <text x="15" y="45" fill="#10b981" fontSize="12">
-            ✅ Device Profiling: Active
-          </text>
-          <text x="15" y="60" fill="#374151" fontSize="12">
-            Policy Enforcement: Enabled
-          </text>
-          <text x="15" y="75" fill="#374151" fontSize="12">
-            Threat Detection: Active
-          </text>
-          <text x="15" y="90" fill="#6b7280" fontSize="11">
-            Zero Trust NAC
-          </text>
-        </g>
-      </svg>
-    )
-  }
-
-  const renderTacacsView = () => {
-    return (
-      <svg
-        ref={svgRef}
-        viewBox="0 0 1600 1200"
-        className="w-full h-full"
-        style={{ background: "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)" }}
-      >
-        <defs>
-          <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e2e8f0" strokeWidth="0.5" opacity="0.3" />
-          </pattern>
-          <filter id="shadow">
-            <feDropShadow dx="3" dy="3" stdDeviation="4" floodOpacity="0.3" />
-          </filter>
-          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill="#374151" />
-          </marker>
-          <linearGradient id="tacacsGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#4f46e5" />
-            <stop offset="50%" stopColor="#6366f1" />
-            <stop offset="100%" stopColor="#818cf8" />
-          </linearGradient>
-        </defs>
-
-        <rect width="100%" height="100%" fill="url(#grid)" />
-
-        {/* Header */}
-        <rect x="0" y="0" width="1600" height="80" fill="url(#tacacsGradient)" />
-        <text x="30" y="35" fill="white" fontSize="24" fontWeight="bold">
-          Cisco TACACS+ Authentication
-        </text>
-        <text x="30" y="55" fill="white" fontSize="14" opacity="0.9">
-          Device Administration • AAA Protocol • Secure Access Control
-        </text>
-
-        {/* Network Devices */}
-        <g transform="translate(100, 200)">
-          <rect width="250" height="150" fill="#ede9fe" rx="15" filter="url(#shadow)" />
-          <text x="125" y="35" textAnchor="middle" fill="#374151" fontSize="18" fontWeight="bold">
-            Network Devices
-          </text>
-          <text x="125" y="60" textAnchor="middle" fill="#374151" fontSize="14">
-            Cisco Routers, Switches
-          </text>
-          <text x="125" y="80" textAnchor="middle" fill="#374151" fontSize="12">
-            Device Administration
-          </text>
-          <text x="125" y="100" textAnchor="middle" fill="#374151" fontSize="12">
-            CLI Access
-          </text>
-        </g>
-
-        {/* TACACS+ Server */}
-        <g transform="translate(400, 200)">
-          <rect width="250" height="150" fill="#f0fdfa" rx="15" filter="url(#shadow)" />
-          <text x="125" y="35" textAnchor="middle" fill="#065f46" fontSize="18" fontWeight="bold">
-            TACACS+ Server
-          </text>
-          <text x="125" y="60" textAnchor="middle" fill="#065f46" fontSize="14">
-            AAA Server
-          </text>
-          <text x="125" y="80" textAnchor="middle" fill="#065f46" fontSize="12">
-            Authentication
-          </text>
-          <text x="125" y="100" textAnchor="middle" fill="#065f46" fontSize="12">
-            Authorization
-          </text>
-        </g>
-
-        {/* Portnox Integration */}
-        <g transform="translate(700, 200)">
-          <rect width="250" height="150" fill="#dcfce7" rx="15" filter="url(#shadow)" />
-          <text x="125" y="35" textAnchor="middle" fill="#065f46" fontSize="18" fontWeight="bold">
-            Portnox Integration
-          </text>
-          <text x="125" y="60" textAnchor="middle" fill="#065f46" fontSize="14">
-            Zero Trust NAC
-          </text>
-          <text x="125" y="80" textAnchor="middle" fill="#065f46" fontSize="12">
-            Contextual Authentication
-          </text>
-          <text x="125" y="100" textAnchor="middle" fill="#065f46" fontSize="12">
-            Policy Enforcement
-          </text>
-        </g>
-
-        {/* User Database */}
-        <g transform="translate(1000, 200)">
-          <rect width="250" height="150" fill="#f8fafc" rx="15" filter="url(#shadow)" />
-          <text x="125" y="35" textAnchor="middle" fill="#374151" fontSize="18" fontWeight="bold">
-            User Database
-          </text>
-          <text x="125" y="60" textAnchor="middle" fill="#374151" fontSize="14">
-            Credentials
-          </text>
-          <text x="125" y="80" textAnchor="middle" fill="#374151" fontSize="12">
-            Username, Password
-          </text>
-          <text x="125" y="100" textAnchor="middle" fill="#374151" fontSize="12">
-            Access Privileges
-          </text>
-        </g>
-
-        {/* Audit Logs */}
-        <g transform="translate(1300, 200)">
-          <rect width="250" height="150" fill="#f0fdfa" rx="15" filter="url(#shadow)" />
-          <text x="125" y="35" textAnchor="middle" fill="#065f46" fontSize="18" fontWeight="bold">
-            Audit Logs
-          </text>
-          <text x="125" y="60" textAnchor="middle" fill="#065f46" fontSize="14">
-            Tracking
-          </text>
-          <text x="125" y="80" textAnchor="middle" fill="#065f46" fontSize="12">
-            User Activity
-          </text>
-          <text x="125" y="100" textAnchor="middle" fill="#065f46" fontSize="12">
-            Compliance
-          </text>
-        </g>
-
-        {/* TACACS+ Workflow */}
-        <g transform="translate(100, 400)">
-          <rect width="250" height="120" fill="#ede9fe" rx="10" />
-          <text x="125" y="25" textAnchor="middle" fill="#374151" fontSize="14" fontWeight="bold">
-            1. User Access
-          </text>
-          <text x="125" y="45" textAnchor="middle" fill="#374151" fontSize="12">
-            User attempts to access device
-          </text>
-          <text x="125" y="65" textAnchor="middle" fill="#374151" fontSize="12">
-            CLI Access
-          </text>
-        </g>
-
-        <g transform="translate(400, 400)">
-          <rect width="250" height="120" fill="#f0fdfa" rx="10" />
-          <text x="125" y="25" textAnchor="middle" fill="#065f46" fontSize="14" fontWeight="bold">
-            2. Authentication Request
-          </text>
-          <text x="125" y="45" textAnchor="middle" fill="#065f46" fontSize="12">
-            Device sends request to TACACS+
-          </text>
-          <text x="125" y="65" textAnchor="middle" fill="#065f46" fontSize="12">
-            AAA Protocol
-          </text>
-        </g>
-
-        <g transform="translate(700, 400)">
-          <rect width="250" height="120" fill="#dcfce7" rx="10" />
-          <text x="125" y="25" textAnchor="middle" fill="#065f46" fontSize="14" fontWeight="bold">
-            3. Context Enrichment
-          </text>
-          <text x="125" y="45" textAnchor="middle" fill="#065f46" fontSize="12">
-            Portnox enriches context
-          </text>
-          <text x="125" y="65" textAnchor="middle" fill="#065f46" fontSize="12">
-            Device Profiling
-          </text>
-        </g>
-
-        <g transform="translate(1000, 400)">
-          <rect width="250" height="120" fill="#f8fafc" rx="10" />
-          <text x="125" y="25" textAnchor="middle" fill="#374151" fontSize="14" fontWeight="bold">
-            4. Policy Evaluation
-          </text>
-          <text x="125" y="45" textAnchor="middle" fill="#374151" fontSize="12">
-            TACACS+ evaluates policies
-          </text>
-          <text x="125" y="65" textAnchor="middle" fill="#374151" fontSize="12">
-            Access Control
-          </text>
-        </g>
-
-        <g transform="translate(1300, 400)">
-          <rect width="250" height="120" fill="#f0fdfa" rx="10" />
-          <text x="125" y="25" textAnchor="middle" fill="#065f46" fontSize="14" fontWeight="bold">
-            5. Access Granted/Denied
-          </text>
-          <text x="125" y="45" textAnchor="middle" fill="#065f46" fontSize="12">
-            Device grants or denies access
-          </text>
-          <text x="125" y="65" textAnchor="middle" fill="#065f46" fontSize="12">
-            Privilege Levels
-          </text>
-        </g>
-
-        {/* Flow Arrows */}
-        {isAnimating && (
-          <>
-            <line x1="350" y1="460" x2="400" y2="460" stroke="#374151" strokeWidth="3" markerEnd="url(#arrowhead)">
-              <animate
-                attributeName="stroke-dasharray"
-                values="0,50;50,0"
-                dur={`${1 / animationSpeed}s`}
-                repeatCount="indefinite"
-              />
-            </line>
-            <line x1="650" y1="460" x2="700" y2="460" stroke="#374151" strokeWidth="3" markerEnd="url(#arrowhead)">
-              <animate
-                attributeName="stroke-dasharray"
-                values="0,50;50,0"
-                dur={`${1.2 / animationSpeed}s`}
-                repeatCount="indefinite"
-              />
-            </line>
-            <line x1="950" y1="460" x2="1000" y2="460" stroke="#374151" strokeWidth="3" markerEnd="url(#arrowhead)">
-              <animate
-                attributeName="stroke-dasharray"
-                values="0,50;50,0"
-                dur={`${1.4 / animationSpeed}s`}
-                repeatCount="indefinite"
-              />
-            </line>
-            <line x1="1250" y1="460" x2="1300" y2="460" stroke="#374151" strokeWidth="3" markerEnd="url(#arrowhead)">
-              <animate
-                attributeName="stroke-dasharray"
-                values="0,50;50,0"
-                dur={`${1.6 / animationSpeed}s`}
-                repeatCount="indefinite"
-              />
-            </line>
-          </>
-        )}
-
-        {/* Statistics */}
-        <rect
-          x="50"
-          y="600"
-          width="1500"
-          height="180"
-          fill="white"
-          stroke="#e5e7eb"
-          strokeWidth="2"
-          rx="12"
-          filter="url(#shadow)"
-        />
-        <text x="80" y="630" fill="#374151" fontSize="18" fontWeight="bold">
-          📊 TACACS+ Metrics & Performance
-        </text>
-
-        <g transform="translate(80, 650)">
-          <rect width="280" height="100" fill="#f8fafc" stroke="#e2e8f0" rx="8" />
-          <text x="15" y="25" fill="#374151" fontSize="14" fontWeight="bold">
-            Authentication Rate
-          </text>
-          <text x="15" y="45" fill="#10b981" fontSize="12">
-            ✅ Successful: 2,450/min
-          </text>
-          <text x="15" y="60" fill="#ef4444" fontSize="12">
-            🚫 Failed: 5/min
-          </text>
-          <text x="15" y="75" fill="#374151" fontSize="12">
-            Total: 2,455/min
-          </text>
-          <text x="15" y="90" fill="#6b7280" fontSize="11">
-            Success Rate: 99.8%
-          </text>
-        </g>
-
-        <g transform="translate(380, 650)">
-          <rect width="280" height="100" fill="#f8fafc" stroke="#e2e8f0" rx="8" />
-          <text x="15" y="25" fill="#374151" fontSize="14" fontWeight="bold">
-            Authorization Success
-          </text>
-          <text x="15" y="45" fill="#10b981" fontSize="12">
-            ✅ Granted: 2,400/min
-          </text>
-          <text x="15" y="60" fill="#f59e0b" fontSize="12">
-            ⚠️ Limited: 45/min
-          </text>
-          <text x="15" y="75" fill="#374151" fontSize="12">
-            Total: 2,445/min
-          </text>
-          <text x="15" y="90" fill="#6b7280" fontSize="11">
-            Success Rate: 98.2%
-          </text>
-        </g>
-
-        <g transform="translate(680, 650)">
-          <rect width="280" height="100" fill="#f8fafc" stroke="#e2e8f0" rx="8" />
-          <text x="15" y="25" fill="#374151" fontSize="14" fontWeight="bold">
-            Device Types
-          </text>
-          <text x="15" y="45" fill="#374151" fontSize="12">
-            Routers: 1,200
-          </text>
-          <text x="15" y="60" fill="#374151" fontSize="12">
-            Switches: 800
-          </text>
-          <text x="15" y="75" fill="#374151" fontSize="12">
-            Firewalls: 400
-          </text>
-          <text x="15" y="90" fill="#6b7280" fontSize="11">
-            Total: 2,400
-          </text>
-        </g>
-
-        <g transform="translate(980, 650)">
-          <rect width="280" height="100" fill="#f8fafc" stroke="#e2e8f0" rx="8" />
-          <text x="15" y="25" fill="#374151" fontSize="14" fontWeight="bold">
-            Privilege Levels
-          </text>
-          <text x="15" y="45" fill="#374151" fontSize="12">
-            Level 15: 1,500
-          </text>
-          <text x="15" y="60" fill="#374151" fontSize="12">
-            Level 1: 600
-          </text>
-          <text x="15" y="75" fill="#374151" fontSize="12">
-            Level 0: 300
-          </text>
-          <text x="15" y="90" fill="#6b7280" fontSize="11">
-            Total: 2,400
-          </text>
-        </g>
-
-        <g transform="translate(1280, 650)">
-          <rect width="220" height="100" fill="#f8fafc" stroke="#e2e8f0" rx="8" />
-          <text x="15" y="25" fill="#374151" fontSize="14" fontWeight="bold">
-            Avg. Auth Time
-          </text>
-          <text x="15" y="45" fill="#374151" fontSize="12">
-            ⏱️ 52ms
-          </text>
-          <text x="15" y="60" fill="#374151" fontSize="12">
-            Peak: 70ms
-          </text>
-          <text x="15" y="75" fill="#374151" fontSize="12">
-            Min: 30ms
-          </text>
-          <text x="15" y="90" fill="#6b7280" fontSize="11">
-            Last 24h
-          </text>
-        </g>
-      </svg>
-    )
-  }
-
   return (
-    <div className="relative w-full h-full">
-      {renderView()}
+    <div className={`relative ${className}`}>
+      {renderDiagramByView()}
 
-      {/* Tooltip */}
-      {showTooltip && (
-        <div
-          className="absolute z-50 bg-gray-900 text-white text-sm rounded-lg px-3 py-2 pointer-events-none"
-          style={{
-            left: showTooltip.x,
-            top: showTooltip.y,
-            transform: "translate(-50%, -100%)",
-          }}
-        >
-          {showTooltip.content.split("\n").map((line, index) => (
-            <div key={index}>{line}</div>
-          ))}
-        </div>
+      {/* Enhanced Component Details Panel */}
+      {selectedComponent && componentDetails[selectedComponent as keyof typeof componentDetails] && (
+        <Card className="absolute top-4 right-4 w-96 max-h-[500px] overflow-y-auto shadow-xl border-2 border-blue-200">
+          <CardHeader className="pb-3 bg-gradient-to-r from-blue-50 to-indigo-50">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-lg text-blue-900">
+                {componentDetails[selectedComponent as keyof typeof componentDetails].name}
+              </h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedComponent(null)}
+                className="h-8 w-8 p-0 hover:bg-blue-100"
+              >
+                ×
+              </Button>
+            </div>
+            <p className="text-sm text-blue-700 mt-1">
+              {componentDetails[selectedComponent as keyof typeof componentDetails].description}
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4 text-sm">
+            {/* Technical Specifications */}
+            <div>
+              <h4 className="font-semibold mb-2 text-gray-800 flex items-center">
+                <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                Technical Specifications
+              </h4>
+              <ul className="space-y-1">
+                {componentDetails[selectedComponent as keyof typeof componentDetails].specs.map((spec, index) => (
+                  <li key={index} className="flex items-start space-x-2">
+                    <CheckCircle2 className="h-3 w-3 text-green-600 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">{spec}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <Separator />
+
+            {/* Network Ports */}
+            <div>
+              <h4 className="font-semibold mb-2 text-gray-800 flex items-center">
+                <Network className="h-4 w-4 text-blue-600 mr-2" />
+                Network Ports
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {componentDetails[selectedComponent as keyof typeof componentDetails].ports.map((port, index) => (
+                  <Badge key={index} variant="outline" className="text-xs bg-blue-50 border-blue-200">
+                    {port}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            {/* Protocols */}
+            <div>
+              <h4 className="font-semibold mb-2 text-gray-800 flex items-center">
+                <Shield className="h-4 w-4 text-purple-600 mr-2" />
+                Supported Protocols
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {componentDetails[selectedComponent as keyof typeof componentDetails].protocols.map(
+                  (protocol, index) => (
+                    <Badge key={index} variant="secondary" className="text-xs bg-purple-50 border-purple-200">
+                      {protocol}
+                    </Badge>
+                  ),
+                )}
+              </div>
+            </div>
+
+            {/* Performance Metrics */}
+            {componentDetails[selectedComponent as keyof typeof componentDetails].metrics && (
+              <>
+                <Separator />
+                <div>
+                  <h4 className="font-semibold mb-2 text-gray-800 flex items-center">
+                    <Activity className="h-4 w-4 text-green-600 mr-2" />
+                    Performance Metrics
+                  </h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    {Object.entries(
+                      componentDetails[selectedComponent as keyof typeof componentDetails].metrics || {},
+                    ).map(([key, value], index) => (
+                      <div key={index} className="bg-gray-50 p-2 rounded">
+                        <div className="text-xs text-gray-600 capitalize">{key.replace(/([A-Z])/g, " $1")}</div>
+                        <div className="font-medium text-gray-900">{value}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
       )}
 
-      {/* Controls */}
-      <div className="absolute top-4 right-4 flex gap-2">
-        <button
-          onClick={() => setIsAnimating(!isAnimating)}
-          className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
-        >
-          {isAnimating ? "Pause" : "Play"}
-        </button>
-        <button
-          onClick={() => setShowLegend(!showLegend)}
-          className="bg-gray-600 text-white px-3 py-1 rounded text-sm hover:bg-gray-700"
-        >
-          Legend
-        </button>
-        <button
-          onClick={() => handleExport("svg")}
-          className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
-        >
-          Export SVG
-        </button>
-        <button
-          onClick={() => handleExport("png")}
-          className="bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700"
-        >
-          Export PNG
-        </button>
-      </div>
+      {/* Enhanced Legend Panel */}
+      {showLegend && (
+        <Card className="absolute bottom-4 left-4 w-80 shadow-xl border-2 border-gray-200">
+          <CardHeader className="pb-3 bg-gradient-to-r from-gray-50 to-slate-50">
+            <h3 className="font-bold text-lg flex items-center space-x-2 text-gray-800">
+              <Info className="h-5 w-5 text-blue-600" />
+              <span>Architecture Legend</span>
+            </h3>
+          </CardHeader>
+          <CardContent className="space-y-4 text-sm">
+            {/* Security Zones */}
+            <div>
+              <h4 className="font-semibold mb-2 text-gray-800">Security Zones</h4>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 bg-green-100 border border-green-400 rounded"></div>
+                  <span>Trusted Zone</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 bg-yellow-100 border border-yellow-400 rounded"></div>
+                  <span>DMZ</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 bg-gray-100 border border-gray-400 rounded"></div>
+                  <span>Access Layer</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 bg-red-100 border border-red-400 rounded"></div>
+                  <span>Restricted</span>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Component Types */}
+            <div>
+              <h4 className="font-semibold mb-2 text-gray-800">Component Types</h4>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 bg-blue-500 rounded"></div>
+                  <span>Cloud Services</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 bg-purple-500 rounded"></div>
+                  <span>Identity</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 bg-red-500 rounded"></div>
+                  <span>Security</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 bg-green-500 rounded"></div>
+                  <span>Network</span>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Data Flow Indicators */}
+            <div>
+              <h4 className="font-semibold mb-2 text-gray-800">Data Flow</h4>
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <div className="w-6 h-1 bg-blue-500 rounded"></div>
+                  <span>Authentication Flow</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-6 h-1 bg-green-500 rounded"></div>
+                  <span>Secure Channel</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                  <span>Flow Indicator</span>
+                </div>
+                {isAnimating && (
+                  <div className="flex items-center space-x-2">
+                    <Activity className="h-4 w-4 text-green-600" />
+                    <span>Live Animation Active</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Status Indicators */}
+            <div>
+              <h4 className="font-semibold mb-2 text-gray-800">Status Indicators</h4>
+              <div className="space-y-1">
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <span>Online/Active</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                  <span>Warning/Maintenance</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                  <span>Error/Offline</span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

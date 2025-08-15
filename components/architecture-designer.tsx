@@ -4,364 +4,406 @@ import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Slider } from "@/components/ui/slider"
-import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import { toast } from "@/components/ui/use-toast"
+import { Slider } from "@/components/ui/slider"
+import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import InteractiveDiagram from "./InteractiveDiagram"
+import ArchitectureLegend from "./ArchitectureLegend"
 import PolicyManagement from "./policy-management"
-import IndustryScenarios from "./industry-scenarios"
-import AuthenticationFlows from "./authentication-flows"
-import PolicySimulator from "./policy-simulator"
 import {
+  Cloud,
   Network,
-  Download,
-  Settings,
-  Play,
-  Pause,
-  RotateCcw,
-  Zap,
   Shield,
-  Globe,
-  Server,
-  Wifi,
-  Database,
-  Users,
+  Settings,
+  Zap,
+  GlobeIcon,
   Lock,
-  Building2,
-  Heart,
-  Banknote,
-  Cpu,
-  Factory,
-  GraduationCap,
-  ShoppingCart,
-  Plane,
+  Users,
+  Server,
+  Download,
+  Smartphone,
 } from "lucide-react"
 
 export default function ArchitectureDesigner() {
   const [selectedView, setSelectedView] = useState("complete")
-  const [selectedIndustry, setSelectedIndustry] = useState("multi-site-campus")
-  const [cloudProvider, setCloudProvider] = useState("azure")
+  const [cloudProvider, setCloudProvider] = useState("aws")
   const [networkVendor, setNetworkVendor] = useState("cisco")
   const [connectivityType, setConnectivityType] = useState("sdwan")
-  const [identityProvider, setIdentityProvider] = useState("azure-ad")
-  const [mdmProvider, setMdmProvider] = useState("intune")
-  const [firewallVendor, setFirewallVendor] = useState("palo-alto")
-  const [isAnimating, setIsAnimating] = useState(true)
   const [animationSpeed, setAnimationSpeed] = useState([1])
-  const [showLegend, setShowLegend] = useState(true)
-  const [showMetrics, setShowMetrics] = useState(true)
-  const [selectedTheme, setSelectedTheme] = useState("professional")
-  const [simulationMode, setSimulationMode] = useState("normal")
-  const [riskLevel, setRiskLevel] = useState("low")
-
-  const industryScenarios = [
-    {
-      id: "multi-site-campus",
-      name: "Multi-Site Campus",
-      icon: <Building2 className="h-4 w-4" />,
-      description: "Global enterprise with multiple campuses",
-      color: "bg-blue-500",
-      scenarios: ["Global HQ + Regional Offices", "Hybrid Cloud Deployment", "Cross-Site Collaboration"],
-    },
-    {
-      id: "healthcare",
-      name: "Healthcare",
-      icon: <Heart className="h-4 w-4" />,
-      description: "Hospital networks with HIPAA compliance",
-      color: "bg-red-500",
-      scenarios: ["Patient Data Protection", "Medical Device Security", "HIPAA Compliance"],
-    },
-    {
-      id: "financial",
-      name: "Financial Services",
-      icon: <Banknote className="h-4 w-4" />,
-      description: "Banking and financial institutions",
-      color: "bg-green-500",
-      scenarios: ["PCI DSS Compliance", "Trading Floor Security", "Customer Data Protection"],
-    },
-    {
-      id: "technology",
-      name: "Technology",
-      icon: <Cpu className="h-4 w-4" />,
-      description: "Tech companies and software development",
-      color: "bg-purple-500",
-      scenarios: ["DevOps Security", "Intellectual Property Protection", "Remote Development"],
-    },
-    {
-      id: "manufacturing",
-      name: "Manufacturing",
-      icon: <Factory className="h-4 w-4" />,
-      description: "Industrial networks and IoT devices",
-      color: "bg-orange-500",
-      scenarios: ["OT/IT Convergence", "Industrial IoT Security", "Supply Chain Protection"],
-    },
-    {
-      id: "education",
-      name: "Education",
-      icon: <GraduationCap className="h-4 w-4" />,
-      description: "Universities and educational institutions",
-      color: "bg-indigo-500",
-      scenarios: ["Student BYOD", "Research Network Security", "Campus-wide Access"],
-    },
-    {
-      id: "retail",
-      name: "Retail",
-      icon: <ShoppingCart className="h-4 w-4" />,
-      description: "Retail chains and e-commerce",
-      color: "bg-pink-500",
-      scenarios: ["POS Security", "Customer WiFi", "Inventory Management"],
-    },
-    {
-      id: "transportation",
-      name: "Transportation",
-      icon: <Plane className="h-4 w-4" />,
-      description: "Airlines, logistics, and transport",
-      color: "bg-cyan-500",
-      scenarios: ["Fleet Management", "Passenger Services", "Cargo Tracking"],
-    },
-  ]
+  const [showPolicyDesigner, setShowPolicyDesigner] = useState(false)
 
   const architectureViews = [
     {
       id: "complete",
-      name: "Complete Architecture",
-      icon: <Network className="h-4 w-4" />,
-      description: "Full zero trust NAC overview with all components",
-    },
-    {
-      id: "multi-site",
-      name: "Multi-Site View",
-      icon: <Globe className="h-4 w-4" />,
-      description: "Global deployment with site interconnections",
+      label: "Complete Architecture",
+      icon: <Cloud className="w-4 h-4" />,
+      description: "Full end-to-end NAC deployment with all components",
     },
     {
       id: "auth-flow",
-      name: "Authentication Flow",
-      icon: <Lock className="h-4 w-4" />,
-      description: "Detailed authentication and authorization flows",
+      label: "Authentication Flow",
+      icon: <Shield className="w-4 h-4" />,
+      description: "802.1X authentication sequence and RADIUS flow",
     },
     {
-      id: "tacacs-detailed",
-      name: "TACACS+ Deep Dive",
-      icon: <Server className="h-4 w-4" />,
-      description: "Comprehensive TACACS+ implementation with command authorization",
+      id: "pki",
+      label: "PKI Infrastructure",
+      icon: <Lock className="w-4 h-4" />,
+      description: "Certificate authority and PKI components",
     },
     {
-      id: "intune-detailed",
-      name: "Microsoft Intune Integration",
-      icon: <Database className="h-4 w-4" />,
-      description: "Complete Intune MDM/MAM integration with compliance policies",
+      id: "policies",
+      label: "Policy Framework",
+      icon: <Settings className="w-4 h-4" />,
+      description: "Policy engine and rule management",
     },
     {
-      id: "jamf-detailed",
-      name: "JAMF Pro Integration",
-      icon: <Database className="h-4 w-4" />,
-      description: "Apple device management with JAMF Pro integration",
+      id: "connectivity",
+      label: "Connectivity Options",
+      icon: <Network className="w-4 h-4" />,
+      description: "Multi-cloud and network connectivity patterns",
     },
     {
-      id: "radsec-proxy",
-      name: "RadSec Proxy Design",
-      icon: <Shield className="h-4 w-4" />,
-      description: "Secure RADIUS over TLS proxy architecture",
+      id: "intune",
+      label: "Intune Integration",
+      icon: <Users className="w-4 h-4" />,
+      description: "Microsoft Intune MDM integration",
     },
     {
-      id: "pki-detailed",
-      name: "PKI & Certificate Management",
-      icon: <Shield className="h-4 w-4" />,
-      description: "Complete PKI infrastructure with certificate lifecycle",
+      id: "jamf",
+      label: "JAMF Integration",
+      icon: <Smartphone className="w-4 h-4" />,
+      description: "Apple device management with JAMF Pro",
     },
     {
-      id: "policy-framework",
-      name: "AI Policy Framework",
-      icon: <Settings className="h-4 w-4" />,
-      description: "Machine learning-powered policy engine",
+      id: "onboarding",
+      label: "Device Onboarding",
+      icon: <Zap className="w-4 h-4" />,
+      description: "Device enrollment and provisioning workflows",
     },
     {
-      id: "wireless-detailed",
-      name: "Wireless Infrastructure",
-      icon: <Wifi className="h-4 w-4" />,
-      description: "Enterprise wireless with multiple vendor support",
+      id: "fortigate-tacacs",
+      label: "FortiGate TACACS+",
+      icon: <Server className="w-4 h-4" />,
+      description: "FortiGate device administration with TACACS+",
     },
     {
-      id: "iot-onboarding",
-      name: "IoT Device Onboarding",
-      icon: <Zap className="h-4 w-4" />,
-      description: "Automated IoT device discovery and provisioning",
+      id: "palo-tacacs",
+      label: "Palo Alto TACACS+",
+      icon: <Server className="w-4 h-4" />,
+      description: "Palo Alto device administration with TACACS+",
     },
     {
-      id: "guest-portal",
-      name: "Guest Access Portal",
-      icon: <Users className="h-4 w-4" />,
-      description: "Self-service guest registration and access",
+      id: "cisco-tacacs",
+      label: "Cisco TACACS+",
+      icon: <Server className="w-4 h-4" />,
+      description: "Cisco device administration with TACACS+",
+    },
+    {
+      id: "aruba-tacacs",
+      label: "Aruba TACACS+",
+      icon: <Server className="w-4 h-4" />,
+      description: "Aruba device administration with TACACS+",
+    },
+    {
+      id: "juniper-tacacs",
+      label: "Juniper TACACS+",
+      icon: <Server className="w-4 h-4" />,
+      description: "Juniper device administration with TACACS+",
+    },
+    {
+      id: "palo-userid",
+      label: "Palo Alto User-ID",
+      icon: <Users className="w-4 h-4" />,
+      description: "Palo Alto User-ID integration with syslog",
+    },
+    {
+      id: "fortigate-fsso",
+      label: "FortiGate FSSO",
+      icon: <Users className="w-4 h-4" />,
+      description: "FortiGate FSSO integration with syslog",
+    },
+    {
+      id: "meraki-wireless",
+      label: "Meraki Wireless",
+      icon: <Network className="w-4 h-4" />,
+      description: "Cisco Meraki wireless deep-dive integration",
+    },
+    {
+      id: "mist-wireless",
+      label: "Mist Wireless",
+      icon: <Network className="w-4 h-4" />,
+      description: "Juniper Mist wireless deep-dive integration",
+    },
+    {
+      id: "multi-site",
+      label: "Multi-Site Enterprise",
+      icon: <GlobeIcon className="w-4 h-4" />,
+      description: "Enterprise deployment across multiple locations",
+    },
+    {
+      id: "healthcare",
+      label: "Healthcare Deployment",
+      icon: <Shield className="w-4 h-4" />,
+      description: "Medical device prioritization with HIPAA compliance",
+    },
+    {
+      id: "education",
+      label: "Education Campus",
+      icon: <Users className="w-4 h-4" />,
+      description: "University campus with student BYOD and research networks",
+    },
+    {
+      id: "financial",
+      label: "Financial Services",
+      icon: <Lock className="w-4 h-4" />,
+      description: "Banking and financial compliance with regulatory requirements",
+    },
+    {
+      id: "manufacturing",
+      label: "Manufacturing & Industrial",
+      icon: <Settings className="w-4 h-4" />,
+      description: "Industrial IoT and OT network segmentation",
+    },
+    {
+      id: "retail",
+      label: "Retail & Hospitality",
+      icon: <Smartphone className="w-4 h-4" />,
+      description: "Point-of-sale systems and guest access management",
     },
   ]
 
   const cloudProviders = [
-    { id: "azure", name: "Microsoft Azure", color: "#0078d4" },
-    { id: "aws", name: "Amazon AWS", color: "#ff9900" },
-    { id: "gcp", name: "Google Cloud", color: "#4285f4" },
-    { id: "onprem", name: "On-Premises", color: "#6b7280" },
+    { id: "aws", label: "Amazon Web Services", color: "#FF9900" },
+    { id: "azure", label: "Microsoft Azure", color: "#0078D4" },
+    { id: "gcp", label: "Google Cloud Platform", color: "#4285F4" },
+    { id: "onprem", label: "On-Premises", color: "#6B7280" },
   ]
 
   const networkVendors = [
-    { id: "cisco", name: "Cisco Systems" },
-    { id: "aruba", name: "Aruba (HPE)" },
-    { id: "juniper", name: "Juniper Networks" },
-    { id: "extreme", name: "Extreme Networks" },
-    { id: "fortinet", name: "Fortinet" },
+    { id: "cisco", label: "Cisco" },
+    { id: "aruba", label: "Aruba (HPE)" },
+    { id: "juniper", label: "Juniper" },
+    { id: "extreme", label: "Extreme Networks" },
+    { id: "ruckus", label: "Ruckus (CommScope)" },
+    { id: "fortinet", label: "Fortinet" },
+    { id: "paloalto", label: "Palo Alto Networks" },
+    { id: "meraki", label: "Cisco Meraki" },
+    { id: "mist", label: "Juniper Mist" },
+    { id: "ubiquiti", label: "Ubiquiti" },
+    { id: "netgear", label: "Netgear" },
+    { id: "dlink", label: "D-Link" },
+    { id: "tplink", label: "TP-Link" },
+    { id: "huawei", label: "Huawei" },
+    { id: "alcatel", label: "Alcatel-Lucent Enterprise" },
+    { id: "dell", label: "Dell Technologies" },
+    { id: "hpe", label: "HPE Networking" },
+    { id: "brocade", label: "Brocade (Broadcom)" },
   ]
 
-  const connectivityTypes = [
-    { id: "sdwan", name: "SD-WAN" },
-    { id: "mpls", name: "MPLS" },
-    { id: "expressroute", name: "Azure ExpressRoute" },
-    { id: "directconnect", name: "AWS Direct Connect" },
-    { id: "vpn", name: "Site-to-Site VPN" },
-    { id: "internet", name: "Internet" },
+  const connectivityOptions = [
+    { id: "sdwan", label: "SD-WAN" },
+    { id: "expressroute", label: "Azure Express Route" },
+    { id: "directconnect", label: "AWS Direct Connect" },
+    { id: "mpls", label: "MPLS Network" },
+    { id: "vpn", label: "Site-to-Site VPN" },
+    { id: "internet", label: "Internet Connection" },
   ]
 
-  const identityProviders = [
-    { id: "azure-ad", name: "Azure Active Directory" },
-    { id: "active-directory", name: "Active Directory" },
-    { id: "okta", name: "Okta" },
-    { id: "ping", name: "Ping Identity" },
-    { id: "ldap", name: "LDAP" },
-  ]
+  const currentView = architectureViews.find((view) => view.id === selectedView) || architectureViews[0]
 
-  const mdmProviders = [
-    { id: "intune", name: "Microsoft Intune" },
-    { id: "jamf", name: "Jamf Pro" },
-    { id: "workspace-one", name: "VMware Workspace ONE" },
-    { id: "mobileiron", name: "Ivanti MobileIron" },
-  ]
+  // Export Functions
+  const exportDiagram = async (format: "svg" | "png" | "pdf") => {
+    const diagramElement = document.querySelector(".architecture-diagram svg")
+    if (!diagramElement) return
 
-  const firewallVendors = [
-    { id: "palo-alto", name: "Palo Alto Networks" },
-    { id: "fortinet", name: "Fortinet" },
-    { id: "cisco", name: "Cisco ASA/FTD" },
-    { id: "checkpoint", name: "Check Point" },
-    { id: "sonicwall", name: "SonicWall" },
-  ]
-
-  const simulationModes = [
-    { id: "normal", name: "Normal Operation", description: "Standard network operation with baseline metrics" },
-    { id: "security-breach", name: "Security Breach", description: "Simulate advanced persistent threat response" },
-    { id: "compliance-audit", name: "Compliance Audit", description: "Regulatory compliance validation mode" },
-    { id: "mass-onboarding", name: "Mass Onboarding", description: "High-volume device enrollment simulation" },
-    { id: "disaster-recovery", name: "Disaster Recovery", description: "Business continuity and failover testing" },
-    { id: "peak-load", name: "Peak Load Testing", description: "Maximum capacity stress testing" },
-    { id: "zero-trust-validation", name: "Zero Trust Validation", description: "Continuous verification simulation" },
-    { id: "iot-surge", name: "IoT Device Surge", description: "Massive IoT device onboarding scenario" },
-  ]
-
-  const handleExport = async (format: "svg" | "png" | "pdf") => {
     try {
-      toast({
-        title: "Export Started",
-        description: `Generating ${format.toUpperCase()} export with industry branding...`,
-      })
-
-      // The actual export will be handled by the diagram component
-      setTimeout(() => {
-        toast({
-          title: "Export Complete",
-          description: `Architecture diagram exported as ${format.toUpperCase()} with marketing graphics`,
-        })
-      }, 2000)
+      if (format === "svg") {
+        await exportAsSVG(diagramElement as SVGElement)
+      } else if (format === "png") {
+        await exportAsPNG(diagramElement as SVGElement)
+      } else if (format === "pdf") {
+        await exportAsPDF(diagramElement as SVGElement)
+      }
     } catch (error) {
-      toast({
-        title: "Export Failed",
-        description: "Failed to export diagram. Please try again.",
-        variant: "destructive",
-      })
+      console.error("Export failed:", error)
     }
   }
 
-  const handleSimulationChange = (mode: string) => {
-    setSimulationMode(mode)
-    toast({
-      title: "Simulation Mode Changed",
-      description: `Switched to ${simulationModes.find((m) => m.id === mode)?.name} mode`,
+  const exportAsSVG = async (svgElement: SVGElement) => {
+    // Clone the SVG to avoid modifying the original
+    const svgClone = svgElement.cloneNode(true) as SVGElement
+
+    // Add proper dimensions and styling
+    svgClone.setAttribute("width", "1400")
+    svgClone.setAttribute("height", "1000")
+    svgClone.setAttribute("xmlns", "http://www.w3.org/2000/svg")
+
+    // Add header with logos and title
+    const headerGroup = document.createElementNS("http://www.w3.org/2000/svg", "g")
+    headerGroup.setAttribute("id", "export-header")
+
+    // Header background
+    const headerBg = document.createElementNS("http://www.w3.org/2000/svg", "rect")
+    headerBg.setAttribute("x", "0")
+    headerBg.setAttribute("y", "0")
+    headerBg.setAttribute("width", "1400")
+    headerBg.setAttribute("height", "80")
+    headerBg.setAttribute("fill", "#00c8d7")
+    headerGroup.appendChild(headerBg)
+
+    // Title text
+    const titleText = document.createElementNS("http://www.w3.org/2000/svg", "text")
+    titleText.setAttribute("x", "700")
+    titleText.setAttribute("y", "35")
+    titleText.setAttribute("text-anchor", "middle")
+    titleText.setAttribute("fill", "white")
+    titleText.setAttribute("font-size", "18")
+    titleText.setAttribute("font-weight", "bold")
+    titleText.textContent = `Portnox NAC Architecture - ${currentView?.label}`
+    headerGroup.appendChild(titleText)
+
+    // Date text
+    const dateText = document.createElementNS("http://www.w3.org/2000/svg", "text")
+    dateText.setAttribute("x", "700")
+    dateText.setAttribute("y", "55")
+    dateText.setAttribute("text-anchor", "middle")
+    dateText.setAttribute("fill", "white")
+    dateText.setAttribute("font-size", "12")
+    dateText.textContent = `Generated on ${new Date().toLocaleDateString()}`
+    headerGroup.appendChild(dateText)
+
+    // Insert header at the beginning
+    svgClone.insertBefore(headerGroup, svgClone.firstChild)
+
+    // Adjust viewBox to accommodate header
+    const currentViewBox = svgClone.getAttribute("viewBox") || "0 0 1200 800"
+    const viewBoxParts = currentViewBox.split(" ")
+    const newViewBox = `0 0 ${viewBoxParts[2]} ${Number.parseInt(viewBoxParts[3]) + 80}`
+    svgClone.setAttribute("viewBox", newViewBox)
+
+    // Move existing content down to make room for header
+    const existingContent = svgClone.querySelector("g:not(#export-header)")
+    if (existingContent) {
+      existingContent.setAttribute("transform", "translate(0, 80)")
+    }
+
+    const svgData = new XMLSerializer().serializeToString(svgClone)
+    const blob = new Blob([svgData], { type: "image/svg+xml" })
+    downloadFile(blob, `portnox-architecture-${selectedView}-${Date.now()}.svg`)
+  }
+
+  const exportAsPNG = async (svgElement: SVGElement) => {
+    // First create the enhanced SVG
+    const svgClone = svgElement.cloneNode(true) as SVGElement
+    svgClone.setAttribute("width", "1400")
+    svgClone.setAttribute("height", "1000")
+    svgClone.setAttribute("xmlns", "http://www.w3.org/2000/svg")
+
+    // Add white background
+    const background = document.createElementNS("http://www.w3.org/2000/svg", "rect")
+    background.setAttribute("x", "0")
+    background.setAttribute("y", "0")
+    background.setAttribute("width", "1400")
+    background.setAttribute("height", "1000")
+    background.setAttribute("fill", "white")
+    svgClone.insertBefore(background, svgClone.firstChild)
+
+    // Add header
+    const headerGroup = document.createElementNS("http://www.w3.org/2000/svg", "g")
+    headerGroup.setAttribute("id", "export-header")
+
+    const headerBg = document.createElementNS("http://www.w3.org/2000/svg", "rect")
+    headerBg.setAttribute("x", "0")
+    headerBg.setAttribute("y", "0")
+    headerBg.setAttribute("width", "1400")
+    headerBg.setAttribute("height", "80")
+    headerBg.setAttribute("fill", "#00c8d7")
+    headerGroup.appendChild(headerBg)
+
+    const titleText = document.createElementNS("http://www.w3.org/2000/svg", "text")
+    titleText.setAttribute("x", "700")
+    titleText.setAttribute("y", "35")
+    titleText.setAttribute("text-anchor", "middle")
+    titleText.setAttribute("fill", "white")
+    titleText.setAttribute("font-size", "18")
+    titleText.setAttribute("font-weight", "bold")
+    titleText.textContent = `Portnox NAC Architecture - ${currentView?.label}`
+    headerGroup.appendChild(titleText)
+
+    const dateText = document.createElementNS("http://www.w3.org/2000/svg", "text")
+    dateText.setAttribute("x", "700")
+    dateText.setAttribute("y", "55")
+    dateText.setAttribute("text-anchor", "middle")
+    dateText.setAttribute("fill", "white")
+    dateText.setAttribute("font-size", "12")
+    dateText.textContent = `Generated on ${new Date().toLocaleDateString()}`
+    headerGroup.appendChild(dateText)
+
+    svgClone.insertBefore(headerGroup, background.nextSibling)
+
+    // Move existing content down
+    const existingContent = Array.from(svgClone.children).find(
+      (child) => child.tagName !== "rect" && child.getAttribute("id") !== "export-header",
+    )
+    if (existingContent) {
+      existingContent.setAttribute("transform", "translate(0, 80)")
+    }
+
+    // Convert to PNG
+    const canvas = document.createElement("canvas")
+    const ctx = canvas.getContext("2d")
+    const img = new Image()
+
+    canvas.width = 1400
+    canvas.height = 1000
+
+    const svgData = new XMLSerializer().serializeToString(svgClone)
+    const svgBlob = new Blob([svgData], { type: "image/svg+xml" })
+    const url = URL.createObjectURL(svgBlob)
+
+    return new Promise<void>((resolve, reject) => {
+      img.onload = () => {
+        try {
+          ctx!.drawImage(img, 0, 0, 1400, 1000)
+
+          canvas.toBlob((blob) => {
+            if (blob) {
+              downloadFile(blob, `portnox-architecture-${selectedView}-${Date.now()}.png`)
+              resolve()
+            } else {
+              reject(new Error("Failed to create PNG blob"))
+            }
+          }, "image/png")
+
+          URL.revokeObjectURL(url)
+        } catch (error) {
+          reject(error)
+        }
+      }
+
+      img.onerror = () => {
+        reject(new Error("Failed to load SVG image"))
+      }
+
+      img.src = url
     })
   }
 
-  const diagramConfig = {
-    industry: selectedIndustry,
-    identityProvider: {
-      type: identityProvider,
-      domain: "company.com",
-      mfaEnabled: true,
-      conditionalAccess: true,
-      riskBasedAuth: true,
-    },
-    mdmProvider: {
-      type: mdmProvider,
-      complianceEnabled: true,
-      appProtection: true,
-      deviceEncryption: true,
-    },
-    firewallInfrastructure: {
-      vendor: firewallVendor,
-      haConfiguration: true,
-      nextGenFeatures: true,
-      threatIntelligence: true,
-    },
-    wiredInfrastructure: {
-      vendor: networkVendor,
-      switchCount: 24,
-      stackingEnabled: true,
-      poeEnabled: true,
-    },
-    wirelessInfrastructure: {
-      vendor: networkVendor,
-      apCount: 48,
-      wifi6Enabled: true,
-      meshEnabled: true,
-    },
-    radiusConfiguration: {
-      type: "cloud-radius",
-      clustering: true,
-      loadBalancing: true,
-      failover: true,
-    },
-    portnoxAgent: {
-      enabled: true,
-      riskAssessment: true,
-      behaviorAnalytics: true,
-      aiPowered: true,
-    },
-    tacacsPlus: {
-      enabled: true,
-      commandAuthorization: true,
-      accounting: true,
-      redundancy: true,
-    },
-    radSecProxy: {
-      enabled: true,
-      tlsVersion: "1.3",
-      certificateValidation: true,
-      loadBalancing: true,
-    },
-    guestPortal: {
-      enabled: true,
-      captivePortal: true,
-      selfRegistration: true,
-      socialLogin: true,
-    },
-    iotOnboarding: {
-      enabled: true,
-      autoProvisioning: true,
-      deviceProfiling: true,
-      certificateBasedAuth: true,
-    },
-    simulationMode,
-    animationSpeed: animationSpeed[0],
-    showMetrics,
-    showLegend,
+  const exportAsPDF = async (svgElement: SVGElement) => {
+    // This would require a PDF library like jsPDF
+    // For now, we'll export as PNG and let user convert if needed
+    await exportAsPNG(svgElement)
+  }
+
+  const downloadFile = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = filename
+    link.click()
+    URL.revokeObjectURL(url)
   }
 
   return (
@@ -369,313 +411,196 @@ export default function ArchitectureDesigner() {
       {/* Header */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center space-x-2">
-                <Network className="h-6 w-6 text-blue-600" />
-                <span>Zero Trust NAC Architecture Designer</span>
-              </CardTitle>
-              <p className="text-sm text-muted-foreground mt-1">
-                Design, visualize, and simulate enterprise-grade network access control architectures
-              </p>
+          <CardTitle className="flex items-center space-x-2">
+            <GlobeIcon className="h-6 w-6 text-blue-600" />
+            <span>Zero Trust NAC Architecture Designer</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Architecture View Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="view-select">Architecture View</Label>
+              <Select value={selectedView} onValueChange={setSelectedView}>
+                <SelectTrigger id="view-select">
+                  <SelectValue placeholder="Select view" />
+                </SelectTrigger>
+                <SelectContent>
+                  {architectureViews.map((view) => (
+                    <SelectItem key={view.id} value={view.id}>
+                      <div className="flex items-center space-x-2">
+                        {view.icon}
+                        <span>{view.label}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <div className="flex items-center space-x-2">
-              <Badge variant="outline" className="bg-green-50 text-green-700">
-                Live Dashboard
-              </Badge>
-              <Badge
-                variant="outline"
-                className={`${industryScenarios.find((i) => i.id === selectedIndustry)?.color} text-white`}
-              >
-                {industryScenarios.find((i) => i.id === selectedIndustry)?.name}
-              </Badge>
-              <Badge variant="outline">{simulationModes.find((m) => m.id === simulationMode)?.name}</Badge>
+
+            {/* Cloud Provider Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="cloud-select">Cloud Provider</Label>
+              <Select value={cloudProvider} onValueChange={setCloudProvider}>
+                <SelectTrigger id="cloud-select">
+                  <SelectValue placeholder="Select provider" />
+                </SelectTrigger>
+                <SelectContent>
+                  {cloudProviders.map((provider) => (
+                    <SelectItem key={provider.id} value={provider.id}>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: provider.color }} />
+                        <span>{provider.label}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Network Vendor Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="vendor-select">Network Vendor</Label>
+              <Select value={networkVendor} onValueChange={setNetworkVendor}>
+                <SelectTrigger id="vendor-select">
+                  <SelectValue placeholder="Select vendor" />
+                </SelectTrigger>
+                <SelectContent>
+                  {networkVendors.map((vendor) => (
+                    <SelectItem key={vendor.id} value={vendor.id}>
+                      {vendor.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Connectivity Type Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="connectivity-select">Connectivity</Label>
+              <Select value={connectivityType} onValueChange={setConnectivityType}>
+                <SelectTrigger id="connectivity-select">
+                  <SelectValue placeholder="Select connectivity" />
+                </SelectTrigger>
+                <SelectContent>
+                  {connectivityOptions.map((option) => (
+                    <SelectItem key={option.id} value={option.id}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
-        </CardHeader>
+
+          {/* Animation Speed Control */}
+          <div className="mt-4 space-y-2">
+            <Label>Animation Speed: {animationSpeed[0]}x</Label>
+            <Slider
+              value={animationSpeed}
+              onValueChange={setAnimationSpeed}
+              max={3}
+              min={0.5}
+              step={0.5}
+              className="w-full"
+            />
+          </div>
+
+          {/* Current View Info */}
+          {currentView && (
+            <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+              <div className="flex items-center space-x-2 mb-2">
+                {currentView.icon}
+                <h3 className="font-semibold text-blue-900 dark:text-blue-100">{currentView.label}</h3>
+              </div>
+              <p className="text-sm text-blue-800 dark:text-blue-200">{currentView.description}</p>
+            </div>
+          )}
+        </CardContent>
       </Card>
 
-      <Tabs defaultValue="designer" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="designer">Architecture Designer</TabsTrigger>
-          <TabsTrigger value="industry">Industry Scenarios</TabsTrigger>
-          <TabsTrigger value="authentication">Authentication Flows</TabsTrigger>
-          <TabsTrigger value="policies">Policy Management</TabsTrigger>
-          <TabsTrigger value="simulator">Policy Simulator</TabsTrigger>
+      {/* Main Content */}
+      <Tabs defaultValue="diagram" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="diagram">Interactive Diagram</TabsTrigger>
+          <TabsTrigger value="policies">Policy Designer</TabsTrigger>
+          <TabsTrigger value="legend">Components Legend</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="designer" className="space-y-6">
-          {/* Configuration Panel */}
+        <TabsContent value="diagram" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center space-x-2">
+                  {currentView?.icon}
+                  <span>{currentView?.label}</span>
+                </CardTitle>
+                <div className="flex items-center space-x-2">
+                  <div className="flex space-x-2">
+                    <Badge variant="outline">{cloudProviders.find((p) => p.id === cloudProvider)?.label}</Badge>
+                    <Badge variant="outline">{networkVendors.find((v) => v.id === networkVendor)?.label}</Badge>
+                    <Badge variant="outline">{connectivityOptions.find((c) => c.id === connectivityType)?.label}</Badge>
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => exportDiagram("svg")}
+                      className="flex items-center space-x-1"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>SVG</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => exportDiagram("png")}
+                      className="flex items-center space-x-1"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>PNG</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => exportDiagram("pdf")}
+                      className="flex items-center space-x-1"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>PDF</span>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <InteractiveDiagram
+                view={selectedView}
+                cloudProvider={cloudProvider}
+                networkVendor={networkVendor}
+                connectivityType={connectivityType}
+                animationSpeed={animationSpeed[0]}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="policies" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <Settings className="h-5 w-5" />
-                <span>Architecture Configuration</span>
+                <Shield className="h-6 w-6 text-blue-600" />
+                <span>Policy Designer & Management</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {/* Industry Selection */}
-                <div className="space-y-2">
-                  <Label>Industry Scenario</Label>
-                  <Select value={selectedIndustry} onValueChange={setSelectedIndustry}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {industryScenarios.map((industry) => (
-                        <SelectItem key={industry.id} value={industry.id}>
-                          <div className="flex items-center space-x-2">
-                            {industry.icon}
-                            <span>{industry.name}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">
-                    {industryScenarios.find((i) => i.id === selectedIndustry)?.description}
-                  </p>
-                </div>
-
-                {/* View Selection */}
-                <div className="space-y-2">
-                  <Label>Architecture View</Label>
-                  <Select value={selectedView} onValueChange={setSelectedView}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {architectureViews.map((view) => (
-                        <SelectItem key={view.id} value={view.id}>
-                          <div className="flex items-center space-x-2">
-                            {view.icon}
-                            <span>{view.name}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">
-                    {architectureViews.find((v) => v.id === selectedView)?.description}
-                  </p>
-                </div>
-
-                {/* Cloud Provider */}
-                <div className="space-y-2">
-                  <Label>Cloud Provider</Label>
-                  <Select value={cloudProvider} onValueChange={setCloudProvider}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {cloudProviders.map((provider) => (
-                        <SelectItem key={provider.id} value={provider.id}>
-                          {provider.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Network Vendor */}
-                <div className="space-y-2">
-                  <Label>Network Vendor</Label>
-                  <Select value={networkVendor} onValueChange={setNetworkVendor}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {networkVendors.map((vendor) => (
-                        <SelectItem key={vendor.id} value={vendor.id}>
-                          {vendor.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Connectivity */}
-                <div className="space-y-2">
-                  <Label>Connectivity Type</Label>
-                  <Select value={connectivityType} onValueChange={setConnectivityType}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {connectivityTypes.map((type) => (
-                        <SelectItem key={type.id} value={type.id}>
-                          {type.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Identity Provider */}
-                <div className="space-y-2">
-                  <Label>Identity Provider</Label>
-                  <Select value={identityProvider} onValueChange={setIdentityProvider}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {identityProviders.map((provider) => (
-                        <SelectItem key={provider.id} value={provider.id}>
-                          {provider.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* MDM Provider */}
-                <div className="space-y-2">
-                  <Label>MDM Provider</Label>
-                  <Select value={mdmProvider} onValueChange={setMdmProvider}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {mdmProviders.map((provider) => (
-                        <SelectItem key={provider.id} value={provider.id}>
-                          {provider.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Firewall Vendor */}
-                <div className="space-y-2">
-                  <Label>Firewall Vendor</Label>
-                  <Select value={firewallVendor} onValueChange={setFirewallVendor}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {firewallVendors.map((vendor) => (
-                        <SelectItem key={vendor.id} value={vendor.id}>
-                          {vendor.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Simulation Mode */}
-                <div className="space-y-2">
-                  <Label>Simulation Mode</Label>
-                  <Select value={simulationMode} onValueChange={handleSimulationChange}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {simulationModes.map((mode) => (
-                        <SelectItem key={mode.id} value={mode.id}>
-                          {mode.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">
-                    {simulationModes.find((m) => m.id === simulationMode)?.description}
-                  </p>
-                </div>
-              </div>
-
-              <Separator className="my-6" />
-
-              {/* Controls */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-6">
-                  <div className="flex items-center space-x-2">
-                    <Button variant="outline" size="sm" onClick={() => setIsAnimating(!isAnimating)}>
-                      {isAnimating ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                      {isAnimating ? "Pause" : "Play"}
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => setAnimationSpeed([1])}>
-                      <RotateCcw className="h-4 w-4" />
-                      Reset
-                    </Button>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <Label className="text-sm">Speed:</Label>
-                    <div className="w-20">
-                      <Slider
-                        value={animationSpeed}
-                        onValueChange={setAnimationSpeed}
-                        max={3}
-                        min={0.5}
-                        step={0.5}
-                        className="w-full"
-                      />
-                    </div>
-                    <span className="text-sm text-muted-foreground">{animationSpeed[0]}x</span>
-                  </div>
-
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center space-x-2">
-                      <Switch id="legend" checked={showLegend} onCheckedChange={setShowLegend} />
-                      <Label htmlFor="legend" className="text-sm">
-                        Legend
-                      </Label>
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                      <Switch id="metrics" checked={showMetrics} onCheckedChange={setShowMetrics} />
-                      <Label htmlFor="metrics" className="text-sm">
-                        Metrics
-                      </Label>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Button variant="outline" size="sm" onClick={() => handleExport("svg")}>
-                    <Download className="h-4 w-4 mr-2" />
-                    SVG
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleExport("png")}>
-                    <Download className="h-4 w-4 mr-2" />
-                    PNG
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleExport("pdf")}>
-                    <Download className="h-4 w-4 mr-2" />
-                    PDF
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Architecture Diagram */}
-          <Card>
-            <CardContent className="p-0">
-              <InteractiveDiagram view={selectedView} config={diagramConfig} onExport={handleExport} />
+              <PolicyManagement />
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="industry">
-          <IndustryScenarios selectedIndustry={selectedIndustry} onIndustryChange={setSelectedIndustry} />
-        </TabsContent>
-
-        <TabsContent value="authentication">
-          <AuthenticationFlows
-            identityProvider={identityProvider}
-            mdmProvider={mdmProvider}
-            simulationMode={simulationMode}
-          />
-        </TabsContent>
-
-        <TabsContent value="policies">
-          <PolicyManagement />
-        </TabsContent>
-
-        <TabsContent value="simulator">
-          <PolicySimulator config={diagramConfig} simulationMode={simulationMode} onModeChange={setSimulationMode} />
+        <TabsContent value="legend" className="space-y-4">
+          <ArchitectureLegend currentView={selectedView} />
         </TabsContent>
       </Tabs>
     </div>
