@@ -3,158 +3,138 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Switch } from "@/components/ui/switch"
-import { Palette, Upload, Download, RotateCcw, Sun, Moon, Monitor } from "lucide-react"
-import { useTheme } from "@/components/theme-provider"
-import { storage } from "@/lib/storage"
+import { Badge } from "@/components/ui/badge"
 import { toast } from "@/components/ui/use-toast"
+import { storage, type UserPreferences } from "@/lib/storage"
+import { Palette, RotateCcw, Building2 } from "lucide-react"
 
 interface ThemeCustomizerProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  onThemeUpdated?: () => void
 }
 
-export default function ThemeCustomizer({ open, onOpenChange }: ThemeCustomizerProps) {
-  const { theme, setTheme } = useTheme()
-  const [companyName, setCompanyName] = useState("TechCorp Global")
-  const [customerLogo, setCustomerLogo] = useState("")
-  const [notifications, setNotifications] = useState(true)
-  const [autoSave, setAutoSave] = useState(true)
-  const [isLoading, setIsLoading] = useState(false)
+export default function ThemeCustomizer({ onThemeUpdated }: ThemeCustomizerProps) {
   const [mounted, setMounted] = useState(false)
+  const [open, setOpen] = useState(false)
+  const [preferences, setPreferences] = useState<UserPreferences>({})
+  const [loading, setLoading] = useState(false)
+
+  const [formData, setFormData] = useState({
+    companyName: "",
+    customerLogo: "",
+    theme: "light" as "light" | "dark" | "system",
+    notifications: true,
+    autoSave: true,
+  })
 
   useEffect(() => {
     setMounted(true)
-    if (open) {
+  }, [])
+
+  useEffect(() => {
+    if (mounted && open) {
       loadPreferences()
     }
-  }, [open])
+  }, [mounted, open])
 
   const loadPreferences = async () => {
-    if (typeof window === "undefined") return
+    if (!mounted) return
 
     try {
-      const preferences = await storage.getUserPreferences()
-      setCompanyName(preferences.companyName || "TechCorp Global")
-      setCustomerLogo(preferences.customerLogo || "")
-      setNotifications(preferences.notifications ?? true)
-      setAutoSave(preferences.autoSave ?? true)
+      setLoading(true)
+      const prefs = await storage.getUserPreferences()
+      setPreferences(prefs)
+      setFormData({
+        companyName: prefs.companyName || "",
+        customerLogo: prefs.customerLogo || "",
+        theme: prefs.theme || "light",
+        notifications: prefs.notifications ?? true,
+        autoSave: prefs.autoSave ?? true,
+      })
     } catch (error) {
       console.error("Error loading preferences:", error)
+      toast({
+        title: "Error",
+        description: "Failed to load preferences. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
     }
   }
 
   const handleSave = async () => {
-    setIsLoading(true)
+    if (!mounted) return
+
     try {
-      await storage.updateUserPreferences({
-        companyName,
-        customerLogo,
-        notifications,
-        autoSave,
-        theme,
-      })
+      setLoading(true)
+      await storage.updateUserPreferences(formData)
 
       toast({
-        title: "Settings saved",
-        description: "Your preferences have been updated successfully.",
+        title: "Preferences saved",
+        description: "Your customization preferences have been saved successfully.",
       })
 
-      // Trigger a page refresh to apply changes
-      window.location.reload()
+      onThemeUpdated?.()
     } catch (error) {
       console.error("Error saving preferences:", error)
       toast({
-        title: "Error saving settings",
-        description: "Please try again.",
+        title: "Error",
+        description: "Failed to save preferences. Please try again.",
         variant: "destructive",
       })
     } finally {
-      setIsLoading(false)
+      setLoading(false)
     }
   }
 
   const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
-    if (file && file.type.match("image.*")) {
+    if (file) {
       const reader = new FileReader()
       reader.onload = (e) => {
         const result = e.target?.result as string
-        setCustomerLogo(result)
+        setFormData({ ...formData, customerLogo: result })
       }
       reader.readAsDataURL(file)
     }
   }
 
-  const handleExportSettings = async () => {
+  const handleReset = async () => {
+    if (!mounted || !confirm("Are you sure you want to reset all customizations?")) return
+
     try {
-      const data = await storage.exportData()
-      const blob = new Blob([data], { type: "application/json" })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = `nac-designer-export-${new Date().toISOString().split("T")[0]}.json`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
+      setLoading(true)
+      const defaultPrefs = {
+        companyName: "TechCorp Global",
+        theme: "light" as const,
+        notifications: true,
+        autoSave: true,
+      }
+
+      await storage.updateUserPreferences(defaultPrefs)
+      setFormData({ ...defaultPrefs, customerLogo: "" })
 
       toast({
-        title: "Settings exported",
-        description: "Your settings have been exported successfully.",
+        title: "Preferences reset",
+        description: "All customizations have been reset to defaults.",
       })
+
+      onThemeUpdated?.()
     } catch (error) {
-      console.error("Error exporting settings:", error)
+      console.error("Error resetting preferences:", error)
       toast({
-        title: "Export failed",
-        description: "Please try again.",
+        title: "Error",
+        description: "Failed to reset preferences. Please try again.",
         variant: "destructive",
       })
+    } finally {
+      setLoading(false)
     }
-  }
-
-  const handleImportSettings = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = async (e) => {
-        try {
-          const content = e.target?.result as string
-          await storage.importData(content)
-
-          toast({
-            title: "Settings imported",
-            description: "Your settings have been imported successfully. The page will refresh.",
-          })
-
-          setTimeout(() => {
-            window.location.reload()
-          }, 2000)
-        } catch (error) {
-          console.error("Error importing settings:", error)
-          toast({
-            title: "Import failed",
-            description: "Please check the file format and try again.",
-            variant: "destructive",
-          })
-        }
-      }
-      reader.readAsText(file)
-    }
-  }
-
-  const resetToDefaults = () => {
-    setCompanyName("TechCorp Global")
-    setCustomerLogo("")
-    setNotifications(true)
-    setAutoSave(true)
-    setTheme("system")
   }
 
   if (!mounted) {
@@ -162,191 +142,161 @@ export default function ThemeCustomizer({ open, onOpenChange }: ThemeCustomizerP
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" className="gap-2 bg-transparent">
+          <Palette className="h-4 w-4" />
+          Customize
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center space-x-2">
-            <Palette className="h-5 w-5" />
-            <span>Theme & Customization</span>
+          <DialogTitle className="flex items-center gap-2">
+            <Palette className="h-5 w-5 text-blue-600" />
+            Theme Customization
           </DialogTitle>
-          <DialogDescription>Customize the appearance and behavior of your NAC Designer application.</DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="appearance" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="appearance">Appearance</TabsTrigger>
-            <TabsTrigger value="preferences">Preferences</TabsTrigger>
-            <TabsTrigger value="data">Data Management</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="appearance" className="space-y-6">
+        {loading ? (
+          <div className="flex items-center justify-center h-32">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {/* Company Branding */}
             <Card>
               <CardHeader>
-                <CardTitle>Theme</CardTitle>
-                <CardDescription>Choose your preferred color scheme</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-3 gap-4">
-                  <Button
-                    variant={theme === "light" ? "default" : "outline"}
-                    onClick={() => setTheme("light")}
-                    className="h-20 flex-col"
-                  >
-                    <Sun className="h-6 w-6 mb-2" />
-                    Light
-                  </Button>
-                  <Button
-                    variant={theme === "dark" ? "default" : "outline"}
-                    onClick={() => setTheme("dark")}
-                    className="h-20 flex-col"
-                  >
-                    <Moon className="h-6 w-6 mb-2" />
-                    Dark
-                  </Button>
-                  <Button
-                    variant={theme === "system" ? "default" : "outline"}
-                    onClick={() => setTheme("system")}
-                    className="h-20 flex-col"
-                  >
-                    <Monitor className="h-6 w-6 mb-2" />
-                    System
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Branding</CardTitle>
-                <CardDescription>Customize your company branding</CardDescription>
+                <CardTitle className="flex items-center gap-2">
+                  <Building2 className="h-5 w-5" />
+                  Company Branding
+                </CardTitle>
+                <CardDescription>Customize your company information and branding</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="company-name">Company Name</Label>
+                  <Label htmlFor="companyName">Company Name</Label>
                   <Input
-                    id="company-name"
-                    value={companyName}
-                    onChange={(e) => setCompanyName(e.target.value)}
+                    id="companyName"
+                    value={formData.companyName}
+                    onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
                     placeholder="Enter your company name"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="logo-upload">Customer Logo</Label>
-                  <div className="flex items-center space-x-4">
-                    {customerLogo && (
-                      <img
-                        src={customerLogo || "/placeholder.svg"}
-                        alt="Customer Logo"
-                        className="h-12 max-w-[150px] object-contain border rounded"
-                      />
+                  <Label htmlFor="logo">Company Logo</Label>
+                  <div className="flex items-center gap-4">
+                    <Input id="logo" type="file" accept="image/*" onChange={handleLogoUpload} className="flex-1" />
+                    {formData.customerLogo && (
+                      <div className="w-16 h-16 border rounded-lg overflow-hidden">
+                        <img
+                          src={formData.customerLogo || "/placeholder.svg"}
+                          alt="Company Logo"
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
                     )}
-                    <div className="flex-1">
-                      <input
-                        type="file"
-                        id="logo-upload"
-                        accept="image/*"
-                        onChange={handleLogoUpload}
-                        className="hidden"
-                      />
-                      <label
-                        htmlFor="logo-upload"
-                        className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 cursor-pointer"
-                      >
-                        <Upload className="h-4 w-4 mr-2" />
-                        Upload Logo
-                      </label>
-                    </div>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    Upload a logo image (PNG, JPG, SVG). Recommended size: 150x50px
+                  <p className="text-xs text-gray-500">
+                    Upload a logo image (PNG, JPG, SVG). Recommended size: 200x200px
                   </p>
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
 
-          <TabsContent value="preferences" className="space-y-6">
+            {/* Theme Settings */}
             <Card>
               <CardHeader>
-                <CardTitle>Application Preferences</CardTitle>
-                <CardDescription>Configure how the application behaves</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Notifications</Label>
-                    <p className="text-sm text-muted-foreground">Show toast notifications for actions and updates</p>
-                  </div>
-                  <Switch checked={notifications} onCheckedChange={setNotifications} />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Auto Save</Label>
-                    <p className="text-sm text-muted-foreground">Automatically save changes as you work</p>
-                  </div>
-                  <Switch checked={autoSave} onCheckedChange={setAutoSave} />
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="data" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Data Management</CardTitle>
-                <CardDescription>Export, import, or reset your application data</CardDescription>
+                <CardTitle>Theme Settings</CardTitle>
+                <CardDescription>Configure the appearance and behavior of the application</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Button onClick={handleExportSettings} variant="outline" className="h-20 flex-col bg-transparent">
-                    <Download className="h-6 w-6 mb-2" />
-                    Export Data
-                    <span className="text-xs text-muted-foreground">Download all settings and data</span>
-                  </Button>
-
-                  <div>
-                    <input
-                      type="file"
-                      id="import-settings"
-                      accept=".json"
-                      onChange={handleImportSettings}
-                      className="hidden"
-                    />
-                    <label
-                      htmlFor="import-settings"
-                      className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-20 px-4 py-2 cursor-pointer w-full flex-col"
-                    >
-                      <Upload className="h-6 w-6 mb-2" />
-                      Import Data
-                      <span className="text-xs text-muted-foreground">Upload settings and data file</span>
-                    </label>
+                <div className="space-y-2">
+                  <Label>Theme Mode</Label>
+                  <div className="flex gap-2">
+                    {[
+                      { value: "light", label: "Light" },
+                      { value: "dark", label: "Dark" },
+                      { value: "system", label: "System" },
+                    ].map((option) => (
+                      <Button
+                        key={option.value}
+                        variant={formData.theme === option.value ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setFormData({ ...formData, theme: option.value as any })}
+                      >
+                        {option.label}
+                      </Button>
+                    ))}
                   </div>
                 </div>
 
-                <div className="pt-4 border-t">
-                  <Button onClick={resetToDefaults} variant="destructive" className="w-full">
-                    <RotateCcw className="h-4 w-4 mr-2" />
-                    Reset to Defaults
-                  </Button>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    This will reset all customizations to their default values. Your data will not be affected.
-                  </p>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>Enable Notifications</Label>
+                      <p className="text-xs text-gray-500">Show toast notifications for actions</p>
+                    </div>
+                    <Button
+                      variant={formData.notifications ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setFormData({ ...formData, notifications: !formData.notifications })}
+                    >
+                      {formData.notifications ? "Enabled" : "Disabled"}
+                    </Button>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>Auto Save</Label>
+                      <p className="text-xs text-gray-500">Automatically save changes</p>
+                    </div>
+                    <Button
+                      variant={formData.autoSave ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setFormData({ ...formData, autoSave: !formData.autoSave })}
+                    >
+                      {formData.autoSave ? "Enabled" : "Disabled"}
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
 
-        <div className="flex justify-end space-x-2 pt-4 border-t">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave} disabled={isLoading}>
-            {isLoading ? "Saving..." : "Save Changes"}
-          </Button>
-        </div>
+            {/* Current Settings Preview */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Current Settings</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="outline">Company: {formData.companyName || "Not set"}</Badge>
+                  <Badge variant="outline">Theme: {formData.theme}</Badge>
+                  <Badge variant="outline">Notifications: {formData.notifications ? "On" : "Off"}</Badge>
+                  <Badge variant="outline">Auto Save: {formData.autoSave ? "On" : "Off"}</Badge>
+                  {formData.customerLogo && <Badge variant="outline">Logo: Uploaded</Badge>}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Action Buttons */}
+            <div className="flex justify-between">
+              <Button variant="outline" onClick={handleReset} className="gap-2 bg-transparent">
+                <RotateCcw className="h-4 w-4" />
+                Reset to Defaults
+              </Button>
+
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleSave} disabled={loading}>
+                  {loading ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   )

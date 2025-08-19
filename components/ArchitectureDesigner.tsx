@@ -1,647 +1,937 @@
 "use client"
 
-import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useState, useEffect } from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Label } from "@/components/ui/label"
-import { Slider } from "@/components/ui/slider"
-import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Separator } from "@/components/ui/separator"
+import { Switch } from "@/components/ui/switch"
+import { Slider } from "@/components/ui/slider"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import InteractiveDiagram from "./InteractiveDiagram"
-import ArchitectureLegend from "./ArchitectureLegend"
-import PolicyEditor from "./PolicyEditor"
+import PolicyManagement from "./policy-management"
+import { storage } from "@/lib/storage"
+import { toast } from "@/components/ui/use-toast"
 import {
-  Cloud,
+  Settings,
   Network,
   Shield,
-  Settings,
-  Zap,
-  GlobeIcon,
+  Wifi,
+  Server,
   Lock,
   Users,
-  Server,
-  Download,
   Smartphone,
-  Play,
-  Pause,
-  RotateCcw,
+  Monitor,
+  Router,
+  Globe,
+  ChevronDown,
+  ChevronRight,
+  Save,
+  Download,
+  Eye,
+  Zap,
+  Activity,
+  BarChart3,
+  Layers,
+  MapPin,
+  Building,
+  Factory,
+  GraduationCap,
+  ShoppingBag,
+  Heart,
+  Landmark,
 } from "lucide-react"
 
+interface ArchitectureConfig {
+  selectedSite?: string
+  industry: string
+  deployment: string
+  connectivity: string[]
+  wiredVendor: string
+  wirelessVendor: string
+  firewallVendor: string
+  identityProvider: string[]
+  mdmProvider: string[]
+  radiusType: string
+  deviceAdmin: string
+  authTypes: string[]
+  deviceTypes: string[]
+  complianceFrameworks: string[]
+  securityFeatures: string[]
+  networkSegmentation: boolean
+  guestAccess: boolean
+  iotSupport: boolean
+  cloudIntegration: boolean
+  onPremiseIntegration: boolean
+  hybridDeployment: boolean
+  animations: boolean
+  showMetrics: boolean
+  showConnections: boolean
+  animationSpeed: number
+  zoomLevel: number
+  selectedView: string
+  customColors: {
+    primary: string
+    secondary: string
+    accent: string
+  }
+}
+
+const defaultConfig: ArchitectureConfig = {
+  industry: "healthcare",
+  deployment: "hybrid",
+  connectivity: ["wired", "wireless"],
+  wiredVendor: "cisco",
+  wirelessVendor: "aruba",
+  firewallVendor: "palo_alto",
+  identityProvider: ["azure_ad"],
+  mdmProvider: ["intune"],
+  radiusType: "cloud",
+  deviceAdmin: "radius",
+  authTypes: ["802.1x", "mac_auth"],
+  deviceTypes: ["windows", "mac", "ios", "android"],
+  complianceFrameworks: ["hipaa"],
+  securityFeatures: ["encryption", "mfa"],
+  networkSegmentation: true,
+  guestAccess: true,
+  iotSupport: true,
+  cloudIntegration: true,
+  onPremiseIntegration: false,
+  hybridDeployment: true,
+  animations: true,
+  showMetrics: true,
+  showConnections: true,
+  animationSpeed: 50,
+  zoomLevel: 100,
+  selectedView: "complete",
+  customColors: {
+    primary: "#3b82f6",
+    secondary: "#10b981",
+    accent: "#f59e0b",
+  },
+}
+
 export default function ArchitectureDesigner() {
-  const [selectedView, setSelectedView] = useState("complete")
-  const [cloudProvider, setCloudProvider] = useState("aws")
-  const [networkVendor, setNetworkVendor] = useState("cisco")
-  const [connectivityType, setConnectivityType] = useState("sdwan")
-  const [animationSpeed, setAnimationSpeed] = useState([1])
-  const [isAnimating, setIsAnimating] = useState(true)
-  const [showLegend, setShowLegend] = useState(true)
+  const [config, setConfig] = useState<ArchitectureConfig>(defaultConfig)
+  const [sites, setSites] = useState<any[]>([])
+  const [activeTab, setActiveTab] = useState("configuration")
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    basic: true,
+    infrastructure: true,
+    identity: true,
+    security: true,
+    features: true,
+    visualization: true,
+  })
 
-  const architectureViews = [
-    {
-      id: "complete",
-      label: "Complete Architecture",
-      icon: <Cloud className="w-4 h-4" />,
-      description: "Full end-to-end NAC deployment with all components and data flows",
-    },
-    {
-      id: "multi-site",
-      label: "Multi-Site Enterprise",
-      icon: <GlobeIcon className="w-4 h-4" />,
-      description: "Enterprise deployment across multiple global locations",
-    },
-    {
-      id: "auth-flow",
-      label: "Authentication Flow",
-      icon: <Shield className="w-4 h-4" />,
-      description: "Detailed 802.1X authentication sequence and RADIUS flow",
-    },
-    {
-      id: "pki",
-      label: "PKI Infrastructure",
-      icon: <Lock className="w-4 h-4" />,
-      description: "Certificate authority and PKI certificate lifecycle management",
-    },
-    {
-      id: "policies",
-      label: "Policy Framework",
-      icon: <Settings className="w-4 h-4" />,
-      description: "Policy engine and rule management with enforcement points",
-    },
-    {
-      id: "connectivity",
-      label: "Connectivity Options",
-      icon: <Network className="w-4 h-4" />,
-      description: "Multi-cloud and network connectivity patterns",
-    },
-    {
-      id: "intune",
-      label: "Intune Integration",
-      icon: <Users className="w-4 h-4" />,
-      description: "Microsoft Intune MDM integration and certificate deployment",
-    },
-    {
-      id: "jamf",
-      label: "JAMF Integration",
-      icon: <Smartphone className="w-4 h-4" />,
-      description: "Apple device management with JAMF Pro integration",
-    },
-    {
-      id: "onboarding",
-      label: "Device Onboarding",
-      icon: <Zap className="w-4 h-4" />,
-      description: "Device enrollment and provisioning workflows",
-    },
-    {
-      id: "healthcare",
-      label: "Healthcare Deployment",
-      icon: <Server className="w-4 h-4" />,
-      description: "Medical device prioritization with HIPAA compliance",
-    },
-    {
-      id: "education",
-      label: "Education Campus",
-      icon: <Server className="w-4 h-4" />,
-      description: "University campus with student BYOD and research networks",
-    },
-    {
-      id: "fortigate-tacacs",
-      label: "FortiGate TACACS+",
-      icon: <Server className="w-4 h-4" />,
-      description: "FortiGate device administration with TACACS+",
-    },
-    {
-      id: "palo-tacacs",
-      label: "Palo Alto TACACS+",
-      icon: <Server className="w-4 h-4" />,
-      description: "Palo Alto device administration with TACACS+",
-    },
-    {
-      id: "cisco-tacacs",
-      label: "Cisco TACACS+",
-      icon: <Server className="w-4 h-4" />,
-      description: "Cisco device administration with TACACS+",
-    },
-    {
-      id: "aruba-tacacs",
-      label: "Aruba TACACS+",
-      icon: <Server className="w-4 h-4" />,
-      description: "Aruba device administration with TACACS+",
-    },
-    {
-      id: "juniper-tacacs",
-      label: "Juniper TACACS+",
-      icon: <Server className="w-4 h-4" />,
-      description: "Juniper device administration with TACACS+",
-    },
-    {
-      id: "palo-userid",
-      label: "Palo Alto User-ID",
-      icon: <Users className="w-4 h-4" />,
-      description: "Palo Alto User-ID integration with syslog",
-    },
-    {
-      id: "fortigate-fsso",
-      label: "FortiGate FSSO",
-      icon: <Users className="w-4 h-4" />,
-      description: "FortiGate FSSO integration with syslog",
-    },
-    {
-      id: "meraki-wireless",
-      label: "Meraki Wireless",
-      icon: <Network className="w-4 h-4" />,
-      description: "Cisco Meraki wireless deep-dive integration",
-    },
-    {
-      id: "mist-wireless",
-      label: "Mist Wireless",
-      icon: <Network className="w-4 h-4" />,
-      description: "Juniper Mist wireless deep-dive integration",
-    },
-  ]
+  useEffect(() => {
+    loadConfiguration()
+    loadSites()
+  }, [])
 
-  const cloudProviders = [
-    { id: "aws", label: "Amazon Web Services", color: "#FF9900" },
-    { id: "azure", label: "Microsoft Azure", color: "#0078D4" },
-    { id: "gcp", label: "Google Cloud Platform", color: "#4285F4" },
-    { id: "onprem", label: "On-Premises", color: "#6B7280" },
-  ]
-
-  const networkVendors = [
-    { id: "cisco", label: "Cisco" },
-    { id: "aruba", label: "Aruba (HPE)" },
-    { id: "juniper", label: "Juniper" },
-    { id: "extreme", label: "Extreme Networks" },
-    { id: "ruckus", label: "Ruckus (CommScope)" },
-    { id: "fortinet", label: "Fortinet" },
-    { id: "paloalto", label: "Palo Alto Networks" },
-    { id: "meraki", label: "Cisco Meraki" },
-    { id: "mist", label: "Juniper Mist" },
-    { id: "ubiquiti", label: "Ubiquiti" },
-    { id: "netgear", label: "Netgear" },
-    { id: "dlink", label: "D-Link" },
-    { id: "tplink", label: "TP-Link" },
-    { id: "huawei", label: "Huawei" },
-    { id: "alcatel", label: "Alcatel-Lucent Enterprise" },
-    { id: "dell", label: "Dell Technologies" },
-    { id: "hpe", label: "HPE Networking" },
-    { id: "brocade", label: "Brocade (Broadcom)" },
-  ]
-
-  const connectivityOptions = [
-    { id: "sdwan", label: "SD-WAN" },
-    { id: "expressroute", label: "Azure Express Route" },
-    { id: "directconnect", label: "AWS Direct Connect" },
-    { id: "mpls", label: "MPLS Network" },
-    { id: "vpn", label: "Site-to-Site VPN" },
-    { id: "internet", label: "Internet Connection" },
-    { id: "fiber", label: "Dedicated Fiber" },
-    { id: "satellite", label: "Satellite Connection" },
-  ]
-
-  const currentView = architectureViews.find((view) => view.id === selectedView) || architectureViews[0]
-
-  // Export Functions
-  const exportDiagram = async (format: "svg" | "png" | "pdf") => {
-    const diagramElement = document.querySelector(".architecture-diagram")
-    if (!diagramElement) return
-
+  const loadConfiguration = async () => {
     try {
-      if (format === "svg") {
-        await exportAsSVG(diagramElement as SVGElement)
-      } else if (format === "png") {
-        await exportAsPNG(diagramElement as SVGElement)
-      } else if (format === "pdf") {
-        await exportAsPDF(diagramElement as SVGElement)
+      const savedConfig = await storage.getArchitectureConfig()
+      if (savedConfig) {
+        setConfig({ ...defaultConfig, ...savedConfig })
       }
     } catch (error) {
-      console.error("Export failed:", error)
+      console.error("Error loading configuration:", error)
     }
   }
 
-  const exportAsSVG = async (svgElement: SVGElement) => {
-    const svgClone = svgElement.cloneNode(true) as SVGElement
-    svgClone.setAttribute("width", "1400")
-    svgClone.setAttribute("height", "1000")
-    svgClone.setAttribute("xmlns", "http://www.w3.org/2000/svg")
-
-    const headerGroup = document.createElementNS("http://www.w3.org/2000/svg", "g")
-    headerGroup.setAttribute("id", "export-header")
-
-    const headerBg = document.createElementNS("http://www.w3.org/2000/svg", "rect")
-    headerBg.setAttribute("x", "0")
-    headerBg.setAttribute("y", "0")
-    headerBg.setAttribute("width", "1400")
-    headerBg.setAttribute("height", "80")
-    headerBg.setAttribute("fill", "#00c8d7")
-    headerGroup.appendChild(headerBg)
-
-    const titleText = document.createElementNS("http://www.w3.org/2000/svg", "text")
-    titleText.setAttribute("x", "700")
-    titleText.setAttribute("y", "35")
-    titleText.setAttribute("text-anchor", "middle")
-    titleText.setAttribute("fill", "white")
-    titleText.setAttribute("font-size", "18")
-    titleText.setAttribute("font-weight", "bold")
-    titleText.textContent = `Portnox NAC Architecture - ${currentView?.label}`
-    headerGroup.appendChild(titleText)
-
-    const dateText = document.createElementNS("http://www.w3.org/2000/svg", "text")
-    dateText.setAttribute("x", "700")
-    dateText.setAttribute("y", "55")
-    dateText.setAttribute("text-anchor", "middle")
-    dateText.setAttribute("fill", "white")
-    dateText.setAttribute("font-size", "12")
-    dateText.textContent = `Generated on ${new Date().toLocaleDateString()}`
-    headerGroup.appendChild(dateText)
-
-    svgClone.insertBefore(headerGroup, svgClone.firstChild)
-
-    const currentViewBox = svgClone.getAttribute("viewBox") || "0 0 1400 800"
-    const viewBoxParts = currentViewBox.split(" ")
-    const newViewBox = `0 0 ${viewBoxParts[2]} ${Number.parseInt(viewBoxParts[3]) + 80}`
-    svgClone.setAttribute("viewBox", newViewBox)
-
-    const existingContent = svgClone.querySelector("g:not(#export-header)")
-    if (existingContent) {
-      existingContent.setAttribute("transform", "translate(0, 80)")
+  const loadSites = async () => {
+    try {
+      const savedSites = await storage.getSites()
+      setSites(savedSites || [])
+    } catch (error) {
+      console.error("Error loading sites:", error)
     }
-
-    const svgData = new XMLSerializer().serializeToString(svgClone)
-    const blob = new Blob([svgData], { type: "image/svg+xml" })
-    downloadFile(blob, `portnox-architecture-${selectedView}-${Date.now()}.svg`)
   }
 
-  const exportAsPNG = async (svgElement: SVGElement) => {
-    const svgClone = svgElement.cloneNode(true) as SVGElement
-    svgClone.setAttribute("width", "1400")
-    svgClone.setAttribute("height", "1000")
-    svgClone.setAttribute("xmlns", "http://www.w3.org/2000/svg")
-
-    const background = document.createElementNS("http://www.w3.org/2000/svg", "rect")
-    background.setAttribute("x", "0")
-    background.setAttribute("y", "0")
-    background.setAttribute("width", "1400")
-    background.setAttribute("height", "1000")
-    background.setAttribute("fill", "white")
-    svgClone.insertBefore(background, svgClone.firstChild)
-
-    const headerGroup = document.createElementNS("http://www.w3.org/2000/svg", "g")
-    headerGroup.setAttribute("id", "export-header")
-
-    const headerBg = document.createElementNS("http://www.w3.org/2000/svg", "rect")
-    headerBg.setAttribute("x", "0")
-    headerBg.setAttribute("y", "0")
-    headerBg.setAttribute("width", "1400")
-    headerBg.setAttribute("height", "80")
-    headerBg.setAttribute("fill", "#00c8d7")
-    headerGroup.appendChild(headerBg)
-
-    const titleText = document.createElementNS("http://www.w3.org/2000/svg", "text")
-    titleText.setAttribute("x", "700")
-    titleText.setAttribute("y", "35")
-    titleText.setAttribute("text-anchor", "middle")
-    titleText.setAttribute("fill", "white")
-    titleText.setAttribute("font-size", "18")
-    titleText.setAttribute("font-weight", "bold")
-    titleText.textContent = `Portnox NAC Architecture - ${currentView?.label}`
-    headerGroup.appendChild(titleText)
-
-    const dateText = document.createElementNS("http://www.w3.org/2000/svg", "text")
-    dateText.setAttribute("x", "700")
-    dateText.setAttribute("y", "55")
-    dateText.setAttribute("text-anchor", "middle")
-    dateText.setAttribute("fill", "white")
-    dateText.setAttribute("font-size", "12")
-    dateText.textContent = `Generated on ${new Date().toLocaleDateString()}`
-    headerGroup.appendChild(dateText)
-
-    svgClone.insertBefore(headerGroup, background.nextSibling)
-
-    const existingContent = Array.from(svgClone.children).find(
-      (child) => child.tagName !== "rect" && child.getAttribute("id") !== "export-header",
-    )
-    if (existingContent) {
-      existingContent.setAttribute("transform", "translate(0, 80)")
+  const saveConfiguration = async () => {
+    try {
+      await storage.saveArchitectureConfig(config)
+      toast({
+        title: "Configuration Saved",
+        description: "Architecture configuration has been saved successfully.",
+      })
+    } catch (error) {
+      console.error("Error saving configuration:", error)
+      toast({
+        title: "Error",
+        description: "Failed to save configuration.",
+        variant: "destructive",
+      })
     }
-
-    const canvas = document.createElement("canvas")
-    const ctx = canvas.getContext("2d")
-    const img = new Image()
-
-    canvas.width = 1400
-    canvas.height = 1000
-
-    const svgData = new XMLSerializer().serializeToString(svgClone)
-    const svgBlob = new Blob([svgData], { type: "image/svg+xml" })
-    const url = URL.createObjectURL(svgBlob)
-
-    return new Promise<void>((resolve, reject) => {
-      img.onload = () => {
-        try {
-          ctx!.drawImage(img, 0, 0, 1400, 1000)
-
-          canvas.toBlob((blob) => {
-            if (blob) {
-              downloadFile(blob, `portnox-architecture-${selectedView}-${Date.now()}.png`)
-              resolve()
-            } else {
-              reject(new Error("Failed to create PNG blob"))
-            }
-          }, "image/png")
-
-          URL.revokeObjectURL(url)
-        } catch (error) {
-          reject(error)
-        }
-      }
-
-      img.onerror = () => {
-        reject(new Error("Failed to load SVG image"))
-      }
-
-      img.src = url
-    })
   }
 
-  const exportAsPDF = async (svgElement: SVGElement) => {
-    await exportAsPNG(svgElement)
+  const updateConfig = (updates: Partial<ArchitectureConfig>) => {
+    setConfig((prev) => ({ ...prev, ...updates }))
   }
 
-  const downloadFile = (blob: Blob, filename: string) => {
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement("a")
-    link.href = url
-    link.download = filename
-    link.click()
-    URL.revokeObjectURL(url)
+  const toggleSection = (section: string) => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }))
   }
+
+  const industryOptions = [
+    { value: "healthcare", label: "Healthcare", icon: Heart },
+    { value: "financial", label: "Financial Services", icon: Landmark },
+    { value: "manufacturing", label: "Manufacturing", icon: Factory },
+    { value: "technology", label: "Technology", icon: Monitor },
+    { value: "retail", label: "Retail", icon: ShoppingBag },
+    { value: "education", label: "Education", icon: GraduationCap },
+    { value: "government", label: "Government", icon: Building },
+  ]
+
+  const deploymentOptions = [
+    { value: "cloud", label: "Cloud Only", description: "Fully cloud-based deployment" },
+    { value: "on_premise", label: "On-Premise", description: "Traditional on-premise deployment" },
+    { value: "hybrid", label: "Hybrid", description: "Combination of cloud and on-premise" },
+  ]
+
+  const vendorOptions = {
+    wired: [
+      { value: "cisco", label: "Cisco" },
+      { value: "aruba", label: "Aruba (HPE)" },
+      { value: "juniper", label: "Juniper" },
+      { value: "extreme", label: "Extreme Networks" },
+      { value: "dell", label: "Dell Networking" },
+    ],
+    wireless: [
+      { value: "cisco", label: "Cisco" },
+      { value: "aruba", label: "Aruba (HPE)" },
+      { value: "ruckus", label: "Ruckus (CommScope)" },
+      { value: "meraki", label: "Cisco Meraki" },
+      { value: "mist", label: "Mist (Juniper)" },
+    ],
+    firewall: [
+      { value: "palo_alto", label: "Palo Alto Networks" },
+      { value: "fortinet", label: "Fortinet" },
+      { value: "checkpoint", label: "Check Point" },
+      { value: "cisco", label: "Cisco ASA/FTD" },
+      { value: "juniper", label: "Juniper SRX" },
+    ],
+  }
+
+  const identityProviders = [
+    { value: "azure_ad", label: "Azure Active Directory" },
+    { value: "active_directory", label: "Active Directory" },
+    { value: "okta", label: "Okta" },
+    { value: "ping", label: "Ping Identity" },
+    { value: "google", label: "Google Workspace" },
+    { value: "aws_sso", label: "AWS SSO" },
+  ]
+
+  const mdmProviders = [
+    { value: "intune", label: "Microsoft Intune" },
+    { value: "jamf", label: "Jamf Pro" },
+    { value: "workspace_one", label: "VMware Workspace ONE" },
+    { value: "mobileiron", label: "MobileIron" },
+    { value: "airwatch", label: "AirWatch" },
+  ]
+
+  const complianceFrameworks = [
+    { value: "hipaa", label: "HIPAA" },
+    { value: "pci_dss", label: "PCI DSS" },
+    { value: "sox", label: "SOX" },
+    { value: "iso_27001", label: "ISO 27001" },
+    { value: "nist", label: "NIST" },
+    { value: "gdpr", label: "GDPR" },
+    { value: "fisma", label: "FISMA" },
+    { value: "fedramp", label: "FedRAMP" },
+  ]
+
+  const architectureViews = [
+    { value: "complete", label: "Complete Architecture", icon: Layers },
+    { value: "authentication", label: "Authentication Flow", icon: Lock },
+    { value: "pki", label: "PKI & Certificate Management", icon: Shield },
+    { value: "policies", label: "Access Control Policies", icon: Settings },
+    { value: "connectivity", label: "Connectivity Options", icon: Network },
+    { value: "intune", label: "Intune Integration", icon: Smartphone },
+    { value: "onboarding", label: "Device Onboarding", icon: Users },
+    { value: "radsec", label: "RADSEC Proxy", icon: Router },
+    { value: "ztna", label: "Zero Trust Network Access", icon: Globe },
+    { value: "guest", label: "Guest Portal", icon: Wifi },
+    { value: "iot", label: "IoT Onboarding", icon: Activity },
+  ]
 
   return (
     <div className="space-y-6">
-      {/* Enhanced Header */}
-      <Card className="border-2 border-blue-200 shadow-lg">
-        <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50">
-          <CardTitle className="flex items-center space-x-3">
-            <GlobeIcon className="h-8 w-8 text-blue-600" />
-            <div>
-              <h1 className="text-2xl font-bold text-blue-900">Zero Trust NAC Architecture Designer</h1>
-              <p className="text-sm text-blue-700 font-normal">
-                Interactive network access control visualization and planning tool
-              </p>
-            </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Architecture View Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="view-select" className="text-sm font-semibold text-gray-700">
-                Architecture View
-              </Label>
-              <Select value={selectedView} onValueChange={setSelectedView}>
-                <SelectTrigger id="view-select" className="h-10">
-                  <SelectValue placeholder="Select view" />
-                </SelectTrigger>
-                <SelectContent className="max-h-80">
-                  {architectureViews.map((view) => (
-                    <SelectItem key={view.id} value={view.id}>
-                      <div className="flex items-center space-x-2">
-                        {view.icon}
-                        <span>{view.label}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Architecture Designer</h2>
+          <p className="text-gray-600">Design and configure your Zero Trust NAC architecture</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={saveConfiguration}>
+            <Save className="h-4 w-4 mr-2" />
+            Save Configuration
+          </Button>
+          <Button variant="outline">
+            <Download className="h-4 w-4 mr-2" />
+            Export
+          </Button>
+        </div>
+      </div>
 
-            {/* Cloud Provider Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="cloud-select" className="text-sm font-semibold text-gray-700">
-                Cloud Provider
-              </Label>
-              <Select value={cloudProvider} onValueChange={setCloudProvider}>
-                <SelectTrigger id="cloud-select" className="h-10">
-                  <SelectValue placeholder="Select provider" />
-                </SelectTrigger>
-                <SelectContent>
-                  {cloudProviders.map((provider) => (
-                    <SelectItem key={provider.id} value={provider.id}>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: provider.color }} />
-                        <span>{provider.label}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Network Vendor Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="vendor-select" className="text-sm font-semibold text-gray-700">
-                Network Vendor
-              </Label>
-              <Select value={networkVendor} onValueChange={setNetworkVendor}>
-                <SelectTrigger id="vendor-select" className="h-10">
-                  <SelectValue placeholder="Select vendor" />
-                </SelectTrigger>
-                <SelectContent className="max-h-60">
-                  {networkVendors.map((vendor) => (
-                    <SelectItem key={vendor.id} value={vendor.id}>
-                      {vendor.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Connectivity Type Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="connectivity-select" className="text-sm font-semibold text-gray-700">
-                Connectivity
-              </Label>
-              <Select value={connectivityType} onValueChange={setConnectivityType}>
-                <SelectTrigger id="connectivity-select" className="h-10">
-                  <SelectValue placeholder="Select connectivity" />
-                </SelectTrigger>
-                <SelectContent>
-                  {connectivityOptions.map((option) => (
-                    <SelectItem key={option.id} value={option.id}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Enhanced Animation Controls */}
-          <div className="mt-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <Label className="text-sm font-semibold text-gray-700">Animation Controls</Label>
-              <div className="flex items-center space-x-2">
-                <Button
-                  variant={isAnimating ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setIsAnimating(!isAnimating)}
-                  className="flex items-center space-x-1"
-                >
-                  {isAnimating ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                  <span>{isAnimating ? "Pause" : "Play"}</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setAnimationSpeed([1])}
-                  className="flex items-center space-x-1"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                  <span>Reset</span>
-                </Button>
-                <Button
-                  variant={showLegend ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setShowLegend(!showLegend)}
-                >
-                  Legend
-                </Button>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              <Label className="text-sm text-gray-600 min-w-fit">Speed: {animationSpeed[0]}x</Label>
-              <Slider
-                value={animationSpeed}
-                onValueChange={setAnimationSpeed}
-                max={3}
-                min={0.5}
-                step={0.5}
-                className="flex-1"
-              />
-            </div>
-          </div>
-
-          {/* Current View Info */}
-          {currentView && (
-            <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
-              <div className="flex items-center space-x-3 mb-2">
-                <div className="p-2 bg-blue-100 rounded-lg">{currentView.icon}</div>
-                <div>
-                  <h3 className="font-bold text-blue-900">{currentView.label}</h3>
-                  <p className="text-sm text-blue-700">{currentView.description}</p>
-                </div>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Main Content Tabs */}
-      <Tabs defaultValue="diagram" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3 h-12">
-          <TabsTrigger value="diagram" className="flex items-center space-x-2">
-            <Cloud className="w-4 h-4" />
-            <span>Interactive Diagram</span>
-          </TabsTrigger>
-          <TabsTrigger value="legend" className="flex items-center space-x-2">
-            <Shield className="w-4 h-4" />
-            <span>Components Legend</span>
-          </TabsTrigger>
-          <TabsTrigger value="policies" className="flex items-center space-x-2">
-            <Settings className="w-4 h-4" />
-            <span>Policy Designer</span>
-          </TabsTrigger>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="configuration">Configuration</TabsTrigger>
+          <TabsTrigger value="diagram">Architecture Diagram</TabsTrigger>
+          <TabsTrigger value="policies">Site Policies</TabsTrigger>
+          <TabsTrigger value="simulation">Simulation</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="diagram" className="space-y-4">
-          <Card className="border-2 border-gray-200 shadow-lg">
-            <CardHeader className="bg-gradient-to-r from-gray-50 to-slate-50">
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center space-x-3">
-                  <div className="p-2 bg-blue-100 rounded-lg">{currentView?.icon}</div>
-                  <div>
-                    <h2 className="text-xl font-bold text-gray-900">{currentView?.label}</h2>
-                    <p className="text-sm text-gray-600 font-normal">{currentView?.description}</p>
-                  </div>
+        {/* Configuration Tab */}
+        <TabsContent value="configuration" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Site Selection */}
+            <Card className="lg:col-span-3">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MapPin className="h-5 w-5" />
+                  Site Selection
                 </CardTitle>
-                <div className="flex items-center space-x-4">
-                  <div className="flex space-x-2">
-                    <Badge variant="outline" className="bg-blue-50 border-blue-200">
-                      {cloudProviders.find((p) => p.id === cloudProvider)?.label}
-                    </Badge>
-                    <Badge variant="outline" className="bg-green-50 border-green-200">
-                      {networkVendors.find((v) => v.id === networkVendor)?.label}
-                    </Badge>
-                    <Badge variant="outline" className="bg-purple-50 border-purple-200">
-                      {connectivityOptions.find((c) => c.id === connectivityType)?.label}
-                    </Badge>
-                  </div>
-                  <div className="flex space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => exportDiagram("svg")}
-                      className="flex items-center space-x-1 hover:bg-blue-50"
-                    >
-                      <Download className="w-4 h-4" />
-                      <span>SVG</span>
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => exportDiagram("png")}
-                      className="flex items-center space-x-1 hover:bg-green-50"
-                    >
-                      <Download className="w-4 h-4" />
-                      <span>PNG</span>
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => exportDiagram("pdf")}
-                      className="flex items-center space-x-1 hover:bg-red-50"
-                    >
-                      <Download className="w-4 h-4" />
-                      <span>PDF</span>
-                    </Button>
-                  </div>
-                </div>
-              </div>
+                <CardDescription>Select a site to configure its architecture</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Select value={config.selectedSite} onValueChange={(value) => updateConfig({ selectedSite: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a site to configure" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="global">Global Configuration</SelectItem>
+                    {sites.map((site) => (
+                      <SelectItem key={site.id} value={site.id}>
+                        {site.name} - {site.location}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </CardContent>
+            </Card>
+
+            {/* Basic Configuration */}
+            <Card>
+              <Collapsible open={expandedSections.basic} onOpenChange={() => toggleSection("basic")}>
+                <CollapsibleTrigger asChild>
+                  <CardHeader className="cursor-pointer hover:bg-gray-50">
+                    <CardTitle className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Building className="h-5 w-5" />
+                        Basic Configuration
+                      </div>
+                      {expandedSections.basic ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                    </CardTitle>
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <Label>Industry</Label>
+                      <Select value={config.industry} onValueChange={(value) => updateConfig({ industry: value })}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {industryOptions.map((option) => {
+                            const IconComponent = option.icon
+                            return (
+                              <SelectItem key={option.value} value={option.value}>
+                                <div className="flex items-center gap-2">
+                                  <IconComponent className="h-4 w-4" />
+                                  {option.label}
+                                </div>
+                              </SelectItem>
+                            )
+                          })}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label>Deployment Model</Label>
+                      <Select value={config.deployment} onValueChange={(value) => updateConfig({ deployment: value })}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {deploymentOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              <div>
+                                <div className="font-medium">{option.label}</div>
+                                <div className="text-sm text-gray-500">{option.description}</div>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label>Connectivity Options</Label>
+                      <div className="space-y-2 mt-2">
+                        {[
+                          { value: "wired", label: "Wired Network" },
+                          { value: "wireless", label: "Wireless Network" },
+                          { value: "vpn", label: "VPN Access" },
+                          { value: "remote", label: "Remote Access" },
+                        ].map((option) => (
+                          <div key={option.value} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={option.value}
+                              checked={config.connectivity.includes(option.value)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  updateConfig({ connectivity: [...config.connectivity, option.value] })
+                                } else {
+                                  updateConfig({ connectivity: config.connectivity.filter((c) => c !== option.value) })
+                                }
+                              }}
+                            />
+                            <Label htmlFor={option.value}>{option.label}</Label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </CollapsibleContent>
+              </Collapsible>
+            </Card>
+
+            {/* Infrastructure Configuration */}
+            <Card>
+              <Collapsible open={expandedSections.infrastructure} onOpenChange={() => toggleSection("infrastructure")}>
+                <CollapsibleTrigger asChild>
+                  <CardHeader className="cursor-pointer hover:bg-gray-50">
+                    <CardTitle className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Server className="h-5 w-5" />
+                        Infrastructure
+                      </div>
+                      {expandedSections.infrastructure ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                    </CardTitle>
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <Label>Wired Network Vendor</Label>
+                      <Select
+                        value={config.wiredVendor}
+                        onValueChange={(value) => updateConfig({ wiredVendor: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {vendorOptions.wired.map((vendor) => (
+                            <SelectItem key={vendor.value} value={vendor.value}>
+                              {vendor.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label>Wireless Network Vendor</Label>
+                      <Select
+                        value={config.wirelessVendor}
+                        onValueChange={(value) => updateConfig({ wirelessVendor: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {vendorOptions.wireless.map((vendor) => (
+                            <SelectItem key={vendor.value} value={vendor.value}>
+                              {vendor.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label>Firewall Vendor</Label>
+                      <Select
+                        value={config.firewallVendor}
+                        onValueChange={(value) => updateConfig({ firewallVendor: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {vendorOptions.firewall.map((vendor) => (
+                            <SelectItem key={vendor.value} value={vendor.value}>
+                              {vendor.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label>RADIUS Type</Label>
+                      <Select value={config.radiusType} onValueChange={(value) => updateConfig({ radiusType: value })}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="cloud">Portnox Cloud RADIUS</SelectItem>
+                          <SelectItem value="on_premise">On-Premise RADIUS</SelectItem>
+                          <SelectItem value="proxy">RADSEC Proxy</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label>Device Administration</Label>
+                      <Select
+                        value={config.deviceAdmin}
+                        onValueChange={(value) => updateConfig({ deviceAdmin: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="radius">RADIUS</SelectItem>
+                          <SelectItem value="tacacs">TACACS+</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </CardContent>
+                </CollapsibleContent>
+              </Collapsible>
+            </Card>
+
+            {/* Identity & Authentication */}
+            <Card>
+              <Collapsible open={expandedSections.identity} onOpenChange={() => toggleSection("identity")}>
+                <CollapsibleTrigger asChild>
+                  <CardHeader className="cursor-pointer hover:bg-gray-50">
+                    <CardTitle className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Users className="h-5 w-5" />
+                        Identity & Authentication
+                      </div>
+                      {expandedSections.identity ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                    </CardTitle>
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <Label>Identity Providers</Label>
+                      <div className="space-y-2 mt-2">
+                        {identityProviders.map((provider) => (
+                          <div key={provider.value} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={provider.value}
+                              checked={config.identityProvider.includes(provider.value)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  updateConfig({ identityProvider: [...config.identityProvider, provider.value] })
+                                } else {
+                                  updateConfig({
+                                    identityProvider: config.identityProvider.filter((p) => p !== provider.value),
+                                  })
+                                }
+                              }}
+                            />
+                            <Label htmlFor={provider.value}>{provider.label}</Label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label>MDM Providers</Label>
+                      <div className="space-y-2 mt-2">
+                        {mdmProviders.map((provider) => (
+                          <div key={provider.value} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={provider.value}
+                              checked={config.mdmProvider.includes(provider.value)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  updateConfig({ mdmProvider: [...config.mdmProvider, provider.value] })
+                                } else {
+                                  updateConfig({ mdmProvider: config.mdmProvider.filter((p) => p !== provider.value) })
+                                }
+                              }}
+                            />
+                            <Label htmlFor={provider.value}>{provider.label}</Label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label>Authentication Types</Label>
+                      <div className="space-y-2 mt-2">
+                        {[
+                          { value: "802.1x", label: "802.1X Certificate" },
+                          { value: "mac_auth", label: "MAC Authentication" },
+                          { value: "web_auth", label: "Web Authentication" },
+                          { value: "captive_portal", label: "Captive Portal" },
+                        ].map((auth) => (
+                          <div key={auth.value} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={auth.value}
+                              checked={config.authTypes.includes(auth.value)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  updateConfig({ authTypes: [...config.authTypes, auth.value] })
+                                } else {
+                                  updateConfig({ authTypes: config.authTypes.filter((a) => a !== auth.value) })
+                                }
+                              }}
+                            />
+                            <Label htmlFor={auth.value}>{auth.label}</Label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </CollapsibleContent>
+              </Collapsible>
+            </Card>
+
+            {/* Security & Compliance */}
+            <Card className="lg:col-span-2">
+              <Collapsible open={expandedSections.security} onOpenChange={() => toggleSection("security")}>
+                <CollapsibleTrigger asChild>
+                  <CardHeader className="cursor-pointer hover:bg-gray-50">
+                    <CardTitle className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Shield className="h-5 w-5" />
+                        Security & Compliance
+                      </div>
+                      {expandedSections.security ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                    </CardTitle>
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label>Compliance Frameworks</Label>
+                        <div className="space-y-2 mt-2">
+                          {complianceFrameworks.map((framework) => (
+                            <div key={framework.value} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={framework.value}
+                                checked={config.complianceFrameworks.includes(framework.value)}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    updateConfig({
+                                      complianceFrameworks: [...config.complianceFrameworks, framework.value],
+                                    })
+                                  } else {
+                                    updateConfig({
+                                      complianceFrameworks: config.complianceFrameworks.filter(
+                                        (f) => f !== framework.value,
+                                      ),
+                                    })
+                                  }
+                                }}
+                              />
+                              <Label htmlFor={framework.value}>{framework.label}</Label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label>Security Features</Label>
+                        <div className="space-y-2 mt-2">
+                          {[
+                            { value: "encryption", label: "End-to-End Encryption" },
+                            { value: "mfa", label: "Multi-Factor Authentication" },
+                            { value: "threat_detection", label: "Threat Detection" },
+                            { value: "behavioral_analysis", label: "Behavioral Analysis" },
+                            { value: "device_profiling", label: "Device Profiling" },
+                            { value: "risk_scoring", label: "Risk Scoring" },
+                          ].map((feature) => (
+                            <div key={feature.value} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={feature.value}
+                                checked={config.securityFeatures.includes(feature.value)}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    updateConfig({ securityFeatures: [...config.securityFeatures, feature.value] })
+                                  } else {
+                                    updateConfig({
+                                      securityFeatures: config.securityFeatures.filter((f) => f !== feature.value),
+                                    })
+                                  }
+                                }}
+                              />
+                              <Label htmlFor={feature.value}>{feature.label}</Label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </CollapsibleContent>
+              </Collapsible>
+            </Card>
+
+            {/* Features & Capabilities */}
+            <Card>
+              <Collapsible open={expandedSections.features} onOpenChange={() => toggleSection("features")}>
+                <CollapsibleTrigger asChild>
+                  <CardHeader className="cursor-pointer hover:bg-gray-50">
+                    <CardTitle className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Zap className="h-5 w-5" />
+                        Features & Capabilities
+                      </div>
+                      {expandedSections.features ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                    </CardTitle>
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="network-segmentation">Network Segmentation</Label>
+                        <Switch
+                          id="network-segmentation"
+                          checked={config.networkSegmentation}
+                          onCheckedChange={(checked) => updateConfig({ networkSegmentation: checked })}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="guest-access">Guest Access</Label>
+                        <Switch
+                          id="guest-access"
+                          checked={config.guestAccess}
+                          onCheckedChange={(checked) => updateConfig({ guestAccess: checked })}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="iot-support">IoT Device Support</Label>
+                        <Switch
+                          id="iot-support"
+                          checked={config.iotSupport}
+                          onCheckedChange={(checked) => updateConfig({ iotSupport: checked })}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="cloud-integration">Cloud Integration</Label>
+                        <Switch
+                          id="cloud-integration"
+                          checked={config.cloudIntegration}
+                          onCheckedChange={(checked) => updateConfig({ cloudIntegration: checked })}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="on-premise-integration">On-Premise Integration</Label>
+                        <Switch
+                          id="on-premise-integration"
+                          checked={config.onPremiseIntegration}
+                          onCheckedChange={(checked) => updateConfig({ onPremiseIntegration: checked })}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="hybrid-deployment">Hybrid Deployment</Label>
+                        <Switch
+                          id="hybrid-deployment"
+                          checked={config.hybridDeployment}
+                          onCheckedChange={(checked) => updateConfig({ hybridDeployment: checked })}
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </CollapsibleContent>
+              </Collapsible>
+            </Card>
+
+            {/* Visualization Settings */}
+            <Card className="lg:col-span-2">
+              <Collapsible open={expandedSections.visualization} onOpenChange={() => toggleSection("visualization")}>
+                <CollapsibleTrigger asChild>
+                  <CardHeader className="cursor-pointer hover:bg-gray-50">
+                    <CardTitle className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Eye className="h-5 w-5" />
+                        Visualization Settings
+                      </div>
+                      {expandedSections.visualization ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                    </CardTitle>
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="animations">Enable Animations</Label>
+                          <Switch
+                            id="animations"
+                            checked={config.animations}
+                            onCheckedChange={(checked) => updateConfig({ animations: checked })}
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="show-metrics">Show Metrics</Label>
+                          <Switch
+                            id="show-metrics"
+                            checked={config.showMetrics}
+                            onCheckedChange={(checked) => updateConfig({ showMetrics: checked })}
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="show-connections">Show Connections</Label>
+                          <Switch
+                            id="show-connections"
+                            checked={config.showConnections}
+                            onCheckedChange={(checked) => updateConfig({ showConnections: checked })}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div>
+                          <Label>Animation Speed: {config.animationSpeed}%</Label>
+                          <Slider
+                            value={[config.animationSpeed]}
+                            onValueChange={([value]) => updateConfig({ animationSpeed: value })}
+                            max={100}
+                            min={10}
+                            step={10}
+                            className="mt-2"
+                          />
+                        </div>
+
+                        <div>
+                          <Label>Zoom Level: {config.zoomLevel}%</Label>
+                          <Slider
+                            value={[config.zoomLevel]}
+                            onValueChange={([value]) => updateConfig({ zoomLevel: value })}
+                            max={200}
+                            min={50}
+                            step={10}
+                            className="mt-2"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    <div>
+                      <Label>Architecture View</Label>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+                        {architectureViews.map((view) => {
+                          const IconComponent = view.icon
+                          return (
+                            <Button
+                              key={view.value}
+                              variant={config.selectedView === view.value ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => updateConfig({ selectedView: view.value })}
+                              className="justify-start h-auto p-3"
+                            >
+                              <div className="flex items-center gap-2">
+                                <IconComponent className="h-4 w-4" />
+                                <span className="text-xs">{view.label}</span>
+                              </div>
+                            </Button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  </CardContent>
+                </CollapsibleContent>
+              </Collapsible>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Architecture Diagram Tab */}
+        <TabsContent value="diagram">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Network className="h-5 w-5" />
+                Interactive Architecture Diagram
+              </CardTitle>
+              <CardDescription>Visualize and interact with your Zero Trust NAC architecture</CardDescription>
             </CardHeader>
-            <CardContent className="p-0">
-              <InteractiveDiagram
-                view={selectedView}
-                config={{
-                  cloudProvider,
-                  networkVendor,
-                  connectivityType,
-                  identityProvider: "azure-ad",
-                  mdmProvider: "intune",
-                  firewallVendor: "palo-alto",
-                  radiusType: "cisco-ise",
-                  pkiProvider: "microsoft-ca",
-                  wirelessVendor: "cisco-meraki",
-                  deviceTypes: ["windows", "mac", "ios", "android", "iot", "printers", "medical"],
-                  byodSupport: true,
-                  guestPortal: true,
-                }}
-                isAnimating={isAnimating}
-                animationSpeed={animationSpeed[0]}
-                showLegend={showLegend}
-                className="min-h-[600px]"
-              />
+            <CardContent>
+              <InteractiveDiagram config={config} />
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="legend" className="space-y-4">
-          <ArchitectureLegend currentView={selectedView} />
+        {/* Site Policies Tab */}
+        <TabsContent value="policies">
+          <PolicyManagement />
         </TabsContent>
 
-        <TabsContent value="policies" className="space-y-4">
-          <PolicyEditor />
+        {/* Simulation Tab */}
+        <TabsContent value="simulation">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                Architecture Simulation
+              </CardTitle>
+              <CardDescription>Simulate network traffic and policy enforcement</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-12">
+                <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Simulation Coming Soon</h3>
+                <p className="text-gray-600">
+                  Advanced network simulation and policy testing capabilities will be available in the next release.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

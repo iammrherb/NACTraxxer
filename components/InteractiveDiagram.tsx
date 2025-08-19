@@ -1,54 +1,68 @@
 "use client"
 
-import type React from "react"
-
-import { useState, useEffect, useRef } from "react"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { useState, useEffect, useRef, useCallback } from "react"
 import {
-  Network,
-  Shield,
-  Key,
-  Lock,
+  Settings,
+  Activity,
+  BarChart3,
+  Zap,
+  Target,
   Wifi,
-  Cloud,
-  Smartphone,
-  Monitor,
-  Router,
+  Shield,
+  Lock,
+  Users,
   Server,
   Database,
-  Users,
+  Globe,
+  Smartphone,
+  Monitor,
+  Network,
+  Router,
+  Cloud,
   AlertTriangle,
   CheckCircle,
-  Globe,
-  Building,
+  XCircle,
+  TrendingUp,
   Cpu,
-  Activity,
+  HardDrive,
+  MemoryStick,
+  Signal,
+  Key,
   Eye,
-  Settings,
-  Play,
-  Pause,
-  RotateCcw,
-  Layers,
-  Target,
-  FileText,
+  Building,
+  Search,
+  GitBranch,
+  Layers3,
+  Radio,
+  Satellite,
+  Cable,
+  Workflow,
+  FileKey,
   UserCheck,
   ShieldCheck,
+  Fingerprint,
+  Scan,
+  Radar,
+  Download,
+  Save,
+  ZoomIn,
+  ZoomOut,
+  Edit,
+  MousePointer,
+  Hand,
+  Link,
+  Maximize,
+  Minimize,
+  Layers,
 } from "lucide-react"
-
-interface InteractiveDiagramProps {
-  view: string
-  vendor: string
-  idp: string
-  mdm: string
-  showLabels: boolean
-  showConnections: boolean
-  animationSpeed: number
-  isAnimating: boolean
-  zoomLevel: number
-  theme: string
-  siteId?: string
-}
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Slider } from "@/components/ui/slider"
+import { Switch } from "@/components/ui/switch"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 interface DiagramComponent {
   id: string
@@ -58,2603 +72,2882 @@ interface DiagramComponent {
   y: number
   width: number
   height: number
-  icon: React.ReactNode
+  status: "online" | "offline" | "warning" | "error" | "maintenance"
+  category: "cloud" | "network" | "security" | "endpoint" | "identity" | "management" | "application" | "connectivity"
+  metrics?: {
+    cpu?: number
+    memory?: number
+    network?: number
+    connections?: number
+    throughput?: string
+    latency?: number
+    uptime?: number
+    temperature?: number
+    powerUsage?: number
+    users?: number
+    sessions?: number
+    requests?: number
+    bandwidth?: string
+    packetLoss?: number
+    jitter?: number
+    availability?: number
+    responseTime?: number
+    errorRate?: number
+    securityScore?: number
+    complianceScore?: number
+    riskScore?: number
+    threatLevel?: string
+    vulnerabilities?: number
+    patches?: number
+    certificates?: number
+    policies?: number
+    violations?: number
+    incidents?: number
+  }
+  connections: string[]
+  icon: string
   color: string
-  status?: "active" | "inactive" | "warning" | "error"
-  connections?: string[]
-  details?: Record<string, any>
+  description: string
   vendor?: string
   model?: string
   version?: string
+  location?: string
+  ipAddress?: string
+  macAddress?: string
+  serialNumber?: string
+  firmwareVersion?: string
+  lastUpdate?: string
+  supportContract?: string
+  warrantyExpiry?: string
+  isDragging?: boolean
+  isSelected?: boolean
+  isHovered?: boolean
+  ports?: Array<{
+    id: string
+    name: string
+    type: "ethernet" | "fiber" | "wireless" | "usb" | "serial" | "console" | "management"
+    status: "active" | "inactive" | "error" | "disabled"
+    speed?: string
+    duplex?: "full" | "half"
+    vlan?: string
+    description?: string
+  }>
+  certificates?: Array<{
+    name: string
+    issuer: string
+    subject: string
+    expiry: string
+    status: "valid" | "expired" | "expiring" | "revoked"
+    keySize?: string
+    algorithm?: string
+    serialNumber?: string
+  }>
+  policies?: string[]
+  compliance?: string[]
+  applications?: string[]
+  authentication?: string[]
+  userGroups?: string[]
+  accessPolicies?: string[]
+  networkSegments?: string[]
+  vlans?: Array<{
+    id: string
+    name: string
+    subnet: string
+    gateway: string
+    dhcp: boolean
+    description: string
+  }>
+  routes?: Array<{
+    destination: string
+    gateway: string
+    metric: number
+    interface: string
+  }>
+  securityFeatures?: string[]
+  monitoringTools?: string[]
+  backupStatus?: {
+    lastBackup: string
+    status: "success" | "failed" | "in_progress"
+    size: string
+    location: string
+  }
+  highAvailability?: {
+    enabled: boolean
+    partner?: string
+    syncStatus?: "synchronized" | "out_of_sync" | "failed"
+    failoverTime?: string
+  }
+  performanceMetrics?: {
+    cpu: Array<{ timestamp: string; value: number }>
+    memory: Array<{ timestamp: string; value: number }>
+    network: Array<{ timestamp: string; value: number }>
+  }
 }
 
 interface Connection {
+  id: string
   from: string
   to: string
-  type: "data" | "control" | "auth" | "policy" | "radius" | "ldap" | "saml" | "tacacs" | "https" | "syslog"
-  protocol?: string
-  animated?: boolean
-  bidirectional?: boolean
-  encrypted?: boolean
+  type:
+    | "ethernet"
+    | "fiber"
+    | "wireless"
+    | "vpn"
+    | "radius"
+    | "api"
+    | "tunnel"
+    | "saml"
+    | "oidc"
+    | "https"
+    | "tacacs"
+    | "radsec"
+    | "expressroute"
+    | "sdwan"
+    | "mpls"
+    | "internet"
+    | "leased_line"
+    | "satellite"
+  status: "active" | "inactive" | "error" | "congested" | "degraded"
+  protocol: string
+  port?: number
+  throughput?: string
+  latency?: number
+  encryption?: boolean
   bandwidth?: string
-  latency?: string
+  packetLoss?: number
+  jitter?: number
+  label?: string
+  bidirectional?: boolean
+  redundancy?: boolean
+  priority?: "low" | "medium" | "high" | "critical"
+  qos?: string
+  sla?: {
+    uptime: number
+    latency: number
+    bandwidth: string
+    support: string
+  }
+  cost?: {
+    monthly: number
+    setup: number
+    currency: string
+  }
+  provider?: string
+  circuitId?: string
+  contractExpiry?: string
+  isSelected?: boolean
+  isHovered?: boolean
+  pathData?: string
+  animationOffset?: number
 }
 
-const views = {
-  complete: { name: "Complete Architecture", icon: <Layers className="h-4 w-4" /> },
-  authentication: { name: "Authentication Flow", icon: <Shield className="h-4 w-4" /> },
-  pki: { name: "PKI & Certificate Management", icon: <Lock className="h-4 w-4" /> },
-  policies: { name: "Access Control Policies", icon: <ShieldCheck className="h-4 w-4" /> },
-  connectivity: { name: "Connectivity Options", icon: <Network className="h-4 w-4" /> },
-  intune: { name: "Intune Integration", icon: <Cloud className="h-4 w-4" /> },
-  onboarding: { name: "Device Onboarding", icon: <Eye className="h-4 w-4" /> },
-  "risk-assessment": { name: "Risk Assessment", icon: <AlertTriangle className="h-4 w-4" /> },
-  "guest-portal": { name: "Guest & Captive Portal", icon: <Globe className="h-4 w-4" /> },
-  "iot-onboarding": { name: "IoT Device Onboarding", icon: <Cpu className="h-4 w-4" /> },
-  "radsec-proxy": { name: "RADSEC Proxy Architecture", icon: <Server className="h-4 w-4" /> },
-  tacacs: { name: "TACACS+ Integration", icon: <Database className="h-4 w-4" /> },
+interface ArchitectureConfig {
+  selectedSite?: string
+  industry: string
+  deployment: string
+  connectivity: string[]
+  wiredVendor: string
+  wirelessVendor: string
+  firewallVendor: string
+  identityProvider: string[]
+  mdmProvider: string[]
+  radiusType: string
+  deviceAdmin: string
+  authTypes: string[]
+  deviceTypes: string[]
+  complianceFrameworks: string[]
+  securityFeatures: string[]
+  networkSegmentation: boolean
+  guestAccess: boolean
+  iotSupport: boolean
+  cloudIntegration: boolean
+  onPremiseIntegration: boolean
+  hybridDeployment: boolean
+  animations: boolean
+  showMetrics: boolean
+  showConnections: boolean
+  animationSpeed: number
+  zoomLevel: number
+  selectedView: string
+  customColors: {
+    primary: string
+    secondary: string
+    accent: string
+  }
+  connectivityOptions?: {
+    expressRoute: boolean
+    sdwan: boolean
+    vpn: boolean
+    mpls: boolean
+    internet: boolean
+    leasedLine: boolean
+    satellite: boolean
+  }
+  ztnaConfiguration?: {
+    enabled: boolean
+    provider: string
+    applications: string[]
+    policies: string[]
+    userGroups: string[]
+    deviceTrust: boolean
+    continuousVerification: boolean
+    microsegmentation: boolean
+  }
+  tacacsConfiguration?: {
+    enabled: boolean
+    servers: Array<{
+      id: string
+      address: string
+      port: number
+      sharedSecret: string
+      timeout: number
+      retries: number
+    }>
+    commandAuthorization: boolean
+    commandAccounting: boolean
+    privilegeLevels: number[]
+  }
+  radsecConfiguration?: {
+    enabled: boolean
+    proxies: Array<{
+      id: string
+      address: string
+      port: number
+      certificate: string
+      cacheTimeout: number
+      failover: boolean
+    }>
+    loadBalancing: boolean
+    highAvailability: boolean
+  }
 }
 
-// Vendor-specific configurations
-const vendorConfigs = {
-  cisco: {
-    name: "Cisco Systems",
-    color: "#1BA0D7",
-    switch: { model: "Catalyst 9300-48P", firmware: "17.09.04", ports: 48, poe: "740W" },
-    wireless: { controller: "Catalyst 9800-CL", ap: "Catalyst 9130AXI", firmware: "17.09.04", aps: 150 },
-    firewall: { model: "ASA 5516-X", firmware: "9.19(1)", throughput: "1 Gbps" },
-    protocols: ["802.1X", "RADIUS", "TACACS+", "SNMP"],
-  },
-  aruba: {
-    name: "Aruba (HPE)",
-    color: "#FF6900",
-    switch: { model: "CX 6300-48G", firmware: "10.10.1020", ports: 48, poe: "740W" },
-    wireless: { controller: "7030", ap: "AP-635", firmware: "10.4.0.3", aps: 120 },
-    firewall: { model: "ClearPass", firmware: "6.11.2", throughput: "N/A" },
-    protocols: ["802.1X", "RADIUS", "ClearPass Policy Manager"],
-  },
-  juniper: {
-    name: "Juniper Networks",
-    color: "#84BD00",
-    switch: { model: "EX4300-48P", firmware: "21.4R2", ports: 48, poe: "740W" },
-    wireless: { controller: "Mist Cloud", ap: "AP63", firmware: "0.16.31245", aps: 180 },
-    firewall: { model: "SRX1500", firmware: "21.2R3", throughput: "1.5 Gbps" },
-    protocols: ["802.1X", "RADIUS", "TACACS+", "Mist AI"],
-  },
-  meraki: {
-    name: "Cisco Meraki",
-    color: "#1BA0D7",
-    switch: { model: "MS225-48", firmware: "16.16", ports: 48, poe: "740W" },
-    wireless: { controller: "Cloud Dashboard", ap: "MR46", firmware: "29.6.1", aps: 100 },
-    firewall: { model: "MX250", firmware: "18.107.2", throughput: "1 Gbps" },
-    protocols: ["802.1X", "RADIUS", "Cloud Management"],
-  },
-  mist: {
-    name: "Juniper Mist",
-    color: "#84BD00",
-    switch: { model: "EX4300-48P", firmware: "21.4R2", ports: 48, poe: "740W" },
-    wireless: { controller: "Mist Cloud", ap: "AP43", firmware: "0.16.31245", aps: 200 },
-    firewall: { model: "SRX1500", firmware: "21.2R3", throughput: "1.5 Gbps" },
-    protocols: ["802.1X", "RADIUS", "AI-driven RF", "Marvis VNA"],
-  },
-  ruckus: {
-    name: "Ruckus (CommScope)",
-    color: "#FF6B35",
-    switch: { model: "ICX 7150-48P", firmware: "09.0.10", ports: 48, poe: "740W" },
-    wireless: { controller: "SmartZone 144", ap: "R750", firmware: "104.1.0.0.213", aps: 130 },
-    firewall: { model: "N/A", firmware: "N/A", throughput: "N/A" },
-    protocols: ["802.1X", "RADIUS", "SmartZone", "BeamFlex+"],
-  },
-  ubiquiti: {
-    name: "Ubiquiti Networks",
-    color: "#0559C4",
-    switch: { model: "Dream Machine Pro", firmware: "7.4.162", ports: 8, poe: "60W" },
-    wireless: { controller: "UniFi Controller", ap: "U6 Enterprise", firmware: "7.4.162", aps: 80 },
-    firewall: { model: "UDM Pro", firmware: "7.4.162", throughput: "3.5 Gbps" },
-    protocols: ["802.1X", "RADIUS", "UniFi Controller"],
-  },
+const COMPONENT_ICONS = {
+  cloud: Cloud,
+  server: Server,
+  network: Network,
+  router: Router,
+  wifi: Wifi,
+  shield: Shield,
+  lock: Lock,
+  users: Users,
+  smartphone: Smartphone,
+  monitor: Monitor,
+  database: Database,
+  globe: Globe,
+  activity: Activity,
+  settings: Settings,
+  "check-circle": CheckCircle,
+  "alert-triangle": AlertTriangle,
+  "x-circle": XCircle,
+  zap: Zap,
+  target: Target,
+  "bar-chart-3": BarChart3,
+  "trending-up": TrendingUp,
+  cpu: Cpu,
+  "hard-drive": HardDrive,
+  "memory-stick": MemoryStick,
+  signal: Signal,
+  key: Key,
+  eye: Eye,
+  building: Building,
+  search: Search,
+  "git-branch": GitBranch,
+  layers3: Layers3,
+  radio: Radio,
+  satellite: Satellite,
+  cable: Cable,
+  workflow: Workflow,
+  "file-key": FileKey,
+  "user-check": UserCheck,
+  "shield-check": ShieldCheck,
+  fingerprint: Fingerprint,
+  scan: Scan,
+  radar: Radar,
 }
 
-// IDP configurations
-const idpConfigs = {
-  "azure-ad": {
-    name: "Azure Active Directory",
-    color: "#0078D4",
-    icon: <Cloud className="h-6 w-6" />,
-    features: ["SSO", "MFA", "Conditional Access", "Identity Protection"],
-    protocols: ["SAML 2.0", "OAuth 2.0", "OpenID Connect"],
-  },
-  okta: {
-    name: "Okta",
-    color: "#007DC1",
-    icon: <Shield className="h-6 w-6" />,
-    features: ["Universal Directory", "Adaptive MFA", "Lifecycle Management"],
-    protocols: ["SAML 2.0", "OAuth 2.0", "OpenID Connect", "LDAP"],
-  },
-  ping: {
-    name: "PingIdentity",
-    color: "#FF6B35",
-    icon: <Key className="h-6 w-6" />,
-    features: ["PingFederate", "PingAccess", "PingDirectory"],
-    protocols: ["SAML 2.0", "OAuth 2.0", "OpenID Connect", "WS-Federation"],
-  },
-  ad: {
-    name: "Active Directory",
-    color: "#0078D4",
-    icon: <Building className="h-6 w-6" />,
-    features: ["Domain Services", "Group Policy", "Certificate Services"],
-    protocols: ["LDAP", "Kerberos", "NTLM"],
-  },
-  ldap: {
-    name: "LDAP Directory",
-    color: "#6B7280",
-    icon: <Database className="h-6 w-6" />,
-    features: ["Directory Services", "User Authentication", "Group Management"],
-    protocols: ["LDAP", "LDAPS"],
-  },
+const VENDOR_COLORS = {
+  cisco: "#1BA0D7",
+  aruba: "#FF6900",
+  juniper: "#84BD00",
+  fortinet: "#EE3124",
+  palo_alto: "#FA582D",
+  checkpoint: "#FF6B35",
+  microsoft: "#00BCF2",
+  google: "#4285F4",
+  amazon: "#FF9900",
+  vmware: "#607078",
+  okta: "#007DC1",
+  ping: "#0066CC",
+  azure: "#0078D4",
+  aws: "#FF9900",
+  portnox: "#3B82F6",
+  extreme: "#00A651",
+  ruckus: "#FF6B00",
+  mist: "#41B883",
+  meraki: "#58C4DC",
+  f5: "#FF6600",
+  citrix: "#FFB900",
+  zscaler: "#0066CC",
+  cloudflare: "#F38020",
+  akamai: "#0096D6",
 }
 
-// MDM configurations
-const mdmConfigs = {
-  intune: {
-    name: "Microsoft Intune",
-    color: "#00BCF2",
-    icon: <Cloud className="h-6 w-6" />,
-    platforms: ["Windows", "iOS", "Android", "macOS"],
-    features: ["Device Compliance", "App Protection", "Conditional Access"],
-  },
-  jamf: {
-    name: "Jamf Pro",
-    color: "#4A90E2",
-    icon: <Monitor className="h-6 w-6" />,
-    platforms: ["macOS", "iOS", "iPadOS", "tvOS"],
-    features: ["Device Enrollment", "App Management", "Security Policies"],
-  },
-  "workspace-one": {
-    name: "VMware Workspace ONE",
-    color: "#0091DA",
-    icon: <Server className="h-6 w-6" />,
-    platforms: ["Windows", "iOS", "Android", "macOS", "Chrome OS"],
-    features: ["Unified Endpoint Management", "Digital Workspace", "Zero Trust"],
-  },
-  mobileiron: {
-    name: "Ivanti MobileIron",
-    color: "#E31837",
-    icon: <Smartphone className="h-6 w-6" />,
-    platforms: ["iOS", "Android", "Windows", "macOS"],
-    features: ["EMM", "UEM", "Zero Sign-On", "Threat Defense"],
-  },
+const STATUS_COLORS = {
+  online: "#10B981",
+  offline: "#6B7280",
+  warning: "#F59E0B",
+  error: "#EF4444",
+  maintenance: "#8B5CF6",
 }
 
-export default function InteractiveDiagram({
-  view,
-  vendor,
-  idp,
-  mdm,
-  showLabels,
-  showConnections,
-  animationSpeed,
-  isAnimating,
-  zoomLevel,
-  theme,
-  siteId,
-}: InteractiveDiagramProps) {
-  const [selectedComponent, setSelectedComponent] = useState<string | null>(null)
-  const [hoveredComponent, setHoveredComponent] = useState<string | null>(null)
+const CONNECTION_COLORS = {
+  ethernet: "#9CA3AF",
+  fiber: "#64748B",
+  wireless: "#A78BFA",
+  vpn: "#F472B6",
+  radius: "#F87171",
+  api: "#6EE7B7",
+  tunnel: "#FBBF24",
+  saml: "#60A5FA",
+  oidc: "#38BDF8",
+  https: "#A3E635",
+  tacacs: "#FB7185",
+  radsec: "#9333EA",
+  expressroute: "#0EA5E9",
+  sdwan: "#C084FC",
+  mpls: "#E879F9",
+  internet: "#6366F1",
+  leased_line: "#F43F5E",
+  satellite: "#4ADE80",
+}
+
+export default function InteractiveDiagram({ config }: { config: ArchitectureConfig }) {
+  const svgRef = useRef<SVGSVGElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
   const [components, setComponents] = useState<DiagramComponent[]>([])
   const [connections, setConnections] = useState<Connection[]>([])
-  const svgRef = useRef<SVGSVGElement>(null)
-  const currentView = views[view as keyof typeof views]
-  const [isAnimationActive, setIsAnimationActive] = useState(isAnimating)
+  const [selectedComponent, setSelectedComponent] = useState<DiagramComponent | null>(null)
+  const [selectedConnection, setSelectedConnection] = useState<Connection | null>(null)
+  const [hoveredComponent, setHoveredComponent] = useState<string | null>(null)
+  const [hoveredConnection, setHoveredConnection] = useState<string | null>(null)
+  const [animationActive, setAnimationActive] = useState(true)
+  const [zoomLevel, setZoomLevel] = useState(100)
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 })
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  const [draggedComponent, setDraggedComponent] = useState<string | null>(null)
+  const [showMetrics, setShowMetrics] = useState(true)
+  const [showConnections, setShowConnections] = useState(true)
+  const [showLabels, setShowLabels] = useState(true)
+  const [showPorts, setShowPorts] = useState(false)
+  const [showCertificates, setShowCertificates] = useState(false)
+  const [animationSpeed, setAnimationSpeed] = useState(50)
+  const [dataFlowAnimation, setDataFlowAnimation] = useState(0)
+  const [metricsUpdateInterval, setMetricsUpdateInterval] = useState<NodeJS.Timeout | null>(null)
+  const [interactionMode, setInteractionMode] = useState<"select" | "pan" | "connect" | "edit">("select")
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const [showGrid, setShowGrid] = useState(true)
+  const [snapToGrid, setSnapToGrid] = useState(true)
+  const [gridSize, setGridSize] = useState(20)
+  const [autoLayout, setAutoLayout] = useState(false)
+  const [showLegend, setShowLegend] = useState(true)
+  const [exportFormat, setExportFormat] = useState<"png" | "svg" | "pdf">("png")
+  const [showControlPanel, setShowControlPanel] = useState(true)
 
-  const vendorConfig = vendorConfigs[vendor as keyof typeof vendorConfigs] || vendorConfigs.cisco
-  const idpConfig = idpConfigs[idp as keyof typeof idpConfigs] || idpConfigs["azure-ad"]
-  const mdmConfig = mdmConfigs[mdm as keyof typeof mdmConfigs] || mdmConfigs.intune
+  const determineConnectionType = (source: DiagramComponent, target: DiagramComponent) => {
+    if (source.category === "cloud" || target.category === "cloud") {
+      return {
+        type: "https" as const,
+        protocol: "HTTPS",
+        port: 443,
+        throughput: "1 Gbps",
+        latency: 10,
+        encryption: true,
+        bandwidth: "1 Gbps",
+      }
+    }
 
-  const toggleAnimation = () => {
-    setIsAnimationActive(!isAnimationActive)
+    if (source.type.includes("radius") || target.type.includes("radius")) {
+      return {
+        type: "radsec" as const,
+        protocol: "RADSEC",
+        port: 2083,
+        throughput: "100 Mbps",
+        latency: 5,
+        encryption: true,
+        bandwidth: "100 Mbps",
+      }
+    }
+
+    if (source.type.includes("tacacs") || target.type.includes("tacacs")) {
+      return {
+        type: "tacacs" as const,
+        protocol: "TACACS+",
+        port: 49,
+        throughput: "10 Mbps",
+        latency: 3,
+        encryption: true,
+        bandwidth: "10 Mbps",
+      }
+    }
+
+    if (source.category === "identity" || target.category === "identity") {
+      return {
+        type: "saml" as const,
+        protocol: "SAML",
+        port: 443,
+        throughput: "100 Mbps",
+        latency: 15,
+        encryption: true,
+        bandwidth: "100 Mbps",
+      }
+    }
+
+    if (source.category === "network" && target.category === "network") {
+      return {
+        type: "ethernet" as const,
+        protocol: "Ethernet",
+        port: undefined,
+        throughput: "10 Gbps",
+        latency: 1,
+        encryption: false,
+        bandwidth: "10 Gbps",
+      }
+    }
+
+    return {
+      type: "api" as const,
+      protocol: "REST API",
+      port: 443,
+      throughput: "1 Gbps",
+      latency: 5,
+      encryption: true,
+      bandwidth: "1 Gbps",
+    }
   }
 
-  const resetView = () => {
-    setSelectedComponent(null)
-    setHoveredComponent(null)
+  const generateIntelligentConnections = (components: DiagramComponent[], connections: Connection[]) => {
+    components.forEach((source) => {
+      source.connections.forEach((targetId) => {
+        const target = components.find((c) => c.id === targetId)
+        if (target) {
+          const existingConnection = connections.find(
+            (conn) =>
+              (conn.from === source.id && conn.to === target.id) || (conn.from === target.id && conn.to === source.id),
+          )
+          if (!existingConnection) {
+            const connectionDetails = determineConnectionType(source, target)
+            connections.push({
+              id: `${source.id}-${target.id}`,
+              from: source.id,
+              to: target.id,
+              ...connectionDetails,
+              status: "active",
+            })
+          }
+        }
+      })
+    })
   }
 
   useEffect(() => {
-    generateDiagramComponents()
-  }, [view, vendor, idp, mdm, siteId])
+    generateArchitecture()
+  }, [config])
 
   useEffect(() => {
-    setIsAnimationActive(isAnimating)
-  }, [isAnimating])
+    if (config.animations && animationActive) {
+      const interval = setInterval(
+        () => {
+          updateMetrics()
+          setDataFlowAnimation((prev) => (prev + 1) % 100)
+        },
+        2000 - animationSpeed * 15,
+      )
+      setMetricsUpdateInterval(interval)
+      return () => clearInterval(interval)
+    } else if (metricsUpdateInterval) {
+      clearInterval(metricsUpdateInterval)
+      setMetricsUpdateInterval(null)
+    }
+  }, [config.animations, animationActive, animationSpeed])
 
-  const generateDiagramComponents = () => {
-    let newComponents: DiagramComponent[] = []
-    let newConnections: Connection[] = []
+  const generateArchitecture = useCallback(() => {
+    const newComponents: DiagramComponent[] = []
+    const newConnections: Connection[] = []
 
-    switch (view) {
+    switch (config.selectedView) {
       case "complete":
-        newComponents = generateCompleteArchitecture()
-        newConnections = generateCompleteConnections()
+        generateCompleteArchitecture(newComponents, newConnections)
         break
       case "authentication":
-        newComponents = generateAuthenticationFlow()
-        newConnections = generateAuthenticationConnections()
+        generateAuthenticationFlow(newComponents, newConnections)
         break
       case "pki":
-        newComponents = generatePKIComponents()
-        newConnections = generatePKIConnections()
+        generatePKIArchitecture(newComponents, newConnections)
         break
       case "policies":
-        newComponents = generatePolicyComponents()
-        newConnections = generatePolicyConnections()
+        generatePolicyArchitecture(newComponents, newConnections)
         break
       case "connectivity":
-        newComponents = generateConnectivityComponents()
-        newConnections = generateConnectivityConnections()
+        generateConnectivityArchitecture(newComponents, newConnections)
         break
       case "intune":
-        newComponents = generateIntuneComponents()
-        newConnections = generateIntuneConnections()
+        generateIntuneIntegration(newComponents, newConnections)
         break
       case "onboarding":
-        newComponents = generateOnboardingComponents()
-        newConnections = generateOnboardingConnections()
+        generateDeviceOnboarding(newComponents, newConnections)
         break
-      case "risk-assessment":
-        newComponents = generateRiskAssessmentComponents()
-        newConnections = generateRiskAssessmentConnections()
+      case "radsec":
+        generateRadSecProxyArchitecture(newComponents, newConnections)
         break
-      case "guest-portal":
-        newComponents = generateGuestPortalComponents()
-        newConnections = generateGuestPortalConnections()
+      case "ztna":
+        generateZTNAArchitecture(newComponents, newConnections)
         break
-      case "iot-onboarding":
-        newComponents = generateIoTOnboardingComponents()
-        newConnections = generateIoTOnboardingConnections()
+      case "guest":
+        generateGuestPortal(newComponents, newConnections)
         break
-      case "radsec-proxy":
-        newComponents = generateRadSecProxyComponents()
-        newConnections = generateRadSecProxyConnections()
+      case "iot":
+        generateIoTOnboarding(newComponents, newConnections)
         break
       case "tacacs":
-        newComponents = generateTACACSComponents()
-        newConnections = generateTACACSConnections()
+        generateTACACSArchitecture(newComponents, newConnections)
+        break
+      case "risk":
+        generateRiskPolicyArchitecture(newComponents, newConnections)
+        break
+      case "multisite":
+        generateMultiSiteArchitecture(newComponents, newConnections)
         break
       default:
-        newComponents = generateCompleteArchitecture()
-        newConnections = generateCompleteConnections()
+        generateCompleteArchitecture(newComponents, newConnections)
     }
 
     setComponents(newComponents)
     setConnections(newConnections)
-  }
+  }, [config])
 
-  const generateCompleteArchitecture = (): DiagramComponent[] => [
-    {
-      id: "portnox-cloud",
-      type: "nac-platform",
-      name: "Portnox Cloud",
-      x: 450,
-      y: 60,
-      width: 220,
-      height: 100,
-      icon: <Cloud className="h-8 w-8" />,
-      color: "bg-blue-500",
-      status: "active",
-      details: {
-        version: "24.1.2",
-        region: "US-East-1",
-        uptime: "99.99%",
-        endpoints: "15,247",
-        policies: "342",
-        "last-sync": "2 min ago",
+  const generateCompleteArchitecture = (components: DiagramComponent[], connections: Connection[]) => {
+    // Portnox Cloud Platform
+    components.push({
+      id: "portnox-cloud-platform",
+      type: "nac_platform",
+      name: "Portnox Cloud NAC Platform",
+      x: 600,
+      y: 50,
+      width: 400,
+      height: 150,
+      status: "online",
+      category: "cloud",
+      metrics: {
+        connections: 15847,
+        throughput: "12.8 Gbps",
+        latency: 8,
+        uptime: 99.98,
+        cpu: 42,
+        memory: 68,
+        users: 12500,
+        sessions: 8950,
+        requests: 2850000,
+        securityScore: 98,
+        complianceScore: 96,
+        policies: 156,
+        violations: 3,
+        incidents: 0,
       },
-    },
-    {
-      id: "identity-provider",
-      type: "identity-provider",
-      name: idpConfig.name,
-      x: 120,
-      y: 60,
-      width: 200,
-      height: 100,
-      icon: idpConfig.icon,
-      color: "bg-green-500",
-      status: "active",
-      vendor: idp,
-      details: {
-        tenant: idp === "azure-ad" ? "contoso.onmicrosoft.com" : `${idp}.domain.com`,
-        users: "15,247",
-        groups: "342",
-        mfa: "Enabled",
-        "conditional-access": "Active",
-      },
-    },
-    {
-      id: "mdm-platform",
-      type: "mdm-platform",
-      name: mdmConfig.name,
-      x: 780,
-      y: 60,
-      width: 200,
-      height: 100,
-      icon: mdmConfig.icon,
-      color: "bg-purple-500",
-      status: "active",
-      vendor: mdm,
-      details: {
-        devices: "8,542",
-        policies: "67",
-        compliance: "94.2%",
-        "enrolled-today": "23",
-        platforms: mdmConfig.platforms.join(", "),
-      },
-    },
-    {
-      id: "network-switch",
-      type: "network-device",
-      name: `${vendorConfig.name} Switch`,
-      x: 220,
-      y: 280,
-      width: 180,
-      height: 100,
-      icon: <Router className="h-8 w-8" />,
-      color: "bg-orange-500",
-      status: "active",
-      vendor: vendor,
-      model: vendorConfig.switch.model,
-      version: vendorConfig.switch.firmware,
-      details: {
-        model: vendorConfig.switch.model,
-        firmware: vendorConfig.switch.firmware,
-        ports: vendorConfig.switch.ports,
-        poe: vendorConfig.switch.poe,
-        "active-ports": Math.floor(vendorConfig.switch.ports * 0.8),
-        uptime: "45 days",
-      },
-    },
-    {
-      id: "wireless-controller",
-      type: "network-device",
-      name: `${vendorConfig.name} Wireless`,
-      x: 650,
-      y: 280,
-      width: 180,
-      height: 100,
-      icon: <Wifi className="h-8 w-8" />,
-      color: "bg-cyan-500",
-      status: "active",
-      vendor: vendor,
-      model: vendorConfig.wireless.controller,
-      version: vendorConfig.wireless.firmware,
-      details: {
-        controller: vendorConfig.wireless.controller,
-        "ap-model": vendorConfig.wireless.ap,
-        firmware: vendorConfig.wireless.firmware,
-        aps: vendorConfig.wireless.aps,
-        clients: "2,847",
-        "avg-utilization": "34%",
-      },
-    },
-    {
-      id: "radius-proxy",
-      type: "radius-proxy",
-      name: "RADIUS Proxy",
-      x: 450,
-      y: 200,
-      width: 220,
-      height: 80,
-      icon: <Server className="h-6 w-6" />,
-      color: "bg-indigo-500",
-      status: "active",
-      details: {
-        type: "Docker Container",
-        version: "2024.1.5",
-        throughput: "12K req/sec",
-        latency: "1.2ms",
-        "active-sessions": "1,247",
-      },
-    },
-    {
-      id: "windows-device",
-      type: "endpoint",
-      name: "Windows Devices",
-      x: 60,
-      y: 450,
-      width: 160,
-      height: 80,
-      icon: <Monitor className="h-6 w-6" />,
-      color: "bg-gray-500",
-      status: "active",
-      details: {
-        count: "3,247",
-        "os-versions": "Win 10, Win 11",
-        compliance: "96.2%",
-        "last-check": "5 min ago",
-      },
-    },
-    {
-      id: "mobile-device",
-      type: "endpoint",
-      name: "Mobile Devices",
-      x: 280,
-      y: 450,
-      width: 160,
-      height: 80,
-      icon: <Smartphone className="h-6 w-6" />,
-      color: "bg-pink-500",
-      status: "active",
-      details: {
-        count: "2,847",
-        platforms: "iOS, Android",
-        compliance: "91.8%",
-        "enrolled-today": "12",
-      },
-    },
-    {
-      id: "iot-device",
-      type: "endpoint",
-      name: "IoT Devices",
-      x: 500,
-      y: 450,
-      width: 160,
-      height: 80,
-      icon: <Cpu className="h-6 w-6" />,
-      color: "bg-yellow-500",
-      status: "warning",
-      details: {
-        count: "1,542",
-        types: "Cameras, Sensors, Printers",
-        unmanaged: "247",
-        "risk-score": "Medium",
-      },
-    },
-    {
-      id: "guest-device",
-      type: "endpoint",
-      name: "Guest Devices",
-      x: 720,
-      y: 450,
-      width: 160,
-      height: 80,
-      icon: <Users className="h-6 w-6" />,
-      color: "bg-indigo-500",
-      status: "active",
-      details: {
-        count: "342",
-        "active-sessions": "89",
-        "avg-duration": "2.4 hours",
-        "bandwidth-limit": "25 Mbps",
-      },
-    },
-    {
-      id: "firewall",
-      type: "firewall",
-      name: `${vendorConfig.name} Firewall`,
-      x: 920,
-      y: 280,
-      width: 160,
-      height: 100,
-      icon: <Shield className="h-8 w-8" />,
-      color: "bg-red-500",
-      status: "active",
-      vendor: vendor,
-      model: vendorConfig.firewall.model,
-      version: vendorConfig.firewall.firmware,
-      details: {
-        model: vendorConfig.firewall.model,
-        firmware: vendorConfig.firewall.firmware,
-        throughput: vendorConfig.firewall.throughput,
-        "active-sessions": "15,247",
-        "threat-blocks": "342/day",
-      },
-    },
-  ]
+      connections: [
+        "azure-ad-tenant",
+        "okta-identity",
+        "intune-mdm",
+        "jamf-mdm",
+        "ztna-gateway",
+        "policy-engine",
+        "radsec-proxy-primary",
+        "certificate-authority",
+      ],
+      icon: "cloud",
+      color: config.customColors.primary,
+      description: "Multi-tenant cloud NAC platform with global presence and comprehensive security analytics",
+      vendor: "portnox",
+      version: "v6.5.2",
+      location: "Multi-Region (AWS/Azure)",
+    })
 
-  const generateCompleteConnections = (): Connection[] => [
-    {
-      from: "identity-provider",
-      to: "portnox-cloud",
-      type: "saml",
-      protocol: idpConfig.protocols[0],
-      animated: true,
-      bidirectional: true,
-      encrypted: true,
-    },
-    {
-      from: "mdm-platform",
-      to: "portnox-cloud",
-      type: "https",
-      protocol: "REST API",
-      animated: true,
-      bidirectional: true,
-      encrypted: true,
-    },
-    {
-      from: "portnox-cloud",
-      to: "radius-proxy",
-      type: "radius",
-      protocol: "RADIUS",
-      animated: true,
-      bidirectional: true,
-      encrypted: true,
-    },
-    {
-      from: "radius-proxy",
-      to: "network-switch",
-      type: "radius",
-      protocol: "RADIUS",
-      animated: true,
-      bidirectional: true,
-      encrypted: false,
-    },
-    {
-      from: "radius-proxy",
-      to: "wireless-controller",
-      type: "radius",
-      protocol: "RADIUS",
-      animated: true,
-      bidirectional: true,
-      encrypted: false,
-    },
-    {
-      from: "network-switch",
-      to: "windows-device",
-      type: "data",
-      protocol: "802.1X",
-      animated: true,
-      bidirectional: true,
-      encrypted: false,
-    },
-    {
-      from: "network-switch",
-      to: "iot-device",
-      type: "data",
-      protocol: "MAB",
-      animated: true,
-      bidirectional: true,
-      encrypted: false,
-    },
-    {
-      from: "wireless-controller",
-      to: "mobile-device",
-      type: "data",
-      protocol: "802.11",
-      animated: true,
-      bidirectional: true,
-      encrypted: true,
-    },
-    {
-      from: "wireless-controller",
-      to: "guest-device",
-      type: "data",
-      protocol: "Captive Portal",
-      animated: true,
-      bidirectional: true,
-      encrypted: true,
-    },
-    {
-      from: "firewall",
-      to: "portnox-cloud",
-      type: "syslog",
-      protocol: "Syslog",
-      animated: true,
-      bidirectional: false,
-      encrypted: true,
-    },
-  ]
+    // Identity Providers
+    if (config.identityProvider.includes("azure_ad")) {
+      components.push({
+        id: "azure-ad-tenant",
+        type: "identity_provider",
+        name: "Azure Active Directory",
+        x: 100,
+        y: 50,
+        width: 250,
+        height: 120,
+        status: "online",
+        category: "identity",
+        metrics: {
+          users: 12500,
+          sessions: 8950,
+          uptime: 99.97,
+          latency: 15,
+          securityScore: 94,
+          policies: 45,
+          violations: 2,
+        },
+        connections: ["portnox-cloud-platform", "conditional-access", "intune-mdm", "ztna-gateway"],
+        icon: "users",
+        color: VENDOR_COLORS.microsoft,
+        description: "Enterprise identity platform with conditional access and MFA",
+        vendor: "microsoft",
+        version: "2024.01",
+      })
 
-  const generateAuthenticationFlow = (): DiagramComponent[] => [
-    {
-      id: "user",
-      type: "user",
-      name: "User",
-      x: 80,
-      y: 250,
-      width: 120,
-      height: 80,
-      icon: <Users className="h-6 w-6" />,
-      color: "bg-blue-500",
-      status: "active",
-      details: {
-        username: "john.doe",
-        department: "Engineering",
-        "last-login": "2 hours ago",
-      },
-    },
-    {
-      id: "device",
-      type: "device",
-      name: "Device",
-      x: 250,
-      y: 250,
-      width: 140,
-      height: 80,
-      icon: <Monitor className="h-6 w-6" />,
-      color: "bg-gray-500",
-      status: "active",
-      details: {
-        type: "Windows 11",
-        hostname: "LAPTOP-ABC123",
-        "mac-address": "00:1B:44:11:3A:B7",
-        compliance: "Compliant",
-      },
-    },
-    {
-      id: "network-access",
-      type: "network",
-      name: `${vendorConfig.name} Switch`,
-      x: 440,
-      y: 250,
-      width: 160,
-      height: 80,
-      icon: <Network className="h-6 w-6" />,
-      color: "bg-orange-500",
-      status: "active",
-      vendor: vendor,
-      details: {
-        model: vendorConfig.switch.model,
-        port: "GigabitEthernet1/0/12",
-        vlan: "100",
-        "auth-method": "802.1X",
-      },
-    },
-    {
-      id: "portnox-nac",
-      type: "nac",
-      name: "Portnox NAC",
-      x: 650,
-      y: 250,
-      width: 160,
-      height: 80,
-      icon: <Shield className="h-6 w-6" />,
-      color: "bg-blue-500",
-      status: "active",
-      details: {
-        region: "US-East",
-        policies: "45 active",
-        "response-time": "120ms",
-        decision: "Allow",
-      },
-    },
-    {
-      id: "identity-source",
-      type: "identity",
-      name: idpConfig.name,
-      x: 860,
-      y: 250,
-      width: 160,
-      height: 80,
-      icon: idpConfig.icon,
-      color: "bg-green-500",
-      status: "active",
-      vendor: idp,
-      details: {
-        protocol: idpConfig.protocols[0],
-        "auth-time": "85ms",
-        mfa: "Required",
-        result: "Success",
-      },
-    },
-  ]
-
-  const generateAuthenticationConnections = (): Connection[] => [
-    {
-      from: "user",
-      to: "device",
-      type: "auth",
-      protocol: "Login",
-      animated: true,
-      bidirectional: false,
-    },
-    {
-      from: "device",
-      to: "network-access",
-      type: "auth",
-      protocol: "802.1X EAP-Start",
-      animated: true,
-      bidirectional: false,
-    },
-    {
-      from: "network-access",
-      to: "portnox-nac",
-      type: "radius",
-      protocol: "Access-Request",
-      animated: true,
-      bidirectional: false,
-    },
-    {
-      from: "portnox-nac",
-      to: "identity-source",
-      type: "saml",
-      protocol: idpConfig.protocols[0],
-      animated: true,
-      bidirectional: false,
-    },
-    {
-      from: "identity-source",
-      to: "portnox-nac",
-      type: "saml",
-      protocol: "Auth Response",
-      animated: true,
-      bidirectional: false,
-    },
-    {
-      from: "portnox-nac",
-      to: "network-access",
-      type: "radius",
-      protocol: "Access-Accept",
-      animated: true,
-      bidirectional: false,
-    },
-  ]
-
-  const generatePKIComponents = (): DiagramComponent[] => [
-    {
-      id: "root-ca",
-      type: "ca",
-      name: "Root Certificate Authority",
-      x: 450,
-      y: 60,
-      width: 200,
-      height: 100,
-      icon: <Lock className="h-8 w-8" />,
-      color: "bg-red-500",
-      status: "active",
-      details: {
-        algorithm: "RSA 4096",
-        validity: "20 years",
-        "serial-number": "01",
-        issuer: "Corporate Root CA",
-        "key-usage": "Certificate Sign, CRL Sign",
-      },
-    },
-    {
-      id: "issuing-ca",
-      type: "ca",
-      name: "Issuing Certificate Authority",
-      x: 450,
-      y: 200,
-      width: 200,
-      height: 100,
-      icon: <Key className="h-8 w-8" />,
-      color: "bg-orange-500",
-      status: "active",
-      details: {
-        algorithm: "RSA 2048",
-        validity: "5 years",
-        "certificates-issued": "15,247",
-        "active-certificates": "12,847",
-        "revoked-certificates": "342",
-      },
-    },
-    {
-      id: "scep-server",
-      type: "scep",
-      name: "SCEP Server",
-      x: 180,
-      y: 350,
-      width: 160,
-      height: 100,
-      icon: <Server className="h-8 w-8" />,
-      color: "bg-blue-500",
-      status: "active",
-      details: {
-        protocol: "SCEP",
-        "enrollments-today": "23",
-        "pending-requests": "5",
-        "success-rate": "98.2%",
-        url: "https://scep.company.com/certsrv/mscep/mscep.dll",
-      },
-    },
-    {
-      id: "certificate-store",
-      type: "store",
-      name: "Certificate Store",
-      x: 720,
-      y: 350,
-      width: 160,
-      height: 100,
-      icon: <Database className="h-8 w-8" />,
-      color: "bg-purple-500",
-      status: "active",
-      details: {
-        "total-certificates": "15,247",
-        "user-certificates": "8,542",
-        "device-certificates": "6,705",
-        "expiring-soon": "47",
-        "auto-renewal": "Enabled",
-      },
-    },
-    {
-      id: "client-cert",
-      type: "certificate",
-      name: "Client Certificates",
-      x: 450,
-      y: 480,
-      width: 200,
-      height: 80,
-      icon: <ShieldCheck className="h-6 w-6" />,
-      color: "bg-green-500",
-      status: "active",
-      details: {
-        "user-certs": "8,542",
-        "device-certs": "6,705",
-        "validity-period": "1 year",
-        "renewal-threshold": "30 days",
-        "auto-enrollment": "Enabled",
-      },
-    },
-    {
-      id: "crl-distribution",
-      type: "crl",
-      name: "CRL Distribution Point",
-      x: 120,
-      y: 200,
-      width: 160,
-      height: 80,
-      icon: <FileText className="h-6 w-6" />,
-      color: "bg-yellow-500",
-      status: "active",
-      details: {
-        "crl-size": "2.4 MB",
-        "revoked-certs": "342",
-        "last-update": "6 hours ago",
-        "next-update": "18 hours",
-        url: "http://crl.company.com/rootca.crl",
-      },
-    },
-  ]
-
-  const generatePKIConnections = (): Connection[] => [
-    {
-      from: "root-ca",
-      to: "issuing-ca",
-      type: "control",
-      protocol: "Certificate Signing",
-      animated: true,
-      bidirectional: false,
-      encrypted: true,
-    },
-    {
-      from: "root-ca",
-      to: "crl-distribution",
-      type: "control",
-      protocol: "CRL Publishing",
-      animated: true,
-      bidirectional: false,
-      encrypted: false,
-    },
-    {
-      from: "issuing-ca",
-      to: "scep-server",
-      type: "control",
-      protocol: "Certificate Issuance",
-      animated: true,
-      bidirectional: true,
-      encrypted: true,
-    },
-    {
-      from: "issuing-ca",
-      to: "certificate-store",
-      type: "data",
-      protocol: "Certificate Storage",
-      animated: true,
-      bidirectional: true,
-      encrypted: true,
-    },
-    {
-      from: "scep-server",
-      to: "client-cert",
-      type: "data",
-      protocol: "SCEP Enrollment",
-      animated: true,
-      bidirectional: true,
-      encrypted: true,
-    },
-    {
-      from: "certificate-store",
-      to: "client-cert",
-      type: "data",
-      protocol: "Certificate Retrieval",
-      animated: true,
-      bidirectional: true,
-      encrypted: true,
-    },
-  ]
-
-  const generatePolicyComponents = (): DiagramComponent[] => [
-    {
-      id: "policy-engine",
-      type: "policy",
-      name: "Portnox Policy Engine",
-      x: 450,
-      y: 120,
-      width: 220,
-      height: 100,
-      icon: <ShieldCheck className="h-8 w-8" />,
-      color: "bg-blue-500",
-      status: "active",
-      details: {
-        "active-policies": "342",
-        "policy-evaluations": "50K/min",
-        "avg-response-time": "12ms",
-        "cache-hit-rate": "94.2%",
-        "last-update": "2 hours ago",
-      },
-    },
-    {
-      id: "global-policies",
-      type: "policy-set",
-      name: "Global Policies",
-      x: 120,
-      y: 280,
-      width: 160,
-      height: 100,
-      icon: <Globe className="h-8 w-8" />,
-      color: "bg-green-500",
-      status: "active",
-      details: {
-        count: "15",
-        priority: "High",
-        "applies-to": "All Sites",
-        "last-modified": "3 days ago",
-        categories: "Auth, Compliance, Security",
-      },
-    },
-    {
-      id: "site-policies",
-      type: "policy-set",
-      name: "Site-Specific Policies",
-      x: 340,
-      y: 280,
-      width: 160,
-      height: 100,
-      icon: <Building className="h-8 w-8" />,
-      color: "bg-orange-500",
-      status: "active",
-      details: {
-        sites: "25",
-        "total-policies": "180",
-        "avg-per-site": "7.2",
-        "most-common": "VLAN Assignment",
-        "last-created": "1 day ago",
-      },
-    },
-    {
-      id: "user-policies",
-      type: "policy-set",
-      name: "User-Based Policies",
-      x: 560,
-      y: 280,
-      width: 160,
-      height: 100,
-      icon: <UserCheck className="h-8 w-8" />,
-      color: "bg-purple-500",
-      status: "active",
-      details: {
-        "user-groups": "47",
-        "role-based": "23",
-        "department-based": "18",
-        "location-based": "12",
-        "time-based": "8",
-      },
-    },
-    {
-      id: "device-policies",
-      type: "policy-set",
-      name: "Device-Based Policies",
-      x: 780,
-      y: 280,
-      width: 160,
-      height: 100,
-      icon: <Monitor className="h-8 w-8" />,
-      color: "bg-cyan-500",
-      status: "active",
-      details: {
-        "device-types": "12",
-        "os-based": "Windows, macOS, iOS, Android",
-        "compliance-based": "34",
-        "certificate-based": "28",
-        "mac-based": "15",
-      },
-    },
-    {
-      id: "enforcement-point",
-      type: "enforcement",
-      name: "Policy Enforcement Points",
-      x: 450,
-      y: 440,
-      width: 220,
-      height: 100,
-      icon: <Target className="h-8 w-8" />,
-      color: "bg-red-500",
-      status: "active",
-      details: {
-        switches: "150",
-        "access-points": "300",
-        firewalls: "25",
-        "enforcement-rate": "99.8%",
-        "avg-enforcement-time": "45ms",
-      },
-    },
-  ]
-
-  const generatePolicyConnections = (): Connection[] => [
-    {
-      from: "global-policies",
-      to: "policy-engine",
-      type: "policy",
-      protocol: "Policy Rules",
-      animated: true,
-      bidirectional: false,
-    },
-    {
-      from: "site-policies",
-      to: "policy-engine",
-      type: "policy",
-      protocol: "Site Rules",
-      animated: true,
-      bidirectional: false,
-    },
-    {
-      from: "user-policies",
-      to: "policy-engine",
-      type: "policy",
-      protocol: "User Rules",
-      animated: true,
-      bidirectional: false,
-    },
-    {
-      from: "device-policies",
-      to: "policy-engine",
-      type: "policy",
-      protocol: "Device Rules",
-      animated: true,
-      bidirectional: false,
-    },
-    {
-      from: "policy-engine",
-      to: "enforcement-point",
-      type: "control",
-      protocol: "Enforcement Actions",
-      animated: true,
-      bidirectional: false,
-    },
-  ]
-
-  const generateConnectivityComponents = (): DiagramComponent[] => [
-    {
-      id: "vlan-100",
-      type: "vlan",
-      name: "VLAN 100 - Corporate",
-      x: 120,
-      y: 180,
-      width: 180,
-      height: 100,
-      icon: <Network className="h-8 w-8" />,
-      color: "bg-blue-500",
-      status: "active",
-      details: {
-        "vlan-id": "100",
-        subnet: "10.100.0.0/24",
-        gateway: "10.100.0.1",
-        "active-hosts": "247",
-        "dhcp-pool": "10.100.0.10-10.100.0.250",
-      },
-    },
-    {
-      id: "vlan-200",
-      type: "vlan",
-      name: "VLAN 200 - Guest",
-      x: 340,
-      y: 180,
-      width: 180,
-      height: 100,
-      icon: <Network className="h-8 w-8" />,
-      color: "bg-green-500",
-      status: "active",
-      details: {
-        "vlan-id": "200",
-        subnet: "10.200.0.0/24",
-        gateway: "10.200.0.1",
-        "active-hosts": "89",
-        "bandwidth-limit": "25 Mbps",
-      },
-    },
-    {
-      id: "vlan-300",
-      type: "vlan",
-      name: "VLAN 300 - IoT",
-      x: 560,
-      y: 180,
-      width: 180,
-      height: 100,
-      icon: <Network className="h-8 w-8" />,
-      color: "bg-yellow-500",
-      status: "active",
-      details: {
-        "vlan-id": "300",
-        subnet: "10.300.0.0/24",
-        gateway: "10.300.0.1",
-        "active-hosts": "542",
-        isolation: "Enabled",
-      },
-    },
-    {
-      id: "vlan-999",
-      type: "vlan",
-      name: "VLAN 999 - Quarantine",
-      x: 780,
-      y: 180,
-      width: 180,
-      height: 100,
-      icon: <Network className="h-8 w-8" />,
-      color: "bg-red-500",
-      status: "warning",
-      details: {
-        "vlan-id": "999",
-        subnet: "10.999.0.0/24",
-        gateway: "10.999.0.1",
-        "quarantined-hosts": "12",
-        "remediation-url": "https://remediation.company.com",
-      },
-    },
-    {
-      id: "ssid-corporate",
-      type: "ssid",
-      name: "Corporate-WiFi",
-      x: 230,
-      y: 340,
-      width: 160,
-      height: 100,
-      icon: <Wifi className="h-8 w-8" />,
-      color: "bg-blue-500",
-      status: "active",
-      details: {
-        ssid: "Corporate-WiFi",
-        security: "WPA3-Enterprise",
-        "auth-method": "802.1X",
-        "connected-clients": "1,247",
-        "signal-strength": "-45 dBm",
-      },
-    },
-    {
-      id: "ssid-guest",
-      type: "ssid",
-      name: "Guest-WiFi",
-      x: 450,
-      y: 340,
-      width: 160,
-      height: 100,
-      icon: <Wifi className="h-8 w-8" />,
-      color: "bg-green-500",
-      status: "active",
-      details: {
-        ssid: "Guest-WiFi",
-        security: "Captive Portal",
-        "auth-method": "Web Authentication",
-        "connected-clients": "89",
-        "session-timeout": "4 hours",
-      },
-    },
-    {
-      id: "ssid-iot",
-      type: "ssid",
-      name: "IoT-WiFi",
-      x: 670,
-      y: 340,
-      width: 160,
-      height: 100,
-      icon: <Wifi className="h-8 w-8" />,
-      color: "bg-yellow-500",
-      status: "active",
-      details: {
-        ssid: "IoT-WiFi",
-        security: "WPA2-PSK",
-        "auth-method": "Pre-Shared Key",
-        "connected-clients": "342",
-        "bandwidth-limit": "10 Mbps",
-      },
-    },
-  ]
-
-  const generateConnectivityConnections = (): Connection[] => [
-    {
-      from: "ssid-corporate",
-      to: "vlan-100",
-      type: "data",
-      protocol: "VLAN Mapping",
-      animated: true,
-      bidirectional: false,
-    },
-    {
-      from: "ssid-guest",
-      to: "vlan-200",
-      type: "data",
-      protocol: "VLAN Mapping",
-      animated: true,
-      bidirectional: false,
-    },
-    {
-      from: "ssid-iot",
-      to: "vlan-300",
-      type: "data",
-      protocol: "VLAN Mapping",
-      animated: true,
-      bidirectional: false,
-    },
-  ]
-
-  const generateIntuneComponents = (): DiagramComponent[] => [
-    {
-      id: "intune-portal",
-      type: "portal",
-      name: "Microsoft Intune Portal",
-      x: 450,
-      y: 60,
-      width: 220,
-      height: 100,
-      icon: <Cloud className="h-8 w-8" />,
-      color: "bg-blue-500",
-      status: "active",
-      details: {
-        tenant: "contoso.onmicrosoft.com",
-        "enrolled-devices": "8,542",
-        "active-policies": "67",
-        "compliance-rate": "94.2%",
-        "last-sync": "5 min ago",
-      },
-    },
-    {
-      id: "compliance-policies",
-      type: "policies",
-      name: "Device Compliance Policies",
-      x: 120,
-      y: 220,
-      width: 180,
-      height: 100,
-      icon: <CheckCircle className="h-8 w-8" />,
-      color: "bg-green-500",
-      status: "active",
-      details: {
-        "total-policies": "23",
-        platforms: "Windows, iOS, Android, macOS",
-        "compliance-rate": "94.2%",
-        "non-compliant": "495 devices",
-        "grace-period": "3 days",
-      },
-    },
-    {
-      id: "configuration-profiles",
-      type: "profiles",
-      name: "Configuration Profiles",
-      x: 380,
-      y: 220,
-      width: 180,
-      height: 100,
-      icon: <Settings className="h-8 w-8" />,
-      color: "bg-orange-500",
-      status: "active",
-      details: {
-        "total-profiles": "45",
-        "wifi-profiles": "12",
-        "vpn-profiles": "8",
-        "email-profiles": "15",
-        "certificate-profiles": "10",
-      },
-    },
-    {
-      id: "certificate-profiles",
-      type: "certificates",
-      name: "Certificate Profiles",
-      x: 640,
-      y: 220,
-      width: 180,
-      height: 100,
-      icon: <Lock className="h-8 w-8" />,
-      color: "bg-purple-500",
-      status: "active",
-      details: {
-        "scep-profiles": "8",
-        "pkcs-profiles": "2",
-        "trusted-root": "5",
-        "issued-certificates": "8,247",
-        "renewal-rate": "98.5%",
-      },
-    },
-    {
-      id: "app-protection",
-      type: "protection",
-      name: "App Protection Policies",
-      x: 900,
-      y: 220,
-      width: 180,
-      height: 100,
-      icon: <Shield className="h-8 w-8" />,
-      color: "bg-red-500",
-      status: "active",
-      details: {
-        "protected-apps": "25",
-        "data-loss-prevention": "Enabled",
-        "conditional-launch": "Active",
-        "app-wrapping": "12 apps",
-        "policy-violations": "23/day",
-      },
-    },
-    {
-      id: "managed-device",
-      type: "device",
-      name: "Managed Devices",
-      x: 450,
-      y: 380,
-      width: 220,
-      height: 100,
-      icon: <Smartphone className="h-8 w-8" />,
-      color: "bg-cyan-500",
-      status: "active",
-      details: {
-        "total-devices": "8,542",
-        windows: "3,247",
-        ios: "2,847",
-        android: "1,892",
-        macos: "556",
-      },
-    },
-  ]
-
-  const generateIntuneConnections = (): Connection[] => [
-    {
-      from: "intune-portal",
-      to: "compliance-policies",
-      type: "control",
-      protocol: "Policy Assignment",
-      animated: true,
-      bidirectional: false,
-    },
-    {
-      from: "intune-portal",
-      to: "configuration-profiles",
-      type: "control",
-      protocol: "Profile Deployment",
-      animated: true,
-      bidirectional: false,
-    },
-    {
-      from: "intune-portal",
-      to: "certificate-profiles",
-      type: "control",
-      protocol: "Certificate Deployment",
-      animated: true,
-      bidirectional: false,
-    },
-    {
-      from: "intune-portal",
-      to: "app-protection",
-      type: "control",
-      protocol: "App Policy Assignment",
-      animated: true,
-      bidirectional: false,
-    },
-    {
-      from: "compliance-policies",
-      to: "managed-device",
-      type: "policy",
-      protocol: "Compliance Check",
-      animated: true,
-      bidirectional: true,
-    },
-    {
-      from: "configuration-profiles",
-      to: "managed-device",
-      type: "data",
-      protocol: "Configuration",
-      animated: true,
-      bidirectional: false,
-    },
-    {
-      from: "certificate-profiles",
-      to: "managed-device",
-      type: "data",
-      protocol: "Certificate Installation",
-      animated: true,
-      bidirectional: false,
-    },
-    {
-      from: "app-protection",
-      to: "managed-device",
-      type: "policy",
-      protocol: "App Protection",
-      animated: true,
-      bidirectional: true,
-    },
-  ]
-
-  const generateOnboardingComponents = (): DiagramComponent[] => [
-    {
-      id: "enrollment-portal",
-      type: "portal",
-      name: "Device Enrollment Portal",
-      x: 450,
-      y: 60,
-      width: 220,
-      height: 100,
-      icon: <Globe className="h-8 w-8" />,
-      color: "bg-blue-500",
-      status: "active",
-      details: {
-        url: "https://enroll.company.com",
-        "daily-enrollments": "23",
-        "success-rate": "94.2%",
-        "supported-platforms": "Windows, macOS, iOS, Android",
-        "avg-enrollment-time": "4.2 minutes",
-      },
-    },
-    {
-      id: "device-discovery",
-      type: "discovery",
-      name: "Device Discovery",
-      x: 180,
-      y: 220,
-      width: 180,
-      height: 100,
-      icon: <Eye className="h-8 w-8" />,
-      color: "bg-green-500",
-      status: "active",
-      details: {
-        "discovery-methods": "DHCP, DNS, Network Scan",
-        "discovered-today": "47",
-        "unknown-devices": "12",
-        "fingerprinting-accuracy": "96.8%",
-        "profiling-rules": "342",
-      },
-    },
-    {
-      id: "certificate-enrollment",
-      type: "enrollment",
-      name: "Certificate Enrollment",
-      x: 450,
-      y: 220,
-      width: 180,
-      height: 100,
-      icon: <Key className="h-8 w-8" />,
-      color: "bg-orange-500",
-      status: "active",
-      details: {
-        "enrollment-method": "SCEP",
-        "certificates-issued": "23 today",
-        "pending-requests": "5",
-        "auto-renewal": "Enabled",
-        "certificate-validity": "1 year",
-      },
-    },
-    {
-      id: "policy-assignment",
-      type: "assignment",
-      name: "Policy Assignment",
-      x: 720,
-      y: 220,
-      width: 180,
-      height: 100,
-      icon: <Target className="h-8 w-8" />,
-      color: "bg-purple-500",
-      status: "active",
-      details: {
-        "assignment-rules": "47",
-        "user-based": "23",
-        "device-based": "18",
-        "location-based": "6",
-        "auto-assignment": "89%",
-      },
-    },
-    {
-      id: "network-access",
-      type: "access",
-      name: "Network Access Grant",
-      x: 450,
-      y: 380,
-      width: 220,
-      height: 100,
-      icon: <Network className="h-8 w-8" />,
-      color: "bg-cyan-500",
-      status: "active",
-      details: {
-        "access-granted": "8,247 devices",
-        quarantined: "47 devices",
-        "pending-approval": "12 devices",
-        "avg-onboarding-time": "4.2 minutes",
-        "success-rate": "94.2%",
-      },
-    },
-  ]
-
-  const generateOnboardingConnections = (): Connection[] => [
-    {
-      from: "enrollment-portal",
-      to: "device-discovery",
-      type: "control",
-      protocol: "Device Registration",
-      animated: true,
-      bidirectional: false,
-    },
-    {
-      from: "device-discovery",
-      to: "certificate-enrollment",
-      type: "data",
-      protocol: "Device Information",
-      animated: true,
-      bidirectional: false,
-    },
-    {
-      from: "certificate-enrollment",
-      to: "policy-assignment",
-      type: "data",
-      protocol: "Certificate Validation",
-      animated: true,
-      bidirectional: false,
-    },
-    {
-      from: "policy-assignment",
-      to: "network-access",
-      type: "control",
-      protocol: "Access Authorization",
-      animated: true,
-      bidirectional: false,
-    },
-    {
-      from: "enrollment-portal",
-      to: "network-access",
-      type: "control",
-      protocol: "Enrollment Status",
-      animated: true,
-      bidirectional: true,
-    },
-  ]
-
-  const generateRiskAssessmentComponents = (): DiagramComponent[] => [
-    {
-      id: "risk-engine",
-      type: "engine",
-      name: "Risk Assessment Engine",
-      x: 450,
-      y: 120,
-      width: 220,
-      height: 100,
-      icon: <AlertTriangle className="h-8 w-8" />,
-      color: "bg-red-500",
-      status: "active",
-      details: {
-        "risk-evaluations": "15K/hour",
-        "high-risk-devices": "47",
-        "medium-risk-devices": "342",
-        "low-risk-devices": "8,153",
-        "avg-assessment-time": "250ms",
-      },
-    },
-    {
-      id: "device-health",
-      type: "health",
-      name: "Device Health Assessment",
-      x: 120,
-      y: 280,
-      width: 180,
-      height: 100,
-      icon: <Activity className="h-8 w-8" />,
-      color: "bg-green-500",
-      status: "active",
-      details: {
-        "health-checks": "Antivirus, OS Updates, Firewall",
-        "healthy-devices": "7,892",
-        "unhealthy-devices": "650",
-        "check-frequency": "Every 4 hours",
-        "remediation-success": "87%",
-      },
-    },
-    {
-      id: "compliance-check",
-      type: "compliance",
-      name: "Compliance Verification",
-      x: 380,
-      y: 280,
-      width: 180,
-      height: 100,
-      icon: <CheckCircle className="h-8 w-8" />,
-      color: "bg-blue-500",
-      status: "active",
-      details: {
-        "compliance-policies": "23",
-        "compliant-devices": "8,047",
-        "non-compliant": "495",
-        "grace-period": "3 days",
-        "auto-remediation": "Enabled",
-      },
-    },
-    {
-      id: "threat-detection",
-      type: "threat",
-      name: "Threat Detection",
-      x: 640,
-      y: 280,
-      width: 180,
-      height: 100,
-      icon: <Shield className="h-8 w-8" />,
-      color: "bg-orange-500",
-      status: "warning",
-      details: {
-        "threats-detected": "12 today",
-        "malware-blocked": "8",
-        "suspicious-behavior": "4",
-        "false-positives": "2%",
-        "response-time": "< 30 seconds",
-      },
-    },
-    {
-      id: "remediation",
-      type: "remediation",
-      name: "Automated Remediation",
-      x: 900,
-      y: 280,
-      width: 180,
-      height: 100,
-      icon: <Settings className="h-8 w-8" />,
-      color: "bg-purple-500",
-      status: "active",
-      details: {
-        "remediation-actions": "15",
-        "auto-remediated": "342 today",
-        "manual-intervention": "23",
-        "success-rate": "87%",
-        "avg-remediation-time": "12 minutes",
-      },
-    },
-    {
-      id: "quarantine-vlan",
-      type: "quarantine",
-      name: "Quarantine Network",
-      x: 450,
-      y: 440,
-      width: 220,
-      height: 100,
-      icon: <Lock className="h-8 w-8" />,
-      color: "bg-red-500",
-      status: "warning",
-      details: {
-        "vlan-id": "999",
-        "quarantined-devices": "47",
-        "remediation-portal": "https://remediation.company.com",
-        "avg-quarantine-time": "2.4 hours",
-        "release-rate": "89%",
-      },
-    },
-  ]
-
-  const generateRiskAssessmentConnections = (): Connection[] => [
-    {
-      from: "device-health",
-      to: "risk-engine",
-      type: "data",
-      protocol: "Health Status",
-      animated: true,
-      bidirectional: false,
-    },
-    {
-      from: "compliance-check",
-      to: "risk-engine",
-      type: "data",
-      protocol: "Compliance Status",
-      animated: true,
-      bidirectional: false,
-    },
-    {
-      from: "threat-detection",
-      to: "risk-engine",
-      type: "data",
-      protocol: "Threat Intelligence",
-      animated: true,
-      bidirectional: false,
-    },
-    {
-      from: "risk-engine",
-      to: "remediation",
-      type: "control",
-      protocol: "Remediation Trigger",
-      animated: true,
-      bidirectional: false,
-    },
-    {
-      from: "risk-engine",
-      to: "quarantine-vlan",
-      type: "control",
-      protocol: "Quarantine Action",
-      animated: true,
-      bidirectional: false,
-    },
-    {
-      from: "remediation",
-      to: "quarantine-vlan",
-      type: "control",
-      protocol: "Release Authorization",
-      animated: true,
-      bidirectional: false,
-    },
-  ]
-
-  const generateGuestPortalComponents = (): DiagramComponent[] => [
-    {
-      id: "captive-portal",
-      type: "portal",
-      name: "Captive Portal",
-      x: 450,
-      y: 120,
-      width: 220,
-      height: 100,
-      icon: <Globe className="h-8 w-8" />,
-      color: "bg-blue-500",
-      status: "active",
-      details: {
-        url: "https://guest.company.com",
-        "daily-registrations": "89",
-        "active-sessions": "47",
-        "avg-session-duration": "2.4 hours",
-        "success-rate": "96.8%",
-      },
-    },
-    {
-      id: "guest-registration",
-      type: "registration",
-      name: "Guest Registration",
-      x: 180,
-      y: 280,
-      width: 180,
-      height: 100,
-      icon: <Users className="h-8 w-8" />,
-      color: "bg-green-500",
-      status: "active",
-      details: {
-        "registration-methods": "Email, SMS, Social",
-        "self-registration": "67%",
-        "sponsor-required": "33%",
-        "terms-acceptance": "Required",
-        "data-retention": "30 days",
-      },
-    },
-    {
-      id: "sponsor-approval",
-      type: "approval",
-      name: "Sponsor Approval",
-      x: 450,
-      y: 280,
-      width: 180,
-      height: 100,
-      icon: <CheckCircle className="h-8 w-8" />,
-      color: "bg-orange-500",
-      status: "active",
-      details: {
-        "approval-required": "33% of guests",
-        "avg-approval-time": "12 minutes",
-        "auto-approval": "After hours",
-        "sponsor-notifications": "Email, SMS",
-        "approval-rate": "94%",
-      },
-    },
-    {
-      id: "guest-vlan",
-      type: "vlan",
-      name: "Guest Network",
-      x: 720,
-      y: 280,
-      width: 180,
-      height: 100,
-      icon: <Network className="h-8 w-8" />,
-      color: "bg-purple-500",
-      status: "active",
-      details: {
-        "vlan-id": "200",
-        subnet: "10.200.0.0/24",
-        "bandwidth-limit": "25 Mbps",
-        "session-timeout": "4 hours",
-        isolation: "Enabled",
-      },
-    },
-    {
-      id: "internet-access",
-      type: "internet",
-      name: "Internet Access",
-      x: 450,
-      y: 440,
-      width: 220,
-      height: 100,
-      icon: <Globe className="h-8 w-8" />,
-      color: "bg-cyan-500",
-      status: "active",
-      details: {
-        "content-filtering": "Enabled",
-        "blocked-categories": "Social Media, Gaming, Adult",
-        "allowed-sites": "Company Portal, Help Desk",
-        "bandwidth-per-user": "25 Mbps",
-        "concurrent-sessions": "47",
-      },
-    },
-  ]
-
-  const generateGuestPortalConnections = (): Connection[] => [
-    {
-      from: "captive-portal",
-      to: "guest-registration",
-      type: "control",
-      protocol: "Registration Flow",
-      animated: true,
-      bidirectional: false,
-    },
-    {
-      from: "guest-registration",
-      to: "sponsor-approval",
-      type: "data",
-      protocol: "Approval Request",
-      animated: true,
-      bidirectional: false,
-    },
-    {
-      from: "sponsor-approval",
-      to: "guest-vlan",
-      type: "control",
-      protocol: "Access Grant",
-      animated: true,
-      bidirectional: false,
-    },
-    {
-      from: "guest-vlan",
-      to: "internet-access",
-      type: "data",
-      protocol: "Internet Traffic",
-      animated: true,
-      bidirectional: true,
-    },
-    {
-      from: "captive-portal",
-      to: "internet-access",
-      type: "control",
-      protocol: "Session Management",
-      animated: true,
-      bidirectional: true,
-    },
-  ]
-
-  const generateIoTOnboardingComponents = (): DiagramComponent[] => [
-    {
-      id: "iot-discovery",
-      type: "discovery",
-      name: "IoT Device Discovery",
-      x: 450,
-      y: 120,
-      width: 220,
-      height: 100,
-      icon: <Eye className="h-8 w-8" />,
-      color: "bg-blue-500",
-      status: "active",
-      details: {
-        "discovery-methods": "DHCP Fingerprinting, Network Scan, LLDP",
-        "discovered-today": "23",
-        "device-types": "Cameras, Sensors, Printers, Controllers",
-        "unknown-devices": "5",
-        "profiling-accuracy": "94.2%",
-      },
-    },
-    {
-      id: "device-profiling",
-      type: "profiling",
-      name: "Device Profiling",
-      x: 180,
-      y: 280,
-      width: 180,
-      height: 100,
-      icon: <Cpu className="h-8 w-8" />,
-      color: "bg-green-500",
-      status: "active",
-      details: {
-        "profiling-rules": "1,247",
-        "device-categories": "47",
-        "vendor-identification": "89%",
-        "behavioral-analysis": "Enabled",
-        "ml-classification": "Active",
-      },
-    },
-    {
-      id: "mac-authentication",
-      type: "auth",
-      name: "MAC Authentication Bypass",
-      x: 450,
-      y: 280,
-      width: 180,
-      height: 100,
-      icon: <Key className="h-8 w-8" />,
-      color: "bg-orange-500",
-      status: "active",
-      details: {
-        "auth-method": "MAB",
-        "mac-whitelist": "1,542 entries",
-        "auto-approval": "Based on profiling",
-        "manual-approval": "Unknown devices",
-        "success-rate": "96.8%",
-      },
-    },
-    {
-      id: "iot-vlan",
-      type: "vlan",
-      name: "IoT Network Segment",
-      x: 720,
-      y: 280,
-      width: 180,
-      height: 100,
-      icon: <Network className="h-8 w-8" />,
-      color: "bg-purple-500",
-      status: "active",
-      details: {
-        "vlan-id": "300",
-        subnet: "10.300.0.0/24",
-        "device-isolation": "Enabled",
-        "micro-segmentation": "Active",
-        "connected-devices": "1,542",
-      },
-    },
-    {
-      id: "iot-policies",
-      type: "policies",
-      name: "IoT Security Policies",
-      x: 450,
-      y: 440,
-      width: 220,
-      height: 100,
-      icon: <Shield className="h-8 w-8" />,
-      color: "bg-red-500",
-      status: "active",
-      details: {
-        "security-policies": "23",
-        "traffic-restrictions": "Enabled",
-        "communication-rules": "Device-to-cloud only",
-        "anomaly-detection": "Active",
-        "threat-monitoring": "24/7",
-      },
-    },
-  ]
-
-  const generateIoTOnboardingConnections = (): Connection[] => [
-    {
-      from: "iot-discovery",
-      to: "device-profiling",
-      type: "data",
-      protocol: "Device Fingerprint",
-      animated: true,
-      bidirectional: false,
-    },
-    {
-      from: "device-profiling",
-      to: "mac-authentication",
-      type: "data",
-      protocol: "Device Classification",
-      animated: true,
-      bidirectional: false,
-    },
-    {
-      from: "mac-authentication",
-      to: "iot-vlan",
-      type: "control",
-      protocol: "VLAN Assignment",
-      animated: true,
-      bidirectional: false,
-    },
-    {
-      from: "iot-vlan",
-      to: "iot-policies",
-      type: "policy",
-      protocol: "Security Enforcement",
-      animated: true,
-      bidirectional: false,
-    },
-    {
-      from: "iot-discovery",
-      to: "iot-policies",
-      type: "control",
-      protocol: "Policy Application",
-      animated: true,
-      bidirectional: false,
-    },
-  ]
-
-  const generateRadSecProxyComponents = (): DiagramComponent[] => [
-    {
-      id: "radsec-proxy",
-      type: "proxy",
-      name: "RADSEC Proxy",
-      x: 450,
-      y: 120,
-      width: 220,
-      height: 100,
-      icon: <Server className="h-8 w-8" />,
-      color: "bg-blue-500",
-      status: "active",
-      details: {
-        version: "2024.1.5",
-        "tls-version": "1.3",
-        "certificate-validation": "Enabled",
-        throughput: "15K req/sec",
-        "active-connections": "247",
-      },
-    },
-    {
-      id: "local-radius",
-      type: "radius",
-      name: "Local RADIUS Server",
-      x: 180,
-      y: 280,
-      width: 180,
-      height: 100,
-      icon: <Database className="h-8 w-8" />,
-      color: "bg-green-500",
-      status: "active",
-      details: {
-        type: "FreeRADIUS",
-        version: "3.2.3",
-        "local-users": "247",
-        "shared-secrets": "Configured",
-        accounting: "Enabled",
-      },
-    },
-    {
-      id: "cloud-radius",
-      type: "radius",
-      name: "Portnox Cloud RADIUS",
-      x: 720,
-      y: 280,
-      width: 180,
-      height: 100,
-      icon: <Cloud className="h-8 w-8" />,
-      color: "bg-purple-500",
-      status: "active",
-      details: {
-        region: "US-East-1",
-        "load-balancing": "Active",
-        failover: "Automatic",
-        "response-time": "45ms",
-        availability: "99.99%",
-      },
-    },
-    {
-      id: "tls-encryption",
-      type: "encryption",
-      name: "TLS Encryption Layer",
-      x: 450,
-      y: 280,
-      width: 180,
-      height: 100,
-      icon: <Lock className="h-8 w-8" />,
-      color: "bg-orange-500",
-      status: "active",
-      details: {
-        "tls-version": "1.3",
-        "cipher-suite": "AES-256-GCM",
-        "certificate-authority": "Internal CA",
-        "key-rotation": "90 days",
-        "perfect-forward-secrecy": "Enabled",
-      },
-    },
-    {
-      id: "network-devices",
-      type: "devices",
-      name: `${vendorConfig.name} Network Devices`,
-      x: 450,
-      y: 440,
-      width: 220,
-      height: 100,
-      icon: <Router className="h-8 w-8" />,
-      color: "bg-cyan-500",
-      status: "active",
-      vendor: vendor,
-      details: {
-        switches: "150",
-        "access-points": "300",
-        "radsec-support": "Native",
-        "shared-secrets": "Not required",
-        "certificate-auth": "Enabled",
-      },
-    },
-  ]
-
-  const generateRadSecProxyConnections = (): Connection[] => [
-    {
-      from: "local-radius",
-      to: "radsec-proxy",
-      type: "radius",
-      protocol: "RADIUS",
-      animated: true,
-      bidirectional: true,
-      encrypted: false,
-    },
-    {
-      from: "radsec-proxy",
-      to: "tls-encryption",
-      type: "control",
-      protocol: "TLS Handshake",
-      animated: true,
-      bidirectional: true,
-      encrypted: true,
-    },
-    {
-      from: "tls-encryption",
-      to: "cloud-radius",
-      type: "radius",
-      protocol: "RADSEC",
-      animated: true,
-      bidirectional: true,
-      encrypted: true,
-    },
-    {
-      from: "radsec-proxy",
-      to: "network-devices",
-      type: "radius",
-      protocol: "RADIUS",
-      animated: true,
-      bidirectional: true,
-      encrypted: false,
-    },
-  ]
-
-  const generateTACACSComponents = (): DiagramComponent[] => [
-    {
-      id: "tacacs-server",
-      type: "tacacs",
-      name: "TACACS+ Server",
-      x: 450,
-      y: 120,
-      width: 220,
-      height: 100,
-      icon: <Database className="h-8 w-8" />,
-      color: "bg-blue-500",
-      status: "active",
-      details: {
-        version: "TACACS+ v1.78",
-        "admin-sessions": "23 active",
-        "command-authorization": "Enabled",
-        accounting: "Full",
-        "shared-secret": "Configured",
-      },
-    },
-    {
-      id: "network-admin",
-      type: "admin",
-      name: "Network Administrators",
-      x: 120,
-      y: 280,
-      width: 180,
-      height: 100,
-      icon: <Users className="h-8 w-8" />,
-      color: "bg-green-500",
-      status: "active",
-      details: {
-        "admin-users": "23",
-        "privilege-levels": "1, 7, 15",
-        "active-sessions": "8",
-        "mfa-required": "Yes",
-        "session-timeout": "30 minutes",
-      },
-    },
-    {
-      id: "command-authorization",
-      type: "authorization",
-      name: "Command Authorization",
-      x: 450,
-      y: 280,
-      width: 180,
-      height: 100,
-      icon: <Key className="h-8 w-8" />,
-      color: "bg-orange-500",
-      status: "active",
-      details: {
-        "authorization-rules": "247",
-        "command-sets": "15",
-        "privilege-mapping": "Role-based",
-        "denied-commands": "12/day",
-        "approval-required": "Critical commands",
-      },
-    },
-    {
-      id: "audit-logging",
-      type: "logging",
-      name: "Audit & Accounting",
-      x: 780,
-      y: 280,
-      width: 180,
-      height: 100,
-      icon: <Activity className="h-8 w-8" />,
-      color: "bg-purple-500",
-      status: "active",
-      details: {
-        "log-retention": "7 years",
-        "commands-logged": "All",
-        "session-recording": "Enabled",
-        "siem-integration": "Active",
-        "compliance-reports": "Monthly",
-      },
-    },
-    {
-      id: "managed-devices",
-      type: "devices",
-      name: `${vendorConfig.name} Managed Devices`,
-      x: 450,
-      y: 440,
-      width: 220,
-      height: 100,
-      icon: <Router className="h-8 w-8" />,
-      color: "bg-cyan-500",
-      status: "active",
-      vendor: vendor,
-      details: {
-        switches: "150",
-        routers: "47",
-        firewalls: "23",
-        "tacacs-clients": "220",
-        "device-groups": "12",
-      },
-    },
-  ]
-
-  const generateTACACSConnections = (): Connection[] => [
-    {
-      from: "network-admin",
-      to: "tacacs-server",
-      type: "tacacs",
-      protocol: "TACACS+ Authentication",
-      animated: true,
-      bidirectional: false,
-    },
-    {
-      from: "tacacs-server",
-      to: "command-authorization",
-      type: "control",
-      protocol: "Authorization Request",
-      animated: true,
-      bidirectional: true,
-    },
-    {
-      from: "tacacs-server",
-      to: "audit-logging",
-      type: "data",
-      protocol: "Accounting Data",
-      animated: true,
-      bidirectional: false,
-    },
-    {
-      from: "command-authorization",
-      to: "managed-devices",
-      type: "control",
-      protocol: "Command Execution",
-      animated: true,
-      bidirectional: false,
-    },
-    {
-      from: "managed-devices",
-      to: "tacacs-server",
-      type: "tacacs",
-      protocol: "TACACS+ Request",
-      animated: true,
-      bidirectional: true,
-    },
-  ]
-
-  const getConnectionPath = (from: DiagramComponent, to: DiagramComponent): string => {
-    const fromX = from.x + from.width / 2
-    const fromY = from.y + from.height / 2
-    const toX = to.x + to.width / 2
-    const toY = to.y + to.height / 2
-
-    // Create a curved path for better visual appeal
-    const midX = (fromX + toX) / 2
-    const midY = (fromY + toY) / 2
-    const offset = Math.abs(fromX - toX) > Math.abs(fromY - toY) ? 30 : 20
-
-    return `M ${fromX} ${fromY} Q ${midX} ${midY - offset} ${toX} ${toY}`
-  }
-
-  const getConnectionColor = (type: string): string => {
-    switch (type) {
-      case "auth":
-        return "#10b981" // green
-      case "data":
-        return "#3b82f6" // blue
-      case "control":
-        return "#f59e0b" // amber
-      case "policy":
-        return "#8b5cf6" // violet
-      case "radius":
-        return "#00c8d7" // cyan
-      case "saml":
-        return "#059669" // emerald
-      case "ldap":
-        return "#0078d4" // blue
-      case "tacacs":
-        return "#dc2626" // red
-      case "https":
-        return "#16a34a" // green
-      case "syslog":
-        return "#7c3aed" // purple
-      default:
-        return "#6b7280" // gray
+      components.push({
+        id: "conditional-access",
+        type: "conditional_access_engine",
+        name: "Microsoft Conditional Access",
+        x: 100,
+        y: 200,
+        width: 250,
+        height: 100,
+        status: "online",
+        category: "security",
+        metrics: {
+          policies: 28,
+          evaluations: 450000,
+          blocked: 1250,
+          uptime: 99.95,
+          responseTime: 85,
+        },
+        connections: ["azure-ad-tenant", "intune-mdm", "ztna-gateway"],
+        icon: "shield-check",
+        color: VENDOR_COLORS.microsoft,
+        description: "Advanced conditional access with real-time risk assessment",
+        vendor: "microsoft",
+      })
     }
+
+    if (config.identityProvider.includes("okta")) {
+      components.push({
+        id: "okta-identity",
+        type: "identity_provider",
+        name: "Okta Identity Platform",
+        x: 400,
+        y: 50,
+        width: 180,
+        height: 100,
+        status: "online",
+        category: "identity",
+        metrics: {
+          users: 5500,
+          sessions: 3200,
+          uptime: 99.98,
+          latency: 12,
+        },
+        connections: ["portnox-cloud-platform", "ztna-gateway"],
+        icon: "key",
+        color: VENDOR_COLORS.okta,
+        description: "Universal Directory and SSO platform with adaptive MFA",
+        vendor: "okta",
+      })
+    }
+
+    // Zero Trust Gateway
+    components.push({
+      id: "ztna-gateway",
+      type: "ztna_gateway",
+      name: "Zero Trust Application Gateway",
+      x: 1200,
+      y: 50,
+      width: 300,
+      height: 150,
+      status: "online",
+      category: "security",
+      metrics: {
+        connections: 8950,
+        throughput: "18.5 Gbps",
+        latency: 3,
+        uptime: 99.99,
+        users: 12500,
+        sessions: 8200,
+        requests: 1850000,
+        securityScore: 97,
+        threatLevel: "Low",
+        vulnerabilities: 0,
+      },
+      connections: [
+        "portnox-cloud-platform",
+        "azure-ad-tenant",
+        "okta-identity",
+        "on-premise-apps",
+        "saas-applications",
+        "device-trust-engine",
+      ],
+      icon: "shield",
+      color: "#7C3AED",
+      description: "Enterprise ZTNA gateway with micro-segmentation and continuous verification",
+      vendor: "portnox",
+      version: "v3.2.1",
+    })
+
+    // Device Trust Engine
+    components.push({
+      id: "device-trust-engine",
+      type: "device_trust_engine",
+      name: "Device Trust & Compliance Engine",
+      x: 1200,
+      y: 230,
+      width: 300,
+      height: 120,
+      status: "online",
+      category: "security",
+      metrics: {
+        devices: 15200,
+        compliance: 94.8,
+        riskScore: 15,
+        threats: 8,
+        patches: 156,
+        uptime: 99.94,
+      },
+      connections: ["ztna-gateway", "intune-mdm", "jamf-mdm"],
+      icon: "scan",
+      color: config.customColors.accent,
+      description: "AI-powered device posture assessment with continuous trust scoring",
+    })
+
+    // MDM Integration
+    if (config.mdmProvider.includes("intune")) {
+      components.push({
+        id: "intune-mdm",
+        type: "mdm_platform",
+        name: "Microsoft Intune",
+        x: 100,
+        y: 350,
+        width: 250,
+        height: 120,
+        status: "online",
+        category: "management",
+        metrics: {
+          devices: 12500,
+          compliance: 92.5,
+          policies: 35,
+          apps: 125,
+          uptime: 99.92,
+        },
+        connections: ["azure-ad-tenant", "conditional-access", "portnox-cloud-platform", "device-trust-engine"],
+        icon: "smartphone",
+        color: VENDOR_COLORS.microsoft,
+        description: "Unified endpoint management with app protection and compliance policies",
+        vendor: "microsoft",
+        version: "2024.01",
+      })
+    }
+
+    if (config.mdmProvider.includes("jamf")) {
+      components.push({
+        id: "jamf-mdm",
+        type: "mdm_platform",
+        name: "Jamf Pro",
+        x: 400,
+        y: 350,
+        width: 180,
+        height: 100,
+        status: "online",
+        category: "management",
+        metrics: {
+          devices: 2800,
+          compliance: 96.2,
+          policies: 18,
+          apps: 45,
+          uptime: 99.89,
+        },
+        connections: ["portnox-cloud-platform", "device-trust-engine"],
+        icon: "smartphone",
+        color: "#4A90E2",
+        description: "Apple device management with advanced security features",
+        vendor: "jamf",
+      })
+    }
+
+    // RADSEC Proxy
+    components.push({
+      id: "radsec-proxy-primary",
+      type: "radius_proxy",
+      name: "RADSEC Proxy (Primary)",
+      x: 600,
+      y: 250,
+      width: 200,
+      height: 100,
+      status: "online",
+      category: "network",
+      metrics: {
+        connections: 2850,
+        throughput: "5.2 Gbps",
+        latency: 2,
+        uptime: 99.99,
+        cpu: 28,
+        memory: 42,
+        packetLoss: 0.001,
+      },
+      connections: ["portnox-cloud-platform", "core-switch-stack"],
+      icon: "router",
+      color: config.customColors.secondary,
+      description: "High-performance RADIUS over TLS proxy with intelligent caching",
+      vendor: "portnox",
+      version: "v2.8.1",
+    })
+
+    // Core Network Infrastructure
+    components.push({
+      id: "core-switch-stack",
+      type: "core_switch",
+      name: `${config.wiredVendor.toUpperCase()} Core Switch Stack`,
+      x: 600,
+      y: 400,
+      width: 400,
+      height: 120,
+      status: "online",
+      category: "network",
+      metrics: {
+        connections: 96,
+        throughput: "800 Gbps",
+        latency: 0.5,
+        uptime: 99.99,
+        cpu: 18,
+        memory: 35,
+        temperature: 38,
+        powerUsage: 2850,
+      },
+      connections: [
+        "radsec-proxy-primary",
+        "distribution-switches",
+        "wireless-controller",
+        "firewall-cluster",
+        "connectivity-hub",
+      ],
+      icon: "server",
+      color: VENDOR_COLORS[config.wiredVendor as keyof typeof VENDOR_COLORS] || "#6B7280",
+      description: "High-density core switching with 802.1X authentication and dynamic VLAN assignment",
+      vendor: config.wiredVendor,
+    })
+
+    // Distribution Switches
+    components.push({
+      id: "distribution-switches",
+      type: "distribution_switch",
+      name: "Distribution Layer Switches",
+      x: 600,
+      y: 550,
+      width: 400,
+      height: 100,
+      status: "online",
+      category: "network",
+      metrics: {
+        connections: 288,
+        throughput: "240 Gbps",
+        latency: 1,
+        uptime: 99.98,
+        cpu: 22,
+        memory: 45,
+      },
+      connections: ["core-switch-stack", "access-switches", "wireless-controller"],
+      icon: "network",
+      color: VENDOR_COLORS[config.wiredVendor as keyof typeof VENDOR_COLORS] || "#6B7280",
+      description: "Distribution layer with advanced routing and VLAN management",
+      vendor: config.wiredVendor,
+    })
+
+    // Access Switches
+    components.push({
+      id: "access-switches",
+      type: "access_switch",
+      name: "Access Layer Switches (48x)",
+      x: 600,
+      y: 680,
+      width: 400,
+      height: 100,
+      status: "online",
+      category: "network",
+      metrics: {
+        connections: 2304,
+        throughput: "115 Gbps",
+        latency: 2,
+        uptime: 99.95,
+        cpu: 35,
+        memory: 52,
+      },
+      connections: ["distribution-switches", "endpoint-devices"],
+      icon: "network",
+      color: VENDOR_COLORS[config.wiredVendor as keyof typeof VENDOR_COLORS] || "#6B7280",
+      description: "PoE+ enabled access switches with 802.1X authentication",
+      vendor: config.wiredVendor,
+    })
+
+    // Wireless Infrastructure
+    if (config.connectivity.includes("wireless")) {
+      components.push({
+        id: "wireless-controller",
+        type: "wireless_controller",
+        name: `${config.wirelessVendor.toUpperCase()} Wireless Controller`,
+        x: 1050,
+        y: 400,
+        width: 200,
+        height: 120,
+        status: "online",
+        category: "network",
+        metrics: {
+          connections: 2850,
+          throughput: "45 Gbps",
+          latency: 5,
+          uptime: 99.96,
+          cpu: 42,
+          memory: 68,
+        },
+        connections: ["core-switch-stack", "distribution-switches", "access-points"],
+        icon: "wifi",
+        color: VENDOR_COLORS[config.wirelessVendor as keyof typeof VENDOR_COLORS] || "#8B5CF6",
+        description: "Centralized wireless management with AI-driven optimization",
+        vendor: config.wirelessVendor,
+      })
+
+      components.push({
+        id: "access-points",
+        type: "access_point",
+        name: "WiFi 6E Access Points (240x)",
+        x: 1050,
+        y: 550,
+        width: 200,
+        height: 100,
+        status: "online",
+        category: "network",
+        metrics: {
+          connections: 2850,
+          throughput: "28 Gbps",
+          latency: 8,
+          uptime: 99.92,
+        },
+        connections: ["wireless-controller", "endpoint-devices"],
+        icon: "wifi",
+        color: VENDOR_COLORS[config.wirelessVendor as keyof typeof VENDOR_COLORS] || "#8B5CF6",
+        description: "High-density WiFi 6E access points with advanced security",
+        vendor: config.wirelessVendor,
+      })
+    }
+
+    // Security Infrastructure
+    components.push({
+      id: "firewall-cluster",
+      type: "firewall_cluster",
+      name: `${config.firewallVendor.toUpperCase()} Firewall Cluster`,
+      x: 1300,
+      y: 400,
+      width: 200,
+      height: 120,
+      status: "online",
+      category: "security",
+      metrics: {
+        connections: 125000,
+        throughput: "80 Gbps",
+        latency: 0.8,
+        uptime: 99.98,
+        threats: 1250,
+        blocked: 8500,
+        cpu: 45,
+        memory: 62,
+      },
+      connections: ["core-switch-stack", "connectivity-hub", "internet-gateway"],
+      icon: "shield",
+      color: VENDOR_COLORS[config.firewallVendor as keyof typeof VENDOR_COLORS] || "#EF4444",
+      description: "Next-generation firewall cluster with advanced threat protection",
+      vendor: config.firewallVendor,
+    })
+
+    // Connectivity Hub
+    components.push({
+      id: "connectivity-hub",
+      type: "connectivity_hub",
+      name: "Multi-WAN Connectivity Hub",
+      x: 1300,
+      y: 550,
+      width: 200,
+      height: 150,
+      status: "online",
+      category: "connectivity",
+      metrics: {
+        connections: 8,
+        throughput: "25 Gbps",
+        latency: 12,
+        uptime: 99.95,
+        availability: 99.9,
+      },
+      connections: ["firewall-cluster", "internet-gateway"],
+      icon: "git-branch",
+      color: "#059669",
+      description: "Intelligent WAN aggregation with automatic failover",
+      vendor: "multi-vendor",
+    })
+
+    // Internet Gateway
+    components.push({
+      id: "internet-gateway",
+      type: "internet_gateway",
+      name: "Internet Gateway",
+      x: 1300,
+      y: 750,
+      width: 200,
+      height: 80,
+      status: "online",
+      category: "connectivity",
+      metrics: {
+        bandwidth: "10 Gbps",
+        latency: 18,
+        uptime: 99.8,
+        utilization: 45,
+      },
+      connections: ["firewall-cluster", "connectivity-hub"],
+      icon: "globe",
+      color: "#6366F1",
+      description: "High-speed internet connectivity with DDoS protection",
+    })
+
+    // Endpoint Devices
+    components.push({
+      id: "endpoint-devices",
+      type: "endpoint_devices",
+      name: "Endpoint Devices (12,500)",
+      x: 600,
+      y: 820,
+      width: 400,
+      height: 100,
+      status: "online",
+      category: "endpoint",
+      metrics: {
+        devices: 12500,
+        online: 8950,
+        compliance: 94.2,
+        threats: 15,
+        patches: 2850,
+      },
+      connections: ["access-switches", "access-points"],
+      icon: "monitor",
+      color: "#6B7280",
+      description: "Diverse endpoint ecosystem with comprehensive security",
+      deviceTypes: config.deviceTypes,
+    })
+
+    // Applications
+    components.push({
+      id: "on-premise-apps",
+      type: "application_server",
+      name: "On-Premise Applications",
+      x: 1550,
+      y: 50,
+      width: 200,
+      height: 120,
+      status: "online",
+      category: "application",
+      metrics: {
+        connections: 2850,
+        throughput: "8.5 Gbps",
+        latency: 2,
+        uptime: 99.95,
+        users: 8500,
+        sessions: 2850,
+      },
+      connections: ["ztna-gateway"],
+      icon: "server",
+      color: "#059669",
+      description: "Critical business applications with zero trust protection",
+    })
+
+    components.push({
+      id: "saas-applications",
+      type: "saas_applications",
+      name: "SaaS Applications",
+      x: 1550,
+      y: 200,
+      width: 200,
+      height: 120,
+      status: "online",
+      category: "application",
+      metrics: {
+        connections: 12500,
+        throughput: "5.2 Gbps",
+        latency: 45,
+        uptime: 99.98,
+        users: 12500,
+        sessions: 8950,
+      },
+      connections: ["ztna-gateway", "azure-ad-tenant"],
+      icon: "cloud",
+      color: config.customColors.accent,
+      description: "Cloud applications with conditional access",
+    })
+
+    // Policy Engine
+    components.push({
+      id: "policy-engine",
+      type: "policy_engine",
+      name: "Centralized Policy Engine",
+      x: 600,
+      y: 950,
+      width: 400,
+      height: 100,
+      status: "online",
+      category: "management",
+      metrics: {
+        policies: 156,
+        evaluations: 2850000,
+        latency: 1.5,
+        accuracy: 99.8,
+        uptime: 99.99,
+      },
+      connections: ["portnox-cloud-platform"],
+      icon: "settings",
+      color: "#059669",
+      description: "AI-powered policy engine with real-time decision making",
+    })
+
+    // Certificate Authority
+    components.push({
+      id: "certificate-authority",
+      type: "certificate_authority",
+      name: "Internal Certificate Authority",
+      x: 1050,
+      y: 950,
+      width: 200,
+      height: 100,
+      status: "online",
+      category: "security",
+      metrics: {
+        certificates: 15200,
+        issued: 125,
+        revoked: 8,
+        expiring: 45,
+        uptime: 99.98,
+      },
+      connections: ["portnox-cloud-platform"],
+      icon: "file-key",
+      color: "#DC2626",
+      description: "Enterprise PKI with automated certificate lifecycle management",
+    })
+
+    generateIntelligentConnections(components, connections)
   }
 
-  const handleComponentClick = (componentId: string) => {
-    setSelectedComponent(componentId === selectedComponent ? null : componentId)
+  const generateAuthenticationFlow = (components: DiagramComponent[], connections: Connection[]) => {
+    components.push({
+      id: "user-device",
+      type: "endpoint_device",
+      name: "User Device",
+      x: 100,
+      y: 300,
+      width: 200,
+      height: 120,
+      status: "online",
+      category: "endpoint",
+      connections: ["network-access-point"],
+      icon: "smartphone",
+      color: "#6B7280",
+      description: "Corporate or BYOD device attempting network access",
+    })
+
+    components.push({
+      id: "network-access-point",
+      type: "network_access_point",
+      name: "Network Access Point",
+      x: 400,
+      y: 300,
+      width: 200,
+      height: 120,
+      status: "online",
+      category: "network",
+      connections: ["radius-proxy", "user-device"],
+      icon: "wifi",
+      color: VENDOR_COLORS[config.wirelessVendor as keyof typeof VENDOR_COLORS] || "#8B5CF6",
+      description: "802.1X enabled switch port or wireless access point",
+      vendor: config.connectivity.includes("wireless") ? config.wirelessVendor : config.wiredVendor,
+    })
+
+    components.push({
+      id: "radius-proxy",
+      type: "radius_proxy",
+      name: "RADIUS Proxy",
+      x: 700,
+      y: 300,
+      width: 200,
+      height: 120,
+      status: "online",
+      category: "security",
+      connections: ["network-access-point", "portnox-cloud"],
+      icon: "router",
+      color: config.customColors.secondary,
+      description: "RADSEC proxy forwarding authentication to cloud",
+      vendor: "portnox",
+    })
+
+    components.push({
+      id: "portnox-cloud",
+      type: "nac_platform",
+      name: "Portnox Cloud Platform",
+      x: 1000,
+      y: 200,
+      width: 300,
+      height: 150,
+      status: "online",
+      category: "cloud",
+      connections: ["radius-proxy", "identity-provider", "policy-engine"],
+      icon: "cloud",
+      color: config.customColors.primary,
+      description: "Cloud NAC platform with integrated RADIUS and policy engine",
+      vendor: "portnox",
+    })
+
+    components.push({
+      id: "identity-provider",
+      type: "identity_provider",
+      name: config.identityProvider.includes("azure_ad") ? "Azure Active Directory" : "Identity Provider",
+      x: 1400,
+      y: 100,
+      width: 250,
+      height: 120,
+      status: "online",
+      category: "identity",
+      connections: ["portnox-cloud"],
+      icon: "users",
+      color: config.identityProvider.includes("azure_ad") ? VENDOR_COLORS.microsoft : "#0078D4",
+      description: "Enterprise identity provider for user authentication",
+      vendor: config.identityProvider.includes("azure_ad") ? "microsoft" : "generic",
+    })
+
+    components.push({
+      id: "policy-engine",
+      type: "policy_engine",
+      name: "Policy Decision Engine",
+      x: 1000,
+      y: 400,
+      width: 200,
+      height: 100,
+      status: "online",
+      category: "management",
+      connections: ["portnox-cloud"],
+      icon: "settings",
+      color: "#059669",
+      description: "Real-time policy evaluation and decision making",
+    })
+
+    generateIntelligentConnections(components, connections)
+  }
+
+  const generatePKIArchitecture = (components: DiagramComponent[], connections: Connection[]) => {
+    components.push({
+      id: "root-ca",
+      type: "root_ca",
+      name: "Root Certificate Authority",
+      x: 600,
+      y: 100,
+      width: 250,
+      height: 120,
+      status: "online",
+      category: "security",
+      connections: ["intermediate-ca-1", "intermediate-ca-2"],
+      icon: "file-key",
+      color: "#DC2626",
+      description: "Offline root CA for maximum security",
+      location: "Secure Vault",
+    })
+
+    components.push({
+      id: "intermediate-ca-1",
+      type: "intermediate_ca",
+      name: "Policy CA",
+      x: 400,
+      y: 300,
+      width: 200,
+      height: 120,
+      status: "online",
+      category: "security",
+      connections: ["root-ca", "issuing-ca-user", "issuing-ca-device"],
+      icon: "file-key",
+      color: "#DC2626",
+      description: "Intermediate CA for policy certificates",
+    })
+
+    components.push({
+      id: "intermediate-ca-2",
+      type: "intermediate_ca",
+      name: "Infrastructure CA",
+      x: 800,
+      y: 300,
+      width: 200,
+      height: 120,
+      status: "online",
+      category: "security",
+      connections: ["root-ca", "issuing-ca-server"],
+      icon: "file-key",
+      color: "#DC2626",
+      description: "Intermediate CA for infrastructure certificates",
+    })
+
+    components.push({
+      id: "issuing-ca-user",
+      type: "issuing_ca",
+      name: "User Certificate CA",
+      x: 200,
+      y: 500,
+      width: 180,
+      height: 100,
+      status: "online",
+      category: "security",
+      connections: ["intermediate-ca-1", "user-certificates"],
+      icon: "file-key",
+      color: "#DC2626",
+      description: "Issues certificates for user authentication",
+    })
+
+    components.push({
+      id: "issuing-ca-device",
+      type: "issuing_ca",
+      name: "Device Certificate CA",
+      x: 400,
+      y: 500,
+      width: 180,
+      height: 100,
+      status: "online",
+      category: "security",
+      connections: ["intermediate-ca-1", "device-certificates"],
+      icon: "file-key",
+      color: "#DC2626",
+      description: "Issues certificates for device authentication",
+    })
+
+    components.push({
+      id: "issuing-ca-server",
+      type: "issuing_ca",
+      name: "Server Certificate CA",
+      x: 800,
+      y: 500,
+      width: 180,
+      height: 100,
+      status: "online",
+      category: "security",
+      connections: ["intermediate-ca-2", "server-certificates"],
+      icon: "file-key",
+      color: "#DC2626",
+      description: "Issues certificates for server authentication",
+    })
+
+    components.push({
+      id: "user-certificates",
+      type: "certificate_store",
+      name: "User Certificates",
+      x: 200,
+      y: 700,
+      width: 180,
+      height: 80,
+      status: "online",
+      category: "endpoint",
+      connections: ["issuing-ca-user"],
+      icon: "users",
+      color: "#6B7280",
+      description: "User certificate store for authentication",
+    })
+
+    components.push({
+      id: "device-certificates",
+      type: "certificate_store",
+      name: "Device Certificates",
+      x: 400,
+      y: 700,
+      width: 180,
+      height: 80,
+      status: "online",
+      category: "endpoint",
+      connections: ["issuing-ca-device"],
+      icon: "smartphone",
+      color: "#6B7280",
+      description: "Device certificate store for authentication",
+    })
+
+    components.push({
+      id: "server-certificates",
+      type: "certificate_store",
+      name: "Server Certificates",
+      x: 800,
+      y: 700,
+      width: 180,
+      height: 80,
+      status: "online",
+      category: "application",
+      connections: ["issuing-ca-server"],
+      icon: "server",
+      color: "#6B7280",
+      description: "Server certificate store for SSL/TLS",
+    })
+
+    generateIntelligentConnections(components, connections)
+  }
+
+  const generatePolicyArchitecture = (components: DiagramComponent[], connections: Connection[]) => {
+    components.push({
+      id: "policy-engine",
+      type: "policy_engine",
+      name: "Centralized Policy Engine",
+      x: 600,
+      y: 200,
+      width: 300,
+      height: 150,
+      status: "online",
+      category: "management",
+      connections: ["policy-repository", "decision-engine", "enforcement-points"],
+      icon: "settings",
+      color: "#059669",
+      description: "AI-powered policy engine with real-time decision making",
+    })
+
+    components.push({
+      id: "policy-repository",
+      type: "policy_repository",
+      name: "Policy Repository",
+      x: 300,
+      y: 100,
+      width: 200,
+      height: 100,
+      status: "online",
+      category: "management",
+      connections: ["policy-engine"],
+      icon: "database",
+      color: "#3B82F6",
+      description: "Centralized storage for all access control policies",
+    })
+
+    components.push({
+      id: "decision-engine",
+      type: "decision_engine",
+      name: "Policy Decision Point",
+      x: 600,
+      y: 400,
+      width: 200,
+      height: 100,
+      status: "online",
+      category: "management",
+      connections: ["policy-engine"],
+      icon: "target",
+      color: "#F59E0B",
+      description: "Real-time policy evaluation and access decisions",
+    })
+
+    components.push({
+      id: "enforcement-points",
+      type: "enforcement_points",
+      name: "Policy Enforcement Points",
+      x: 1000,
+      y: 200,
+      width: 200,
+      height: 150,
+      status: "online",
+      category: "network",
+      connections: ["policy-engine"],
+      icon: "shield",
+      color: "#DC2626",
+      description: "Network devices enforcing access control policies",
+    })
+
+    generateIntelligentConnections(components, connections)
+  }
+
+  const generateConnectivityArchitecture = (components: DiagramComponent[], connections: Connection[]) => {
+    components.push({
+      id: "network-core",
+      type: "network_core",
+      name: "Core Network Infrastructure",
+      x: 600,
+      y: 300,
+      width: 300,
+      height: 150,
+      status: "online",
+      category: "network",
+      connections: ["wan-aggregator", "lan-distribution", "cloud-connectivity"],
+      icon: "network",
+      color: config.customColors.primary,
+      description: "High-performance core network with redundant paths",
+      vendor: config.wiredVendor,
+    })
+
+    components.push({
+      id: "wan-aggregator",
+      type: "wan_aggregator",
+      name: "WAN Aggregation Hub",
+      x: 300,
+      y: 100,
+      width: 250,
+      height: 120,
+      status: "online",
+      category: "connectivity",
+      connections: ["network-core", "internet-gateway"],
+      icon: "git-branch",
+      color: "#059669",
+      description: "Intelligent WAN aggregation with automatic failover",
+    })
+
+    components.push({
+      id: "internet-gateway",
+      type: "internet_gateway",
+      name: "Internet Gateway",
+      x: 100,
+      y: 50,
+      width: 180,
+      height: 100,
+      status: "online",
+      category: "connectivity",
+      connections: ["wan-aggregator"],
+      icon: "globe",
+      color: "#6366F1",
+      description: "High-speed internet connectivity with DDoS protection",
+    })
+
+    components.push({
+      id: "lan-distribution",
+      type: "lan_distribution",
+      name: "LAN Distribution Layer",
+      x: 1000,
+      y: 300,
+      width: 200,
+      height: 120,
+      status: "online",
+      category: "network",
+      connections: ["network-core", "access-layer"],
+      icon: "network",
+      color: VENDOR_COLORS[config.wiredVendor as keyof typeof VENDOR_COLORS] || "#6B7280",
+      description: "Distribution layer with advanced routing",
+      vendor: config.wiredVendor,
+    })
+
+    components.push({
+      id: "access-layer",
+      type: "access_layer",
+      name: "Access Layer Switches",
+      x: 1200,
+      y: 200,
+      width: 180,
+      height: 100,
+      status: "online",
+      category: "network",
+      connections: ["lan-distribution"],
+      icon: "network",
+      color: VENDOR_COLORS[config.wiredVendor as keyof typeof VENDOR_COLORS] || "#6B7280",
+      description: "PoE+ enabled access switches",
+      vendor: config.wiredVendor,
+    })
+
+    components.push({
+      id: "cloud-connectivity",
+      type: "cloud_connectivity",
+      name: "Multi-Cloud Connectivity",
+      x: 300,
+      y: 500,
+      width: 200,
+      height: 120,
+      status: "online",
+      category: "connectivity",
+      connections: ["network-core"],
+      icon: "cloud",
+      color: "#059669",
+      description: "Secure connectivity to multiple cloud providers",
+    })
+
+    generateIntelligentConnections(components, connections)
+  }
+
+  const generateIntuneIntegration = (components: DiagramComponent[], connections: Connection[]) => {
+    components.push({
+      id: "intune-cloud",
+      type: "intune_cloud",
+      name: "Microsoft Intune",
+      x: 600,
+      y: 100,
+      width: 300,
+      height: 150,
+      status: "online",
+      category: "cloud",
+      connections: ["azure-ad", "device-enrollment", "app-protection", "compliance-policies"],
+      icon: "cloud",
+      color: VENDOR_COLORS.microsoft,
+      description: "Cloud-based unified endpoint management platform",
+      vendor: "microsoft",
+      version: "2024.01",
+    })
+
+    components.push({
+      id: "azure-ad",
+      type: "azure_ad",
+      name: "Azure Active Directory",
+      x: 300,
+      y: 50,
+      width: 200,
+      height: 120,
+      status: "online",
+      category: "identity",
+      connections: ["intune-cloud"],
+      icon: "users",
+      color: VENDOR_COLORS.microsoft,
+      description: "Identity and access management integration",
+      vendor: "microsoft",
+    })
+
+    components.push({
+      id: "device-enrollment",
+      type: "device_enrollment",
+      name: "Device Enrollment Services",
+      x: 400,
+      y: 300,
+      width: 200,
+      height: 100,
+      status: "online",
+      category: "management",
+      connections: ["intune-cloud"],
+      icon: "smartphone",
+      color: "#059669",
+      description: "Automated device enrollment and provisioning",
+    })
+
+    components.push({
+      id: "app-protection",
+      type: "app_protection",
+      name: "App Protection Policies",
+      x: 800,
+      y: 300,
+      width: 200,
+      height: 100,
+      status: "online",
+      category: "security",
+      connections: ["intune-cloud"],
+      icon: "shield",
+      color: "#F59E0B",
+      description: "Mobile application protection and data loss prevention",
+    })
+
+    components.push({
+      id: "compliance-policies",
+      type: "compliance_policies",
+      name: "Compliance Policies",
+      x: 600,
+      y: 300,
+      width: 200,
+      height: 100,
+      status: "online",
+      category: "security",
+      connections: ["intune-cloud"],
+      icon: "check-circle",
+      color: "#10B981",
+      description: "Device compliance assessment and enforcement",
+    })
+
+    generateIntelligentConnections(components, connections)
+  }
+
+  const generateDeviceOnboarding = (components: DiagramComponent[], connections: Connection[]) => {
+    components.push({
+      id: "onboarding-portal",
+      type: "onboarding_portal",
+      name: "Device Onboarding Portal",
+      x: 600,
+      y: 100,
+      width: 300,
+      height: 150,
+      status: "online",
+      category: "application",
+      connections: ["identity-verification", "device-registration", "certificate-enrollment"],
+      icon: "globe",
+      color: config.customColors.primary,
+      description: "Self-service device onboarding portal with multi-platform support",
+    })
+
+    components.push({
+      id: "identity-verification",
+      type: "identity_verification",
+      name: "Identity Verification Service",
+      x: 300,
+      y: 50,
+      width: 200,
+      height: 120,
+      status: "online",
+      category: "identity",
+      connections: ["onboarding-portal"],
+      icon: "user-check",
+      color: "#0078D4",
+      description: "Multi-factor identity verification for device registration",
+    })
+
+    components.push({
+      id: "device-registration",
+      type: "device_registration",
+      name: "Device Registration Service",
+      x: 600,
+      y: 300,
+      width: 200,
+      height: 120,
+      status: "online",
+      category: "management",
+      connections: ["onboarding-portal"],
+      icon: "smartphone",
+      color: "#10B981",
+      description: "Automated device registration and inventory management",
+    })
+
+    components.push({
+      id: "certificate-enrollment",
+      type: "certificate_enrollment",
+      name: "Certificate Enrollment Service",
+      x: 1000,
+      y: 100,
+      width: 200,
+      height: 120,
+      status: "online",
+      category: "security",
+      connections: ["onboarding-portal"],
+      icon: "file-key",
+      color: "#DC2626",
+      description: "Automated certificate enrollment and deployment",
+    })
+
+    generateIntelligentConnections(components, connections)
+  }
+
+  const generateRadSecProxyArchitecture = (components: DiagramComponent[], connections: Connection[]) => {
+    components.push({
+      id: "radsec-proxy-cluster",
+      type: "radsec_proxy_cluster",
+      name: "RADSEC Proxy Cluster",
+      x: 600,
+      y: 200,
+      width: 300,
+      height: 150,
+      status: "online",
+      category: "network",
+      connections: ["portnox-cloud", "network-devices"],
+      icon: "router",
+      color: config.customColors.secondary,
+      description: "High-availability RADSEC proxy cluster with intelligent load balancing",
+      vendor: "portnox",
+      version: "v2.8.1",
+    })
+
+    components.push({
+      id: "portnox-cloud",
+      type: "portnox_cloud",
+      name: "Portnox Cloud Platform",
+      x: 1000,
+      y: 100,
+      width: 300,
+      height: 150,
+      status: "online",
+      category: "cloud",
+      connections: ["radsec-proxy-cluster"],
+      icon: "cloud",
+      color: config.customColors.primary,
+      description: "Cloud NAC platform with integrated RADIUS and policy engine",
+      vendor: "portnox",
+    })
+
+    components.push({
+      id: "network-devices",
+      type: "network_devices",
+      name: "Network Access Devices",
+      x: 300,
+      y: 50,
+      width: 250,
+      height: 120,
+      status: "online",
+      category: "network",
+      connections: ["radsec-proxy-cluster"],
+      icon: "network",
+      color: VENDOR_COLORS[config.wiredVendor as keyof typeof VENDOR_COLORS] || "#6B7280",
+      description: "Network devices configured for RADIUS authentication",
+      vendor: config.wiredVendor,
+    })
+
+    generateIntelligentConnections(components, connections)
+  }
+
+  const generateZTNAArchitecture = (components: DiagramComponent[], connections: Connection[]) => {
+    components.push({
+      id: "ztna-gateway-cluster",
+      type: "ztna_gateway_cluster",
+      name: "Zero Trust Gateway Cluster",
+      x: 600,
+      y: 200,
+      width: 350,
+      height: 150,
+      status: "online",
+      category: "security",
+      connections: ["identity-verification", "device-trust", "application-connector"],
+      icon: "shield",
+      color: "#7C3AED",
+      description: "High-availability ZTNA gateway cluster with micro-segmentation",
+      vendor: "portnox",
+      version: "v3.2.1",
+    })
+
+    components.push({
+      id: "identity-verification",
+      type: "identity_verification",
+      name: "Identity Verification Service",
+      x: 200,
+      y: 100,
+      width: 250,
+      height: 120,
+      status: "online",
+      category: "identity",
+      connections: ["ztna-gateway-cluster"],
+      icon: "user-check",
+      color: "#0078D4",
+      description: "Multi-provider identity verification with adaptive authentication",
+    })
+
+    components.push({
+      id: "device-trust",
+      type: "device_trust_engine",
+      name: "Device Trust Engine",
+      x: 1000,
+      y: 100,
+      width: 250,
+      height: 120,
+      status: "online",
+      category: "security",
+      connections: ["ztna-gateway-cluster"],
+      icon: "scan",
+      color: "#F59E0B",
+      description: "Continuous device posture assessment and trust scoring",
+    })
+
+    components.push({
+      id: "application-connector",
+      type: "application_connector",
+      name: "Application Connector",
+      x: 1000,
+      y: 400,
+      width: 250,
+      height: 120,
+      status: "online",
+      category: "application",
+      connections: ["ztna-gateway-cluster"],
+      icon: "git-branch",
+      color: "#059669",
+      description: "Secure application connectivity with micro-tunneling",
+    })
+
+    generateIntelligentConnections(components, connections)
+  }
+
+  const generateGuestPortal = (components: DiagramComponent[], connections: Connection[]) => {
+    components.push({
+      id: "guest-portal-platform",
+      type: "guest_portal_platform",
+      name: "Guest Portal Platform",
+      x: 600,
+      y: 200,
+      width: 300,
+      height: 150,
+      status: "online",
+      category: "application",
+      connections: ["captive-portal", "self-registration", "sponsor-approval"],
+      icon: "globe",
+      color: config.customColors.primary,
+      description: "Comprehensive guest access management platform",
+    })
+
+    components.push({
+      id: "captive-portal",
+      type: "captive_portal",
+      name: "Captive Portal",
+      x: 300,
+      y: 100,
+      width: 200,
+      height: 120,
+      status: "online",
+      category: "application",
+      connections: ["guest-portal-platform"],
+      icon: "wifi",
+      color: "#8B5CF6",
+      description: "Branded captive portal with customizable authentication flows",
+    })
+
+    components.push({
+      id: "self-registration",
+      type: "self_registration",
+      name: "Self-Registration Service",
+      x: 600,
+      y: 400,
+      width: 200,
+      height: 120,
+      status: "online",
+      category: "management",
+      connections: ["guest-portal-platform"],
+      icon: "user-check",
+      color: "#059669",
+      description: "Automated guest registration with customizable workflows",
+    })
+
+    components.push({
+      id: "sponsor-approval",
+      type: "sponsor_approval",
+      name: "Sponsor Approval Workflow",
+      x: 1000,
+      y: 200,
+      width: 200,
+      height: 120,
+      status: "online",
+      category: "management",
+      connections: ["guest-portal-platform"],
+      icon: "users",
+      color: "#7C3AED",
+      description: "Employee sponsor-based guest approval system",
+    })
+
+    generateIntelligentConnections(components, connections)
+  }
+
+  const generateIoTOnboarding = (components: DiagramComponent[], connections: Connection[]) => {
+    components.push({
+      id: "iot-management-platform",
+      type: "iot_management_platform",
+      name: "IoT Management Platform",
+      x: 600,
+      y: 200,
+      width: 350,
+      height: 150,
+      status: "online",
+      category: "management",
+      connections: ["device-discovery", "device-profiling", "certificate-provisioning"],
+      icon: "activity",
+      color: "#84CC16",
+      description: "Comprehensive IoT device lifecycle management platform",
+    })
+
+    components.push({
+      id: "device-discovery",
+      type: "device_discovery",
+      name: "IoT Device Discovery Service",
+      x: 200,
+      y: 100,
+      width: 250,
+      height: 120,
+      status: "online",
+      category: "network",
+      connections: ["iot-management-platform"],
+      icon: "search",
+      color: "#3B82F6",
+      description: "Automated IoT device discovery using multiple detection methods",
+    })
+
+    components.push({
+      id: "device-profiling",
+      type: "device_profiling",
+      name: "IoT Device Profiling Engine",
+      x: 1000,
+      y: 100,
+      width: 250,
+      height: 120,
+      status: "online",
+      category: "security",
+      connections: ["iot-management-platform"],
+      icon: "scan",
+      color: "#8B5CF6",
+      description: "AI-powered IoT device profiling with security assessment",
+    })
+
+    components.push({
+      id: "certificate-provisioning",
+      type: "certificate_provisioning",
+      name: "IoT Certificate Provisioning",
+      x: 600,
+      y: 400,
+      width: 250,
+      height: 120,
+      status: "online",
+      category: "security",
+      connections: ["iot-management-platform"],
+      icon: "file-key",
+      color: "#DC2626",
+      description: "Automated certificate provisioning for IoT device identity",
+    })
+
+    generateIntelligentConnections(components, connections)
+  }
+
+  const generateTACACSArchitecture = (components: DiagramComponent[], connections: Connection[]) => {
+    components.push({
+      id: "tacacs-server-cluster",
+      type: "tacacs_server_cluster",
+      name: "TACACS+ Server Cluster",
+      x: 600,
+      y: 200,
+      width: 300,
+      height: 150,
+      status: "online",
+      category: "security",
+      connections: ["identity-sources", "policy-engine", "network-devices"],
+      icon: "lock",
+      color: "#DC2626",
+      description: "High-availability TACACS+ server cluster for device administration",
+      vendor: "portnox",
+      version: "v3.1.2",
+    })
+
+    components.push({
+      id: "identity-sources",
+      type: "identity_sources",
+      name: "Identity Sources",
+      x: 1000,
+      y: 100,
+      width: 250,
+      height: 120,
+      status: "online",
+      category: "identity",
+      connections: ["tacacs-server-cluster"],
+      icon: "users",
+      color: "#0078D4",
+      description: "Multiple identity sources for TACACS+ authentication",
+    })
+
+    components.push({
+      id: "policy-engine",
+      type: "tacacs_policy_engine",
+      name: "TACACS+ Policy Engine",
+      x: 600,
+      y: 400,
+      width: 250,
+      height: 120,
+      status: "online",
+      category: "management",
+      connections: ["tacacs-server-cluster"],
+      icon: "settings",
+      color: "#7C3AED",
+      description: "Advanced policy engine for command authorization",
+    })
+
+    components.push({
+      id: "network-devices",
+      type: "network_devices",
+      name: "Network Infrastructure Devices",
+      x: 200,
+      y: 50,
+      width: 300,
+      height: 120,
+      status: "online",
+      category: "network",
+      connections: ["tacacs-server-cluster"],
+      icon: "network",
+      color: VENDOR_COLORS[config.wiredVendor as keyof typeof VENDOR_COLORS] || "#6B7280",
+      description: "Network devices configured for TACACS+ authentication",
+      vendor: config.wiredVendor,
+    })
+
+    generateIntelligentConnections(components, connections)
+  }
+
+  const generateRiskPolicyArchitecture = (components: DiagramComponent[], connections: Connection[]) => {
+    components.push({
+      id: "risk-assessment-platform",
+      type: "risk_assessment_platform",
+      name: "Risk Assessment Platform",
+      x: 600,
+      y: 200,
+      width: 350,
+      height: 150,
+      status: "online",
+      category: "security",
+      connections: ["data-collection", "risk-engine", "policy-engine"],
+      icon: "alert-triangle",
+      color: "#EF4444",
+      description: "Comprehensive risk assessment platform with AI-powered analysis",
+    })
+
+    components.push({
+      id: "data-collection",
+      type: "data_collection",
+      name: "Data Collection Layer",
+      x: 200,
+      y: 100,
+      width: 250,
+      height: 120,
+      status: "online",
+      category: "management",
+      connections: ["risk-assessment-platform"],
+      icon: "database",
+      color: "#3B82F6",
+      description: "Multi-source data collection for comprehensive risk assessment",
+    })
+
+    components.push({
+      id: "risk-engine",
+      type: "risk_engine",
+      name: "AI Risk Assessment Engine",
+      x: 1000,
+      y: 100,
+      width: 250,
+      height: 120,
+      status: "online",
+      category: "security",
+      connections: ["risk-assessment-platform"],
+      icon: "target",
+      color: "#DC2626",
+      description: "Machine learning-powered risk assessment with real-time scoring",
+    })
+
+    components.push({
+      id: "policy-engine",
+      type: "policy_engine",
+      name: "Risk Policy Engine",
+      x: 600,
+      y: 400,
+      width: 250,
+      height: 120,
+      status: "online",
+      category: "management",
+      connections: ["risk-assessment-platform"],
+      icon: "settings",
+      color: "#7C3AED",
+      description: "Dynamic policy adjustment based on risk assessment",
+    })
+
+    generateIntelligentConnections(components, connections)
+  }
+
+  const generateMultiSiteArchitecture = (components: DiagramComponent[], connections: Connection[]) => {
+    components.push({
+      id: "headquarters",
+      type: "headquarters",
+      name: "Headquarters",
+      x: 600,
+      y: 200,
+      width: 300,
+      height: 150,
+      status: "online",
+      category: "network",
+      connections: ["branch-office-1", "branch-office-2", "remote-sites"],
+      icon: "building",
+      color: config.customColors.primary,
+      description: "Main headquarters with centralized NAC management",
+    })
+
+    components.push({
+      id: "branch-office-1",
+      type: "branch_office",
+      name: "Branch Office - East",
+      x: 200,
+      y: 100,
+      width: 250,
+      height: 120,
+      status: "online",
+      category: "network",
+      connections: ["headquarters"],
+      icon: "building",
+      color: "#059669",
+      description: "Eastern branch office with local network infrastructure",
+    })
+
+    components.push({
+      id: "branch-office-2",
+      type: "branch_office",
+      name: "Branch Office - West",
+      x: 1000,
+      y: 100,
+      width: 250,
+      height: 120,
+      status: "online",
+      category: "network",
+      connections: ["headquarters"],
+      icon: "building",
+      color: "#059669",
+      description: "Western branch office with local network infrastructure",
+    })
+
+    components.push({
+      id: "remote-sites",
+      type: "remote_sites",
+      name: "Remote Sites (15x)",
+      x: 600,
+      y: 400,
+      width: 250,
+      height: 120,
+      status: "online",
+      category: "network",
+      connections: ["headquarters"],
+      icon: "building",
+      color: "#8B5CF6",
+      description: "Multiple remote sites with centralized management",
+    })
+
+    generateIntelligentConnections(components, connections)
+  }
+
+  const updateMetrics = () => {
+    setComponents((prevComponents) =>
+      prevComponents.map((component) => ({
+        ...component,
+        metrics: component.metrics
+          ? {
+              ...component.metrics,
+              cpu: component.metrics.cpu
+                ? Math.max(10, Math.min(90, component.metrics.cpu + (Math.random() - 0.5) * 10))
+                : undefined,
+              memory: component.metrics.memory
+                ? Math.max(20, Math.min(95, component.metrics.memory + (Math.random() - 0.5) * 8))
+                : undefined,
+              network: component.metrics.network
+                ? Math.max(5, Math.min(100, component.metrics.network + (Math.random() - 0.5) * 15))
+                : undefined,
+              latency: component.metrics.latency
+                ? Math.max(1, component.metrics.latency + (Math.random() - 0.5) * 2)
+                : undefined,
+              throughput: component.metrics.throughput,
+              connections: component.metrics.connections
+                ? component.metrics.connections + Math.floor((Math.random() - 0.5) * 10)
+                : undefined,
+            }
+          : undefined,
+      })),
+    )
+  }
+
+  const handleComponentClick = (component: DiagramComponent) => {
+    setSelectedComponent(component)
+    setSelectedConnection(null)
+  }
+
+  const handleConnectionClick = (connection: Connection) => {
+    setSelectedConnection(connection)
+    setSelectedComponent(null)
   }
 
   const handleComponentHover = (componentId: string | null) => {
     setHoveredComponent(componentId)
   }
 
-  const getStatusColor = (status?: string): string => {
-    switch (status) {
-      case "active":
-        return "border-green-500"
-      case "warning":
-        return "border-yellow-500"
-      case "error":
-        return "border-red-500"
-      case "inactive":
-        return "border-gray-400"
-      default:
-        return "border-blue-500"
-    }
+  const handleConnectionHover = (connectionId: string | null) => {
+    setHoveredConnection(connectionId)
   }
 
-  const selectedComponentData = components.find((c) => c.id === selectedComponent)
+  const handleZoom = (delta: number) => {
+    setZoomLevel((prev) => Math.max(25, Math.min(200, prev + delta)))
+  }
+
+  const handlePan = (deltaX: number, deltaY: number) => {
+    setPanOffset((prev) => ({
+      x: prev.x + deltaX,
+      y: prev.y + deltaY,
+    }))
+  }
+
+  const handleExport = (format: "png" | "svg" | "pdf") => {
+    // Export functionality would be implemented here
+    console.log(`Exporting diagram as ${format}`)
+  }
+
+  const handleSave = () => {
+    // Save functionality would be implemented here
+    console.log("Saving diagram configuration")
+  }
+
+  const handleAutoLayout = () => {
+    // Auto-layout functionality would be implemented here
+    console.log("Applying automatic layout")
+  }
+
+  const renderComponent = (component: DiagramComponent) => {
+    const IconComponent = COMPONENT_ICONS[component.icon as keyof typeof COMPONENT_ICONS] || Settings
+    const isSelected = selectedComponent?.id === component.id
+    const isHovered = hoveredComponent === component.id
+
+    return (
+      <g
+        key={component.id}
+        transform={`translate(${component.x}, ${component.y})`}
+        onClick={() => handleComponentClick(component)}
+        onMouseEnter={() => handleComponentHover(component.id)}
+        onMouseLeave={() => handleComponentHover(null)}
+        style={{ cursor: "pointer" }}
+        className="component-group"
+      >
+        {/* Component Background */}
+        <rect
+          width={component.width}
+          height={component.height}
+          rx={8}
+          fill={component.color}
+          fillOpacity={0.1}
+          stroke={component.color}
+          strokeWidth={isSelected ? 3 : isHovered ? 2 : 1}
+          strokeOpacity={isSelected ? 1 : 0.6}
+          className="component-background"
+        />
+
+        {/* Status Indicator */}
+        <circle cx={component.width - 15} cy={15} r={6} fill={STATUS_COLORS[component.status]} />
+
+        {/* Component Icon */}
+        <foreignObject x={15} y={15} width={24} height={24}>
+          <IconComponent size={24} color={component.color} />
+        </foreignObject>
+
+        {/* Component Name */}
+        <text x={50} y={30} fontSize={14} fontWeight="600" fill="#1F2937" className="component-name">
+          {component.name}
+        </text>
+
+        {/* Component Description */}
+        {showLabels && (
+          <text x={15} y={50} fontSize={11} fill="#6B7280" className="component-description">
+            <tspan x={15} dy={0}>
+              {component.description.length > 60
+                ? `${component.description.substring(0, 60)}...`
+                : component.description}
+            </tspan>
+          </text>
+        )}
+
+        {/* Vendor Badge */}
+        {component.vendor && (
+          <>
+            <rect x={component.width - 80} y={component.height - 25} width={70} height={20} rx={10} fill="#F3F4F6" />
+            <text x={component.width - 45} y={component.height - 12} fontSize={10} textAnchor="middle" fill="#374151">
+              {component.vendor.toUpperCase()}
+            </text>
+          </>
+        )}
+
+        {/* Metrics Display */}
+        {showMetrics && component.metrics && (
+          <g transform={`translate(15, ${component.height - 40})`}>
+            {component.metrics.cpu && (
+              <text fontSize={10} fill="#374151">
+                <tspan>CPU: {Math.round(component.metrics.cpu)}%</tspan>
+              </text>
+            )}
+            {component.metrics.memory && (
+              <text fontSize={10} fill="#374151" x={80}>
+                <tspan>RAM: {Math.round(component.metrics.memory)}%</tspan>
+              </text>
+            )}
+            {component.metrics.uptime && (
+              <text fontSize={10} fill="#374151" x={160}>
+                <tspan>Uptime: {component.metrics.uptime.toFixed(2)}%</tspan>
+              </text>
+            )}
+          </g>
+        )}
+
+        {/* Animation Effects */}
+        {config.animations && animationActive && (
+          <g className="animation-effects">
+            {/* Data flow animation */}
+            <circle cx={component.width / 2} cy={component.height / 2} r={3} fill={component.color} fillOpacity={0.6}>
+              <animate attributeName="r" values="3;8;3" dur="2s" repeatCount="indefinite" />
+              <animate attributeName="fill-opacity" values="0.6;0.2;0.6" dur="2s" repeatCount="indefinite" />
+            </circle>
+
+            {/* Pulse effect for selected component */}
+            {isSelected && (
+              <rect
+                width={component.width}
+                height={component.height}
+                rx={8}
+                fill="none"
+                stroke={component.color}
+                strokeWidth={2}
+                strokeOpacity={0.8}
+              >
+                <animate attributeName="stroke-opacity" values="0.8;0.3;0.8" dur="1.5s" repeatCount="indefinite" />
+              </rect>
+            )}
+          </g>
+        )}
+      </g>
+    )
+  }
+
+  const renderConnection = (connection: Connection) => {
+    const sourceComponent = components.find((c) => c.id === connection.from)
+    const targetComponent = components.find((c) => c.id === connection.to)
+
+    if (!sourceComponent || !targetComponent) return null
+
+    const sourceX = sourceComponent.x + sourceComponent.width / 2
+    const sourceY = sourceComponent.y + sourceComponent.height / 2
+    const targetX = targetComponent.x + targetComponent.width / 2
+    const targetY = targetComponent.y + targetComponent.height / 2
+
+    const connectionColor = CONNECTION_COLORS[connection.type] || "#6B7280"
+    const isSelected = selectedConnection?.id === connection.id
+    const isHovered = hoveredConnection === connection.id
+
+    // Calculate connection path for better routing
+    const midX = (sourceX + targetX) / 2
+    const midY = (sourceY + targetY) / 2
+    const pathData = `M ${sourceX} ${sourceY} Q ${midX} ${midY - 50} ${targetX} ${targetY}`
+
+    return (
+      <g
+        key={connection.id}
+        onClick={() => handleConnectionClick(connection)}
+        onMouseEnter={() => handleConnectionHover(connection.id)}
+        onMouseLeave={() => handleConnectionHover(null)}
+        style={{ cursor: "pointer" }}
+        className="connection-group"
+      >
+        {/* Connection Path */}
+        <path
+          d={pathData}
+          fill="none"
+          stroke={connectionColor}
+          strokeWidth={isSelected ? 4 : isHovered ? 3 : 2}
+          strokeOpacity={isSelected ? 1 : isHovered ? 0.8 : 0.6}
+          strokeDasharray={connection.type === "vpn" ? "5,5" : "none"}
+          markerEnd="url(#arrowhead)"
+        />
+
+        {/* Connection Label */}
+        {showLabels && (
+          <text x={midX} y={midY - 60} fontSize={10} fill="#374151" textAnchor="middle" className="connection-label">
+            {connection.protocol}
+          </text>
+        )}
+
+        {/* Data Flow Animation */}
+        {config.animations && animationActive && (
+          <circle r={3} fill={connectionColor} fillOpacity={0.8}>
+            <animateMotion dur="3s" repeatCount="indefinite" path={pathData} />
+          </circle>
+        )}
+
+        {/* Connection Status Indicator */}
+        <circle
+          cx={midX}
+          cy={midY}
+          r={4}
+          fill={connection.status === "active" ? "#10B981" : connection.status === "error" ? "#EF4444" : "#F59E0B"}
+          fillOpacity={0.8}
+        />
+      </g>
+    )
+  }
 
   return (
-    <div className="relative w-full h-full min-h-[700px] bg-gray-50 dark:bg-gray-900 rounded-lg overflow-hidden">
+    <div className="w-full h-full relative bg-gradient-to-br from-slate-50 to-blue-50" ref={containerRef}>
+      {/* Control Panel */}
+      {showControlPanel && (
+        <Card className="absolute top-4 left-4 z-20 w-80 bg-white/90 backdrop-blur-sm border-white/20 shadow-xl">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg font-semibold flex items-center gap-2">
+              <Settings className="h-5 w-5" />
+              Diagram Controls
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* View Selection */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Architecture View</label>
+              <Select value={config.selectedView} onValueChange={(value) => console.log("View changed:", value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="complete">Complete Architecture</SelectItem>
+                  <SelectItem value="authentication">Authentication Flow</SelectItem>
+                  <SelectItem value="pki">PKI & Certificates</SelectItem>
+                  <SelectItem value="policies">Access Policies</SelectItem>
+                  <SelectItem value="connectivity">Connectivity</SelectItem>
+                  <SelectItem value="intune">Intune Integration</SelectItem>
+                  <SelectItem value="onboarding">Device Onboarding</SelectItem>
+                  <SelectItem value="radsec">RADSEC Proxy</SelectItem>
+                  <SelectItem value="ztna">Zero Trust Access</SelectItem>
+                  <SelectItem value="guest">Guest Portal</SelectItem>
+                  <SelectItem value="iot">IoT Onboarding</SelectItem>
+                  <SelectItem value="tacacs">TACACS+</SelectItem>
+                  <SelectItem value="risk">Risk Policies</SelectItem>
+                  <SelectItem value="multisite">Multi-Site</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Interaction Mode */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Interaction Mode</label>
+              <div className="flex gap-1">
+                {[
+                  { mode: "select", icon: MousePointer, label: "Select" },
+                  { mode: "pan", icon: Hand, label: "Pan" },
+                  { mode: "connect", icon: Link, label: "Connect" },
+                  { mode: "edit", icon: Edit, label: "Edit" },
+                ].map(({ mode, icon: Icon, label }) => (
+                  <Button
+                    key={mode}
+                    variant={interactionMode === mode ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setInteractionMode(mode as any)}
+                    className="flex-1"
+                  >
+                    <Icon className="h-4 w-4" />
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Display Options */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">Show Metrics</label>
+                <Switch checked={showMetrics} onCheckedChange={setShowMetrics} />
+              </div>
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">Show Connections</label>
+                <Switch checked={showConnections} onCheckedChange={setShowConnections} />
+              </div>
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">Show Labels</label>
+                <Switch checked={showLabels} onCheckedChange={setShowLabels} />
+              </div>
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">Show Grid</label>
+                <Switch checked={showGrid} onCheckedChange={setShowGrid} />
+              </div>
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">Animations</label>
+                <Switch checked={animationActive} onCheckedChange={setAnimationActive} />
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Zoom and Animation Speed */}
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Zoom Level: {zoomLevel}%</label>
+                <Slider
+                  value={[zoomLevel]}
+                  onValueChange={(value) => setZoomLevel(value[0])}
+                  min={25}
+                  max={200}
+                  step={25}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Animation Speed</label>
+                <Slider
+                  value={[animationSpeed]}
+                  onValueChange={(value) => setAnimationSpeed(value[0])}
+                  min={10}
+                  max={100}
+                  step={10}
+                />
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Action Buttons */}
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="outline" size="sm" onClick={() => handleExport(exportFormat)}>
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleSave}>
+                <Save className="h-4 w-4 mr-2" />
+                Save
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleAutoLayout}>
+                <Layers className="h-4 w-4 mr-2" />
+                Auto Layout
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setIsFullscreen(!isFullscreen)}>
+                {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Diagram Controls */}
+      <div className="absolute top-4 right-4 z-10 flex gap-2">
+        <Button variant="outline" size="sm" onClick={() => handleZoom(25)} className="bg-white/80 hover:bg-white">
+          <ZoomIn size={16} />
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => handleZoom(-25)} className="bg-white/80 hover:bg-white">
+          <ZoomOut size={16} />
+        </Button>
+        <Button
+          variant={showMetrics ? "default" : "outline"}
+          size="sm"
+          onClick={() => setShowMetrics(!showMetrics)}
+          className={showMetrics ? "" : "bg-white/80 hover:bg-white"}
+        >
+          <BarChart3 size={16} />
+        </Button>
+        <Button
+          variant={showConnections ? "default" : "outline"}
+          size="sm"
+          onClick={() => setShowConnections(!showConnections)}
+          className={showConnections ? "" : "bg-white/80 hover:bg-white"}
+        >
+          <GitBranch size={16} />
+        </Button>
+        <Button
+          variant={animationActive ? "default" : "outline"}
+          size="sm"
+          onClick={() => setAnimationActive(!animationActive)}
+          className={animationActive ? "" : "bg-white/80 hover:bg-white"}
+        >
+          <Zap size={16} />
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowControlPanel(!showControlPanel)}
+          className="bg-white/80 hover:bg-white"
+        >
+          <Settings size={16} />
+        </Button>
+      </div>
+
       {/* Main SVG Diagram */}
       <svg
         ref={svgRef}
+        width="100%"
+        height="100%"
+        viewBox={`${-panOffset.x} ${-panOffset.y} ${1600 * (100 / zoomLevel)} ${1200 * (100 / zoomLevel)}`}
         className="w-full h-full"
-        viewBox="0 0 1200 600"
-        style={{ transform: `scale(${zoomLevel / 100})` }}
       >
-        {/* Background Grid */}
+        {/* Definitions */}
         <defs>
-          <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e5e7eb" strokeWidth="0.5" />
-          </pattern>
-          {/* Arrow markers for connections */}
-          <defs>
-            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-              <polygon points="0 0, 10 3.5, 0 7" fill="#6b7280" />
-            </marker>
-          </defs>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#grid)" />
-
-        {/* Connections */}
-        {showConnections &&
-          connections.map((connection, index) => {
-            const fromComponent = components.find((c) => c.id === connection.from)
-            const toComponent = components.find((c) => c.id === connection.to)
-
-            if (!fromComponent || !toComponent) return null
-
-            const path = getConnectionPath(fromComponent, toComponent)
-            const color = getConnectionColor(connection.type)
-
-            return (
-              <g key={index}>
-                <path
-                  d={path}
-                  fill="none"
-                  stroke={color}
-                  strokeWidth="2"
-                  strokeDasharray={connection.animated && isAnimationActive ? "5,5" : "none"}
-                  opacity={0.7}
-                  markerEnd={!connection.bidirectional ? "url(#arrowhead)" : "none"}
-                >
-                  {connection.animated && isAnimationActive && (
-                    <animate
-                      attributeName="stroke-dashoffset"
-                      values="0;-10"
-                      dur={`${2 / animationSpeed}s`}
-                      repeatCount="indefinite"
-                    />
-                  )}
-                </path>
-                {connection.bidirectional && (
-                  <path
-                    d={path}
-                    fill="none"
-                    stroke={color}
-                    strokeWidth="1"
-                    strokeDasharray="2,2"
-                    opacity={0.5}
-                    markerStart="url(#arrowhead)"
-                    markerEnd="url(#arrowhead)"
-                  />
-                )}
-                {/* Connection label */}
-                {showLabels && connection.protocol && (
-                  <text
-                    x={(fromComponent.x + fromComponent.width / 2 + toComponent.x + toComponent.width / 2) / 2}
-                    y={(fromComponent.y + fromComponent.height / 2 + toComponent.y + toComponent.height / 2) / 2 - 5}
-                    textAnchor="middle"
-                    fill="#374151"
-                    fontSize="10"
-                    className="pointer-events-none"
-                  >
-                    <tspan className="bg-white bg-opacity-75 px-1 rounded">{connection.protocol}</tspan>
-                  </text>
-                )}
-              </g>
-            )
-          })}
-
-        {/* Components */}
-        {components.map((component) => (
-          <g key={component.id}>
-            <rect
-              x={component.x}
-              y={component.y}
-              width={component.width}
-              height={component.height}
-              rx="8"
-              fill="white"
-              stroke={
-                selectedComponent === component.id
-                  ? "#3b82f6"
-                  : hoveredComponent === component.id
-                    ? "#6b7280"
-                    : "#e5e7eb"
-              }
-              strokeWidth={selectedComponent === component.id ? "3" : "2"}
-              className={`cursor-pointer transition-all duration-200 ${getStatusColor(component.status)}`}
-              onClick={() => handleComponentClick(component.id)}
-              onMouseEnter={() => handleComponentHover(component.id)}
-              onMouseLeave={() => handleComponentHover(null)}
-            />
-
-            {/* Vendor indicator */}
-            {component.vendor && (
-              <rect
-                x={component.x + component.width - 25}
-                y={component.y + 8}
-                width="18"
-                height="18"
-                rx="3"
-                fill={vendorConfigs[component.vendor as keyof typeof vendorConfigs]?.color || "#6b7280"}
-                opacity="0.8"
+          {/* Grid Pattern */}
+          {showGrid && (
+            <pattern id="grid" width={gridSize} height={gridSize} patternUnits="userSpaceOnUse">
+              <path
+                d={`M ${gridSize} 0 L 0 0 0 ${gridSize}`}
+                fill="none"
+                stroke="#E5E7EB"
+                strokeWidth="1"
+                opacity="0.3"
               />
-            )}
-
-            {/* Component Icon and Text */}
-            <foreignObject
-              x={component.x + 12}
-              y={component.y + 12}
-              width={component.width - 24}
-              height={component.height - 24}
-              className="pointer-events-none"
-            >
-              <div className="flex flex-col items-center justify-center h-full text-center">
-                <div className={`p-3 rounded-lg ${component.color} text-white mb-3`}>{component.icon}</div>
-                {showLabels && (
-                  <div className="text-sm font-medium text-gray-900 dark:text-gray-100 leading-tight px-2">
-                    {component.name}
-                  </div>
-                )}
-                {component.status && (
-                  <div className="mt-2">
-                    <Badge
-                      variant={
-                        component.status === "active"
-                          ? "default"
-                          : component.status === "warning"
-                            ? "secondary"
-                            : "destructive"
-                      }
-                      className="text-xs"
-                    >
-                      {component.status}
-                    </Badge>
-                  </div>
-                )}
-              </div>
-            </foreignObject>
-          </g>
-        ))}
-      </svg>
-
-      {/* Component Details Panel */}
-      {selectedComponentData && (
-        <div className="absolute top-4 left-4 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-lg border p-4 z-20 max-h-96 overflow-y-auto">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center space-x-2">
-              <div className={`p-2 rounded-lg ${selectedComponentData.color} text-white`}>
-                {selectedComponentData.icon}
-              </div>
-              <div>
-                <h3 className="font-semibold text-sm">{selectedComponentData.name}</h3>
-                <p className="text-xs text-gray-500 capitalize">{selectedComponentData.type}</p>
-                {selectedComponentData.vendor && (
-                  <p className="text-xs text-gray-400">
-                    {vendorConfigs[selectedComponentData.vendor as keyof typeof vendorConfigs]?.name}
-                  </p>
-                )}
-              </div>
-            </div>
-            <Button variant="ghost" size="sm" onClick={() => setSelectedComponent(null)} className="h-6 w-6 p-0">
-              ×
-            </Button>
-          </div>
-
-          {selectedComponentData.details && (
-            <div className="space-y-2">
-              <h4 className="font-medium text-sm border-b pb-1">Component Details</h4>
-              {Object.entries(selectedComponentData.details).map(([key, value]) => (
-                <div key={key} className="flex justify-between text-xs">
-                  <span className="text-gray-600 dark:text-gray-400 capitalize">
-                    {key
-                      .replace(/[-_]/g, " ")
-                      .replace(/([A-Z])/g, " $1")
-                      .trim()}
-                    :
-                  </span>
-                  <span className="font-medium text-right max-w-48 truncate" title={String(value)}>
-                    {String(value)}
-                  </span>
-                </div>
-              ))}
-            </div>
+            </pattern>
           )}
 
-          <div className="mt-3 pt-3 border-t">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-gray-600 dark:text-gray-400">Status:</span>
-              <Badge
-                variant={
-                  selectedComponentData.status === "active"
-                    ? "default"
-                    : selectedComponentData.status === "warning"
-                      ? "secondary"
-                      : "destructive"
-                }
+          {/* Arrow Marker */}
+          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#6B7280" />
+          </marker>
+        </defs>
+
+        {/* Background */}
+        <rect width="100%" height="100%" fill={showGrid ? "url(#grid)" : "transparent"} />
+
+        {/* Connections */}
+        {showConnections && connections.map(renderConnection)}
+
+        {/* Components */}
+        {components.map(renderComponent)}
+      </svg>
+
+      {/* Component/Connection Details Panel */}
+      {(selectedComponent || selectedConnection) && (
+        <Card className="absolute bottom-4 left-4 w-96 bg-white/90 backdrop-blur-sm border-white/20 shadow-xl max-h-96">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg font-semibold">
+                {selectedComponent ? selectedComponent.name : selectedConnection?.protocol}
+              </CardTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSelectedComponent(null)
+                  setSelectedConnection(null)
+                }}
               >
-                {selectedComponentData.status || "Unknown"}
-              </Badge>
+                <XCircle size={20} />
+              </Button>
             </div>
-          </div>
-        </div>
+          </CardHeader>
+          <CardContent>
+            <ScrollArea className="h-80">
+              {selectedComponent && (
+                <div className="space-y-3">
+                  <div>
+                    <span className="text-sm font-medium text-gray-500">Status:</span>
+                    <Badge
+                      className={`ml-2 ${
+                        selectedComponent.status === "online"
+                          ? "bg-green-100 text-green-800"
+                          : selectedComponent.status === "warning"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : selectedComponent.status === "error"
+                              ? "bg-red-100 text-red-800"
+                              : "bg-gray-100 text-gray-800"
+                      }`}
+                    >
+                      {selectedComponent.status}
+                    </Badge>
+                  </div>
+
+                  <div>
+                    <span className="text-sm font-medium text-gray-500">Description:</span>
+                    <p className="text-sm text-gray-700 mt-1">{selectedComponent.description}</p>
+                  </div>
+
+                  {selectedComponent.vendor && (
+                    <div>
+                      <span className="text-sm font-medium text-gray-500">Vendor:</span>
+                      <Badge className="ml-2 bg-blue-100 text-blue-800">{selectedComponent.vendor}</Badge>
+                    </div>
+                  )}
+
+                  {selectedComponent.metrics && (
+                    <div>
+                      <span className="text-sm font-medium text-gray-500">Metrics:</span>
+                      <div className="grid grid-cols-2 gap-2 mt-1">
+                        {Object.entries(selectedComponent.metrics).map(([key, value]) => (
+                          <div key={key} className="text-xs">
+                            <span className="text-gray-500 capitalize">{key.replace(/([A-Z])/g, " $1")}:</span>
+                            <span className="ml-1 font-medium">{value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedComponent.securityFeatures && (
+                    <div>
+                      <span className="text-sm font-medium text-gray-500">Security Features:</span>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {selectedComponent.securityFeatures.map((feature, index) => (
+                          <Badge key={index} variant="secondary" className="text-xs">
+                            {feature}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedComponent.ports && (
+                    <div>
+                      <span className="text-sm font-medium text-gray-500">Ports:</span>
+                      <div className="space-y-1 mt-1">
+                        {selectedComponent.ports.map((port) => (
+                          <div key={port.id} className="text-xs flex justify-between">
+                            <span>{port.name}</span>
+                            <Badge variant={port.status === "active" ? "default" : "secondary"} className="text-xs">
+                              {port.status}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {selectedConnection && (
+                <div className="space-y-3">
+                  <div>
+                    <span className="text-sm font-medium text-gray-500">Type:</span>
+                    <Badge className="ml-2 bg-blue-100 text-blue-800">{selectedConnection.type}</Badge>
+                  </div>
+
+                  <div>
+                    <span className="text-sm font-medium text-gray-500">Protocol:</span>
+                    <span className="ml-2 text-sm font-medium">{selectedConnection.protocol}</span>
+                  </div>
+
+                  {selectedConnection.port && (
+                    <div>
+                      <span className="text-sm font-medium text-gray-500">Port:</span>
+                      <span className="ml-2 text-sm font-medium">{selectedConnection.port}</span>
+                    </div>
+                  )}
+
+                  {selectedConnection.bandwidth && (
+                    <div>
+                      <span className="text-sm font-medium text-gray-500">Bandwidth:</span>
+                      <span className="ml-2 text-sm font-medium">{selectedConnection.bandwidth}</span>
+                    </div>
+                  )}
+
+                  {selectedConnection.latency && (
+                    <div>
+                      <span className="text-sm font-medium text-gray-500">Latency:</span>
+                      <span className="ml-2 text-sm font-medium">{selectedConnection.latency}ms</span>
+                    </div>
+                  )}
+
+                  <div>
+                    <span className="text-sm font-medium text-gray-500">Encryption:</span>
+                    <Badge
+                      className={`ml-2 ${
+                        selectedConnection.encryption ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                      }`}
+                    >
+                      {selectedConnection.encryption ? "Enabled" : "Disabled"}
+                    </Badge>
+                  </div>
+                </div>
+              )}
+            </ScrollArea>
+          </CardContent>
+        </Card>
       )}
 
-      {/* View Information */}
-      <div className="absolute bottom-4 left-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg border p-3 z-10">
-        <div className="flex items-center space-x-2 text-sm">
-          <div className="flex items-center space-x-1">
-            {currentView?.icon}
-            <span className="font-medium">{currentView?.name}</span>
-          </div>
-          <span className="text-gray-400">•</span>
-          <span className="text-gray-600 dark:text-gray-400">{components.length} components</span>
-          <span className="text-gray-400">•</span>
-          <span className="text-gray-600 dark:text-gray-400">{connections.length} connections</span>
-          <span className="text-gray-400">•</span>
-          <div className="flex items-center space-x-1">
-            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: vendorConfig.color }} />
-            <span className="text-gray-600 dark:text-gray-400">{vendorConfig.name}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Animation Controls */}
-      <div className="absolute bottom-4 right-4 flex items-center space-x-2 z-10">
-        <Button variant="outline" size="sm" onClick={toggleAnimation} className="bg-white dark:bg-gray-800">
-          {isAnimationActive ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-        </Button>
-        <Button variant="outline" size="sm" onClick={resetView} className="bg-white dark:bg-gray-800">
-          <RotateCcw className="h-4 w-4" />
-        </Button>
-      </div>
+      {/* Legend */}
+      {showLegend && (
+        <Card className="absolute bottom-4 right-4 w-64 bg-white/90 backdrop-blur-sm border-white/20 shadow-xl">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold">Legend</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="space-y-1">
+              <div className="text-xs font-medium text-gray-600">Status</div>
+              <div className="flex gap-2 text-xs">
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                  <span>Online</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+                  <span>Warning</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                  <span>Error</span>
+                </div>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <div className="text-xs font-medium text-gray-600">Categories</div>
+              <div className="grid grid-cols-2 gap-1 text-xs">
+                <div className="flex items-center gap-1">
+                  <Cloud size={12} className="text-blue-500" />
+                  <span>Cloud</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Network size={12} className="text-gray-500" />
+                  <span>Network</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Shield size={12} className="text-red-500" />
+                  <span>Security</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Users size={12} className="text-blue-600" />
+                  <span>Identity</span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

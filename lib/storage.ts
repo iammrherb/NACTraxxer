@@ -1,911 +1,1282 @@
-"use client"
-
-// Types
-export interface User {
-  id: string
-  name: string
-  email: string
-  role:
-    | "admin"
-    | "project-manager"
-    | "technical-owner"
-    | "site-owner"
-    | "systems-engineer"
-    | "account-executive"
-    | "technical-account-manager"
-    | "technician"
-    | "security-specialist"
-  department?: string
-  phone?: string
-  avatar?: string
-  createdAt: string
-  updatedAt: string
-}
+// Storage utility functions for the NAC Designer application
 
 export interface Site {
   id: string
   name: string
   location: string
-  region: string
-  country: string
-  state?: string
   city?: string
-  siteType: "headquarters" | "branch" | "campus" | "department" | "floor" | "building" | "datacenter" | "remote"
-  status: "planning" | "design" | "implementation" | "testing" | "completed" | "on-hold" | "cancelled"
-  priority: "low" | "medium" | "high" | "critical"
-  phase: string
+  state?: string
+  country?: string
+  region: string
+  type: string
   users: number
   devices: number
-  deviceBreakdown: {
+  status: string
+  phase: string
+  timeline: string
+  notes: string
+  infrastructure: {
+    wired: { vendor: string; switches: number; model?: string }
+    wireless: { vendor: string; aps: number; model?: string }
+    firewall: { vendor: string; model: string }
+  }
+  compliance: string[]
+  riskLevel: string
+  securityRequirements: string[]
+  networkSegments: string[]
+  priority: "High" | "Medium" | "Low"
+  budget: number
+  projectManager: string
+  technicalOwner: string
+  deviceCounts: {
+    total: number
     windows: number
     mac: number
-    linux: number
-    ios: number
-    android: number
+    mobile: number
     iot: number
-    medical: number
-    printers: number
-    cameras: number
-    voip: number
-    kiosks: number
-    tablets: number
-    chromeos: number
-    other: number
   }
-  assignedUsers: {
-    projectManagers: string[]
-    technicalOwners: string[]
-    siteOwners: string[]
-    systemsEngineers: string[]
-    accountExecutives: string[]
-    technicalAccountManagers: string[]
-    technicians: string[]
-    securitySpecialists: string[]
+  userCounts: {
+    total: number
+    employees: number
+    contractors: number
+    guests: number
   }
-  startDate: string
-  targetDate: string
-  progress: number
-  wiredInfrastructure: {
-    vendor: string
-    switchModels: string[]
-    switchCount: number
-    portCount: number
-    stackingSupport: boolean
-    poeSupport: boolean
-    mgmtVlan: number
-    firmware: string
-  }
-  wirelessInfrastructure: {
-    vendor: string
-    controllerModel: string
-    apModels: string[]
-    apCount: number
-    wifiStandards: string[]
-    bandSupport: string[]
-    meshSupport: boolean
-    firmware: string
-  }
-  connectivity: {
-    type: string
-    bandwidth: string
-    provider: string
-    redundancy: boolean
-  }
-  identityProvider: {
-    type: string
-    domain: string
-    syncEnabled: boolean
-    mfaEnabled: boolean
-    conditionalAccess: boolean
-  }
-  mdmProvider: {
-    type: string
-    enrollmentType: string
-    complianceEnabled: boolean
-    appManagement: boolean
-  }
-  firewallInfrastructure: {
-    vendor: string
-    models: string[]
-    haConfiguration: boolean
-    userIdIntegration: boolean
-    syslogEnabled: boolean
-    firmware: string
-  }
-  radiusConfiguration: {
-    type: string
-    clustering: boolean
-    loadBalancing: boolean
-    certificates: boolean
-    vendor?: string
-  }
-  deviceAdministration: {
-    type: string
-    privilegeLevels: number[]
-    commandAuthorization: boolean
-    vendor?: string
-  }
-  vlans: number
-  subnets: string[]
-  dhcpScopes: number
-  dnsServers: string[]
-  globalPolicies: string[]
-  sitePolicies: string[]
-  policyEnforcement: {
-    dynamic_vlan: boolean
-    bandwidth_control: boolean
-    time_based_access: boolean
-    device_compliance: boolean
-    location_based: boolean
-  }
-  complianceRequirements: string[]
-  securityStandards: string[]
-  dataClassification: "public" | "internal" | "confidential" | "restricted"
-  notes: string
-  deploymentChecklist: string[]
-  riskAssessment: string[]
-  milestones: string[]
-  createdAt: string
-  updatedAt: string
+  industry: string
 }
 
-export interface GlobalPolicy {
+export interface User {
   id: string
   name: string
-  description: string
-  category: "authentication" | "authorization" | "accounting" | "security" | "compliance" | "qos" | "guest_access"
-  type: "access" | "vlan" | "qos" | "security" | "compliance" | "bandwidth" | "time" | "location"
-  priority: number
-  conditions: PolicyCondition[]
-  actions: PolicyAction[]
-  enabled: boolean
-  applicableSites: string[]
-  tags: string[]
-  version: string
-  approvedBy: string
-  createdAt: string
-  updatedAt: string
-}
-
-export interface PolicyCondition {
-  type:
-    | "user_group"
-    | "device_type"
-    | "location"
-    | "time"
-    | "compliance"
-    | "certificate"
-    | "os_type"
-    | "device_health"
-    | "ip_range"
-    | "mac_address"
-    | "ssid"
-  operator:
-    | "equals"
-    | "not_equals"
-    | "contains"
-    | "not_contains"
-    | "in"
-    | "not_in"
-    | "greater_than"
-    | "less_than"
-    | "matches_regex"
-  value: string | string[]
-  description: string
-}
-
-export interface PolicyAction {
-  type:
-    | "allow"
-    | "deny"
-    | "quarantine"
-    | "redirect"
-    | "notify"
-    | "vlan_assign"
-    | "qos_apply"
-    | "bandwidth_limit"
-    | "time_restrict"
-    | "log_only"
-  parameters: Record<string, any>
-  description: string
-  priority: number
+  email: string
+  role: string
+  department: string
+  sites: string[]
+  permissions: string[]
+  lastLogin: string
+  status: "active" | "inactive"
 }
 
 export interface Event {
   id: string
   title: string
-  description?: string
-  start: string
-  end: string
-  type: "milestone" | "task" | "meeting" | "deadline" | "deployment"
-  status: "planned" | "in-progress" | "completed" | "cancelled"
+  description: string
+  startDate: string
+  endDate: string
+  type: "milestone" | "task" | "meeting" | "deployment"
+  status: "pending" | "in_progress" | "completed" | "cancelled"
+  assignedTo: string[]
   siteId?: string
-  assignedTo?: string[]
   priority: "low" | "medium" | "high" | "critical"
   tags: string[]
+}
+
+export interface Policy {
+  id: string
+  name: string
+  description: string
+  category: string
+  priority: "low" | "medium" | "high" | "critical"
+  status: "active" | "inactive" | "draft"
+  conditions: any[]
+  actions: any[]
   createdAt: string
   updatedAt: string
+  appliedTo: string[]
+  effectiveness: number
+  violations: number
 }
 
-export interface UserPreferences {
-  customerLogo?: string
-  companyName?: string
-  defaultView?: string
-  theme?: "light" | "dark" | "system"
-  notifications?: boolean
-  autoSave?: boolean
+export interface ArchitectureConfig {
+  industry: string
+  deployment: string
+  connectivity: string[]
+  identityProvider: string
+  mdm: string
+  firewall: string
+  wiredVendor: string
+  wirelessVendor: string
+  deviceTypes: string[]
+  authTypes: string[]
+  compliance: string[]
+  customizations: {
+    colors: Record<string, string>
+    layout: string
+    showMetrics: boolean
+    animationSpeed: number
+  }
 }
 
-// Extended vendor and configuration data
-export const REGIONS = ["North America", "South America", "EMEA", "APAC", "Europe", "Asia", "Africa", "Oceania"]
+export interface CustomerInfo {
+  companyName: string
+  industry: string
+  contactName: string
+  email: string
+  phone: string
+  logo?: string
+}
 
-export const COUNTRIES = [
-  "United States",
-  "Canada",
-  "Mexico",
-  "Brazil",
-  "Argentina",
-  "Chile",
-  "Colombia",
-  "Peru",
-  "Venezuela",
-  "United Kingdom",
-  "Germany",
-  "France",
-  "Spain",
-  "Italy",
-  "Netherlands",
-  "Sweden",
-  "Norway",
-  "Denmark",
-  "Finland",
-  "Poland",
-  "Czech Republic",
-  "China",
-  "Japan",
-  "South Korea",
-  "India",
-  "Singapore",
-  "Australia",
-  "New Zealand",
-  "Thailand",
-  "Malaysia",
-  "Philippines",
-  "Indonesia",
-  "South Africa",
-  "Nigeria",
-  "Egypt",
-  "Kenya",
-  "Morocco",
-  "Ghana",
-  "UAE",
-  "Saudi Arabia",
-  "Israel",
-  "Turkey",
-  "Russia",
-]
+const INDUSTRY_SCENARIOS = {
+  healthcare: {
+    id: "healthcare",
+    name: "Regional Healthcare System",
+    industry: "healthcare",
+    description: "Multi-facility healthcare system with HIPAA compliance requirements and medical device integration",
+    userCount: 2500,
+    siteCount: 5,
+    budget: 1500000,
+    timeline: "6 months",
+    compliance: ["HIPAA", "HITECH", "FDA 21 CFR Part 11"],
+    specialties: [
+      "Medical Device Security",
+      "Patient Data Protection",
+      "Compliance Automation",
+      "Telemedicine Support",
+    ],
+    icon: "🏥",
+    color: "bg-red-50 border-red-200",
+  },
+  financial: {
+    id: "financial",
+    name: "Global Investment Bank",
+    industry: "financial services",
+    description: "International banking institution with strict regulatory compliance and high-frequency trading",
+    userCount: 1800,
+    siteCount: 3,
+    budget: 1200000,
+    timeline: "4 months",
+    compliance: ["PCI DSS", "SOX", "GDPR", "MiFID II", "FFIEC"],
+    specialties: ["Trading Floor Security", "Fraud Detection", "Regulatory Compliance", "High-Frequency Trading"],
+    icon: "🏦",
+    color: "bg-green-50 border-green-200",
+  },
+  manufacturing: {
+    id: "manufacturing",
+    name: "Advanced Manufacturing Corp",
+    industry: "manufacturing",
+    description: "Industrial manufacturing with OT/IT convergence and smart factory initiatives",
+    userCount: 1200,
+    siteCount: 4,
+    budget: 900000,
+    timeline: "5 months",
+    compliance: ["IEC 62443", "NIST 800-82", "ISO 27001", "OSHA"],
+    specialties: ["OT Security", "Industrial Control Systems", "Smart Factory", "Predictive Maintenance"],
+    icon: "🏭",
+    color: "bg-blue-50 border-blue-200",
+  },
+  technology: {
+    id: "technology",
+    name: "Cloud-Native Tech Startup",
+    industry: "technology",
+    description: "Fast-growing technology company with cloud-first architecture and global remote workforce",
+    userCount: 800,
+    siteCount: 2,
+    budget: 600000,
+    timeline: "3 months",
+    compliance: ["SOC 2", "GDPR", "ISO 27001", "FedRAMP"],
+    specialties: ["Cloud Security", "DevSecOps", "Zero Trust", "Remote Work Security"],
+    icon: "💻",
+    color: "bg-purple-50 border-purple-200",
+  },
+  retail: {
+    id: "retail",
+    name: "Omnichannel Retail Chain",
+    industry: "retail",
+    description: "Multi-location retail chain with e-commerce integration and customer data analytics",
+    userCount: 1500,
+    siteCount: 8,
+    budget: 1000000,
+    timeline: "4 months",
+    compliance: ["PCI DSS", "CCPA", "GDPR", "SOX"],
+    specialties: ["POS Security", "Customer Data Protection", "Omnichannel Integration", "Loss Prevention"],
+    icon: "🛍️",
+    color: "bg-yellow-50 border-yellow-200",
+  },
+  education: {
+    id: "education",
+    name: "State University System",
+    industry: "education",
+    description: "Large university campus with research facilities, student housing, and administrative buildings",
+    userCount: 25000,
+    siteCount: 6,
+    budget: 1800000,
+    timeline: "8 months",
+    compliance: ["FERPA", "CIPA", "FISMA", "HIPAA"],
+    specialties: ["Student Privacy", "Research Security", "BYOD Management", "Campus Safety"],
+    icon: "🎓",
+    color: "bg-indigo-50 border-indigo-200",
+  },
+  government: {
+    id: "government",
+    name: "Federal Agency",
+    industry: "government",
+    description: "Federal government agency with classified and unclassified networks",
+    userCount: 2000,
+    siteCount: 3,
+    budget: 2500000,
+    timeline: "12 months",
+    compliance: ["FISMA", "NIST 800-53", "FedRAMP", "CJIS"],
+    specialties: ["Classified Security", "FISMA Compliance", "Continuous Monitoring", "Insider Threat"],
+    icon: "🏛️",
+    color: "bg-gray-50 border-gray-200",
+  },
+}
 
-export const US_STATES = [
-  "Alabama",
-  "Alaska",
-  "Arizona",
-  "Arkansas",
-  "California",
-  "Colorado",
-  "Connecticut",
-  "Delaware",
-  "Florida",
-  "Georgia",
-  "Hawaii",
-  "Idaho",
-  "Illinois",
-  "Indiana",
-  "Iowa",
-  "Kansas",
-  "Kentucky",
-  "Louisiana",
-  "Maine",
-  "Maryland",
-  "Massachusetts",
-  "Michigan",
-  "Minnesota",
-  "Mississippi",
-  "Missouri",
-  "Montana",
-  "Nebraska",
-  "Nevada",
-  "New Hampshire",
-  "New Jersey",
-  "New Mexico",
-  "New York",
-  "North Carolina",
-  "North Dakota",
-  "Ohio",
-  "Oklahoma",
-  "Oregon",
-  "Pennsylvania",
-  "Rhode Island",
-  "South Carolina",
-  "South Dakota",
-  "Tennessee",
-  "Texas",
-  "Utah",
-  "Vermont",
-  "Virginia",
-  "Washington",
-  "West Virginia",
-  "Wisconsin",
-  "Wyoming",
-]
+class Storage {
+  private isClient = typeof window !== "undefined"
 
-export const PHASES = [
-  "Phase 1 - Planning",
-  "Phase 2 - Design",
-  "Phase 3 - Implementation",
-  "Phase 4 - Testing",
-  "Phase 5 - Deployment",
-  "Phase 6 - Go-Live",
-]
-
-export const WIRED_VENDORS = [
-  { id: "cisco", name: "Cisco Systems" },
-  { id: "aruba", name: "Aruba (HPE)" },
-  { id: "juniper", name: "Juniper Networks" },
-  { id: "extreme", name: "Extreme Networks" },
-  { id: "dell", name: "Dell Technologies" },
-  { id: "hp", name: "HP Enterprise" },
-]
-
-export const WIRELESS_VENDORS = [
-  { id: "cisco", name: "Cisco Systems" },
-  { id: "aruba", name: "Aruba (HPE)" },
-  { id: "juniper", name: "Juniper Mist" },
-  { id: "ruckus", name: "Ruckus (CommScope)" },
-  { id: "meraki", name: "Cisco Meraki" },
-  { id: "ubiquiti", name: "Ubiquiti Networks" },
-]
-
-export const FIREWALL_VENDORS = [
-  { id: "palo-alto", name: "Palo Alto Networks" },
-  { id: "fortinet", name: "Fortinet" },
-  { id: "cisco", name: "Cisco ASA/FTD" },
-  { id: "juniper", name: "Juniper SRX" },
-  { id: "checkpoint", name: "Check Point" },
-  { id: "sonicwall", name: "SonicWall" },
-]
-
-export const MDM_PROVIDERS = [
-  { id: "intune", name: "Microsoft Intune", description: "Cloud-based MDM and MAM" },
-  { id: "jamf", name: "Jamf Pro", description: "Apple device management" },
-  { id: "workspace-one", name: "VMware Workspace ONE", description: "Unified endpoint management" },
-  { id: "mobileiron", name: "Ivanti MobileIron", description: "Enterprise mobility management" },
-]
-
-// Utility function to check if we're on the client side
-const isClient = () => typeof window !== "undefined"
-
-// Storage utility class
-class StorageManager {
-  private getItem(key: string): string | null {
-    if (!isClient()) return null
+  // Generic storage methods
+  private getItem<T>(key: string, defaultValue: T): T {
+    if (!this.isClient) return defaultValue
     try {
-      return localStorage.getItem(key)
+      const item = localStorage.getItem(key)
+      return item ? JSON.parse(item) : defaultValue
     } catch (error) {
-      console.error("Error accessing localStorage:", error)
-      return null
+      console.error(`Error reading ${key} from localStorage:`, error)
+      return defaultValue
     }
   }
 
-  private setItem(key: string, value: string): void {
-    if (!isClient()) return
+  private setItem<T>(key: string, value: T): void {
+    if (!this.isClient) return
     try {
-      localStorage.setItem(key, value)
+      localStorage.setItem(key, JSON.stringify(value))
     } catch (error) {
-      console.error("Error setting localStorage:", error)
+      console.error(`Error writing ${key} to localStorage:`, error)
     }
-  }
-
-  private removeItem(key: string): void {
-    if (!isClient()) return
-    try {
-      localStorage.removeItem(key)
-    } catch (error) {
-      console.error("Error removing from localStorage:", error)
-    }
-  }
-
-  // Users
-  async getUsers(): Promise<User[]> {
-    const data = this.getItem("portnox-users")
-    return data ? JSON.parse(data) : []
-  }
-
-  async createUser(userData: Omit<User, "id" | "createdAt" | "updatedAt">): Promise<User> {
-    const users = await this.getUsers()
-    const newUser: User = {
-      ...userData,
-      id: `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }
-    users.push(newUser)
-    this.setItem("portnox-users", JSON.stringify(users))
-    return newUser
-  }
-
-  async updateUser(id: string, updates: Partial<User>): Promise<User | null> {
-    const users = await this.getUsers()
-    const index = users.findIndex((u) => u.id === id)
-    if (index === -1) return null
-
-    users[index] = { ...users[index], ...updates, updatedAt: new Date().toISOString() }
-    this.setItem("portnox-users", JSON.stringify(users))
-    return users[index]
-  }
-
-  async deleteUser(id: string): Promise<boolean> {
-    const users = await this.getUsers()
-    const filteredUsers = users.filter((u) => u.id !== id)
-    if (filteredUsers.length === users.length) return false
-
-    this.setItem("portnox-users", JSON.stringify(filteredUsers))
-    return true
   }
 
   // Sites
-  async getSites(): Promise<Site[]> {
-    const data = this.getItem("portnox-sites")
-    return data ? JSON.parse(data) : []
+  getSites(): Site[] {
+    return this.getItem("nac-designer-sites", [])
   }
 
-  async createSite(siteData: Omit<Site, "id" | "createdAt" | "updatedAt">): Promise<Site> {
-    const sites = await this.getSites()
-    const newSite: Site = {
-      ...siteData,
-      id: `site-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }
-    sites.push(newSite)
-    this.setItem("portnox-sites", JSON.stringify(sites))
-    return newSite
+  saveSites(sites: Site[]): void {
+    this.setItem("nac-designer-sites", sites)
   }
 
-  async updateSite(id: string, updates: Partial<Site>): Promise<Site | null> {
-    const sites = await this.getSites()
-    const index = sites.findIndex((s) => s.id === id)
-    if (index === -1) return null
-
-    sites[index] = { ...sites[index], ...updates, updatedAt: new Date().toISOString() }
-    this.setItem("portnox-sites", JSON.stringify(sites))
-    return sites[index]
+  // Users
+  getUsers(): User[] {
+    return this.getItem("nac-designer-users", [])
   }
 
-  async deleteSite(id: string): Promise<boolean> {
-    const sites = await this.getSites()
-    const filteredSites = sites.filter((s) => s.id !== id)
-    if (filteredSites.length === sites.length) return false
-
-    this.setItem("portnox-sites", JSON.stringify(filteredSites))
-    return true
-  }
-
-  // Global Policies
-  async getGlobalPolicies(): Promise<GlobalPolicy[]> {
-    const data = this.getItem("portnox-global-policies")
-    return data ? JSON.parse(data) : []
-  }
-
-  async createGlobalPolicy(policyData: Omit<GlobalPolicy, "id" | "createdAt" | "updatedAt">): Promise<GlobalPolicy> {
-    const policies = await this.getGlobalPolicies()
-    const newPolicy: GlobalPolicy = {
-      ...policyData,
-      id: `policy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }
-    policies.push(newPolicy)
-    this.setItem("portnox-global-policies", JSON.stringify(policies))
-    return newPolicy
-  }
-
-  async updateGlobalPolicy(id: string, updates: Partial<GlobalPolicy>): Promise<GlobalPolicy | null> {
-    const policies = await this.getGlobalPolicies()
-    const index = policies.findIndex((p) => p.id === id)
-    if (index === -1) return null
-
-    policies[index] = { ...policies[index], ...updates, updatedAt: new Date().toISOString() }
-    this.setItem("portnox-global-policies", JSON.stringify(policies))
-    return policies[index]
-  }
-
-  async deleteGlobalPolicy(id: string): Promise<boolean> {
-    const policies = await this.getGlobalPolicies()
-    const filteredPolicies = policies.filter((p) => p.id !== id)
-    if (filteredPolicies.length === policies.length) return false
-
-    this.setItem("portnox-global-policies", JSON.stringify(filteredPolicies))
-    return true
+  saveUsers(users: User[]): void {
+    this.setItem("nac-designer-users", users)
   }
 
   // Events
-  async getEvents(): Promise<Event[]> {
-    const data = this.getItem("portnox-events")
-    return data ? JSON.parse(data) : []
+  getEvents(): Event[] {
+    return this.getItem("nac-designer-events", [])
   }
 
-  async createEvent(eventData: Omit<Event, "id" | "createdAt" | "updatedAt">): Promise<Event> {
-    const events = await this.getEvents()
-    const newEvent: Event = {
-      ...eventData,
-      id: `event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }
-    events.push(newEvent)
-    this.setItem("portnox-events", JSON.stringify(events))
-    return newEvent
+  saveEvents(events: Event[]): void {
+    this.setItem("nac-designer-events", events)
   }
 
-  async updateEvent(id: string, updates: Partial<Event>): Promise<Event | null> {
-    const events = await this.getEvents()
-    const index = events.findIndex((e) => e.id === id)
-    if (index === -1) return null
-
-    events[index] = { ...events[index], ...updates, updatedAt: new Date().toISOString() }
-    this.setItem("portnox-events", JSON.stringify(events))
-    return events[index]
+  // Global Policies
+  getGlobalPolicies(): Policy[] {
+    return this.getItem("nac-designer-global-policies", [])
   }
 
-  async deleteEvent(id: string): Promise<boolean> {
-    const events = await this.getEvents()
-    const filteredEvents = events.filter((e) => e.id !== id)
-    if (filteredEvents.length === events.length) return false
-
-    this.setItem("portnox-events", JSON.stringify(filteredEvents))
-    return true
+  saveGlobalPolicies(policies: Policy[]): void {
+    this.setItem("nac-designer-global-policies", policies)
   }
 
-  // User Preferences
-  async getUserPreferences(): Promise<UserPreferences> {
-    const data = this.getItem("portnox-user-preferences")
-    return data
-      ? JSON.parse(data)
-      : {
-          companyName: "TechCorp Global",
-          theme: "light",
-          notifications: true,
-          autoSave: true,
-        }
-  }
-
-  async updateUserPreferences(updates: Partial<UserPreferences>): Promise<UserPreferences> {
-    const current = await this.getUserPreferences()
-    const updated = { ...current, ...updates }
-    this.setItem("portnox-user-preferences", JSON.stringify(updated))
-    return updated
-  }
-
-  // Export/Import
-  async exportData(): Promise<string> {
-    const [users, sites, policies, events, preferences] = await Promise.all([
-      this.getUsers(),
-      this.getSites(),
-      this.getGlobalPolicies(),
-      this.getEvents(),
-      this.getUserPreferences(),
-    ])
-
-    const exportData = {
-      version: "1.0",
-      timestamp: new Date().toISOString(),
-      data: {
-        users,
-        sites,
-        globalPolicies: policies,
-        events,
-        preferences,
+  // Architecture Configuration
+  getArchitectureConfig(): ArchitectureConfig {
+    return this.getItem("nac-designer-architecture-config", {
+      industry: "healthcare",
+      deployment: "hybrid",
+      connectivity: ["wired", "wireless"],
+      identityProvider: "azure_ad",
+      mdm: "intune",
+      firewall: "palo_alto",
+      wiredVendor: "cisco",
+      wirelessVendor: "aruba",
+      deviceTypes: ["windows", "mac", "mobile", "iot"],
+      authTypes: ["certificate", "username_password", "mfa"],
+      compliance: ["hipaa", "pci_dss"],
+      customizations: {
+        colors: {
+          primary: "#3b82f6",
+          secondary: "#10b981",
+          accent: "#f59e0b",
+        },
+        layout: "standard",
+        showMetrics: true,
+        animationSpeed: 1,
       },
-    }
-
-    return JSON.stringify(exportData, null, 2)
-  }
-
-  async importData(jsonData: string): Promise<void> {
-    try {
-      const importData = JSON.parse(jsonData)
-
-      if (importData.data) {
-        if (importData.data.users) {
-          this.setItem("portnox-users", JSON.stringify(importData.data.users))
-        }
-        if (importData.data.sites) {
-          this.setItem("portnox-sites", JSON.stringify(importData.data.sites))
-        }
-        if (importData.data.globalPolicies) {
-          this.setItem("portnox-global-policies", JSON.stringify(importData.data.globalPolicies))
-        }
-        if (importData.data.events) {
-          this.setItem("portnox-events", JSON.stringify(importData.data.events))
-        }
-        if (importData.data.preferences) {
-          this.setItem("portnox-user-preferences", JSON.stringify(importData.data.preferences))
-        }
-      }
-    } catch (error) {
-      throw new Error("Invalid import data format")
-    }
-  }
-
-  // Demo Data Generation
-  async generateDemoData(
-    scenario: "corporate" | "education" | "healthcare" | "government" | "manufacturing" | "retail",
-  ): Promise<void> {
-    const demoData = this.getDemoDataForScenario(scenario)
-
-    // Clear existing data
-    this.removeItem("portnox-users")
-    this.removeItem("portnox-sites")
-    this.removeItem("portnox-global-policies")
-    this.removeItem("portnox-events")
-
-    // Set demo data
-    this.setItem("portnox-users", JSON.stringify(demoData.users))
-    this.setItem("portnox-sites", JSON.stringify(demoData.sites))
-    this.setItem("portnox-global-policies", JSON.stringify(demoData.policies))
-    this.setItem("portnox-events", JSON.stringify(demoData.events))
-
-    // Update company name based on scenario
-    const preferences = await this.getUserPreferences()
-    await this.updateUserPreferences({
-      ...preferences,
-      companyName: demoData.companyName,
     })
   }
 
-  private getDemoDataForScenario(scenario: string) {
-    const baseTimestamp = new Date().toISOString()
+  saveArchitectureConfig(config: ArchitectureConfig): void {
+    this.setItem("nac-designer-architecture-config", config)
+  }
 
-    const scenarioConfig = {
-      corporate: {
-        companyName: "TechCorp Global",
-        userCount: 25,
-        siteCount: 12,
-        policyCount: 15,
-      },
-      education: {
-        companyName: "State University System",
-        userCount: 30,
-        siteCount: 8,
-        policyCount: 20,
-      },
-      healthcare: {
-        companyName: "Regional Medical Center",
-        userCount: 20,
-        siteCount: 6,
-        policyCount: 25,
-      },
-      government: {
-        companyName: "City Government",
-        userCount: 15,
-        siteCount: 10,
-        policyCount: 30,
-      },
-      manufacturing: {
-        companyName: "Industrial Manufacturing Corp",
-        userCount: 18,
-        siteCount: 15,
-        policyCount: 18,
-      },
-      retail: {
-        companyName: "Retail Chain Inc",
-        userCount: 22,
-        siteCount: 25,
-        policyCount: 12,
-      },
-    }
+  // Customer Information
+  getCustomerInfo(): CustomerInfo {
+    return this.getItem("nac-designer-customer-info", {
+      companyName: "Demo Company",
+      industry: "healthcare",
+      contactName: "John Doe",
+      email: "john.doe@company.com",
+      phone: "+1 (555) 123-4567",
+    })
+  }
 
-    const config = scenarioConfig[scenario as keyof typeof scenarioConfig] || scenarioConfig.corporate
+  saveCustomerInfo(info: CustomerInfo): void {
+    this.setItem("nac-designer-customer-info", info)
+  }
 
-    // Generate demo users
-    const users: User[] = []
-    const roles: User["role"][] = ["admin", "project-manager", "technical-owner", "site-owner", "systems-engineer"]
+  // Theme Settings
+  getThemeSettings(): any {
+    return this.getItem("nac-designer-theme", {
+      mode: "light",
+      primaryColor: "#3b82f6",
+      secondaryColor: "#10b981",
+      accentColor: "#f59e0b",
+    })
+  }
 
-    for (let i = 0; i < config.userCount; i++) {
-      users.push({
-        id: `user-demo-${i + 1}`,
-        name: `User ${i + 1}`,
-        email: `user${i + 1}@${scenario}.com`,
-        role: roles[i % roles.length],
-        department: ["IT", "Engineering", "Operations", "Security"][i % 4],
-        createdAt: baseTimestamp,
-        updatedAt: baseTimestamp,
+  saveThemeSettings(settings: any): void {
+    this.setItem("nac-designer-theme", settings)
+  }
+
+  // Demo Data Generation
+  async generateDemoData(scenarioKey: string): Promise<void> {
+    if (!this.isClient) return
+
+    try {
+      const scenario = INDUSTRY_SCENARIOS[scenarioKey as keyof typeof INDUSTRY_SCENARIOS]
+      if (!scenario) {
+        throw new Error(`Scenario ${scenarioKey} not found`)
+      }
+
+      console.log(`Generating demo data for ${scenario.name}...`)
+
+      // Clear existing data first
+      this.clearAllData()
+
+      // Generate comprehensive demo sites
+      const demoSites = this.generateDemoSites(scenario)
+      console.log(`Generated ${demoSites.length} sites`)
+      this.saveSites(demoSites)
+
+      // Generate demo users
+      const demoUsers = this.generateDemoUsers(scenario, demoSites)
+      console.log(`Generated ${demoUsers.length} users`)
+      this.saveUsers(demoUsers)
+
+      // Generate demo events and timeline
+      const demoEvents = this.generateDemoEvents(scenario, demoSites)
+      console.log(`Generated ${demoEvents.length} events`)
+      this.saveEvents(demoEvents)
+
+      // Generate demo policies
+      const demoPolicies = this.generateDemoPolicies(scenario)
+      console.log(`Generated ${demoPolicies.length} policies`)
+      this.saveGlobalPolicies(demoPolicies)
+
+      // Update customer info
+      this.saveCustomerInfo({
+        companyName: scenario.name,
+        industry: scenario.industry,
+        contactName: "Demo Administrator",
+        email: "admin@demo.com",
+        phone: "+1 (555) 123-4567",
       })
-    }
 
-    // Generate demo sites
+      // Update architecture config for the industry
+      this.saveArchitectureConfig({
+        industry: scenario.industry,
+        deployment: "hybrid",
+        connectivity: ["wired", "wireless"],
+        identityProvider: "azure_ad",
+        mdm: "intune",
+        firewall: "palo_alto",
+        wiredVendor: "cisco",
+        wirelessVendor: "aruba",
+        deviceTypes: ["windows", "mac", "mobile", "iot"],
+        authTypes: ["certificate", "username_password", "mfa"],
+        compliance: scenario.compliance,
+        customizations: {
+          colors: {
+            primary: "#3b82f6",
+            secondary: "#10b981",
+            accent: "#f59e0b",
+          },
+          layout: "standard",
+          showMetrics: true,
+          animationSpeed: 1,
+        },
+      })
+
+      console.log(`Demo data generation completed for ${scenario.name}`)
+    } catch (error) {
+      console.error("Error generating demo data:", error)
+      throw error
+    }
+  }
+
+  private generateDemoSites(scenario: any): Site[] {
     const sites: Site[] = []
-    const regions = ["North America", "Europe", "APAC"]
-    const countries = ["United States", "United Kingdom", "Germany", "Japan", "Australia"]
+    const regions = ["North America", "EMEA", "APAC", "LATAM"]
+    const cities = {
+      "North America": [
+        { name: "New York, NY", state: "NY", country: "USA" },
+        { name: "Los Angeles, CA", state: "CA", country: "USA" },
+        { name: "Chicago, IL", state: "IL", country: "USA" },
+        { name: "Toronto, ON", state: "ON", country: "Canada" },
+      ],
+      EMEA: [
+        { name: "London", state: "England", country: "UK" },
+        { name: "Frankfurt", state: "Hesse", country: "Germany" },
+        { name: "Paris", state: "Île-de-France", country: "France" },
+        { name: "Amsterdam", state: "North Holland", country: "Netherlands" },
+      ],
+      APAC: [
+        { name: "Tokyo", state: "Tokyo", country: "Japan" },
+        { name: "Singapore", state: "Singapore", country: "Singapore" },
+        { name: "Sydney", state: "NSW", country: "Australia" },
+        { name: "Hong Kong", state: "Hong Kong", country: "China" },
+      ],
+      LATAM: [
+        { name: "São Paulo", state: "SP", country: "Brazil" },
+        { name: "Mexico City", state: "CDMX", country: "Mexico" },
+        { name: "Buenos Aires", state: "CABA", country: "Argentina" },
+        { name: "Santiago", state: "RM", country: "Chile" },
+      ],
+    }
 
-    for (let i = 0; i < config.siteCount; i++) {
+    for (let i = 0; i < scenario.siteCount; i++) {
+      const region = regions[i % regions.length]
+      const cityList = cities[region as keyof typeof cities]
+      const cityInfo = cityList[Math.floor(Math.random() * cityList.length)]
+
+      const baseUsers = Math.floor(scenario.userCount / scenario.siteCount) + Math.floor(Math.random() * 200)
+      const baseDevices = Math.floor(baseUsers * 1.8) + Math.floor(Math.random() * 300)
+
       sites.push({
-        id: `site-demo-${i + 1}`,
-        name: `${scenario.charAt(0).toUpperCase() + scenario.slice(1)} Site ${i + 1}`,
-        location: `Location ${i + 1}`,
-        region: regions[i % regions.length],
-        country: countries[i % countries.length],
-        siteType: ["headquarters", "branch", "campus"][i % 3] as Site["siteType"],
-        status: ["planning", "implementation", "completed"][i % 3] as Site["status"],
-        priority: ["low", "medium", "high"][i % 3] as Site["priority"],
-        phase: PHASES[i % PHASES.length],
-        users: Math.floor(Math.random() * 500) + 100,
-        devices: Math.floor(Math.random() * 1000) + 200,
-        deviceBreakdown: {
-          windows: Math.floor(Math.random() * 300) + 50,
-          mac: Math.floor(Math.random() * 100) + 20,
-          linux: Math.floor(Math.random() * 50) + 10,
-          ios: Math.floor(Math.random() * 200) + 30,
-          android: Math.floor(Math.random() * 150) + 25,
-          iot: Math.floor(Math.random() * 100) + 15,
-          medical: Math.floor(Math.random() * 50) + 5,
-          printers: Math.floor(Math.random() * 30) + 5,
-          cameras: Math.floor(Math.random() * 40) + 8,
-          voip: Math.floor(Math.random() * 60) + 10,
-          kiosks: Math.floor(Math.random() * 20) + 2,
-          tablets: Math.floor(Math.random() * 80) + 15,
-          chromeos: Math.floor(Math.random() * 40) + 5,
-          other: Math.floor(Math.random() * 30) + 5,
+        id: `site-${scenario.id}-${i + 1}`,
+        name: `${scenario.name} - ${cityInfo.name.split(",")[0]}`,
+        location: cityInfo.name,
+        city: cityInfo.name.split(",")[0],
+        state: cityInfo.state,
+        country: cityInfo.country,
+        region: region,
+        type: this.getSiteType(scenario.industry),
+        users: baseUsers,
+        devices: baseDevices,
+        status: this.getRandomSiteStatus(),
+        phase: this.getRandomPhase(),
+        timeline: this.getRandomTimeline(),
+        notes: `${scenario.industry} facility with specialized requirements for ${scenario.specialties.join(", ")}`,
+        infrastructure: this.generateInfrastructure(scenario.industry),
+        compliance: scenario.compliance,
+        riskLevel: this.getRandomRiskLevel(),
+        securityRequirements: this.getSecurityRequirements(scenario.industry),
+        networkSegments: this.getNetworkSegments(scenario.industry),
+        priority: this.getRandomPriority() as "High" | "Medium" | "Low",
+        budget: Math.floor(scenario.budget / scenario.siteCount) + Math.floor(Math.random() * 200000),
+        projectManager: this.getRandomProjectManager(),
+        technicalOwner: this.getRandomTechnicalOwner(),
+        deviceCounts: {
+          total: baseDevices,
+          windows: Math.floor(baseDevices * 0.4),
+          mac: Math.floor(baseDevices * 0.2),
+          mobile: Math.floor(baseDevices * 0.3),
+          iot: Math.floor(baseDevices * 0.1),
         },
-        assignedUsers: {
-          projectManagers: [users[0]?.id || ""],
-          technicalOwners: [users[1]?.id || ""],
-          siteOwners: [users[2]?.id || ""],
-          systemsEngineers: [users[3]?.id || ""],
-          accountExecutives: [],
-          technicalAccountManagers: [],
-          technicians: [],
-          securitySpecialists: [],
+        userCounts: {
+          total: baseUsers,
+          employees: Math.floor(baseUsers * 0.8),
+          contractors: Math.floor(baseUsers * 0.15),
+          guests: Math.floor(baseUsers * 0.05),
         },
-        startDate: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-        targetDate: new Date(Date.now() + Math.random() * 180 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-        progress: Math.floor(Math.random() * 100),
-        wiredInfrastructure: {
-          vendor: "cisco",
-          switchModels: ["Catalyst 9300"],
-          switchCount: Math.floor(Math.random() * 20) + 5,
-          portCount: Math.floor(Math.random() * 500) + 100,
-          stackingSupport: true,
-          poeSupport: true,
-          mgmtVlan: 100,
-          firmware: "17.09.04",
-        },
-        wirelessInfrastructure: {
-          vendor: "cisco",
-          controllerModel: "9800-CL",
-          apModels: ["9130AXI"],
-          apCount: Math.floor(Math.random() * 50) + 10,
-          wifiStandards: ["802.11ax"],
-          bandSupport: ["2.4GHz", "5GHz"],
-          meshSupport: false,
-          firmware: "17.09.04",
-        },
-        connectivity: {
-          type: "internet",
-          bandwidth: "1 Gbps",
-          provider: "ISP Provider",
-          redundancy: true,
-        },
-        identityProvider: {
-          type: "azure-ad",
-          domain: `${scenario}.com`,
-          syncEnabled: true,
-          mfaEnabled: true,
-          conditionalAccess: true,
-        },
-        mdmProvider: {
-          type: "intune",
-          enrollmentType: "automatic",
-          complianceEnabled: true,
-          appManagement: true,
-        },
-        firewallInfrastructure: {
-          vendor: "palo-alto",
-          models: ["PA-220"],
-          haConfiguration: false,
-          userIdIntegration: true,
-          syslogEnabled: true,
-          firmware: "11.0.2",
-        },
-        radiusConfiguration: {
-          type: "cloud-radius",
-          clustering: true,
-          loadBalancing: true,
-          certificates: true,
-        },
-        deviceAdministration: {
-          type: "radius",
-          privilegeLevels: [1, 15],
-          commandAuthorization: true,
-        },
-        vlans: 5,
-        subnets: ["10.1.0.0/24", "10.2.0.0/24"],
-        dhcpScopes: 3,
-        dnsServers: ["8.8.8.8", "8.8.4.4"],
-        globalPolicies: [],
-        sitePolicies: [],
-        policyEnforcement: {
-          dynamic_vlan: true,
-          bandwidth_control: false,
-          time_based_access: true,
-          device_compliance: true,
-          location_based: false,
-        },
-        complianceRequirements: scenario === "healthcare" ? ["HIPAA"] : scenario === "government" ? ["FISMA"] : [],
-        securityStandards: ["NIST"],
-        dataClassification: "internal",
-        notes: `Demo site for ${scenario} scenario`,
-        deploymentChecklist: [],
-        riskAssessment: [],
-        milestones: [],
-        createdAt: baseTimestamp,
-        updatedAt: baseTimestamp,
+        industry: scenario.industry,
       })
     }
 
-    // Generate demo policies
-    const policies: GlobalPolicy[] = []
-    for (let i = 0; i < config.policyCount; i++) {
-      policies.push({
-        id: `policy-demo-${i + 1}`,
-        name: `Demo Policy ${i + 1}`,
-        description: `Sample policy for ${scenario} scenario`,
-        category: ["authentication", "authorization", "security"][i % 3] as GlobalPolicy["category"],
-        type: ["access", "vlan", "security"][i % 3] as GlobalPolicy["type"],
-        priority: (i % 5) + 1,
-        conditions: [],
-        actions: [],
-        enabled: true,
-        applicableSites: [],
-        tags: [scenario],
-        version: "1.0",
-        approvedBy: "System Admin",
-        createdAt: baseTimestamp,
-        updatedAt: baseTimestamp,
+    return sites
+  }
+
+  private generateDemoUsers(scenario: any, sites: Site[]): User[] {
+    const users: User[] = []
+    const roles = this.getRoles(scenario.industry)
+    const departments = this.getDepartments(scenario.industry)
+
+    for (let i = 0; i < Math.min(100, Math.floor(scenario.userCount / 25)); i++) {
+      const firstName = this.getRandomFirstName()
+      const lastName = this.getRandomLastName()
+
+      users.push({
+        id: `user-${scenario.id}-${i + 1}`,
+        name: `${firstName} ${lastName}`,
+        email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@${scenario.id}.com`,
+        role: roles[Math.floor(Math.random() * roles.length)],
+        department: departments[Math.floor(Math.random() * departments.length)],
+        sites: [sites[Math.floor(Math.random() * sites.length)].id],
+        permissions: this.getRandomPermissions(),
+        lastLogin: this.getRecentDate(),
+        status: Math.random() > 0.1 ? "active" : "inactive",
       })
     }
 
-    // Generate demo events
+    return users
+  }
+
+  private generateDemoEvents(scenario: any, sites: Site[]): Event[] {
     const events: Event[] = []
-    for (let i = 0; i < 10; i++) {
-      const startDate = new Date(Date.now() + Math.random() * 30 * 24 * 60 * 60 * 1000)
-      const endDate = new Date(startDate.getTime() + Math.random() * 4 * 60 * 60 * 1000)
+    const eventTypes: ("milestone" | "task" | "meeting" | "deployment")[] = [
+      "milestone",
+      "task",
+      "meeting",
+      "deployment",
+    ]
+    const phases = [
+      "Planning",
+      "Design",
+      "Implementation",
+      "Testing",
+      "Deployment",
+      "Go-Live",
+      "Training",
+      "Documentation",
+    ]
+
+    for (let i = 0; i < 50; i++) {
+      const site = sites[Math.floor(Math.random() * sites.length)]
+      const startDate = new Date(Date.now() + (Math.random() - 0.5) * 180 * 24 * 60 * 60 * 1000)
+      const endDate = new Date(startDate.getTime() + Math.random() * 21 * 24 * 60 * 60 * 1000)
 
       events.push({
-        id: `event-demo-${i + 1}`,
-        title: `Demo Event ${i + 1}`,
-        description: `Sample event for ${scenario} scenario`,
-        start: startDate.toISOString(),
-        end: endDate.toISOString(),
-        type: ["milestone", "task", "meeting"][i % 3] as Event["type"],
-        status: ["planned", "in-progress", "completed"][i % 3] as Event["status"],
-        siteId: sites[i % sites.length]?.id,
-        priority: ["low", "medium", "high"][i % 3] as Event["priority"],
-        tags: [scenario],
-        createdAt: baseTimestamp,
-        updatedAt: baseTimestamp,
+        id: `event-${scenario.id}-${i + 1}`,
+        title: `${phases[Math.floor(Math.random() * phases.length)]} - ${site.name}`,
+        description: `${scenario.industry} deployment activity: ${this.getEventDescription(scenario.industry)}`,
+        startDate: startDate.toISOString().split("T")[0],
+        endDate: endDate.toISOString().split("T")[0],
+        type: eventTypes[Math.floor(Math.random() * eventTypes.length)],
+        status: this.getRandomEventStatus() as any,
+        assignedTo: [this.getRandomProjectManager(), this.getRandomTechnicalOwner()],
+        siteId: site.id,
+        priority: this.getRandomPriority() as any,
+        tags: [scenario.industry, site.region, phases[Math.floor(Math.random() * phases.length)]],
       })
     }
 
+    return events
+  }
+
+  private generateDemoPolicies(scenario: any): Policy[] {
+    const policies: Policy[] = []
+    const policyTemplates = this.getPolicyTemplates(scenario.industry)
+
+    policyTemplates.forEach((template, index) => {
+      policies.push({
+        id: `policy-${scenario.id}-${index + 1}`,
+        name: template.name,
+        description: template.description,
+        category: template.category,
+        priority: template.priority as any,
+        status: "active",
+        conditions: template.conditions,
+        actions: template.actions,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        appliedTo: [scenario.id],
+        effectiveness: 85 + Math.random() * 15,
+        violations: Math.floor(Math.random() * 10),
+      })
+    })
+
+    return policies
+  }
+
+  // Helper methods for demo data generation
+  private getSiteType(industry: string): string {
+    const types = {
+      healthcare: ["hospital", "clinic", "medical_center", "imaging_center", "lab"],
+      financial: ["headquarters", "branch", "data_center", "trading_floor", "operations_center"],
+      manufacturing: ["factory", "warehouse", "office", "r_and_d", "distribution_center"],
+      technology: ["headquarters", "office", "lab", "data_center", "co_working"],
+      retail: ["flagship_store", "store", "warehouse", "headquarters", "distribution_center"],
+      education: ["main_campus", "satellite_campus", "research_facility", "student_housing", "administrative"],
+      government: ["headquarters", "field_office", "secure_facility", "data_center", "operations_center"],
+    }
+    const industryTypes = types[industry as keyof typeof types] || ["office"]
+    return industryTypes[Math.floor(Math.random() * industryTypes.length)]
+  }
+
+  private getRandomSiteStatus(): string {
+    const statuses = ["planning", "in-progress", "testing", "completed", "on-hold"]
+    const weights = [0.2, 0.4, 0.2, 0.15, 0.05] // More likely to be in-progress
+    const random = Math.random()
+    let cumulative = 0
+    for (let i = 0; i < weights.length; i++) {
+      cumulative += weights[i]
+      if (random < cumulative) return statuses[i]
+    }
+    return statuses[1] // Default to in-progress
+  }
+
+  private getRandomPhase(): string {
+    const phases = ["Discovery", "Design", "Implementation", "Testing", "Deployment", "Go-Live", "Optimization"]
+    return phases[Math.floor(Math.random() * phases.length)]
+  }
+
+  private getRandomTimeline(): string {
+    const quarters = ["Q1 2024", "Q2 2024", "Q3 2024", "Q4 2024", "Q1 2025"]
+    return quarters[Math.floor(Math.random() * quarters.length)]
+  }
+
+  private generateInfrastructure(industry: string): any {
+    const vendors = {
+      wired: [
+        { name: "cisco", models: ["Catalyst 9300", "Catalyst 9400", "Catalyst 9600", "Nexus 9000"] },
+        { name: "aruba", models: ["CX 6200", "CX 6300", "CX 8360", "CX 10000"] },
+        { name: "juniper", models: ["EX4300", "EX4650", "QFX5120", "QFX10000"] },
+        { name: "extreme", models: ["X465", "X690", "X870", "SLX 9850"] },
+      ],
+      wireless: [
+        { name: "cisco", models: ["Catalyst 9136", "Catalyst 9162", "Aironet 4800", "Meraki MR57"] },
+        { name: "aruba", models: ["AP-515", "AP-635", "AP-655", "AP-675"] },
+        { name: "ruckus", models: ["R550", "R650", "R750", "R850"] },
+        { name: "mist", models: ["AP43", "AP45", "AP63", "AP33"] },
+      ],
+      firewall: [
+        { name: "palo_alto", models: ["PA-220", "PA-850", "PA-3220", "PA-5220", "PA-7080"] },
+        { name: "fortinet", models: ["FortiGate-100F", "FortiGate-600F", "FortiGate-1500D", "FortiGate-3000D"] },
+        { name: "checkpoint", models: ["1570", "3200", "5800", "15600", "26000"] },
+        { name: "cisco", models: ["ASA 5516", "ASA 5525", "FTD 2130", "FTD 4125"] },
+      ],
+    }
+
+    const wiredVendor = vendors.wired[Math.floor(Math.random() * vendors.wired.length)]
+    const wirelessVendor = vendors.wireless[Math.floor(Math.random() * vendors.wireless.length)]
+    const firewallVendor = vendors.firewall[Math.floor(Math.random() * vendors.firewall.length)]
+
     return {
-      companyName: config.companyName,
-      users,
-      sites,
-      policies,
-      events,
+      wired: {
+        vendor: wiredVendor.name,
+        switches: Math.floor(Math.random() * 30) + 5,
+        model: wiredVendor.models[Math.floor(Math.random() * wiredVendor.models.length)],
+      },
+      wireless: {
+        vendor: wirelessVendor.name,
+        aps: Math.floor(Math.random() * 80) + 10,
+        model: wirelessVendor.models[Math.floor(Math.random() * wirelessVendor.models.length)],
+      },
+      firewall: {
+        vendor: firewallVendor.name,
+        model: firewallVendor.models[Math.floor(Math.random() * firewallVendor.models.length)],
+      },
+    }
+  }
+
+  private getRandomRiskLevel(): string {
+    const levels = ["low", "medium", "high", "critical"]
+    const weights = [0.3, 0.4, 0.25, 0.05] // Most sites are low-medium risk
+    const random = Math.random()
+    let cumulative = 0
+    for (let i = 0; i < weights.length; i++) {
+      cumulative += weights[i]
+      if (random < cumulative) return levels[i]
+    }
+    return levels[1] // Default to medium
+  }
+
+  private getSecurityRequirements(industry: string): string[] {
+    const requirements = {
+      healthcare: [
+        "HIPAA Compliance",
+        "Patient Data Protection",
+        "Medical Device Security",
+        "PHI Encryption",
+        "Audit Logging",
+      ],
+      financial: ["PCI DSS", "SOX Compliance", "Fraud Prevention", "Transaction Security", "Regulatory Reporting"],
+      manufacturing: [
+        "OT Security",
+        "Industrial Controls",
+        "Safety Systems",
+        "Production Continuity",
+        "Supply Chain Security",
+      ],
+      technology: ["IP Protection", "Development Security", "Cloud Security", "API Security", "DevSecOps"],
+      retail: [
+        "POS Security",
+        "Customer Data Protection",
+        "Payment Processing",
+        "Loss Prevention",
+        "Omnichannel Security",
+      ],
+      education: ["Student Privacy", "Research Security", "BYOD Management", "Campus Safety", "Academic Freedom"],
+      government: [
+        "FISMA Compliance",
+        "Classified Data Protection",
+        "National Security",
+        "Insider Threat",
+        "Continuous Monitoring",
+      ],
+    }
+    return (
+      requirements[industry as keyof typeof requirements] || ["Standard Security", "Data Protection", "Access Control"]
+    )
+  }
+
+  private getNetworkSegments(industry: string): string[] {
+    const segments = {
+      healthcare: [
+        "Clinical Network",
+        "Administrative",
+        "Guest WiFi",
+        "Medical Devices",
+        "IoT Sensors",
+        "Imaging Systems",
+      ],
+      financial: ["Trading Floor", "Corporate Network", "Guest Access", "ATM Network", "Secure Vault", "Market Data"],
+      manufacturing: [
+        "Production Network",
+        "Office Network",
+        "OT Network",
+        "Guest Access",
+        "IoT Devices",
+        "Safety Systems",
+      ],
+      technology: ["Development", "Production", "Corporate", "Guest Network", "Lab Network", "Cloud Connectivity"],
+      retail: ["POS Network", "Corporate", "Guest WiFi", "Inventory Systems", "Security Cameras", "Digital Signage"],
+      education: [
+        "Academic Network",
+        "Administrative",
+        "Student Network",
+        "Research Network",
+        "Guest Access",
+        "Campus IoT",
+      ],
+      government: [
+        "Classified Network",
+        "Unclassified",
+        "Administrative",
+        "Public Access",
+        "Secure Communications",
+        "Visitor Network",
+      ],
+    }
+    return segments[industry as keyof typeof segments] || ["Corporate Network", "Guest Access", "IoT Devices"]
+  }
+
+  private getRoles(industry: string): string[] {
+    const roles = {
+      healthcare: ["physician", "nurse", "administrator", "it_manager", "security_officer", "compliance_officer"],
+      financial: ["trader", "analyst", "risk_manager", "compliance_officer", "it_admin", "security_analyst"],
+      manufacturing: ["plant_manager", "engineer", "operator", "maintenance", "safety_officer", "it_coordinator"],
+      technology: ["developer", "devops", "product_manager", "security_engineer", "it_admin", "data_scientist"],
+      retail: [
+        "store_manager",
+        "sales_associate",
+        "inventory_manager",
+        "loss_prevention",
+        "it_support",
+        "regional_manager",
+      ],
+      education: ["professor", "administrator", "it_staff", "security_officer", "student_services", "facilities"],
+      government: [
+        "analyst",
+        "administrator",
+        "security_officer",
+        "it_specialist",
+        "program_manager",
+        "compliance_officer",
+      ],
+    }
+    return roles[industry as keyof typeof roles] || ["employee", "manager", "admin", "specialist"]
+  }
+
+  private getDepartments(industry: string): string[] {
+    const departments = {
+      healthcare: [
+        "Clinical Services",
+        "Administration",
+        "IT",
+        "Facilities",
+        "Security",
+        "Compliance",
+        "Nursing",
+        "Radiology",
+      ],
+      financial: [
+        "Trading",
+        "Risk Management",
+        "IT",
+        "Compliance",
+        "Operations",
+        "Wealth Management",
+        "Investment Banking",
+        "Treasury",
+      ],
+      manufacturing: [
+        "Production",
+        "Engineering",
+        "IT",
+        "Quality Assurance",
+        "Safety",
+        "Maintenance",
+        "Supply Chain",
+        "R&D",
+      ],
+      technology: [
+        "Engineering",
+        "Product Management",
+        "IT",
+        "Security",
+        "Operations",
+        "Data Science",
+        "DevOps",
+        "Customer Success",
+      ],
+      retail: [
+        "Store Operations",
+        "IT",
+        "Loss Prevention",
+        "Merchandising",
+        "Customer Service",
+        "Supply Chain",
+        "Marketing",
+        "Finance",
+      ],
+      education: [
+        "IT Services",
+        "Administration",
+        "Facilities",
+        "Security",
+        "Academic Affairs",
+        "Student Services",
+        "Research",
+        "Library",
+      ],
+      government: [
+        "IT",
+        "Security",
+        "Operations",
+        "Administration",
+        "Intelligence",
+        "Communications",
+        "Logistics",
+        "Training",
+      ],
+    }
+    return departments[industry as keyof typeof departments] || ["IT", "Operations", "Administration", "Security"]
+  }
+
+  private getPolicyTemplates(industry: string): any[] {
+    const templates = {
+      healthcare: [
+        {
+          name: "HIPAA Device Compliance Policy",
+          description: "Ensures all devices accessing PHI meet HIPAA security requirements",
+          category: "compliance",
+          priority: "critical",
+          conditions: [
+            { type: "device_type", operator: "equals", value: "medical_device", description: "Medical device type" },
+            { type: "compliance_status", operator: "equals", value: "hipaa_compliant", description: "HIPAA compliant" },
+          ],
+          actions: [
+            { type: "allow", parameters: { network: "clinical" }, description: "Allow clinical network access" },
+            { type: "log", parameters: { level: "audit" }, description: "Create audit log entry" },
+          ],
+        },
+        {
+          name: "Patient Data Access Control",
+          description: "Controls access to patient data systems based on role and location",
+          category: "access_control",
+          priority: "critical",
+          conditions: [
+            {
+              type: "user_role",
+              operator: "in",
+              value: ["physician", "nurse", "clinical_staff"],
+              description: "Clinical staff role",
+            },
+            { type: "location", operator: "equals", value: "clinical_area", description: "Clinical area location" },
+          ],
+          actions: [
+            {
+              type: "allow",
+              parameters: { resources: ["patient_records", "ehr_system"] },
+              description: "Allow patient data access",
+            },
+            {
+              type: "require_mfa",
+              parameters: { methods: ["certificate", "biometric"] },
+              description: "Require strong authentication",
+            },
+          ],
+        },
+      ],
+      financial: [
+        {
+          name: "Trading Floor High Security Access",
+          description: "Ultra-secure access controls for trading floor systems",
+          category: "access_control",
+          priority: "critical",
+          conditions: [
+            { type: "location", operator: "equals", value: "trading_floor", description: "Trading floor location" },
+            {
+              type: "user_role",
+              operator: "in",
+              value: ["trader", "quant", "risk_manager"],
+              description: "Trading role",
+            },
+          ],
+          actions: [
+            {
+              type: "allow",
+              parameters: { network: "trading", priority: "high" },
+              description: "Allow trading network",
+            },
+            {
+              type: "require_mfa",
+              parameters: { methods: ["smartcard", "biometric"] },
+              description: "Require strong MFA",
+            },
+          ],
+        },
+      ],
+      manufacturing: [
+        {
+          name: "OT Network Segmentation Policy",
+          description: "Isolates operational technology from IT networks",
+          category: "network_security",
+          priority: "critical",
+          conditions: [
+            {
+              type: "device_type",
+              operator: "equals",
+              value: "industrial_control",
+              description: "Industrial control system",
+            },
+          ],
+          actions: [
+            { type: "allow", parameters: { vlan: "ot_network" }, description: "Allow OT network access" },
+            { type: "deny", parameters: { networks: ["corporate_it", "internet"] }, description: "Block IT networks" },
+          ],
+        },
+      ],
+      technology: [
+        {
+          name: "Developer Secure Access Policy",
+          description: "Secure access to development resources with code protection",
+          category: "development_security",
+          priority: "high",
+          conditions: [
+            {
+              type: "user_role",
+              operator: "in",
+              value: ["developer", "devops", "architect"],
+              description: "Development role",
+            },
+          ],
+          actions: [
+            {
+              type: "allow",
+              parameters: { resources: ["git_repos", "ci_cd", "staging"] },
+              description: "Allow dev resources",
+            },
+            { type: "require_mfa", parameters: { methods: ["certificate", "totp"] }, description: "Require MFA" },
+          ],
+        },
+      ],
+      retail: [
+        {
+          name: "POS System Security Policy",
+          description: "Comprehensive security for point-of-sale systems",
+          category: "payment_security",
+          priority: "critical",
+          conditions: [
+            { type: "device_type", operator: "equals", value: "pos_terminal", description: "POS terminal device" },
+          ],
+          actions: [
+            { type: "isolate", parameters: { vlan: "pos_network" }, description: "Isolate POS network" },
+            { type: "encrypt", parameters: { method: "p2pe" }, description: "Point-to-point encryption" },
+          ],
+        },
+      ],
+      education: [
+        {
+          name: "Student Network Access Policy",
+          description: "Balanced access for student devices with appropriate restrictions",
+          category: "student_access",
+          priority: "medium",
+          conditions: [{ type: "user_type", operator: "equals", value: "student", description: "Student user" }],
+          actions: [
+            {
+              type: "allow",
+              parameters: { network: "student", bandwidth: "50Mbps" },
+              description: "Student network access",
+            },
+            { type: "filter", parameters: { content: "educational" }, description: "Educational content filter" },
+          ],
+        },
+      ],
+      government: [
+        {
+          name: "Classified System Access Policy",
+          description: "Maximum security for classified information systems",
+          category: "classified_access",
+          priority: "critical",
+          conditions: [
+            {
+              type: "security_clearance",
+              operator: "greater_equal",
+              value: "secret",
+              description: "Security clearance required",
+            },
+          ],
+          actions: [
+            {
+              type: "allow",
+              parameters: { network: "classified", air_gap: "required" },
+              description: "Classified network access",
+            },
+            {
+              type: "require_mfa",
+              parameters: { methods: ["piv_card", "biometric"] },
+              description: "PIV card + biometric",
+            },
+          ],
+        },
+      ],
+    }
+
+    return (
+      templates[industry as keyof typeof templates] || [
+        {
+          name: "Standard Access Policy",
+          description: "Basic network access control policy",
+          category: "access_control",
+          priority: "medium",
+          conditions: [
+            { type: "device_compliance", operator: "equals", value: "compliant", description: "Compliant device" },
+          ],
+          actions: [{ type: "allow", parameters: { network: "corporate" }, description: "Allow corporate access" }],
+        },
+      ]
+    )
+  }
+
+  private getEventDescription(industry: string): string {
+    const descriptions = {
+      healthcare: "Medical device integration and HIPAA compliance validation",
+      financial: "Trading system deployment with regulatory compliance testing",
+      manufacturing: "Industrial control system integration and safety validation",
+      technology: "Cloud infrastructure deployment and security hardening",
+      retail: "POS system rollout and customer data protection implementation",
+      education: "Campus network upgrade and student device management",
+      government: "Classified system deployment with FISMA compliance validation",
+    }
+    return descriptions[industry as keyof typeof descriptions] || "Network access control deployment"
+  }
+
+  private getRandomEventStatus(): string {
+    const statuses = ["pending", "in_progress", "completed", "cancelled"]
+    const weights = [0.3, 0.4, 0.25, 0.05]
+    const random = Math.random()
+    let cumulative = 0
+    for (let i = 0; i < weights.length; i++) {
+      cumulative += weights[i]
+      if (random < cumulative) return statuses[i]
+    }
+    return statuses[1]
+  }
+
+  private getRandomPriority(): string {
+    const priorities = ["low", "medium", "high", "critical"]
+    const weights = [0.2, 0.4, 0.3, 0.1]
+    const random = Math.random()
+    let cumulative = 0
+    for (let i = 0; i < weights.length; i++) {
+      cumulative += weights[i]
+      if (random < cumulative) return priorities[i]
+    }
+    return priorities[1]
+  }
+
+  private getRandomProjectManager(): string {
+    const managers = [
+      "Sarah Johnson",
+      "Michael Chen",
+      "Lisa Rodriguez",
+      "David Kim",
+      "Emily Davis",
+      "Robert Wilson",
+      "Maria Garcia",
+      "James Thompson",
+      "Jennifer Lee",
+      "Alex Martinez",
+      "Amanda Taylor",
+      "Christopher Brown",
+      "Nicole Anderson",
+      "Kevin Zhang",
+      "Rachel Green",
+    ]
+    return managers[Math.floor(Math.random() * managers.length)]
+  }
+
+  private getRandomTechnicalOwner(): string {
+    const owners = [
+      "Alex Thompson",
+      "Maria Garcia",
+      "James Wilson",
+      "Emily Davis",
+      "Robert Lee",
+      "Sarah Kim",
+      "Michael Rodriguez",
+      "Lisa Chen",
+      "David Martinez",
+      "Jennifer Brown",
+      "Kevin Taylor",
+      "Amanda Zhang",
+      "Christopher Green",
+      "Nicole Johnson",
+      "Rachel Anderson",
+    ]
+    return owners[Math.floor(Math.random() * owners.length)]
+  }
+
+  private getRandomPermissions(): string[] {
+    const allPermissions = ["read", "write", "admin", "deploy", "monitor", "audit", "configure", "approve"]
+    return allPermissions.filter(() => Math.random() > 0.6)
+  }
+
+  private getRecentDate(): string {
+    const date = new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000)
+    return date.toISOString()
+  }
+
+  private getRandomFirstName(): string {
+    const names = [
+      "John",
+      "Sarah",
+      "Michael",
+      "Lisa",
+      "David",
+      "Emily",
+      "James",
+      "Maria",
+      "Robert",
+      "Jennifer",
+      "William",
+      "Jessica",
+      "Christopher",
+      "Ashley",
+      "Matthew",
+      "Amanda",
+      "Joshua",
+      "Stephanie",
+      "Andrew",
+      "Nicole",
+      "Daniel",
+      "Elizabeth",
+      "Anthony",
+      "Helen",
+      "Mark",
+      "Sandra",
+      "Donald",
+      "Donna",
+      "Steven",
+      "Carol",
+    ]
+    return names[Math.floor(Math.random() * names.length)]
+  }
+
+  private getRandomLastName(): string {
+    const names = [
+      "Smith",
+      "Johnson",
+      "Williams",
+      "Brown",
+      "Jones",
+      "Garcia",
+      "Miller",
+      "Davis",
+      "Rodriguez",
+      "Martinez",
+      "Hernandez",
+      "Lopez",
+      "Gonzalez",
+      "Wilson",
+      "Anderson",
+      "Thomas",
+      "Taylor",
+      "Moore",
+      "Jackson",
+      "Martin",
+      "Lee",
+      "Perez",
+      "Thompson",
+      "White",
+      "Harris",
+      "Sanchez",
+      "Clark",
+      "Ramirez",
+      "Lewis",
+      "Robinson",
+    ]
+    return names[Math.floor(Math.random() * names.length)]
+  }
+
+  // Demo Data Management
+  loadDemoData(industry: string): void {
+    console.log(`Loading demo data for ${industry}`)
+  }
+
+  clearAllData(): void {
+    if (!this.isClient) return
+    const keys = [
+      "nac-designer-sites",
+      "nac-designer-users",
+      "nac-designer-events",
+      "nac-designer-global-policies",
+      "nac-designer-architecture-config",
+      "nac-designer-customer-info",
+      "nac-designer-theme",
+    ]
+    keys.forEach((key) => localStorage.removeItem(key))
+  }
+
+  // Export/Import functionality
+  exportData(): string {
+    const data = {
+      sites: this.getSites(),
+      users: this.getUsers(),
+      events: this.getEvents(),
+      policies: this.getGlobalPolicies(),
+      config: this.getArchitectureConfig(),
+      customer: this.getCustomerInfo(),
+      theme: this.getThemeSettings(),
+      exportDate: new Date().toISOString(),
+    }
+    return JSON.stringify(data, null, 2)
+  }
+
+  importData(jsonData: string): boolean {
+    try {
+      const data = JSON.parse(jsonData)
+
+      if (data.sites) this.saveSites(data.sites)
+      if (data.users) this.saveUsers(data.users)
+      if (data.events) this.saveEvents(data.events)
+      if (data.policies) this.saveGlobalPolicies(data.policies)
+      if (data.config) this.saveArchitectureConfig(data.config)
+      if (data.customer) this.saveCustomerInfo(data.customer)
+      if (data.theme) this.saveThemeSettings(data.theme)
+
+      return true
+    } catch (error) {
+      console.error("Error importing data:", error)
+      return false
     }
   }
 }
 
-// Export singleton instance
-export const storage = new StorageManager()
+// Export the storage instance
+export const storage = new Storage()

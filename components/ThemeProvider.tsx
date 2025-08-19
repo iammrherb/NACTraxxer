@@ -1,16 +1,10 @@
 "use client"
-
-import type React from "react"
+import { ThemeProvider as NextThemesProvider } from "next-themes"
+import type { ThemeProviderProps } from "next-themes"
 
 import { createContext, useContext, useEffect, useState } from "react"
 
 type Theme = "light" | "dark" | "system"
-
-type ThemeProviderProps = {
-  children: React.ReactNode
-  defaultTheme?: Theme
-  storageKey?: string
-}
 
 type ThemeProviderState = {
   theme: Theme
@@ -24,64 +18,18 @@ const initialState: ThemeProviderState = {
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
 
-export function ThemeProvider({
-  children,
-  defaultTheme = "system",
-  storageKey = "vite-ui-theme",
-  ...props
-}: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(defaultTheme)
+export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     setMounted(true)
+  }, [])
 
-    // Only access localStorage after component mounts
-    if (typeof window !== "undefined") {
-      const storedTheme = localStorage.getItem(storageKey) as Theme
-      if (storedTheme) {
-        setTheme(storedTheme)
-      }
-    }
-  }, [storageKey])
-
-  useEffect(() => {
-    if (!mounted || typeof window === "undefined") return
-
-    const root = window.document.documentElement
-
-    root.classList.remove("light", "dark")
-
-    if (theme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
-
-      root.classList.add(systemTheme)
-      return
-    }
-
-    root.classList.add(theme)
-  }, [theme, mounted])
-
-  const value = {
-    theme,
-    setTheme: (theme: Theme) => {
-      if (typeof window !== "undefined") {
-        localStorage.setItem(storageKey, theme)
-      }
-      setTheme(theme)
-    },
-  }
-
-  // Don't render anything until mounted to prevent hydration mismatch
   if (!mounted) {
     return <>{children}</>
   }
 
-  return (
-    <ThemeProviderContext.Provider {...props} value={value}>
-      {children}
-    </ThemeProviderContext.Provider>
-  )
+  return <NextThemesProvider {...props}>{children}</NextThemesProvider>
 }
 
 export const useTheme = () => {

@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Shield,
   Cloud,
@@ -16,191 +17,272 @@ import {
   X,
   Minimize2,
   Maximize2,
+  Database,
+  Globe,
+  Heart,
+  Factory,
+  ShoppingCart,
+  Building2,
 } from "lucide-react"
 import { useState } from "react"
 
 interface ArchitectureLegendProps {
   currentView: string
-  onClose?: () => void
+  config: any
 }
 
-export default function ArchitectureLegend({ currentView = "complete", onClose }: ArchitectureLegendProps) {
+export default function ArchitectureLegend({ currentView, config }: ArchitectureLegendProps) {
   const [isMinimized, setIsMinimized] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
 
   const componentTypes = [
     {
       type: "endpoint",
-      label: "Endpoints",
-      color: "#4F46E5",
+      label: "Endpoints & Devices",
+      color: "#3B82F6",
       icon: <Smartphone className="w-4 h-4" />,
-      description: "User devices and endpoints",
-      examples: ["Corporate Devices", "BYOD Devices", "IoT Devices"],
+      description: "User devices, workstations, and mobile devices",
+      examples: ["Corporate Laptops", "BYOD Devices", "IoT Sensors", "Mobile Phones"],
+      protocols: ["802.1X", "MAB", "WebAuth"],
     },
     {
       type: "network",
       label: "Network Infrastructure",
-      color: "#059669",
+      color: "#10B981",
       icon: <Network className="w-4 h-4" />,
-      description: "Network access layer components",
-      examples: ["Switches", "Wireless APs", "Routers"],
+      description: "Switches, routers, and wireless infrastructure",
+      examples: ["Access Switches", "Distribution Switches", "Wireless Controllers", "Access Points"],
+      protocols: ["RADIUS", "SNMP", "802.1X", "CAPWAP"],
     },
     {
       type: "nac",
       label: "NAC Platform",
-      color: "#00c8d7",
+      color: "#00C8D7",
       icon: <Shield className="w-4 h-4" />,
-      description: "Portnox NAC components",
-      examples: ["Portnox Cloud", "RADIUS Server", "Policy Engine"],
+      description: "Portnox NAC components and services",
+      examples: ["Portnox Cloud", "Policy Engine", "Risk Assessment", "Device Profiling"],
+      protocols: ["RADIUS", "LDAP", "SAML", "REST API"],
     },
     {
       type: "identity",
       label: "Identity Providers",
-      color: "#0078D4",
+      color: "#8B5CF6",
       icon: <Users className="w-4 h-4" />,
-      description: "User authentication systems",
-      examples: ["Azure AD", "Active Directory", "LDAP"],
+      description: "User authentication and directory services",
+      examples: ["Azure AD", "Active Directory", "Okta", "LDAP"],
+      protocols: ["SAML", "OpenID Connect", "LDAP", "Kerberos"],
     },
     {
       type: "mdm",
       label: "Device Management",
-      color: "#7C3AED",
+      color: "#F59E0B",
       icon: <Settings className="w-4 h-4" />,
-      description: "Mobile device management",
-      examples: ["Microsoft Intune", "JAMF", "VMware Workspace ONE"],
-    },
-    {
-      type: "pki",
-      label: "PKI Infrastructure",
-      color: "#DC2626",
-      icon: <Lock className="w-4 h-4" />,
-      description: "Certificate management",
-      examples: ["Certificate Authority", "Certificate Store", "CRL"],
+      description: "Mobile device and endpoint management",
+      examples: ["Microsoft Intune", "JAMF Pro", "VMware Workspace ONE"],
+      protocols: ["HTTPS", "SCEP", "MDM API"],
     },
     {
       type: "firewall",
       label: "Security Appliances",
-      color: "#EA580C",
+      color: "#EF4444",
       icon: <Server className="w-4 h-4" />,
-      description: "Network security devices",
-      examples: ["FortiGate", "Palo Alto", "Cisco ASA"],
+      description: "Firewalls and security gateways",
+      examples: ["Palo Alto", "Fortinet", "Cisco ASA", "Check Point"],
+      protocols: ["User-ID", "Syslog", "SNMP"],
     },
     {
       type: "cloud",
       label: "Cloud Services",
-      color: "#0891B2",
+      color: "#06B6D4",
       icon: <Cloud className="w-4 h-4" />,
-      description: "Cloud platform services",
-      examples: ["AWS", "Azure", "Google Cloud"],
+      description: "Cloud platforms and services",
+      examples: ["AWS", "Azure", "Google Cloud", "Hybrid Cloud"],
+      protocols: ["HTTPS", "VPN", "ExpressRoute", "Direct Connect"],
+    },
+    {
+      type: "tacacs",
+      label: "Device Administration",
+      color: "#84CC16",
+      icon: <Lock className="w-4 h-4" />,
+      description: "Network device administration and authorization",
+      examples: ["TACACS+ Server", "Command Authorization", "Privilege Levels"],
+      protocols: ["TACACS+", "SSH", "Telnet"],
     },
   ]
 
   const connectionTypes = [
     {
+      type: "ethernet",
+      label: "Ethernet",
+      color: "#10B981",
+      description: "Wired network connections",
+      pattern: "solid",
+      protocols: ["802.1X", "MAB"],
+    },
+    {
+      type: "wireless",
+      label: "Wireless",
+      color: "#3B82F6",
+      description: "Wi-Fi network connections",
+      pattern: "solid",
+      protocols: ["802.1X", "PSK", "Open"],
+    },
+    {
       type: "radius",
       label: "RADIUS",
-      color: "#00c8d7",
+      color: "#00C8D7",
       description: "Authentication protocol",
       pattern: "solid",
+      protocols: ["UDP 1812/1813"],
     },
     {
-      type: "https",
-      label: "HTTPS/REST API",
-      color: "#059669",
-      description: "Secure web communication",
+      type: "radsec",
+      label: "RADSEC",
+      color: "#6366F1",
+      description: "RADIUS over TLS",
+      pattern: "solid",
+      protocols: ["TCP 2083"],
+    },
+    {
+      type: "identity",
+      label: "Identity Integration",
+      color: "#8B5CF6",
+      description: "User authentication flows",
       pattern: "dashed",
+      protocols: ["SAML", "LDAP", "OpenID"],
     },
     {
-      type: "ldap",
-      label: "LDAP/SAML",
-      color: "#0078D4",
-      description: "Directory services",
-      pattern: "dotted",
+      type: "api",
+      label: "API Integration",
+      color: "#F59E0B",
+      description: "REST API communications",
+      pattern: "dashed",
+      protocols: ["HTTPS", "REST"],
     },
     {
       type: "syslog",
-      label: "Syslog",
-      color: "#7C3AED",
-      description: "System logging",
-      pattern: "solid",
+      label: "Logging",
+      color: "#EF4444",
+      description: "System and security logging",
+      pattern: "dotted",
+      protocols: ["UDP 514", "TCP 514"],
     },
     {
       type: "tacacs",
       label: "TACACS+",
-      color: "#DC2626",
+      color: "#84CC16",
       description: "Device administration",
       pattern: "solid",
-    },
-    {
-      type: "data",
-      label: "Data Flow",
-      color: "#6B7280",
-      description: "General data communication",
-      pattern: "solid",
+      protocols: ["TCP 49"],
     },
   ]
 
-  const getViewSpecificInfo = () => {
-    if (!currentView) {
-      return {
-        title: "Architecture Components",
-        description: "Zero Trust NAC architecture components and connections.",
-        keyComponents: [],
-      }
-    }
-
-    switch (currentView.toLowerCase()) {
-      case "complete":
-        return {
-          title: "Complete Architecture",
-          description: "Full end-to-end Zero Trust NAC deployment.",
-          keyComponents: ["Portnox Cloud", "Network Infrastructure", "Identity Providers"],
-        }
-      case "authentication":
-        return {
-          title: "Authentication Flow",
-          description: "802.1X authentication sequence.",
-          keyComponents: ["Supplicant", "Authenticator", "RADIUS Server"],
-        }
-      case "pki":
-        return {
-          title: "PKI Infrastructure",
-          description: "Certificate-based authentication infrastructure.",
-          keyComponents: ["Root CA", "Issuing CA", "Certificate Store"],
-        }
-      case "policies":
-        return {
-          title: "Policy Framework",
-          description: "Dynamic policy engine with access controls.",
-          keyComponents: ["Policy Engine", "User Policies", "Device Policies"],
-        }
-      case "connectivity":
-        return {
-          title: "Connectivity Options",
-          description: "Multi-cloud and hybrid connectivity patterns.",
-          keyComponents: ["VLANs", "SSIDs", "Network Segmentation"],
-        }
-      case "intune":
-        return {
-          title: "Microsoft Intune Integration",
-          description: "Device compliance integration with Microsoft Intune.",
-          keyComponents: ["Intune MDM", "Azure AD", "Compliance Policies"],
-        }
-      case "onboarding":
-        return {
-          title: "Device Onboarding",
-          description: "Automated device enrollment and certificate provisioning.",
-          keyComponents: ["Captive Portal", "Certificate Authority", "MDM Enrollment"],
-        }
-      default:
-        return {
-          title: "Architecture Components",
-          description: "Zero Trust NAC architecture components and connections.",
-          keyComponents: [],
-        }
-    }
+  const industrySpecifics = {
+    healthcare: {
+      icon: <Heart className="w-4 h-4" />,
+      name: "Healthcare",
+      requirements: [
+        "HIPAA Compliance",
+        "Medical Device Isolation",
+        "Patient Data Protection",
+        "Audit Logging",
+        "PHI Encryption",
+      ],
+      zones: [
+        { name: "Medical Device Zone", color: "#EF4444", description: "Isolated network for medical equipment" },
+        { name: "Patient Network", color: "#F59E0B", description: "Guest network for patients and visitors" },
+        { name: "Administrative", color: "#10B981", description: "Staff and administrative systems" },
+      ],
+    },
+    manufacturing: {
+      icon: <Factory className="w-4 h-4" />,
+      name: "Manufacturing",
+      requirements: [
+        "OT/IT Convergence",
+        "Safety System Protection",
+        "Industrial Protocol Support",
+        "Asset Tracking",
+        "Production Continuity",
+      ],
+      zones: [
+        { name: "OT Network", color: "#A855F7", description: "Operational technology and control systems" },
+        { name: "DMZ", color: "#F59E0B", description: "Demilitarized zone for OT/IT integration" },
+        { name: "Corporate IT", color: "#10B981", description: "Standard corporate network" },
+      ],
+    },
+    retail: {
+      icon: <ShoppingCart className="w-4 h-4" />,
+      name: "Retail",
+      requirements: [
+        "PCI DSS Compliance",
+        "Payment Processing Security",
+        "Customer Wi-Fi Isolation",
+        "Inventory System Protection",
+        "Multi-store Management",
+      ],
+      zones: [
+        { name: "PCI Zone", color: "#14B8A6", description: "Payment card industry compliant zone" },
+        { name: "Customer Wi-Fi", color: "#3B82F6", description: "Guest network for customers" },
+        { name: "Store Operations", color: "#10B981", description: "Inventory and store management" },
+      ],
+    },
+    corporate: {
+      icon: <Building2 className="w-4 h-4" />,
+      name: "Corporate",
+      requirements: [
+        "Multi-site Connectivity",
+        "Remote Access Security",
+        "BYOD Support",
+        "Guest Access Management",
+        "Compliance Reporting",
+      ],
+      zones: [
+        { name: "Corporate Network", color: "#10B981", description: "Main corporate network" },
+        { name: "Guest Network", color: "#3B82F6", description: "Visitor and guest access" },
+        { name: "DMZ", color: "#F59E0B", description: "Public-facing services" },
+      ],
+    },
   }
 
+  const getViewSpecificInfo = () => {
+    const viewInfo = {
+      complete: {
+        title: "Complete Zero Trust Architecture",
+        description: "End-to-end NAC deployment with all security layers and components.",
+        keyComponents: ["Endpoints", "Network Infrastructure", "NAC Platform", "Identity Services"],
+        dataFlows: ["Authentication", "Authorization", "Policy Enforcement", "Monitoring"],
+      },
+      "multi-site": {
+        title: "Multi-Site Enterprise Deployment",
+        description: "Centralized management across multiple locations with site-specific policies.",
+        keyComponents: ["Headquarters", "Branch Offices", "Data Centers", "Cloud Services"],
+        dataFlows: ["Site-to-Site VPN", "Centralized Policy", "Distributed Enforcement"],
+      },
+      "hybrid-cloud": {
+        title: "Hybrid Cloud Architecture",
+        description: "Seamless integration between on-premises and cloud infrastructure.",
+        keyComponents: ["On-Premises NAC", "Cloud Services", "Hybrid Connectivity", "Policy Sync"],
+        dataFlows: ["Cloud Integration", "Data Synchronization", "Hybrid Authentication"],
+      },
+      "authentication-flow": {
+        title: "802.1X Authentication Flow",
+        description: "Detailed authentication sequence with EAP methods and certificate validation.",
+        keyComponents: ["Supplicant", "Authenticator", "RADIUS Server", "Identity Store"],
+        dataFlows: ["EAP Negotiation", "Certificate Exchange", "Policy Decision"],
+      },
+      "pki-infrastructure": {
+        title: "PKI & Certificate Management",
+        description: "Complete certificate lifecycle with automated enrollment and validation.",
+        keyComponents: ["Root CA", "Issuing CA", "SCEP Server", "Certificate Store"],
+        dataFlows: ["Certificate Enrollment", "Validation", "Revocation", "Renewal"],
+      },
+    }
+
+    return viewInfo[currentView as keyof typeof viewInfo] || viewInfo.complete
+  }
+
+  const currentIndustry =
+    industrySpecifics[config.industry as keyof typeof industrySpecifics] || industrySpecifics.corporate
   const viewInfo = getViewSpecificInfo()
 
   if (isMinimized) {
@@ -215,115 +297,240 @@ export default function ArchitectureLegend({ currentView = "complete", onClose }
   }
 
   return (
-    <div
-      className={`fixed top-20 right-4 z-30 ${isExpanded ? "w-96" : "w-80"} max-h-[calc(100vh-6rem)] overflow-hidden`}
-    >
+    <div className={`space-y-6 ${isExpanded ? "max-w-none" : "max-w-4xl mx-auto"}`}>
       <Card className="shadow-xl border-2">
-        <CardHeader className="pb-2">
+        <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center space-x-2 text-sm">
-              <Eye className="h-4 w-4 text-blue-600" />
-              <span>Legend</span>
+            <CardTitle className="flex items-center space-x-2">
+              <Eye className="h-5 w-5 text-blue-600" />
+              <span>Architecture Legend & Reference</span>
             </CardTitle>
-            <div className="flex items-center space-x-1">
-              <Button variant="ghost" size="sm" onClick={() => setIsExpanded(!isExpanded)} className="h-6 w-6 p-0">
-                {isExpanded ? <Minimize2 className="h-3 w-3" /> : <Maximize2 className="h-3 w-3" />}
+            <div className="flex items-center space-x-2">
+              <Button variant="ghost" size="sm" onClick={() => setIsExpanded(!isExpanded)}>
+                {isExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => setIsMinimized(true)} className="h-6 w-6 p-0">
-                <X className="h-3 w-3" />
+              <Button variant="ghost" size="sm" onClick={() => setIsMinimized(true)}>
+                <X className="h-4 w-4" />
               </Button>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="overflow-y-auto max-h-[calc(100vh-12rem)] space-y-4">
-          {/* View Overview */}
-          <div>
-            <h4 className="font-semibold text-sm mb-2">{viewInfo.title}</h4>
-            <p className="text-xs text-gray-600 mb-2">{viewInfo.description}</p>
-            {viewInfo.keyComponents.length > 0 && (
-              <div className="flex flex-wrap gap-1">
-                {viewInfo.keyComponents.map((component, index) => (
-                  <Badge key={index} variant="outline" className="text-xs">
-                    {component}
-                  </Badge>
+        <CardContent>
+          <Tabs defaultValue="overview" className="space-y-4">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="components">Components</TabsTrigger>
+              <TabsTrigger value="connections">Connections</TabsTrigger>
+              <TabsTrigger value="industry">Industry</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="overview" className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">{viewInfo.title}</h3>
+                    <p className="text-sm text-muted-foreground mb-3">{viewInfo.description}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {viewInfo.keyComponents.map((component, index) => (
+                        <Badge key={index} variant="outline">
+                          {component}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-medium mb-2">Current Configuration</h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Industry:</span>
+                        <span className="font-medium">{currentIndustry.name}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Deployment:</span>
+                        <span className="font-medium">{config.deploymentType}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Network:</span>
+                        <span className="font-medium">{config.networkType}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Identity:</span>
+                        <span className="font-medium">{config.identityProvider}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-medium mb-2">Data Flows</h4>
+                    <div className="space-y-2">
+                      {viewInfo.dataFlows.map((flow, index) => (
+                        <div key={index} className="flex items-center space-x-2 text-sm">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                          <span>{flow}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-medium mb-2">Advanced Features</h4>
+                    <div className="space-y-2">
+                      {config.tacacsEnabled && (
+                        <div className="flex items-center space-x-2 text-sm">
+                          <Lock className="w-3 h-3 text-green-600" />
+                          <span>TACACS+ Device Administration</span>
+                        </div>
+                      )}
+                      {config.radProxyEnabled && (
+                        <div className="flex items-center space-x-2 text-sm">
+                          <Database className="w-3 h-3 text-blue-600" />
+                          <span>RADSEC Proxy (TLS Encryption)</span>
+                        </div>
+                      )}
+                      {config.ztnaEnabled && (
+                        <div className="flex items-center space-x-2 text-sm">
+                          <Globe className="w-3 h-3 text-purple-600" />
+                          <span>Zero Trust Network Access</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="components" className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {componentTypes.map((component) => (
+                  <Card key={component.type} className="p-4">
+                    <div className="flex items-start space-x-3">
+                      <div
+                        className="p-2 rounded-lg text-white flex-shrink-0"
+                        style={{ backgroundColor: component.color }}
+                      >
+                        {component.icon}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-sm">{component.label}</h4>
+                        <p className="text-xs text-muted-foreground mb-2">{component.description}</p>
+
+                        {isExpanded && (
+                          <>
+                            <div className="mb-2">
+                              <p className="text-xs font-medium mb-1">Examples:</p>
+                              <div className="flex flex-wrap gap-1">
+                                {component.examples.slice(0, 2).map((example, index) => (
+                                  <Badge key={index} variant="secondary" className="text-xs">
+                                    {example}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div>
+                              <p className="text-xs font-medium mb-1">Protocols:</p>
+                              <div className="flex flex-wrap gap-1">
+                                {component.protocols.slice(0, 2).map((protocol, index) => (
+                                  <Badge key={index} variant="outline" className="text-xs">
+                                    {protocol}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
                 ))}
               </div>
-            )}
-          </div>
+            </TabsContent>
 
-          {/* Component Types */}
-          <div>
-            <h4 className="font-semibold text-sm mb-2">Components</h4>
-            <div className="space-y-2">
-              {componentTypes.slice(0, isExpanded ? componentTypes.length : 4).map((component) => (
-                <div key={component.type} className="flex items-center space-x-2 text-xs">
-                  <div
-                    className="w-4 h-4 rounded flex items-center justify-center text-white"
-                    style={{ backgroundColor: component.color }}
-                  >
-                    {component.icon}
+            <TabsContent value="connections" className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {connectionTypes.map((connection) => (
+                  <div key={connection.type} className="flex items-center space-x-3 p-3 border rounded-lg">
+                    <div
+                      className="w-6 h-1 flex-shrink-0"
+                      style={{
+                        backgroundColor: connection.color,
+                        borderStyle:
+                          connection.pattern === "dashed"
+                            ? "dashed"
+                            : connection.pattern === "dotted"
+                              ? "dotted"
+                              : "solid",
+                        borderWidth: connection.pattern !== "solid" ? "1px" : "0",
+                        borderColor: connection.color,
+                      }}
+                    />
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-sm">{connection.label}</h4>
+                      <p className="text-xs text-muted-foreground">{connection.description}</p>
+                      {isExpanded && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {connection.protocols.map((protocol, index) => (
+                            <Badge key={index} variant="outline" className="text-xs">
+                              {protocol}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <div className="font-medium">{component.label}</div>
-                    {isExpanded && <div className="text-gray-500 text-xs">{component.description}</div>}
+                ))}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="industry" className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-blue-100 rounded-lg">{currentIndustry.icon}</div>
+                    <div>
+                      <h3 className="text-lg font-semibold">{currentIndustry.name} Deployment</h3>
+                      <p className="text-sm text-muted-foreground">Industry-specific requirements and configurations</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-medium mb-2">Key Requirements</h4>
+                    <div className="space-y-2">
+                      {currentIndustry.requirements.map((requirement, index) => (
+                        <div key={index} className="flex items-center space-x-2 text-sm">
+                          <div className="w-1.5 h-1.5 bg-blue-600 rounded-full" />
+                          <span>{requirement}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              ))}
-              {!isExpanded && componentTypes.length > 4 && (
-                <div className="text-xs text-gray-500 text-center">+{componentTypes.length - 4} more components</div>
-              )}
-            </div>
-          </div>
 
-          {/* Connection Types */}
-          <div>
-            <h4 className="font-semibold text-sm mb-2">Connections</h4>
-            <div className="space-y-1">
-              {connectionTypes.slice(0, isExpanded ? connectionTypes.length : 3).map((connection) => (
-                <div key={connection.type} className="flex items-center space-x-2 text-xs">
-                  <div
-                    className="w-4 h-0.5"
-                    style={{
-                      backgroundColor: connection.color,
-                      borderStyle:
-                        connection.pattern === "dashed"
-                          ? "dashed"
-                          : connection.pattern === "dotted"
-                            ? "dotted"
-                            : "solid",
-                      borderWidth: connection.pattern !== "solid" ? "1px" : "0",
-                      borderColor: connection.color,
-                    }}
-                  />
-                  <span className="font-medium">{connection.label}</span>
-                </div>
-              ))}
-              {!isExpanded && connectionTypes.length > 3 && (
-                <div className="text-xs text-gray-500 text-center">+{connectionTypes.length - 3} more protocols</div>
-              )}
-            </div>
-          </div>
-
-          {/* Best Practices - Only show when expanded */}
-          {isExpanded && (
-            <div>
-              <h4 className="font-semibold text-sm mb-2">Best Practices</h4>
-              <div className="space-y-1">
-                <div className="flex items-start space-x-2 text-xs">
-                  <div className="w-1 h-1 bg-blue-500 rounded-full mt-1.5 flex-shrink-0" />
-                  <p>Start with pilot deployment</p>
-                </div>
-                <div className="flex items-start space-x-2 text-xs">
-                  <div className="w-1 h-1 bg-blue-500 rounded-full mt-1.5 flex-shrink-0" />
-                  <p>Ensure proper PKI infrastructure</p>
-                </div>
-                <div className="flex items-start space-x-2 text-xs">
-                  <div className="w-1 h-1 bg-blue-500 rounded-full mt-1.5 flex-shrink-0" />
-                  <p>Configure backup authentication</p>
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-medium mb-2">Network Zones</h4>
+                    <div className="space-y-3">
+                      {currentIndustry.zones.map((zone, index) => (
+                        <div key={index} className="flex items-start space-x-3 p-3 border rounded-lg">
+                          <div
+                            className="w-4 h-4 rounded flex-shrink-0 mt-0.5"
+                            style={{ backgroundColor: zone.color }}
+                          />
+                          <div>
+                            <h5 className="font-medium text-sm">{zone.name}</h5>
+                            <p className="text-xs text-muted-foreground">{zone.description}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
     </div>

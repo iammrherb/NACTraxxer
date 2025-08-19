@@ -1,81 +1,103 @@
 "use client"
 
-import type React from "react"
-
-import { createContext, useContext, useState, useEffect } from "react"
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
 
 interface User {
   id: string
   name: string
   email: string
+  role: string
 }
 
 interface SessionContextType {
   user: User | null
   isLoading: boolean
-  signIn: (email: string, password: string) => Promise<void>
+  signIn: (email: string, password: string) => Promise<boolean>
   signOut: () => void
 }
 
 const SessionContext = createContext<SessionContextType | undefined>(undefined)
 
-export function SessionProvider({ children }: { children: React.ReactNode }) {
+export function SessionProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     // Check for existing session on mount
-    if (typeof window !== "undefined") {
-      const savedUser = localStorage.getItem("nac-designer-user")
-      if (savedUser) {
-        try {
-          setUser(JSON.parse(savedUser))
-        } catch (error) {
-          console.error("Error parsing saved user:", error)
-          localStorage.removeItem("nac-designer-user")
+    const checkSession = async () => {
+      try {
+        if (typeof window !== "undefined") {
+          const savedUser = localStorage.getItem("portnox_user")
+          if (savedUser) {
+            setUser(JSON.parse(savedUser))
+          }
         }
+      } catch (error) {
+        console.error("Error checking session:", error)
+      } finally {
+        setIsLoading(false)
       }
     }
-    setIsLoading(false)
+
+    checkSession()
   }, [])
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true)
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      // Demo users for testing
+      const demoUsers = [
+        {
+          id: "1",
+          email: "admin@portnox.com",
+          password: "admin123",
+          name: "Admin User",
+          role: "admin",
+        },
+        {
+          id: "2",
+          email: "user@portnox.com",
+          password: "user123",
+          name: "Standard User",
+          role: "user",
+        },
+      ]
 
-      const mockUser: User = {
-        id: "1",
-        name: email.split("@")[0],
-        email: email,
+      const foundUser = demoUsers.find((u) => u.email === email && u.password === password)
+
+      if (foundUser) {
+        const userSession = {
+          id: foundUser.id,
+          name: foundUser.name,
+          email: foundUser.email,
+          role: foundUser.role,
+        }
+
+        setUser(userSession)
+        if (typeof window !== "undefined") {
+          localStorage.setItem("portnox_user", JSON.stringify(userSession))
+        }
+        setIsLoading(false)
+        return true
       }
 
-      setUser(mockUser)
-
-      if (typeof window !== "undefined") {
-        localStorage.setItem("nac-designer-user", JSON.stringify(mockUser))
-      }
-    } finally {
       setIsLoading(false)
+      return false
+    } catch (error) {
+      console.error("Sign in error:", error)
+      setIsLoading(false)
+      return false
     }
   }
 
   const signOut = () => {
     setUser(null)
     if (typeof window !== "undefined") {
-      localStorage.removeItem("nac-designer-user")
+      localStorage.removeItem("portnox_user")
     }
   }
 
-  const value = {
-    user,
-    isLoading,
-    signIn,
-    signOut,
-  }
-
-  return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>
+  return <SessionContext.Provider value={{ user, isLoading, signIn, signOut }}>{children}</SessionContext.Provider>
 }
 
 export function useSession() {
@@ -85,3 +107,5 @@ export function useSession() {
   }
   return context
 }
+
+export default SessionProvider

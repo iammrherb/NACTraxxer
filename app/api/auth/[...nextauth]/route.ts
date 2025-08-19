@@ -1,46 +1,40 @@
 import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
-import type { NextAuthOptions } from "next-auth"
 
-const authOptions: NextAuthOptions = {
+export const authOptions = {
+  session: {
+    strategy: "jwt",
+  },
   providers: [
     CredentialsProvider({
-      name: "credentials",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
-      },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          return null
-        }
-
-        // Demo users for testing
+      name: "Credentials",
+      async authorize(credentials, req) {
         const demoUsers = [
           {
             id: "1",
             email: "admin@portnox.com",
-            password: "password123",
+            password: "admin123",
             name: "Admin User",
             role: "admin",
           },
           {
             id: "2",
             email: "user@portnox.com",
-            password: "password123",
-            name: "Regular User",
+            password: "user123",
+            name: "Standard User",
             role: "user",
           },
         ]
 
-        const user = demoUsers.find((u) => u.email === credentials.email && u.password === credentials.password)
+        const { email, password } = credentials || {}
+        const foundUser = demoUsers.find((u) => u.email === email && u.password === password)
 
-        if (user) {
+        if (foundUser) {
           return {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            role: user.role,
+            id: foundUser.id,
+            name: foundUser.name,
+            email: foundUser.email,
+            role: foundUser.role,
           }
         }
 
@@ -48,26 +42,27 @@ const authOptions: NextAuthOptions = {
       },
     }),
   ],
-  pages: {
-    signIn: "/login",
-  },
-  session: {
-    strategy: "jwt",
-  },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
+        token.id = user.id
         token.role = user.role
       }
       return token
     },
     async session({ session, token }) {
-      if (token) {
-        session.user.id = token.sub
-        session.user.role = token.role
+      session.user = {
+        id: token.id as string,
+        name: session.user?.name || "",
+        email: session.user?.email || "",
+        role: token.role as string,
       }
       return session
     },
+  },
+  secret: process.env.NEXTAUTH_SECRET,
+  pages: {
+    signIn: "/login",
   },
 }
 
