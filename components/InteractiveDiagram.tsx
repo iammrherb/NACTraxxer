@@ -43,27 +43,29 @@ import {
   Fingerprint,
   Scan,
   Radar,
-  Download,
-  Save,
-  ZoomIn,
-  ZoomOut,
-  Maximize,
-  Minimize,
-  Layers,
-  Play,
-  Pause,
+  Factory,
+  GraduationCap,
+  ShoppingBag,
+  Heart,
+  Landmark,
+  Building2,
+  Home,
+  Briefcase,
+  Car,
+  Plane,
+  Ship,
+  Truck,
+  Train,
+  Bus,
+  Bike,
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Slider } from "@/components/ui/slider"
-import { Switch } from "@/components/ui/switch"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
+import { Slider } from "@/components/ui/slider"
 import { storage } from "@/lib/storage"
 import { toast } from "@/components/ui/use-toast"
 
@@ -85,8 +87,6 @@ interface DiagramComponent {
     throughput?: string
     latency?: number
     uptime?: number
-    temperature?: number
-    powerUsage?: number
     users?: number
     sessions?: number
     requests?: number
@@ -367,33 +367,130 @@ const COMPONENT_ICONS = {
   fingerprint: Fingerprint,
   scan: Scan,
   radar: Radar,
+  factory: Factory,
+  "graduation-cap": GraduationCap,
+  "shopping-bag": ShoppingBag,
+  heart: Heart,
+  landmark: Landmark,
+  "building-2": Building2,
+  home: Home,
+  briefcase: Briefcase,
+  car: Car,
+  plane: Plane,
+  ship: Ship,
+  truck: Truck,
+  train: Train,
+  bus: Bus,
+  bike: Bike,
 }
 
-const VENDOR_COLORS = {
-  cisco: "#1BA0D7",
-  aruba: "#FF6900",
-  juniper: "#84BD00",
-  fortinet: "#EE3124",
-  palo_alto: "#FA582D",
-  checkpoint: "#FF6B35",
-  microsoft: "#00BCF2",
-  google: "#4285F4",
-  amazon: "#FF9900",
-  vmware: "#607078",
-  okta: "#007DC1",
-  ping: "#0066CC",
-  azure: "#0078D4",
-  aws: "#FF9900",
-  portnox: "#3B82F6",
-  extreme: "#00A651",
-  ruckus: "#FF6B00",
-  mist: "#41B883",
-  meraki: "#58C4DC",
-  f5: "#FF6600",
-  citrix: "#FFB900",
-  zscaler: "#0066CC",
-  cloudflare: "#F38020",
-  akamai: "#0096D6",
+const VENDOR_OPTIONS = {
+  wired: [
+    {
+      value: "cisco",
+      label: "Cisco Systems",
+      color: "#1BA0D7",
+      models: ["Catalyst 9300", "Catalyst 9400", "Catalyst 9500", "Nexus 9000"],
+    },
+    { value: "aruba", label: "Aruba (HPE)", color: "#FF6900", models: ["CX 6200", "CX 6300", "CX 6400", "CX 8400"] },
+    {
+      value: "juniper",
+      label: "Juniper Networks",
+      color: "#84BD00",
+      models: ["EX4300", "EX4400", "EX4600", "QFX5100"],
+    },
+    { value: "extreme", label: "Extreme Networks", color: "#00A651", models: ["X440", "X450", "X460", "X670"] },
+    { value: "dell", label: "Dell Technologies", color: "#007DB8", models: ["N1500", "N2000", "N3000", "N4000"] },
+  ],
+  wireless: [
+    {
+      value: "cisco",
+      label: "Cisco Systems",
+      color: "#1BA0D7",
+      models: ["Catalyst 9100", "Catalyst 9115", "Catalyst 9120", "Catalyst 9130"],
+    },
+    { value: "aruba", label: "Aruba (HPE)", color: "#FF6900", models: ["AP-515", "AP-535", "AP-555", "AP-635"] },
+    { value: "ruckus", label: "Ruckus (CommScope)", color: "#FF6B00", models: ["R350", "R550", "R650", "R750"] },
+    { value: "meraki", label: "Cisco Meraki", color: "#58C4DC", models: ["MR36", "MR46", "MR56", "MR86"] },
+    { value: "mist", label: "Mist (Juniper)", color: "#41B883", models: ["AP21", "AP33", "AP43", "AP63"] },
+  ],
+  firewall: [
+    {
+      value: "palo_alto",
+      label: "Palo Alto Networks",
+      color: "#FA582D",
+      models: ["PA-220", "PA-850", "PA-3220", "PA-5220"],
+    },
+    {
+      value: "fortinet",
+      label: "Fortinet",
+      color: "#EE3124",
+      models: ["FortiGate 60F", "FortiGate 100F", "FortiGate 600E", "FortiGate 1500D"],
+    },
+    { value: "checkpoint", label: "Check Point", color: "#FF6B35", models: ["1490", "3200", "5600", "15600"] },
+    {
+      value: "cisco",
+      label: "Cisco ASA/FTD",
+      color: "#1BA0D7",
+      models: ["ASA 5508-X", "ASA 5516-X", "FTD 2110", "FTD 4112"],
+    },
+    { value: "juniper", label: "Juniper SRX", color: "#84BD00", models: ["SRX300", "SRX550", "SRX1500", "SRX4600"] },
+  ],
+  identity: [
+    {
+      value: "azure_ad",
+      label: "Azure Active Directory",
+      color: "#0078D4",
+      features: ["SSO", "MFA", "Conditional Access", "Identity Protection"],
+    },
+    {
+      value: "active_directory",
+      label: "Active Directory",
+      color: "#0078D4",
+      features: ["LDAP", "Kerberos", "Group Policy", "Certificate Services"],
+    },
+    {
+      value: "okta",
+      label: "Okta",
+      color: "#007DC1",
+      features: ["Universal Directory", "Adaptive MFA", "Lifecycle Management", "API Access"],
+    },
+    {
+      value: "ping",
+      label: "Ping Identity",
+      color: "#0066CC",
+      features: ["PingFederate", "PingAccess", "PingDirectory", "PingOne"],
+    },
+    {
+      value: "google",
+      label: "Google Workspace",
+      color: "#4285F4",
+      features: ["Cloud Identity", "SSO", "2-Step Verification", "Admin Console"],
+    },
+    {
+      value: "aws_sso",
+      label: "AWS SSO",
+      color: "#FF9900",
+      features: ["Permission Sets", "Account Assignment", "External IdP", "Access Portal"],
+    },
+  ],
+  mdm: [
+    { value: "intune", label: "Microsoft Intune", color: "#00BCF2", platforms: ["Windows", "iOS", "Android", "macOS"] },
+    { value: "jamf", label: "Jamf Pro", color: "#4A90E2", platforms: ["macOS", "iOS", "iPadOS", "tvOS"] },
+    {
+      value: "workspace_one",
+      label: "VMware Workspace ONE",
+      color: "#607078",
+      platforms: ["Windows", "iOS", "Android", "macOS", "Chrome OS"],
+    },
+    { value: "mobileiron", label: "MobileIron", color: "#0066CC", platforms: ["Windows", "iOS", "Android", "macOS"] },
+    {
+      value: "airwatch",
+      label: "AirWatch",
+      color: "#607078",
+      platforms: ["Windows", "iOS", "Android", "macOS", "Windows Phone"],
+    },
+  ],
 }
 
 const STATUS_COLORS = {
@@ -417,106 +514,7 @@ const CONNECTION_COLORS = {
   https: "#A3E635",
   tacacs: "#FB7185",
   radsec: "#9333EA",
-  expressroute: "#0EA5E9",
-  sdwan: "#C084FC",
-  mpls: "#E879F9",
-  internet: "#6366F1",
-  leased_line: "#F43F5E",
-  satellite: "#4ADE80",
 }
-
-const INDUSTRY_SCENARIOS = {
-  healthcare: {
-    name: "Healthcare",
-    icon: "🏥",
-    color: "#EF4444",
-    compliance: ["HIPAA", "HITECH", "FDA"],
-    specialRequirements: ["Medical Device Security", "Patient Data Protection", "Telemedicine"],
-  },
-  financial: {
-    name: "Financial Services",
-    icon: "🏦",
-    color: "#10B981",
-    compliance: ["PCI DSS", "SOX", "GDPR"],
-    specialRequirements: ["Trading Floor Security", "Fraud Detection", "Regulatory Compliance"],
-  },
-  manufacturing: {
-    name: "Manufacturing",
-    icon: "🏭",
-    color: "#3B82F6",
-    compliance: ["IEC 62443", "NIST 800-82", "ISO 27001"],
-    specialRequirements: ["OT Security", "Industrial Control Systems", "Safety Systems"],
-  },
-  technology: {
-    name: "Technology",
-    icon: "💻",
-    color: "#8B5CF6",
-    compliance: ["SOC 2", "GDPR", "ISO 27001"],
-    specialRequirements: ["Cloud Security", "DevSecOps", "IP Protection"],
-  },
-  retail: {
-    name: "Retail",
-    icon: "🛍️",
-    color: "#F59E0B",
-    compliance: ["PCI DSS", "CCPA", "GDPR"],
-    specialRequirements: ["POS Security", "Customer Data Protection", "Loss Prevention"],
-  },
-  education: {
-    name: "Education",
-    icon: "🎓",
-    color: "#6366F1",
-    compliance: ["FERPA", "CIPA", "FISMA"],
-    specialRequirements: ["Student Privacy", "Research Security", "BYOD Management"],
-  },
-  government: {
-    name: "Government",
-    icon: "🏛️",
-    color: "#6B7280",
-    compliance: ["FISMA", "NIST 800-53", "FedRAMP"],
-    specialRequirements: ["Classified Security", "Continuous Monitoring", "Insider Threat"],
-  },
-}
-
-const ARCHITECTURE_VIEWS = [
-  {
-    id: "complete",
-    name: "Complete Architecture",
-    icon: Layers,
-    description: "Full network architecture with all components",
-  },
-  {
-    id: "authentication",
-    name: "Authentication Flow",
-    icon: Lock,
-    description: "User and device authentication workflows",
-  },
-  {
-    id: "pki",
-    name: "PKI & Certificate Management",
-    icon: FileKey,
-    description: "Certificate authority and PKI infrastructure",
-  },
-  {
-    id: "policies",
-    name: "Access Control Policies",
-    icon: Shield,
-    description: "Policy engine and enforcement points",
-  },
-  { id: "connectivity", name: "Connectivity Options", icon: Network, description: "WAN, LAN, and cloud connectivity" },
-  { id: "intune", name: "Intune Integration", icon: Smartphone, description: "Microsoft Intune MDM integration" },
-  { id: "jamf", name: "Jamf Integration", icon: Monitor, description: "Jamf Pro MDM integration" },
-  { id: "onboarding", name: "Device Onboarding", icon: UserCheck, description: "Device registration and onboarding" },
-  { id: "radsec", name: "RADSEC Proxy", icon: Router, description: "RADIUS over TLS proxy architecture" },
-  { id: "ztna", name: "Zero Trust Network Access", icon: Target, description: "ZTNA gateway and application access" },
-  { id: "guest", name: "Guest Portal", icon: Users, description: "Guest access and captive portal" },
-  { id: "iot", name: "IoT Onboarding", icon: Activity, description: "IoT device discovery and management" },
-  { id: "tacacs", name: "TACACS+ Administration", icon: Settings, description: "Device administration with TACACS+" },
-  { id: "risk", name: "Risk Assessment", icon: AlertTriangle, description: "Risk-based access control policies" },
-  { id: "multisite", name: "Multi-Site Deployment", icon: Building, description: "Multi-location architecture" },
-  { id: "cloud", name: "Cloud Integration", icon: Cloud, description: "Cloud services and hybrid connectivity" },
-  { id: "wireless", name: "Wireless Infrastructure", icon: Wifi, description: "Wireless network architecture" },
-  { id: "wired", name: "Wired Infrastructure", icon: Cable, description: "Wired network infrastructure" },
-]
 
 export default function InteractiveDiagram({ config }: { config: ArchitectureConfig }) {
   const svgRef = useRef<SVGSVGElement>(null)
@@ -552,8 +550,22 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
   const [showControlPanel, setShowControlPanel] = useState(true)
   const [selectedView, setSelectedView] = useState(config.selectedView || "complete")
   const [selectedIndustry, setSelectedIndustry] = useState(config.industry || "healthcare")
+  const [selectedDeployment, setSelectedDeployment] = useState(config.deployment || "hybrid")
   const [sites, setSites] = useState<any[]>([])
   const [selectedSite, setSelectedSite] = useState<string>("global")
+  const [customConfig, setCustomConfig] = useState({
+    wiredVendor: config.wiredVendor || "cisco",
+    wirelessVendor: config.wirelessVendor || "aruba",
+    firewallVendor: config.firewallVendor || "palo_alto",
+    identityProviders: config.identityProvider || ["azure_ad"],
+    mdmProviders: config.mdmProvider || ["intune"],
+    cloudProviders: ["aws", "azure"],
+    connectivity: config.connectivity || ["wired", "wireless"],
+    authTypes: config.authTypes || ["802.1x", "mac_auth"],
+    deviceTypes: config.deviceTypes || ["windows", "mac", "ios", "android"],
+    complianceFrameworks: config.complianceFrameworks || ["hipaa"],
+    securityFeatures: config.securityFeatures || ["encryption", "mfa"],
+  })
 
   useEffect(() => {
     loadSites()
@@ -561,7 +573,7 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
 
   useEffect(() => {
     generateArchitecture()
-  }, [selectedView, selectedIndustry, selectedSite, config])
+  }, [selectedView, selectedIndustry, selectedSite, selectedDeployment, customConfig])
 
   useEffect(() => {
     if (config.animations && animationActive) {
@@ -593,7 +605,7 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
     const newComponents: DiagramComponent[] = []
     const newConnections: Connection[] = []
 
-    // Generate architecture based on selected view and industry
+    // Generate architecture based on selected view
     switch (selectedView) {
       case "complete":
         generateCompleteArchitecture(newComponents, newConnections)
@@ -649,17 +661,21 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
       case "wired":
         generateWiredInfrastructure(newComponents, newConnections)
         break
+      case "compliance":
+        generateComplianceArchitecture(newComponents, newConnections)
+        break
+      case "monitoring":
+        generateMonitoringArchitecture(newComponents, newConnections)
+        break
       default:
         generateCompleteArchitecture(newComponents, newConnections)
     }
 
     setComponents(newComponents)
     setConnections(newConnections)
-  }, [selectedView, selectedIndustry, selectedSite, config])
+  }, [selectedView, selectedIndustry, selectedSite, selectedDeployment, customConfig])
 
   const generateCompleteArchitecture = (components: DiagramComponent[], connections: Connection[]) => {
-    const industryConfig = INDUSTRY_SCENARIOS[selectedIndustry as keyof typeof INDUSTRY_SCENARIOS]
-
     // Portnox Cloud Platform - Central hub
     components.push({
       id: "portnox-cloud-platform",
@@ -689,9 +705,7 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
       },
       connections: [
         "azure-ad-tenant",
-        "okta-identity",
         "intune-mdm",
-        "jamf-mdm",
         "ztna-gateway",
         "policy-engine",
         "radsec-proxy-primary",
@@ -699,16 +713,13 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
       ],
       icon: "cloud",
       color: config.customColors.primary,
-      description: `Multi-tenant cloud NAC platform optimized for ${industryConfig.name} with ${industryConfig.compliance.join(", ")} compliance`,
+      description: `Multi-tenant cloud NAC platform optimized for ${selectedIndustry} with comprehensive compliance`,
       vendor: "portnox",
       version: "v6.5.2",
-      location: "Multi-Region (AWS/Azure)",
-      compliance: industryConfig.compliance,
-      securityFeatures: industryConfig.specialRequirements,
     })
 
     // Identity Providers based on configuration
-    if (config.identityProvider.includes("azure_ad")) {
+    if (customConfig.identityProviders.includes("azure_ad")) {
       components.push({
         id: "azure-ad-tenant",
         type: "identity_provider",
@@ -730,12 +741,10 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
         },
         connections: ["portnox-cloud-platform", "conditional-access", "intune-mdm", "ztna-gateway"],
         icon: "users",
-        color: VENDOR_COLORS.microsoft,
+        color: VENDOR_OPTIONS.identity.find((v) => v.value === "azure_ad")?.color || "#0078D4",
         description: "Enterprise identity platform with conditional access and MFA",
         vendor: "microsoft",
         version: "2024.01",
-        authentication: ["SAML", "OIDC", "OAuth 2.0"],
-        userGroups: ["Employees", "Contractors", "Guests", "Service Accounts"],
       })
 
       components.push({
@@ -750,43 +759,13 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
         category: "security",
         metrics: {
           policies: 28,
-          evaluations: 450000,
-          blocked: 1250,
           uptime: 99.95,
-          responseTime: 85,
         },
         connections: ["azure-ad-tenant", "intune-mdm", "ztna-gateway"],
         icon: "shield-check",
-        color: VENDOR_COLORS.microsoft,
+        color: VENDOR_OPTIONS.identity.find((v) => v.value === "azure_ad")?.color || "#0078D4",
         description: "Advanced conditional access with real-time risk assessment",
         vendor: "microsoft",
-        accessPolicies: ["Device Compliance", "Location-based", "Risk-based", "Application-based"],
-      })
-    }
-
-    if (config.identityProvider.includes("okta")) {
-      components.push({
-        id: "okta-identity",
-        type: "identity_provider",
-        name: "Okta Identity Platform",
-        x: 400,
-        y: 50,
-        width: 180,
-        height: 100,
-        status: "online",
-        category: "identity",
-        metrics: {
-          users: 5500,
-          sessions: 3200,
-          uptime: 99.98,
-          latency: 12,
-        },
-        connections: ["portnox-cloud-platform", "ztna-gateway"],
-        icon: "key",
-        color: VENDOR_COLORS.okta,
-        description: "Universal Directory and SSO platform with adaptive MFA",
-        vendor: "okta",
-        authentication: ["SAML", "OIDC", "LDAP"],
       })
     }
 
@@ -810,13 +789,10 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
         sessions: 8200,
         requests: 1850000,
         securityScore: 97,
-        threatLevel: "Low",
-        vulnerabilities: 0,
       },
       connections: [
         "portnox-cloud-platform",
         "azure-ad-tenant",
-        "okta-identity",
         "on-premise-apps",
         "saas-applications",
         "device-trust-engine",
@@ -826,8 +802,6 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
       description: "Enterprise ZTNA gateway with micro-segmentation and continuous verification",
       vendor: "portnox",
       version: "v3.2.1",
-      applications: ["ERP Systems", "CRM", "File Servers", "Databases"],
-      accessPolicies: ["Zero Trust", "Least Privilege", "Continuous Verification"],
     })
 
     // Device Trust Engine
@@ -842,22 +816,16 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
       status: "online",
       category: "security",
       metrics: {
-        devices: 15200,
-        compliance: 94.8,
-        riskScore: 15,
-        threats: 8,
-        patches: 156,
         uptime: 99.94,
       },
-      connections: ["ztna-gateway", "intune-mdm", "jamf-mdm"],
+      connections: ["ztna-gateway", "intune-mdm"],
       icon: "scan",
       color: config.customColors.accent,
       description: "AI-powered device posture assessment with continuous trust scoring",
-      securityFeatures: ["Device Fingerprinting", "Behavioral Analysis", "Threat Detection"],
     })
 
     // MDM Integration based on configuration
-    if (config.mdmProvider.includes("intune")) {
+    if (customConfig.mdmProviders.includes("intune")) {
       components.push({
         id: "intune-mdm",
         type: "mdm_platform",
@@ -869,47 +837,14 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
         status: "online",
         category: "management",
         metrics: {
-          devices: 12500,
-          compliance: 92.5,
-          policies: 35,
-          apps: 125,
           uptime: 99.92,
         },
         connections: ["azure-ad-tenant", "conditional-access", "portnox-cloud-platform", "device-trust-engine"],
         icon: "smartphone",
-        color: VENDOR_COLORS.microsoft,
+        color: VENDOR_OPTIONS.mdm.find((v) => v.value === "intune")?.color || "#00BCF2",
         description: "Unified endpoint management with app protection and compliance policies",
         vendor: "microsoft",
         version: "2024.01",
-        deviceTypes: ["Windows", "iOS", "Android", "macOS"],
-        policies: ["Compliance", "Configuration", "App Protection"],
-      })
-    }
-
-    if (config.mdmProvider.includes("jamf")) {
-      components.push({
-        id: "jamf-mdm",
-        type: "mdm_platform",
-        name: "Jamf Pro",
-        x: 400,
-        y: 350,
-        width: 180,
-        height: 100,
-        status: "online",
-        category: "management",
-        metrics: {
-          devices: 2800,
-          compliance: 96.2,
-          policies: 18,
-          apps: 45,
-          uptime: 99.89,
-        },
-        connections: ["portnox-cloud-platform", "device-trust-engine"],
-        icon: "smartphone",
-        color: "#4A90E2",
-        description: "Apple device management with advanced security features",
-        vendor: "jamf",
-        deviceTypes: ["macOS", "iOS", "iPadOS", "tvOS"],
       })
     }
 
@@ -932,7 +867,6 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
           uptime: 99.99,
           cpu: 28,
           memory: 42,
-          packetLoss: 0.001,
         },
         connections: ["portnox-cloud-platform", "core-switch-stack"],
         icon: "router",
@@ -940,18 +874,15 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
         description: "High-performance RADIUS over TLS proxy with intelligent caching",
         vendor: "portnox",
         version: "v2.8.1",
-        ports: [
-          { id: "port1", name: "Management", type: "ethernet", status: "active", speed: "1Gbps" },
-          { id: "port2", name: "Uplink", type: "fiber", status: "active", speed: "10Gbps" },
-        ],
       })
     }
 
     // Core Network Infrastructure based on wired vendor
+    const wiredVendorInfo = VENDOR_OPTIONS.wired.find((v) => v.value === customConfig.wiredVendor)
     components.push({
       id: "core-switch-stack",
       type: "core_switch",
-      name: `${config.wiredVendor.toUpperCase()} Core Switch Stack`,
+      name: `${wiredVendorInfo?.label || customConfig.wiredVendor.toUpperCase()} Core Switch Stack`,
       x: 600,
       y: 400,
       width: 400,
@@ -965,8 +896,6 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
         uptime: 99.99,
         cpu: 18,
         memory: 35,
-        temperature: 38,
-        powerUsage: 2850,
       },
       connections: [
         "radsec-proxy-primary",
@@ -976,44 +905,10 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
         "connectivity-hub",
       ],
       icon: "server",
-      color: VENDOR_COLORS[config.wiredVendor as keyof typeof VENDOR_COLORS] || "#6B7280",
+      color: wiredVendorInfo?.color || "#6B7280",
       description: "High-density core switching with 802.1X authentication and dynamic VLAN assignment",
-      vendor: config.wiredVendor,
-      model: "Enterprise Core Switch",
-      vlans: [
-        {
-          id: "10",
-          name: "Management",
-          subnet: "192.168.10.0/24",
-          gateway: "192.168.10.1",
-          dhcp: true,
-          description: "Network management VLAN",
-        },
-        {
-          id: "20",
-          name: "Corporate",
-          subnet: "10.0.20.0/24",
-          gateway: "10.0.20.1",
-          dhcp: true,
-          description: "Corporate user VLAN",
-        },
-        {
-          id: "30",
-          name: "Guest",
-          subnet: "10.0.30.0/24",
-          gateway: "10.0.30.1",
-          dhcp: true,
-          description: "Guest access VLAN",
-        },
-        {
-          id: "40",
-          name: "IoT",
-          subnet: "10.0.40.0/24",
-          gateway: "10.0.40.1",
-          dhcp: true,
-          description: "IoT devices VLAN",
-        },
-      ],
+      vendor: customConfig.wiredVendor,
+      model: wiredVendorInfo?.models?.[2] || "Enterprise Core Switch",
     })
 
     // Distribution Switches
@@ -1037,10 +932,10 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
       },
       connections: ["core-switch-stack", "access-switches", "wireless-controller"],
       icon: "network",
-      color: VENDOR_COLORS[config.wiredVendor as keyof typeof VENDOR_COLORS] || "#6B7280",
+      color: wiredVendorInfo?.color || "#6B7280",
       description: "Distribution layer with advanced routing and VLAN management",
-      vendor: config.wiredVendor,
-      model: "Distribution Switch",
+      vendor: customConfig.wiredVendor,
+      model: wiredVendorInfo?.models?.[1] || "Distribution Switch",
     })
 
     // Access Switches
@@ -1064,26 +959,19 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
       },
       connections: ["distribution-switches", "endpoint-devices"],
       icon: "network",
-      color: VENDOR_COLORS[config.wiredVendor as keyof typeof VENDOR_COLORS] || "#6B7280",
+      color: wiredVendorInfo?.color || "#6B7280",
       description: "PoE+ enabled access switches with 802.1X authentication",
-      vendor: config.wiredVendor,
-      model: "Access Switch",
-      ports: Array.from({ length: 48 }, (_, i) => ({
-        id: `port${i + 1}`,
-        name: `Port ${i + 1}`,
-        type: "ethernet" as const,
-        status: Math.random() > 0.1 ? ("active" as const) : ("inactive" as const),
-        speed: "1Gbps",
-        vlan: Math.random() > 0.5 ? "20" : "30",
-      })),
+      vendor: customConfig.wiredVendor,
+      model: wiredVendorInfo?.models?.[0] || "Access Switch",
     })
 
     // Wireless Infrastructure based on connectivity options
-    if (config.connectivity.includes("wireless")) {
+    if (customConfig.connectivity.includes("wireless")) {
+      const wirelessVendorInfo = VENDOR_OPTIONS.wireless.find((v) => v.value === customConfig.wirelessVendor)
       components.push({
         id: "wireless-controller",
         type: "wireless_controller",
-        name: `${config.wirelessVendor.toUpperCase()} Wireless Controller`,
+        name: `${wirelessVendorInfo?.label || customConfig.wirelessVendor.toUpperCase()} Wireless Controller`,
         x: 1050,
         y: 400,
         width: 200,
@@ -1100,11 +988,10 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
         },
         connections: ["core-switch-stack", "distribution-switches", "access-points"],
         icon: "wifi",
-        color: VENDOR_COLORS[config.wirelessVendor as keyof typeof VENDOR_COLORS] || "#8B5CF6",
+        color: wirelessVendorInfo?.color || "#8B5CF6",
         description: "Centralized wireless management with AI-driven optimization",
-        vendor: config.wirelessVendor,
-        model: "Wireless Controller",
-        networkSegments: ["Corporate WiFi", "Guest WiFi", "IoT WiFi"],
+        vendor: customConfig.wirelessVendor,
+        model: wirelessVendorInfo?.models?.[2] || "Wireless Controller",
       })
 
       components.push({
@@ -1125,18 +1012,19 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
         },
         connections: ["wireless-controller", "endpoint-devices"],
         icon: "wifi",
-        color: VENDOR_COLORS[config.wirelessVendor as keyof typeof VENDOR_COLORS] || "#8B5CF6",
+        color: wirelessVendorInfo?.color || "#8B5CF6",
         description: "High-density WiFi 6E access points with advanced security",
-        vendor: config.wirelessVendor,
-        model: "WiFi 6E AP",
+        vendor: customConfig.wirelessVendor,
+        model: wirelessVendorInfo?.models?.[3] || "WiFi 6E AP",
       })
     }
 
     // Security Infrastructure based on firewall vendor
+    const firewallVendorInfo = VENDOR_OPTIONS.firewall.find((v) => v.value === customConfig.firewallVendor)
     components.push({
       id: "firewall-cluster",
       type: "firewall_cluster",
-      name: `${config.firewallVendor.toUpperCase()} Firewall Cluster`,
+      name: `${firewallVendorInfo?.label || customConfig.firewallVendor.toUpperCase()} Firewall Cluster`,
       x: 1300,
       y: 400,
       width: 200,
@@ -1148,22 +1036,19 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
         throughput: "80 Gbps",
         latency: 0.8,
         uptime: 99.98,
-        threats: 1250,
-        blocked: 8500,
         cpu: 45,
         memory: 62,
       },
       connections: ["core-switch-stack", "connectivity-hub", "internet-gateway"],
       icon: "shield",
-      color: VENDOR_COLORS[config.firewallVendor as keyof typeof VENDOR_COLORS] || "#EF4444",
+      color: firewallVendorInfo?.color || "#EF4444",
       description: "Next-generation firewall cluster with advanced threat protection",
-      vendor: config.firewallVendor,
-      model: "NGFW Cluster",
-      securityFeatures: ["IPS", "Anti-Malware", "URL Filtering", "Application Control", "SSL Inspection"],
+      vendor: customConfig.firewallVendor,
+      model: firewallVendorInfo?.models?.[2] || "NGFW Cluster",
     })
 
     // Connectivity Hub based on deployment type
-    if (config.deployment === "hybrid" || config.deployment === "cloud") {
+    if (selectedDeployment === "hybrid" || selectedDeployment === "cloud_only") {
       components.push({
         id: "connectivity-hub",
         type: "connectivity_hub",
@@ -1179,14 +1064,12 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
           throughput: "25 Gbps",
           latency: 12,
           uptime: 99.95,
-          availability: 99.9,
         },
         connections: ["firewall-cluster", "internet-gateway", "cloud-services"],
         icon: "git-branch",
         color: "#059669",
         description: "Intelligent WAN aggregation with automatic failover",
         vendor: "multi-vendor",
-        networkSegments: ["MPLS", "Internet", "LTE", "Satellite"],
       })
     }
 
@@ -1205,13 +1088,11 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
         bandwidth: "10 Gbps",
         latency: 18,
         uptime: 99.8,
-        utilization: 45,
       },
       connections: ["firewall-cluster", "connectivity-hub"],
       icon: "globe",
       color: "#6366F1",
       description: "High-speed internet connectivity with DDoS protection",
-      provider: "ISP Provider",
     })
 
     // Cloud Services based on cloud integration
@@ -1219,7 +1100,7 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
       components.push({
         id: "cloud-services",
         type: "cloud_services",
-        name: "Cloud Services",
+        name: "Multi-Cloud Services",
         x: 1550,
         y: 400,
         width: 200,
@@ -1227,7 +1108,6 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
         status: "online",
         category: "cloud",
         metrics: {
-          services: 25,
           uptime: 99.99,
           latency: 15,
           bandwidth: "50 Gbps",
@@ -1236,7 +1116,6 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
         icon: "cloud",
         color: "#3B82F6",
         description: "Multi-cloud services integration",
-        applications: ["AWS", "Azure", "Google Cloud", "Office 365"],
       })
     }
 
@@ -1252,17 +1131,12 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
       status: "online",
       category: "endpoint",
       metrics: {
-        devices: 12500,
-        online: 8950,
-        compliance: 94.2,
-        threats: 15,
-        patches: 2850,
+        uptime: 94.2,
       },
       connections: ["access-switches", "access-points"],
       icon: "monitor",
       color: "#6B7280",
       description: "Diverse endpoint ecosystem with comprehensive security",
-      deviceTypes: config.deviceTypes,
     })
 
     // Applications based on deployment
@@ -1289,7 +1163,6 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
         icon: "server",
         color: "#059669",
         description: "Critical business applications with zero trust protection",
-        applications: ["ERP", "CRM", "File Servers", "Databases"],
       })
     }
 
@@ -1315,7 +1188,6 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
       icon: "cloud",
       color: config.customColors.accent,
       description: "Cloud applications with conditional access",
-      applications: ["Office 365", "Salesforce", "ServiceNow", "Slack"],
     })
 
     // Policy Engine
@@ -1331,20 +1203,17 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
       category: "management",
       metrics: {
         policies: 156,
-        evaluations: 2850000,
         latency: 1.5,
-        accuracy: 99.8,
         uptime: 99.99,
       },
       connections: ["portnox-cloud-platform"],
       icon: "settings",
       color: "#059669",
       description: "AI-powered policy engine with real-time decision making",
-      policies: ["Access Control", "Device Compliance", "Risk Assessment", "Remediation"],
     })
 
     // Certificate Authority based on PKI requirements
-    if (config.authTypes.includes("certificate") || config.authTypes.includes("802.1x")) {
+    if (customConfig.authTypes.includes("certificate") || customConfig.authTypes.includes("802.1x")) {
       components.push({
         id: "certificate-authority",
         type: "certificate_authority",
@@ -1356,26 +1225,12 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
         status: "online",
         category: "security",
         metrics: {
-          certificates: 15200,
-          issued: 125,
-          revoked: 8,
-          expiring: 45,
           uptime: 99.98,
         },
         connections: ["portnox-cloud-platform"],
         icon: "file-key",
         color: "#DC2626",
         description: "Enterprise PKI with automated certificate lifecycle management",
-        certificates: [
-          { name: "Root CA", issuer: "Internal CA", subject: "CN=Root CA", expiry: "2030-12-31", status: "valid" },
-          {
-            name: "Intermediate CA",
-            issuer: "Root CA",
-            subject: "CN=Intermediate CA",
-            expiry: "2028-12-31",
-            status: "valid",
-          },
-        ],
       })
     }
 
@@ -1393,9 +1248,6 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
         category: "security",
         metrics: {
           connections: 150,
-          authentications: 5000,
-          authorizations: 12000,
-          accounting: 8000,
           uptime: 99.95,
         },
         connections: ["portnox-cloud-platform", "core-switch-stack"],
@@ -1425,8 +1277,6 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
       icon: "smartphone",
       color: "#6B7280",
       description: "Corporate or BYOD device attempting network access",
-      deviceTypes: config.deviceTypes,
-      authentication: config.authTypes,
     })
 
     // Network Access Point
@@ -1441,15 +1291,12 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
       status: "online",
       category: "network",
       connections: ["radius-proxy", "user-device"],
-      icon: config.connectivity.includes("wireless") ? "wifi" : "network",
-      color:
-        VENDOR_COLORS[
-          config.connectivity.includes("wireless")
-            ? (config.wirelessVendor as keyof typeof VENDOR_COLORS)
-            : (config.wiredVendor as keyof typeof VENDOR_COLORS)
-        ] || "#8B5CF6",
+      icon: customConfig.connectivity.includes("wireless") ? "wifi" : "network",
+      color: customConfig.connectivity.includes("wireless")
+        ? VENDOR_OPTIONS.wireless.find((v) => v.value === customConfig.wirelessVendor)?.color || "#8B5CF6"
+        : VENDOR_OPTIONS.wired.find((v) => v.value === customConfig.wiredVendor)?.color || "#6B7280",
       description: "802.1X enabled switch port or wireless access point",
-      vendor: config.connectivity.includes("wireless") ? config.wirelessVendor : config.wiredVendor,
+      vendor: customConfig.connectivity.includes("wireless") ? customConfig.wirelessVendor : customConfig.wiredVendor,
     })
 
     // RADIUS Proxy
@@ -1492,7 +1339,7 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
     components.push({
       id: "identity-provider",
       type: "identity_provider",
-      name: config.identityProvider.includes("azure_ad") ? "Azure Active Directory" : "Identity Provider",
+      name: customConfig.identityProviders.includes("azure_ad") ? "Azure Active Directory" : "Identity Provider",
       x: 1400,
       y: 100,
       width: 250,
@@ -1501,10 +1348,11 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
       category: "identity",
       connections: ["portnox-cloud"],
       icon: "users",
-      color: config.identityProvider.includes("azure_ad") ? VENDOR_COLORS.microsoft : "#0078D4",
+      color: customConfig.identityProviders.includes("azure_ad")
+        ? VENDOR_OPTIONS.identity.find((v) => v.value === "azure_ad")?.color || "#0078D4"
+        : "#0078D4",
       description: "Enterprise identity provider for user authentication",
-      vendor: config.identityProvider.includes("azure_ad") ? "microsoft" : "generic",
-      authentication: ["SAML", "OIDC", "LDAP"],
+      vendor: customConfig.identityProviders.includes("azure_ad") ? "microsoft" : "generic",
     })
 
     // Policy Engine
@@ -1522,7 +1370,6 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
       icon: "settings",
       color: "#059669",
       description: "Real-time policy evaluation and access decisions",
-      policies: ["Device Compliance", "User Authorization", "Network Segmentation"],
     })
 
     generateIntelligentConnections(components, connections)
@@ -1544,16 +1391,6 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
       icon: "file-key",
       color: "#DC2626",
       description: "Offline root CA for maximum security",
-      location: "Secure Vault",
-      certificates: [
-        {
-          name: "Root CA Certificate",
-          issuer: "Self-Signed",
-          subject: "CN=Root CA",
-          expiry: "2035-12-31",
-          status: "valid",
-        },
-      ],
     })
 
     // Intermediate CAs
@@ -1706,7 +1543,6 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
       icon: "settings",
       color: "#059669",
       description: "AI-powered policy engine with real-time decision making",
-      policies: ["Access Control", "Device Compliance", "Risk Assessment", "Network Segmentation"],
     })
 
     // Policy Repository
@@ -1779,7 +1615,7 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
       icon: "network",
       color: config.customColors.primary,
       description: "High-performance core network with redundant paths",
-      vendor: config.wiredVendor,
+      vendor: customConfig.wiredVendor,
     })
 
     // WAN Aggregator
@@ -1863,9 +1699,9 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
       category: "network",
       connections: ["network-core", "access-layer"],
       icon: "network",
-      color: VENDOR_COLORS[config.wiredVendor as keyof typeof VENDOR_COLORS] || "#6B7280",
+      color: VENDOR_OPTIONS.wired.find((v) => v.value === customConfig.wiredVendor)?.color || "#6B7280",
       description: "Distribution layer with advanced routing",
-      vendor: config.wiredVendor,
+      vendor: customConfig.wiredVendor,
     })
 
     // Access Layer
@@ -1881,9 +1717,9 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
       category: "network",
       connections: ["lan-distribution"],
       icon: "network",
-      color: VENDOR_COLORS[config.wiredVendor as keyof typeof VENDOR_COLORS] || "#6B7280",
+      color: VENDOR_OPTIONS.wired.find((v) => v.value === customConfig.wiredVendor)?.color || "#6B7280",
       description: "PoE+ enabled access switches",
-      vendor: config.wiredVendor,
+      vendor: customConfig.wiredVendor,
     })
 
     // Cloud Connectivity
@@ -1920,7 +1756,7 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
       category: "cloud",
       connections: ["azure-ad", "device-enrollment", "app-protection", "compliance-policies"],
       icon: "cloud",
-      color: VENDOR_COLORS.microsoft,
+      color: VENDOR_OPTIONS.mdm.find((v) => v.value === "intune")?.color || "#00BCF2",
       description: "Cloud-based unified endpoint management platform",
       vendor: "microsoft",
       version: "2024.01",
@@ -1939,7 +1775,7 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
       category: "identity",
       connections: ["intune-cloud"],
       icon: "users",
-      color: VENDOR_COLORS.microsoft,
+      color: VENDOR_OPTIONS.identity.find((v) => v.value === "azure_ad")?.color || "#0078D4",
       description: "Identity and access management integration",
       vendor: "microsoft",
     })
@@ -2012,7 +1848,7 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
       category: "cloud",
       connections: ["apple-business-manager", "device-enrollment", "app-deployment", "security-policies"],
       icon: "cloud",
-      color: "#4A90E2",
+      color: VENDOR_OPTIONS.mdm.find((v) => v.value === "jamf")?.color || "#4A90E2",
       description: "Apple device management platform",
       vendor: "jamf",
       version: "10.45.0",
@@ -2213,9 +2049,9 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
       category: "network",
       connections: ["radsec-proxy-cluster"],
       icon: "network",
-      color: VENDOR_COLORS[config.wiredVendor as keyof typeof VENDOR_COLORS] || "#6B7280",
+      color: VENDOR_OPTIONS.wired.find((v) => v.value === customConfig.wiredVendor)?.color || "#6B7280",
       description: "Network devices configured for RADIUS authentication",
-      vendor: config.wiredVendor,
+      vendor: customConfig.wiredVendor,
     })
 
     generateIntelligentConnections(components, connections)
@@ -2506,9 +2342,9 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
       category: "network",
       connections: ["tacacs-server-cluster"],
       icon: "network",
-      color: VENDOR_COLORS[config.wiredVendor as keyof typeof VENDOR_COLORS] || "#6B7280",
+      color: VENDOR_OPTIONS.wired.find((v) => v.value === customConfig.wiredVendor)?.color || "#6B7280",
       description: "Network devices configured for TACACS+ authentication",
-      vendor: config.wiredVendor,
+      vendor: customConfig.wiredVendor,
     })
 
     generateIntelligentConnections(components, connections)
@@ -2591,24 +2427,24 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
     components.push({
       id: "headquarters",
       type: "headquarters",
-      name: "Headquarters",
+      name: "Corporate Headquarters",
       x: 600,
       y: 200,
       width: 300,
       height: 150,
       status: "online",
       category: "network",
-      connections: ["branch-office-1", "branch-office-2", "remote-sites"],
+      connections: ["branch-office-1", "branch-office-2", "remote-sites", "data-center"],
       icon: "building",
       color: config.customColors.primary,
-      description: "Main headquarters with centralized NAC management",
+      description: `Main headquarters with centralized NAC management for ${selectedIndustry}`,
     })
 
     // Branch Offices
     components.push({
       id: "branch-office-1",
       type: "branch_office",
-      name: "Branch Office - East",
+      name: "Branch Office 1",
       x: 200,
       y: 100,
       width: 250,
@@ -2616,32 +2452,49 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
       status: "online",
       category: "network",
       connections: ["headquarters"],
-      icon: "building",
+      icon: "building-2",
       color: "#059669",
-      description: "Eastern branch office with local network infrastructure",
+      description: "Regional branch office with local NAC enforcement",
     })
 
     components.push({
       id: "branch-office-2",
       type: "branch_office",
-      name: "Branch Office - West",
-      x: 1000,
+      name: "Branch Office 2",
+      x: 600,
       y: 100,
       width: 250,
       height: 120,
       status: "online",
       category: "network",
       connections: ["headquarters"],
-      icon: "building",
+      icon: "building-2",
       color: "#059669",
-      description: "Western branch office with local network infrastructure",
+      description: "Regional branch office with local NAC enforcement",
+    })
+
+    // Data Center
+    components.push({
+      id: "data-center",
+      type: "data_center",
+      name: "Primary Data Center",
+      x: 1000,
+      y: 400,
+      width: 250,
+      height: 120,
+      status: "online",
+      category: "network",
+      connections: ["headquarters"],
+      icon: "server",
+      color: "#6B7280",
+      description: "Primary data center with disaster recovery capabilities",
     })
 
     // Remote Sites
     components.push({
       id: "remote-sites",
       type: "remote_sites",
-      name: "Remote Sites (15x)",
+      name: "Remote Sites (5x)",
       x: 600,
       y: 400,
       width: 250,
@@ -2649,7 +2502,7 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
       status: "online",
       category: "network",
       connections: ["headquarters"],
-      icon: "building",
+      icon: "home",
       color: "#8B5CF6",
       description: "Multiple remote sites with centralized management",
     })
@@ -2679,7 +2532,7 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
     components.push({
       id: "aws-services",
       type: "aws_services",
-      name: "AWS Services",
+      name: "Amazon Web Services",
       x: 200,
       y: 100,
       width: 250,
@@ -2688,8 +2541,8 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
       category: "cloud",
       connections: ["multi-cloud-hub"],
       icon: "cloud",
-      color: VENDOR_COLORS.aws,
-      description: "Amazon Web Services integration",
+      color: "#FF9900",
+      description: "AWS cloud services integration",
       vendor: "aws",
     })
 
@@ -2697,8 +2550,8 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
     components.push({
       id: "azure-services",
       type: "azure_services",
-      name: "Azure Services",
-      x: 1000,
+      name: "Microsoft Azure",
+      x: 500,
       y: 100,
       width: 250,
       height: 120,
@@ -2706,9 +2559,9 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
       category: "cloud",
       connections: ["multi-cloud-hub"],
       icon: "cloud",
-      color: VENDOR_COLORS.azure,
-      description: "Microsoft Azure services integration",
-      vendor: "microsoft",
+      color: "#0078D4",
+      description: "Azure cloud services integration",
+      vendor: "azure",
     })
 
     // Google Cloud
@@ -2716,17 +2569,17 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
       id: "google-cloud",
       type: "google_cloud",
       name: "Google Cloud Platform",
-      x: 200,
-      y: 400,
+      x: 800,
+      y: 100,
       width: 250,
       height: 120,
       status: "online",
       category: "cloud",
       connections: ["multi-cloud-hub"],
       icon: "cloud",
-      color: VENDOR_COLORS.google,
-      description: "Google Cloud Platform integration",
-      vendor: "google",
+      color: "#4285F4",
+      description: "GCP cloud services integration",
+      vendor: "gcp",
     })
 
     // Cloud Security
@@ -2750,11 +2603,13 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
   }
 
   const generateWirelessInfrastructure = (components: DiagramComponent[], connections: Connection[]) => {
+    const wirelessVendorInfo = VENDOR_OPTIONS.wireless.find((v) => v.value === customConfig.wirelessVendor)
+
     // Wireless Controller Cluster
     components.push({
       id: "wireless-controller-cluster",
       type: "wireless_controller_cluster",
-      name: `${config.wirelessVendor.toUpperCase()} Wireless Controller Cluster`,
+      name: `${wirelessVendorInfo?.label || customConfig.wirelessVendor.toUpperCase()} Wireless Controller Cluster`,
       x: 600,
       y: 200,
       width: 350,
@@ -2763,9 +2618,10 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
       category: "network",
       connections: ["access-points", "wireless-management", "network-core"],
       icon: "wifi",
-      color: VENDOR_COLORS[config.wirelessVendor as keyof typeof VENDOR_COLORS] || "#8B5CF6",
+      color: wirelessVendorInfo?.color || "#8B5CF6",
       description: "High-availability wireless controller cluster",
-      vendor: config.wirelessVendor,
+      vendor: customConfig.wirelessVendor,
+      model: wirelessVendorInfo?.models?.[2] || "Wireless Controller",
     })
 
     // Access Points
@@ -2781,9 +2637,10 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
       category: "network",
       connections: ["wireless-controller-cluster"],
       icon: "wifi",
-      color: VENDOR_COLORS[config.wirelessVendor as keyof typeof VENDOR_COLORS] || "#8B5CF6",
+      color: wirelessVendorInfo?.color || "#8B5CF6",
       description: "High-density WiFi 6E access points",
-      vendor: config.wirelessVendor,
+      vendor: customConfig.wirelessVendor,
+      model: wirelessVendorInfo?.models?.[3] || "WiFi 6E AP",
     })
 
     // Wireless Management
@@ -2824,11 +2681,13 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
   }
 
   const generateWiredInfrastructure = (components: DiagramComponent[], connections: Connection[]) => {
+    const wiredVendorInfo = VENDOR_OPTIONS.wired.find((v) => v.value === customConfig.wiredVendor)
+
     // Core Switch Stack
     components.push({
       id: "core-switch-stack",
       type: "core_switch_stack",
-      name: `${config.wiredVendor.toUpperCase()} Core Switch Stack`,
+      name: `${wiredVendorInfo?.label || customConfig.wiredVendor.toUpperCase()} Core Switch Stack`,
       x: 600,
       y: 200,
       width: 350,
@@ -2837,9 +2696,10 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
       category: "network",
       connections: ["distribution-switches", "access-switches", "network-management"],
       icon: "server",
-      color: VENDOR_COLORS[config.wiredVendor as keyof typeof VENDOR_COLORS] || "#6B7280",
+      color: wiredVendorInfo?.color || "#6B7280",
       description: "High-performance core switching infrastructure",
-      vendor: config.wiredVendor,
+      vendor: customConfig.wiredVendor,
+      model: wiredVendorInfo?.models?.[3] || "Core Switch Stack",
     })
 
     // Distribution Switches
@@ -2855,9 +2715,10 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
       category: "network",
       connections: ["core-switch-stack"],
       icon: "network",
-      color: VENDOR_COLORS[config.wiredVendor as keyof typeof VENDOR_COLORS] || "#6B7280",
+      color: wiredVendorInfo?.color || "#6B7280",
       description: "Distribution layer switches",
-      vendor: config.wiredVendor,
+      vendor: customConfig.wiredVendor,
+      model: wiredVendorInfo?.models?.[2] || "Distribution Switch",
     })
 
     // Access Switches
@@ -2873,9 +2734,10 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
       category: "network",
       connections: ["core-switch-stack"],
       icon: "network",
-      color: VENDOR_COLORS[config.wiredVendor as keyof typeof VENDOR_COLORS] || "#6B7280",
+      color: wiredVendorInfo?.color || "#6B7280",
       description: "Access layer switches with PoE+",
-      vendor: config.wiredVendor,
+      vendor: customConfig.wiredVendor,
+      model: wiredVendorInfo?.models?.[0] || "Access Switch",
     })
 
     // Network Management
@@ -2893,6 +2755,150 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
       icon: "settings",
       color: "#059669",
       description: "Centralized network management and monitoring",
+    })
+
+    generateIntelligentConnections(components, connections)
+  }
+
+  const generateComplianceArchitecture = (components: DiagramComponent[], connections: Connection[]) => {
+    // Compliance Management Platform
+    components.push({
+      id: "compliance-platform",
+      type: "compliance_platform",
+      name: "Compliance Management Platform",
+      x: 600,
+      y: 200,
+      width: 350,
+      height: 150,
+      status: "online",
+      category: "management",
+      connections: ["audit-engine", "reporting-system", "policy-compliance"],
+      icon: "check-circle",
+      color: "#10B981",
+      description: "Comprehensive compliance management for industry regulations",
+    })
+
+    // Audit Engine
+    components.push({
+      id: "audit-engine",
+      type: "audit_engine",
+      name: "Automated Audit Engine",
+      x: 200,
+      y: 100,
+      width: 250,
+      height: 120,
+      status: "online",
+      category: "security",
+      connections: ["compliance-platform"],
+      icon: "search",
+      color: "#3B82F6",
+      description: "Continuous compliance monitoring and audit trail generation",
+    })
+
+    // Reporting System
+    components.push({
+      id: "reporting-system",
+      type: "reporting_system",
+      name: "Compliance Reporting System",
+      x: 1000,
+      y: 100,
+      width: 250,
+      height: 120,
+      status: "online",
+      category: "management",
+      connections: ["compliance-platform"],
+      icon: "bar-chart-3",
+      color: "#F59E0B",
+      description: "Automated compliance reporting and dashboard",
+    })
+
+    // Policy Compliance
+    components.push({
+      id: "policy-compliance",
+      type: "policy_compliance",
+      name: "Policy Compliance Engine",
+      x: 600,
+      y: 400,
+      width: 250,
+      height: 120,
+      status: "online",
+      category: "security",
+      connections: ["compliance-platform"],
+      icon: "shield-check",
+      color: "#7C3AED",
+      description: "Real-time policy compliance validation and enforcement",
+    })
+
+    generateIntelligentConnections(components, connections)
+  }
+
+  const generateMonitoringArchitecture = (components: DiagramComponent[], connections: Connection[]) => {
+    // Monitoring Platform
+    components.push({
+      id: "monitoring-platform",
+      type: "monitoring_platform",
+      name: "Network Monitoring Platform",
+      x: 600,
+      y: 200,
+      width: 350,
+      height: 150,
+      status: "online",
+      category: "management",
+      connections: ["data-collectors", "analytics-engine", "alerting-system"],
+      icon: "activity",
+      color: "#3B82F6",
+      description: "Comprehensive network monitoring and analytics platform",
+    })
+
+    // Data Collectors
+    components.push({
+      id: "data-collectors",
+      type: "data_collectors",
+      name: "Data Collection Agents",
+      x: 200,
+      y: 100,
+      width: 250,
+      height: 120,
+      status: "online",
+      category: "network",
+      connections: ["monitoring-platform"],
+      icon: "database",
+      color: "#059669",
+      description: "Distributed data collection from network devices and systems",
+    })
+
+    // Analytics Engine
+    components.push({
+      id: "analytics-engine",
+      type: "analytics_engine",
+      name: "AI Analytics Engine",
+      x: 1000,
+      y: 100,
+      width: 250,
+      height: 120,
+      status: "online",
+      category: "management",
+      connections: ["monitoring-platform"],
+      icon: "trending-up",
+      color: "#8B5CF6",
+      description: "Machine learning-powered network analytics and insights",
+    })
+
+    // Alerting System
+    components.push({
+      id: "alerting-system",
+      type: "alerting_system",
+      name: "Intelligent Alerting System",
+      x: 600,
+      y: 400,
+      width: 250,
+      height: 120,
+      status: "online",
+      category: "management",
+      connections: ["monitoring-platform"],
+      icon: "alert-triangle",
+      color: "#EF4444",
+      description: "Smart alerting with anomaly detection and escalation",
     })
 
     generateIntelligentConnections(components, connections)
@@ -3041,70 +3047,6 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
     setHoveredConnection(connectionId)
   }
 
-  const handleZoom = (delta: number) => {
-    setZoomLevel((prev) => Math.max(25, Math.min(200, prev + delta)))
-  }
-
-  const handlePan = (deltaX: number, deltaY: number) => {
-    setPanOffset((prev) => ({
-      x: prev.x + deltaX,
-      y: prev.y + deltaY,
-    }))
-  }
-
-  const handleExport = (format: "png" | "svg" | "pdf") => {
-    // Export functionality would be implemented here
-    console.log(`Exporting diagram as ${format}`)
-    toast({
-      title: "Export Started",
-      description: `Exporting diagram as ${format.toUpperCase()}...`,
-    })
-  }
-
-  const handleSave = async () => {
-    try {
-      const diagramData = {
-        components,
-        connections,
-        config: {
-          selectedView,
-          selectedIndustry,
-          selectedSite,
-          zoomLevel,
-          panOffset,
-          showMetrics,
-          showConnections,
-          showLabels,
-        },
-        timestamp: new Date().toISOString(),
-      }
-
-      // Save to storage
-      localStorage.setItem("nac-diagram-data", JSON.stringify(diagramData))
-
-      toast({
-        title: "Diagram Saved",
-        description: "Your diagram configuration has been saved successfully.",
-      })
-    } catch (error) {
-      console.error("Error saving diagram:", error)
-      toast({
-        title: "Save Failed",
-        description: "Failed to save diagram configuration.",
-        variant: "destructive",
-      })
-    }
-  }
-
-  const handleAutoLayout = () => {
-    // Auto-layout functionality would be implemented here
-    console.log("Applying automatic layout")
-    toast({
-      title: "Auto Layout",
-      description: "Applying intelligent component positioning...",
-    })
-  }
-
   const renderComponent = (component: DiagramComponent) => {
     const IconComponent = COMPONENT_ICONS[component.icon as keyof typeof COMPONENT_ICONS] || Settings
     const isSelected = selectedComponent?.id === component.id
@@ -3165,10 +3107,32 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
         {/* Vendor Badge */}
         {component.vendor && (
           <>
-            <rect x={component.width - 90} y={component.height - 25} width={80} height={20} rx={10} fill="#F3F4F6" />
-            <text x={component.width - 50} y={component.height - 12} fontSize={10} textAnchor="middle" fill="#374151">
+            <rect
+              x={component.width - 120}
+              y={component.height - 35}
+              width={110}
+              height={30}
+              rx={15}
+              fill={component.color}
+              fillOpacity={0.1}
+              stroke={component.color}
+              strokeWidth={1}
+            />
+            <text
+              x={component.width - 65}
+              y={component.height - 22}
+              fontSize={9}
+              textAnchor="middle"
+              fill={component.color}
+              fontWeight="600"
+            >
               {component.vendor.toUpperCase()}
             </text>
+            {component.model && (
+              <text x={component.width - 65} y={component.height - 12} fontSize={8} textAnchor="middle" fill="#6B7280">
+                {component.model}
+              </text>
+            )}
           </>
         )}
 
@@ -3289,703 +3253,372 @@ export default function InteractiveDiagram({ config }: { config: ArchitectureCon
   }
 
   return (
-    <div className="w-full h-full relative bg-gradient-to-br from-slate-50 to-blue-50" ref={containerRef}>
+    <div
+      className="w-full h-full relative bg-gradient-to-br from-slate-50 to-blue-50 overflow-hidden"
+      ref={containerRef}
+    >
       {/* Enhanced Control Panel */}
       {showControlPanel && (
-        <Card className="absolute top-4 left-4 z-20 w-96 bg-white/95 backdrop-blur-sm border-white/20 shadow-2xl">
+        <Card className="absolute top-4 left-4 z-20 w-96 bg-white/95 backdrop-blur-sm border-white/20 shadow-2xl max-h-[calc(100vh-2rem)] overflow-hidden">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg font-semibold flex items-center gap-2">
               <Settings className="h-5 w-5" />
               Architecture Controls
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="view" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="view">View</TabsTrigger>
-                <TabsTrigger value="config">Config</TabsTrigger>
-                <TabsTrigger value="display">Display</TabsTrigger>
-              </TabsList>
+          <CardContent className="p-0">
+            <ScrollArea className="h-[calc(100vh-8rem)]">
+              <div className="p-6">
+                <Tabs defaultValue="view" className="w-full">
+                  <TabsList className="grid w-full grid-cols-4">
+                    <TabsTrigger value="view">View</TabsTrigger>
+                    <TabsTrigger value="config">Config</TabsTrigger>
+                    <TabsTrigger value="display">Display</TabsTrigger>
+                    <TabsTrigger value="export">Export</TabsTrigger>
+                  </TabsList>
 
-              <TabsContent value="view" className="space-y-4 mt-4">
-                {/* Industry Selection */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Industry Scenario</Label>
-                  <Select value={selectedIndustry} onValueChange={setSelectedIndustry}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(INDUSTRY_SCENARIOS).map(([key, industry]) => (
-                        <SelectItem key={key} value={key}>
-                          <div className="flex items-center gap-2">
-                            <span>{industry.icon}</span>
-                            <span>{industry.name}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                  <TabsContent value="view" className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium">Architecture View</label>
+                      <Select value={selectedView} onValueChange={setSelectedView}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="complete">Complete Architecture</SelectItem>
+                          <SelectItem value="authentication">Authentication Flow</SelectItem>
+                          <SelectItem value="pki">PKI & Certificate Management</SelectItem>
+                          <SelectItem value="policies">Access Control Policies</SelectItem>
+                          <SelectItem value="connectivity">Connectivity Options</SelectItem>
+                          <SelectItem value="intune">Intune Integration</SelectItem>
+                          <SelectItem value="jamf">Jamf Integration</SelectItem>
+                          <SelectItem value="onboarding">Device Onboarding</SelectItem>
+                          <SelectItem value="radsec">RADSEC Proxy</SelectItem>
+                          <SelectItem value="ztna">Zero Trust Network Access</SelectItem>
+                          <SelectItem value="guest">Guest Portal</SelectItem>
+                          <SelectItem value="iot">IoT Onboarding</SelectItem>
+                          <SelectItem value="tacacs">TACACS+ Administration</SelectItem>
+                          <SelectItem value="risk">Risk Assessment</SelectItem>
+                          <SelectItem value="multisite">Multi-Site Deployment</SelectItem>
+                          <SelectItem value="cloud">Cloud Integration</SelectItem>
+                          <SelectItem value="wireless">Wireless Infrastructure</SelectItem>
+                          <SelectItem value="wired">Wired Infrastructure</SelectItem>
+                          <SelectItem value="compliance">Compliance & Audit</SelectItem>
+                          <SelectItem value="monitoring">Monitoring & Analytics</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                {/* Site Selection */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Site Configuration</Label>
-                  <Select value={selectedSite} onValueChange={setSelectedSite}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="global">Global Configuration</SelectItem>
-                      {sites.map((site) => (
-                        <SelectItem key={site.id} value={site.id}>
-                          {site.name} - {site.location}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                    <div>
+                      <label className="text-sm font-medium">Industry</label>
+                      <Select value={selectedIndustry} onValueChange={setSelectedIndustry}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="healthcare">Healthcare</SelectItem>
+                          <SelectItem value="financial">Financial Services</SelectItem>
+                          <SelectItem value="manufacturing">Manufacturing</SelectItem>
+                          <SelectItem value="technology">Technology</SelectItem>
+                          <SelectItem value="retail">Retail</SelectItem>
+                          <SelectItem value="education">Education</SelectItem>
+                          <SelectItem value="government">Government</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                {/* Architecture View Selection */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Architecture View</Label>
-                  <Select value={selectedView} onValueChange={setSelectedView}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ARCHITECTURE_VIEWS.map((view) => {
-                        const IconComponent = view.icon
-                        return (
-                          <SelectItem key={view.id} value={view.id}>
-                            <div className="flex items-center gap-2">
-                              <IconComponent className="h-4 w-4" />
-                              <span>{view.name}</span>
-                            </div>
-                          </SelectItem>
-                        )
-                      })}
-                    </SelectContent>
-                  </Select>
-                </div>
+                    <div>
+                      <label className="text-sm font-medium">Deployment</label>
+                      <Select value={selectedDeployment} onValueChange={setSelectedDeployment}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="cloud">Cloud Only</SelectItem>
+                          <SelectItem value="hybrid">Hybrid</SelectItem>
+                          <SelectItem value="on_premise">On-Premise</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </TabsContent>
 
-                {/* Quick View Buttons */}
-                <div className="grid grid-cols-2 gap-2">
-                  {ARCHITECTURE_VIEWS.slice(0, 6).map((view) => {
-                    const IconComponent = view.icon
-                    return (
-                      <Button
-                        key={view.id}
-                        variant={selectedView === view.id ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setSelectedView(view.id)}
-                        className="justify-start h-auto p-2"
+                  <TabsContent value="config" className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium">Wired Vendor</label>
+                      <Select
+                        value={customConfig.wiredVendor}
+                        onValueChange={(value) => setCustomConfig((prev) => ({ ...prev, wiredVendor: value }))}
                       >
-                        <div className="flex items-center gap-2">
-                          <IconComponent className="h-3 w-3" />
-                          <span className="text-xs">{view.name.split(" ")[0]}</span>
-                        </div>
-                      </Button>
-                    )
-                  })}
-                </div>
-              </TabsContent>
-
-              <TabsContent value="config" className="space-y-4 mt-4">
-                {/* Vendor Configuration */}
-                <div className="space-y-3">
-                  <div>
-                    <Label className="text-sm font-medium">Wired Vendor</Label>
-                    <Select value={config.wiredVendor} onValueChange={(value) => console.log("Wired vendor:", value)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="cisco">Cisco</SelectItem>
-                        <SelectItem value="aruba">Aruba (HPE)</SelectItem>
-                        <SelectItem value="juniper">Juniper</SelectItem>
-                        <SelectItem value="extreme">Extreme Networks</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label className="text-sm font-medium">Wireless Vendor</Label>
-                    <Select
-                      value={config.wirelessVendor}
-                      onValueChange={(value) => console.log("Wireless vendor:", value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="cisco">Cisco</SelectItem>
-                        <SelectItem value="aruba">Aruba (HPE)</SelectItem>
-                        <SelectItem value="ruckus">Ruckus</SelectItem>
-                        <SelectItem value="mist">Mist (Juniper)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label className="text-sm font-medium">Firewall Vendor</Label>
-                    <Select
-                      value={config.firewallVendor}
-                      onValueChange={(value) => console.log("Firewall vendor:", value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="palo_alto">Palo Alto Networks</SelectItem>
-                        <SelectItem value="fortinet">Fortinet</SelectItem>
-                        <SelectItem value="checkpoint">Check Point</SelectItem>
-                        <SelectItem value="cisco">Cisco ASA/FTD</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                {/* Connectivity Options */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Connectivity</Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {[
-                      { id: "wired", label: "Wired", icon: Cable },
-                      { id: "wireless", label: "Wireless", icon: Wifi },
-                      { id: "vpn", label: "VPN", icon: Shield },
-                      { id: "cloud", label: "Cloud", icon: Cloud },
-                    ].map(({ id, label, icon: Icon }) => (
-                      <div key={id} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={id}
-                          checked={config.connectivity.includes(id)}
-                          onCheckedChange={(checked) => {
-                            console.log(`${id} connectivity:`, checked)
-                          }}
-                        />
-                        <Label htmlFor={id} className="flex items-center gap-1 text-xs">
-                          <Icon className="h-3 w-3" />
-                          {label}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Authentication Types */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Authentication</Label>
-                  <div className="grid grid-cols-1 gap-2">
-                    {[
-                      { id: "802.1x", label: "802.1X Certificate" },
-                      { id: "mac_auth", label: "MAC Authentication" },
-                      { id: "web_auth", label: "Web Authentication" },
-                      { id: "captive_portal", label: "Captive Portal" },
-                    ].map(({ id, label }) => (
-                      <div key={id} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={id}
-                          checked={config.authTypes.includes(id)}
-                          onCheckedChange={(checked) => {
-                            console.log(`${id} auth:`, checked)
-                          }}
-                        />
-                        <Label htmlFor={id} className="text-xs">
-                          {label}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="display" className="space-y-4 mt-4">
-                {/* Display Options */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm font-medium">Show Metrics</Label>
-                    <Switch checked={showMetrics} onCheckedChange={setShowMetrics} />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm font-medium">Show Connections</Label>
-                    <Switch checked={showConnections} onCheckedChange={setShowConnections} />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm font-medium">Show Labels</Label>
-                    <Switch checked={showLabels} onCheckedChange={setShowLabels} />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm font-medium">Show Grid</Label>
-                    <Switch checked={showGrid} onCheckedChange={setShowGrid} />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm font-medium">Animations</Label>
-                    <Switch checked={animationActive} onCheckedChange={setAnimationActive} />
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Zoom and Animation Speed */}
-                <div className="space-y-3">
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Zoom Level: {zoomLevel}%</Label>
-                    <Slider
-                      value={[zoomLevel]}
-                      onValueChange={(value) => setZoomLevel(value[0])}
-                      min={25}
-                      max={200}
-                      step={25}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Animation Speed</Label>
-                    <Slider
-                      value={[animationSpeed]}
-                      onValueChange={(value) => setAnimationSpeed(value[0])}
-                      min={10}
-                      max={100}
-                      step={10}
-                    />
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Action Buttons */}
-                <div className="grid grid-cols-2 gap-2">
-                  <Button variant="outline" size="sm" onClick={() => handleExport(exportFormat)}>
-                    <Download className="h-4 w-4 mr-2" />
-                    Export
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={handleSave}>
-                    <Save className="h-4 w-4 mr-2" />
-                    Save
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={handleAutoLayout}>
-                    <Layers className="h-4 w-4 mr-2" />
-                    Auto Layout
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => setIsFullscreen(!isFullscreen)}>
-                    {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
-                  </Button>
-                </div>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Diagram Controls */}
-      <div className="absolute top-4 right-4 z-10 flex gap-2">
-        <Button variant="outline" size="sm" onClick={() => handleZoom(25)} className="bg-white/80 hover:bg-white">
-          <ZoomIn size={16} />
-        </Button>
-        <Button variant="outline" size="sm" onClick={() => handleZoom(-25)} className="bg-white/80 hover:bg-white">
-          <ZoomOut size={16} />
-        </Button>
-        <Button
-          variant={showMetrics ? "default" : "outline"}
-          size="sm"
-          onClick={() => setShowMetrics(!showMetrics)}
-          className={showMetrics ? "" : "bg-white/80 hover:bg-white"}
-        >
-          <BarChart3 size={16} />
-        </Button>
-        <Button
-          variant={showConnections ? "default" : "outline"}
-          size="sm"
-          onClick={() => setShowConnections(!showConnections)}
-          className={showConnections ? "" : "bg-white/80 hover:bg-white"}
-        >
-          <GitBranch size={16} />
-        </Button>
-        <Button
-          variant={animationActive ? "default" : "outline"}
-          size="sm"
-          onClick={() => setAnimationActive(!animationActive)}
-          className={animationActive ? "" : "bg-white/80 hover:bg-white"}
-        >
-          {animationActive ? <Pause size={16} /> : <Play size={16} />}
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowControlPanel(!showControlPanel)}
-          className="bg-white/80 hover:bg-white"
-        >
-          <Settings size={16} />
-        </Button>
-      </div>
-
-      {/* Main SVG Diagram */}
-      <svg
-        ref={svgRef}
-        width="100%"
-        height="100%"
-        viewBox={`${-panOffset.x} ${-panOffset.y} ${1800 * (100 / zoomLevel)} ${1400 * (100 / zoomLevel)}`}
-        className="w-full h-full"
-      >
-        {/* Definitions */}
-        <defs>
-          {/* Grid Pattern */}
-          {showGrid && (
-            <pattern id="grid" width={gridSize} height={gridSize} patternUnits="userSpaceOnUse">
-              <path
-                d={`M ${gridSize} 0 L 0 0 0 ${gridSize}`}
-                fill="none"
-                stroke="#E5E7EB"
-                strokeWidth="1"
-                opacity="0.3"
-              />
-            </pattern>
-          )}
-
-          {/* Arrow Marker */}
-          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill="#6B7280" />
-          </marker>
-
-          {/* Gradient Definitions */}
-          <linearGradient id="componentGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.8" />
-            <stop offset="100%" stopColor="#f8fafc" stopOpacity="0.4" />
-          </linearGradient>
-        </defs>
-
-        {/* Background */}
-        <rect width="100%" height="100%" fill={showGrid ? "url(#grid)" : "transparent"} />
-
-        {/* Connections */}
-        {showConnections && connections.map(renderConnection)}
-
-        {/* Components */}
-        {components.map(renderComponent)}
-      </svg>
-
-      {/* Component/Connection Details Panel */}
-      {(selectedComponent || selectedConnection) && (
-        <Card className="absolute bottom-4 left-4 w-96 bg-white/95 backdrop-blur-sm border-white/20 shadow-2xl max-h-96">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg font-semibold">
-                {selectedComponent ? selectedComponent.name : selectedConnection?.protocol}
-              </CardTitle>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setSelectedComponent(null)
-                  setSelectedConnection(null)
-                }}
-              >
-                <XCircle size={20} />
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-80">
-              {selectedComponent && (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-gray-500">Status:</span>
-                    <Badge
-                      className={`${
-                        selectedComponent.status === "online"
-                          ? "bg-green-100 text-green-800"
-                          : selectedComponent.status === "warning"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : selectedComponent.status === "error"
-                              ? "bg-red-100 text-red-800"
-                              : "bg-gray-100 text-gray-800"
-                      }`}
-                    >
-                      {selectedComponent.status}
-                    </Badge>
-                  </div>
-
-                  <div>
-                    <span className="text-sm font-medium text-gray-500">Description:</span>
-                    <p className="text-sm text-gray-700 mt-1">{selectedComponent.description}</p>
-                  </div>
-
-                  {selectedComponent.vendor && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-gray-500">Vendor:</span>
-                      <Badge className="bg-blue-100 text-blue-800">{selectedComponent.vendor}</Badge>
-                    </div>
-                  )}
-
-                  {selectedComponent.version && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-gray-500">Version:</span>
-                      <span className="text-sm">{selectedComponent.version}</span>
-                    </div>
-                  )}
-
-                  {selectedComponent.metrics && (
-                    <div>
-                      <span className="text-sm font-medium text-gray-500">Metrics:</span>
-                      <div className="grid grid-cols-2 gap-2 mt-2">
-                        {Object.entries(selectedComponent.metrics)
-                          .slice(0, 8)
-                          .map(([key, value]) => (
-                            <div key={key} className="text-xs bg-gray-50 p-2 rounded">
-                              <span className="text-gray-500 capitalize">{key.replace(/([A-Z])/g, " $1")}:</span>
-                              <span className="ml-1 font-medium">{value}</span>
-                            </div>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {VENDOR_OPTIONS.wired.map((vendor) => (
+                            <SelectItem key={vendor.value} value={vendor.value}>
+                              <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: vendor.color }}></div>
+                                {vendor.label}
+                              </div>
+                            </SelectItem>
                           ))}
-                      </div>
+                        </SelectContent>
+                      </Select>
                     </div>
-                  )}
 
-                  {selectedComponent.compliance && selectedComponent.compliance.length > 0 && (
                     <div>
-                      <span className="text-sm font-medium text-gray-500">Compliance:</span>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {selectedComponent.compliance.map((comp, index) => (
-                          <Badge key={index} variant="secondary" className="text-xs">
-                            {comp}
-                          </Badge>
-                        ))}
-                      </div>
+                      <label className="text-sm font-medium">Wireless Vendor</label>
+                      <Select
+                        value={customConfig.wirelessVendor}
+                        onValueChange={(value) => setCustomConfig((prev) => ({ ...prev, wirelessVendor: value }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {VENDOR_OPTIONS.wireless.map((vendor) => (
+                            <SelectItem key={vendor.value} value={vendor.value}>
+                              <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: vendor.color }}></div>
+                                {vendor.label}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
-                  )}
 
-                  {selectedComponent.securityFeatures && selectedComponent.securityFeatures.length > 0 && (
                     <div>
-                      <span className="text-sm font-medium text-gray-500">Security Features:</span>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {selectedComponent.securityFeatures.map((feature, index) => (
-                          <Badge key={index} variant="outline" className="text-xs">
-                            {feature}
-                          </Badge>
-                        ))}
-                      </div>
+                      <label className="text-sm font-medium">Firewall Vendor</label>
+                      <Select
+                        value={customConfig.firewallVendor}
+                        onValueChange={(value) => setCustomConfig((prev) => ({ ...prev, firewallVendor: value }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {VENDOR_OPTIONS.firewall.map((vendor) => (
+                            <SelectItem key={vendor.value} value={vendor.value}>
+                              <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: vendor.color }}></div>
+                                {vendor.label}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
-                  )}
+                  </TabsContent>
 
-                  {selectedComponent.applications && selectedComponent.applications.length > 0 && (
+                  <TabsContent value="display" className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm font-medium">Show Metrics</label>
+                      <Switch checked={showMetrics} onCheckedChange={setShowMetrics} />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm font-medium">Show Connections</label>
+                      <Switch checked={showConnections} onCheckedChange={setShowConnections} />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm font-medium">Show Labels</label>
+                      <Switch checked={showLabels} onCheckedChange={setShowLabels} />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm font-medium">Enable Animations</label>
+                      <Switch checked={animationActive} onCheckedChange={setAnimationActive} />
+                    </div>
+
                     <div>
-                      <span className="text-sm font-medium text-gray-500">Applications:</span>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {selectedComponent.applications.map((app, index) => (
-                          <Badge key={index} variant="secondary" className="text-xs">
-                            {app}
-                          </Badge>
-                        ))}
-                      </div>
+                      <label className="text-sm font-medium">Animation Speed: {animationSpeed}%</label>
+                      <Slider
+                        value={[animationSpeed]}
+                        onValueChange={([value]) => setAnimationSpeed(value)}
+                        max={100}
+                        min={10}
+                        step={10}
+                        className="mt-2"
+                      />
                     </div>
-                  )}
 
-                  {selectedComponent.vlans && selectedComponent.vlans.length > 0 && (
                     <div>
-                      <span className="text-sm font-medium text-gray-500">VLANs:</span>
-                      <div className="space-y-1 mt-1">
-                        {selectedComponent.vlans.slice(0, 3).map((vlan) => (
-                          <div key={vlan.id} className="text-xs bg-gray-50 p-2 rounded">
-                            <div className="flex justify-between items-center">
-                              <span className="font-medium">
-                                VLAN {vlan.id}: {vlan.name}
-                              </span>
-                              <Badge variant="outline" className="text-xs">
-                                {vlan.subnet}
-                              </Badge>
-                            </div>
-                            <p className="text-gray-600 mt-1">{vlan.description}</p>
-                          </div>
-                        ))}
-                      </div>
+                      <label className="text-sm font-medium">Zoom Level: {zoomLevel}%</label>
+                      <Slider
+                        value={[zoomLevel]}
+                        onValueChange={([value]) => setZoomLevel(value)}
+                        max={200}
+                        min={50}
+                        step={10}
+                        className="mt-2"
+                      />
                     </div>
-                  )}
-                </div>
-              )}
+                  </TabsContent>
 
-              {selectedConnection && (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-gray-500">Type:</span>
-                    <Badge className="bg-blue-100 text-blue-800">{selectedConnection.type}</Badge>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-gray-500">Protocol:</span>
-                    <span className="text-sm font-medium">{selectedConnection.protocol}</span>
-                  </div>
-
-                  {selectedConnection.port && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-gray-500">Port:</span>
-                      <span className="text-sm font-medium">{selectedConnection.port}</span>
-                    </div>
-                  )}
-
-                  {selectedConnection.bandwidth && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-gray-500">Bandwidth:</span>
-                      <span className="text-sm font-medium">{selectedConnection.bandwidth}</span>
-                    </div>
-                  )}
-
-                  {selectedConnection.latency && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-gray-500">Latency:</span>
-                      <span className="text-sm font-medium">{selectedConnection.latency}ms</span>
-                    </div>
-                  )}
-
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-gray-500">Encryption:</span>
-                    <Badge
-                      className={`${
-                        selectedConnection.encryption ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-                      }`}
+                  <TabsContent value="export" className="space-y-4">
+                    <Button
+                      onClick={() => toast({ title: "Export Started", description: "Exporting diagram as PNG..." })}
+                      className="w-full"
                     >
-                      {selectedConnection.encryption ? "Enabled" : "Disabled"}
-                    </Badge>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-gray-500">Status:</span>
-                    <Badge
-                      className={`${
-                        selectedConnection.status === "active"
-                          ? "bg-green-100 text-green-800"
-                          : selectedConnection.status === "error"
-                            ? "bg-red-100 text-red-800"
-                            : "bg-yellow-100 text-yellow-800"
-                      }`}
+                      Export as PNG
+                    </Button>
+                    <Button
+                      onClick={() => toast({ title: "Export Started", description: "Exporting diagram as SVG..." })}
+                      variant="outline"
+                      className="w-full"
                     >
-                      {selectedConnection.status}
-                    </Badge>
-                  </div>
-                </div>
-              )}
+                      Export as SVG
+                    </Button>
+                    <Button
+                      onClick={() => toast({ title: "Export Started", description: "Exporting diagram as PDF..." })}
+                      variant="outline"
+                      className="w-full"
+                    >
+                      Export as PDF
+                    </Button>
+                  </TabsContent>
+                </Tabs>
+              </div>
             </ScrollArea>
           </CardContent>
         </Card>
       )}
 
-      {/* Legend */}
-      {showLegend && (
-        <Card className="absolute bottom-4 right-4 w-80 bg-white/95 backdrop-blur-sm border-white/20 shadow-2xl">
+      {/* Component Details Panel */}
+      {selectedComponent && (
+        <Card className="absolute top-4 right-4 z-20 w-80 bg-white/95 backdrop-blur-sm border-white/20 shadow-2xl">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <Eye className="h-4 w-4" />
-              Architecture Legend
+            <CardTitle className="text-lg font-semibold flex items-center gap-2">
+              <Eye className="h-5 w-5" />
+              Component Details
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Current View Info */}
-            <div className="p-3 bg-blue-50 rounded-lg">
-              <div className="flex items-center gap-2 mb-2">
-                {(() => {
-                  const currentView = ARCHITECTURE_VIEWS.find((v) => v.id === selectedView)
-                  const IconComponent = currentView?.icon || Layers
-                  return (
-                    <>
-                      <IconComponent className="h-4 w-4 text-blue-600" />
-                      <span className="font-medium text-blue-900">{currentView?.name}</span>
-                    </>
-                  )
-                })()}
+          <CardContent>
+            <div className="space-y-3">
+              <div>
+                <h3 className="font-semibold text-base">{selectedComponent.name}</h3>
+                <p className="text-sm text-gray-600">{selectedComponent.description}</p>
               </div>
-              <p className="text-xs text-blue-700">
-                {ARCHITECTURE_VIEWS.find((v) => v.id === selectedView)?.description}
-              </p>
-            </div>
 
-            {/* Industry Info */}
-            <div className="p-3 bg-gray-50 rounded-lg">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-lg">
-                  {INDUSTRY_SCENARIOS[selectedIndustry as keyof typeof INDUSTRY_SCENARIOS]?.icon}
-                </span>
-                <span className="font-medium">
-                  {INDUSTRY_SCENARIOS[selectedIndustry as keyof typeof INDUSTRY_SCENARIOS]?.name}
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-1">
-                {INDUSTRY_SCENARIOS[selectedIndustry as keyof typeof INDUSTRY_SCENARIOS]?.compliance.map((comp) => (
-                  <Badge key={comp} variant="secondary" className="text-xs">
-                    {comp}
-                  </Badge>
-                ))}
-              </div>
-            </div>
+              {selectedComponent.vendor && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">Vendor:</span>
+                  <span className="text-sm">{selectedComponent.vendor}</span>
+                </div>
+              )}
 
-            {/* Status Legend */}
-            <div className="space-y-2">
-              <div className="text-xs font-medium text-gray-600">Component Status</div>
-              <div className="grid grid-cols-2 gap-2 text-xs">
+              {selectedComponent.model && (
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                  <span>Online</span>
+                  <span className="text-sm font-medium">Model:</span>
+                  <span className="text-sm">{selectedComponent.model}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                  <span>Warning</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                  <span>Error</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-gray-500"></div>
-                  <span>Offline</span>
-                </div>
-              </div>
-            </div>
+              )}
 
-            {/* Connection Types */}
-            <div className="space-y-2">
-              <div className="text-xs font-medium text-gray-600">Connection Types</div>
-              <div className="space-y-1">
-                {Object.entries(CONNECTION_COLORS)
-                  .slice(0, 6)
-                  .map(([type, color]) => (
-                    <div key={type} className="flex items-center gap-2 text-xs">
-                      <div className="w-4 h-0.5" style={{ backgroundColor: color }}></div>
-                      <span className="capitalize">{type.replace("_", " ")}</span>
-                    </div>
-                  ))}
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">Status:</span>
+                <div className="flex items-center gap-1">
+                  <div
+                    className="w-2 h-2 rounded-full"
+                    style={{ backgroundColor: STATUS_COLORS[selectedComponent.status] }}
+                  />
+                  <span className="text-sm capitalize">{selectedComponent.status}</span>
+                </div>
               </div>
-            </div>
 
-            {/* Component Categories */}
-            <div className="space-y-2">
-              <div className="text-xs font-medium text-gray-600">Categories</div>
-              <div className="grid grid-cols-2 gap-1 text-xs">
-                <div className="flex items-center gap-1">
-                  <Cloud size={12} className="text-blue-500" />
-                  <span>Cloud</span>
+              {selectedComponent.metrics && (
+                <div className="space-y-2">
+                  <h4 className="font-medium text-sm">Metrics</h4>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    {selectedComponent.metrics.cpu && <div>CPU: {Math.round(selectedComponent.metrics.cpu)}%</div>}
+                    {selectedComponent.metrics.memory && (
+                      <div>Memory: {Math.round(selectedComponent.metrics.memory)}%</div>
+                    )}
+                    {selectedComponent.metrics.uptime && (
+                      <div>Uptime: {selectedComponent.metrics.uptime.toFixed(2)}%</div>
+                    )}
+                    {selectedComponent.metrics.latency && <div>Latency: {selectedComponent.metrics.latency}ms</div>}
+                    {selectedComponent.metrics.throughput && (
+                      <div>Throughput: {selectedComponent.metrics.throughput}</div>
+                    )}
+                    {selectedComponent.metrics.connections && (
+                      <div>Connections: {selectedComponent.metrics.connections}</div>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center gap-1">
-                  <Network size={12} className="text-gray-500" />
-                  <span>Network</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Shield size={12} className="text-red-500" />
-                  <span>Security</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Users size={12} className="text-blue-600" />
-                  <span>Identity</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Settings size={12} className="text-purple-500" />
-                  <span>Management</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Monitor size={12} className="text-green-500" />
-                  <span>Endpoint</span>
-                </div>
-              </div>
+              )}
             </div>
           </CardContent>
         </Card>
       )}
+
+      {/* Main SVG Diagram */}
+      <div className="w-full h-full overflow-auto">
+        <svg
+          ref={svgRef}
+          width="2000"
+          height="1200"
+          viewBox="0 0 2000 1200"
+          className="w-full h-full"
+          style={{
+            transform: `scale(${zoomLevel / 100}) translate(${panOffset.x}px, ${panOffset.y}px)`,
+            transformOrigin: "0 0",
+          }}
+        >
+          {/* Definitions for markers and patterns */}
+          <defs>
+            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+              <polygon points="0 0, 10 3.5, 0 7" fill="#6B7280" />
+            </marker>
+
+            {/* Grid pattern */}
+            <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+              <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#E5E7EB" strokeWidth="0.5" />
+            </pattern>
+          </defs>
+
+          {/* Grid background */}
+          <rect width="100%" height="100%" fill="url(#grid)" opacity="0.3" />
+
+          {/* Render connections first (behind components) */}
+          {showConnections && connections.map(renderConnection)}
+
+          {/* Render components */}
+          {components.map(renderComponent)}
+        </svg>
+      </div>
+
+      {/* Status Bar */}
+      <div className="absolute bottom-4 left-4 right-4 z-10">
+        <Card className="bg-white/90 backdrop-blur-sm border-white/20 shadow-lg">
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-4">
+                <span>
+                  View: <strong>{selectedView}</strong>
+                </span>
+                <span>
+                  Components: <strong>{components.length}</strong>
+                </span>
+                <span>
+                  Connections: <strong>{connections.length}</strong>
+                </span>
+              </div>
+              <div className="flex items-center gap-4">
+                <span>
+                  Industry: <strong>{selectedIndustry}</strong>
+                </span>
+                <span>
+                  Zoom: <strong>{zoomLevel}%</strong>
+                </span>
+                <Button variant="ghost" size="sm" onClick={() => setShowControlPanel(!showControlPanel)}>
+                  <Settings className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }
