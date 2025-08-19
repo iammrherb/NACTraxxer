@@ -123,23 +123,33 @@ export default function Home() {
       setUsers(usersData)
 
       // Calculate stats
-      const completedSites = sitesData.filter((s: any) => s.status === "completed" || s.status === "Complete").length
-      const totalUsers = sitesData.reduce((sum: number, site: any) => sum + (site.users || 0), 0)
+      const completedSites =
+        sitesData.filter((s: any) => s.status === "completed" || s.status === "Complete").length || 0
+      const totalUsers = sitesData.reduce((sum: number, site: any) => {
+        const users = typeof site.users === "number" && !isNaN(site.users) ? site.users : 0
+        return sum + users
+      }, 0)
       const totalDevices = sitesData.reduce((sum: number, site: any) => {
         if (site.devices && typeof site.devices === "object") {
           return (
             sum +
-            Object.values(site.devices).reduce(
-              (deviceSum: number, count: any) => deviceSum + (typeof count === "number" ? count : 0),
-              0,
-            )
+            Object.values(site.devices).reduce((deviceSum: number, count: any) => {
+              const deviceCount = typeof count === "number" && !isNaN(count) ? count : 0
+              return deviceSum + deviceCount
+            }, 0)
           )
         }
-        return sum + (site.devices || 0)
+        const devices = typeof site.devices === "number" && !isNaN(site.devices) ? site.devices : 0
+        return sum + devices
       }, 0)
-      const activePolicies = policiesData.filter((p: any) => p.status === "active").length
+      const activePolicies = policiesData.filter((p: any) => p.status === "active").length || 0
       const avgEffectiveness =
-        policiesData.reduce((sum: number, p: any) => sum + (p.effectiveness || 0), 0) / (policiesData.length || 1)
+        policiesData.length > 0
+          ? policiesData.reduce((sum: number, p: any) => {
+              const effectiveness = typeof p.effectiveness === "number" && !isNaN(p.effectiveness) ? p.effectiveness : 0
+              return sum + effectiveness
+            }, 0) / policiesData.length
+          : 0
 
       setStats({
         sites: sitesData.length,
@@ -410,15 +420,24 @@ export default function Home() {
                       <Building2 className="h-6 w-6 text-blue-600" />
                     </div>
                     <div className="text-right">
-                      <div className="text-2xl font-bold text-gray-900">{stats.sites}</div>
+                      <div className="text-2xl font-bold text-gray-900">{isNaN(stats.sites) ? 0 : stats.sites}</div>
                       <div className="text-sm text-gray-500">Total Sites</div>
                     </div>
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-600">Completed</span>
-                    <span className="font-medium text-blue-600">{stats.completedSites}</span>
+                    <span className="font-medium text-blue-600">
+                      {isNaN(stats.completedSites) ? 0 : stats.completedSites}
+                    </span>
                   </div>
-                  <Progress value={(stats.completedSites / (stats.sites || 1)) * 100} className="mt-2 h-2" />
+                  <Progress
+                    value={
+                      isNaN((stats.completedSites / (stats.sites || 1)) * 100)
+                        ? 0
+                        : (stats.completedSites / (stats.sites || 1)) * 100
+                    }
+                    className="mt-2 h-2"
+                  />
                 </CardContent>
               </Card>
 
@@ -430,15 +449,19 @@ export default function Home() {
                       <Shield className="h-6 w-6 text-green-600" />
                     </div>
                     <div className="text-right">
-                      <div className="text-2xl font-bold text-gray-900">{stats.policies}</div>
+                      <div className="text-2xl font-bold text-gray-900">
+                        {isNaN(stats.policies) ? 0 : stats.policies}
+                      </div>
                       <div className="text-sm text-gray-500">Active Policies</div>
                     </div>
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-600">Effectiveness</span>
-                    <span className="font-medium text-green-600">{stats.complianceScore}%</span>
+                    <span className="font-medium text-green-600">
+                      {isNaN(stats.complianceScore) ? 0 : stats.complianceScore}%
+                    </span>
                   </div>
-                  <Progress value={stats.complianceScore} className="mt-2 h-2" />
+                  <Progress value={isNaN(stats.complianceScore) ? 0 : stats.complianceScore} className="mt-2 h-2" />
                 </CardContent>
               </Card>
 
@@ -450,7 +473,9 @@ export default function Home() {
                       <Users className="h-6 w-6 text-purple-600" />
                     </div>
                     <div className="text-right">
-                      <div className="text-2xl font-bold text-gray-900">{(stats.users / 1000).toFixed(1)}K</div>
+                      <div className="text-2xl font-bold text-gray-900">
+                        {isNaN(stats.users) ? 0 : (stats.users / 1000).toFixed(1)}K
+                      </div>
                       <div className="text-sm text-gray-500">Total Users</div>
                     </div>
                   </div>
@@ -470,7 +495,9 @@ export default function Home() {
                       <Target className="h-6 w-6 text-orange-600" />
                     </div>
                     <div className="text-right">
-                      <div className="text-2xl font-bold text-gray-900">{stats.complianceScore}%</div>
+                      <div className="text-2xl font-bold text-gray-900">
+                        {isNaN(stats.complianceScore) ? 0 : stats.complianceScore}%
+                      </div>
                       <div className="text-sm text-gray-500">Security Score</div>
                     </div>
                   </div>
@@ -478,7 +505,7 @@ export default function Home() {
                     <span className="text-gray-600">Active Threats</span>
                     <span className="font-medium text-orange-600">{stats.activeThreats}</span>
                   </div>
-                  <Progress value={stats.complianceScore} className="mt-2 h-2" />
+                  <Progress value={isNaN(stats.complianceScore) ? 0 : stats.complianceScore} className="mt-2 h-2" />
                 </CardContent>
               </Card>
             </div>
@@ -585,9 +612,12 @@ export default function Home() {
                       <div key={site.id || index} className="space-y-2">
                         <div className="flex justify-between text-sm">
                           <span className="font-medium">{site.name}</span>
-                          <span>{site.completionPercent || 0}%</span>
+                          <span>{isNaN(site.completionPercent) ? 0 : site.completionPercent || 0}%</span>
                         </div>
-                        <Progress value={site.completionPercent || 0} className="h-2" />
+                        <Progress
+                          value={isNaN(site.completionPercent) ? 0 : site.completionPercent || 0}
+                          className="h-2"
+                        />
                       </div>
                     ))}
                   </div>
@@ -605,9 +635,9 @@ export default function Home() {
                       <div key={policy.id || index} className="space-y-2">
                         <div className="flex justify-between text-sm">
                           <span className="font-medium">{policy.name}</span>
-                          <span>{policy.effectiveness || 0}%</span>
+                          <span>{isNaN(policy.effectiveness) ? 0 : policy.effectiveness || 0}%</span>
                         </div>
-                        <Progress value={policy.effectiveness || 0} className="h-2" />
+                        <Progress value={isNaN(policy.effectiveness) ? 0 : policy.effectiveness || 0} className="h-2" />
                       </div>
                     ))}
                   </div>

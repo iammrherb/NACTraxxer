@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { Loader2, Building2, Users, Shield, DollarSign, Clock, CheckCircle } from "lucide-react"
+import { Loader2, Building2, Users, Shield, DollarSign, Clock, CheckCircle, AlertCircle } from "lucide-react"
 import { storage } from "@/lib/storage"
 import { toast } from "@/components/ui/use-toast"
 
@@ -17,81 +17,86 @@ interface DemoDataModalProps {
 
 const INDUSTRY_SCENARIOS = {
   healthcare: {
-    name: "Healthcare Deployment",
+    name: "Regional Healthcare System",
     industry: "healthcare",
-    description: "Comprehensive demo data for a healthcare environment with realistic users, sites, and policies.",
+    description: "Multi-facility healthcare system with HIPAA compliance requirements and medical device integration",
     userCount: 2500,
     siteCount: 5,
     budget: 1500000,
     timeline: "6 months",
-    compliance: ["HIPAA", "HITRUST"],
-    specialties: ["Medical Device Security", "Patient Data Protection", "Compliance Automation"],
+    compliance: ["HIPAA", "HITECH", "FDA 21 CFR Part 11", "Joint Commission"],
+    specialties: [
+      "Medical Device Security",
+      "Patient Data Protection",
+      "Compliance Automation",
+      "Telemedicine Support",
+    ],
   },
   financial: {
-    name: "Financial Services",
+    name: "Global Investment Bank",
     industry: "financial services",
-    description: "Demo data for a financial institution with detailed user profiles and security policies.",
+    description: "International banking institution with strict regulatory compliance and high-frequency trading",
     userCount: 1800,
     siteCount: 3,
     budget: 1200000,
     timeline: "4 months",
-    compliance: ["PCI DSS", "SOX"],
-    specialties: ["Transaction Security", "Fraud Detection", "Compliance Reporting"],
+    compliance: ["PCI DSS", "SOX", "GDPR", "MiFID II", "FFIEC"],
+    specialties: ["Trading Floor Security", "Fraud Detection", "Regulatory Compliance", "High-Frequency Trading"],
   },
   manufacturing: {
-    name: "Manufacturing OT/IT",
+    name: "Advanced Manufacturing Corp",
     industry: "manufacturing",
-    description: "Demo data for a manufacturing environment with OT/IT convergence and industrial control systems.",
+    description: "Industrial manufacturing with OT/IT convergence and smart factory initiatives",
     userCount: 1200,
-    siteCount: 2,
+    siteCount: 4,
     budget: 900000,
     timeline: "5 months",
-    compliance: ["IEC 62443", "NIST 800-82"],
-    specialties: ["OT Security", "Industrial Control Systems", "Network Segmentation"],
+    compliance: ["IEC 62443", "NIST 800-82", "ISO 27001", "OSHA"],
+    specialties: ["OT Security", "Industrial Control Systems", "Smart Factory", "Predictive Maintenance"],
   },
   technology: {
-    name: "Technology Startup",
+    name: "Cloud-Native Tech Startup",
     industry: "technology",
-    description: "Demo data for a fast-growing tech startup with cloud-based infrastructure and agile security.",
+    description: "Fast-growing technology company with cloud-first architecture and global remote workforce",
     userCount: 800,
-    siteCount: 1,
+    siteCount: 2,
     budget: 600000,
     timeline: "3 months",
-    compliance: ["SOC 2", "GDPR"],
-    specialties: ["Cloud Security", "Agile Development", "Data Privacy"],
+    compliance: ["SOC 2", "GDPR", "ISO 27001", "FedRAMP"],
+    specialties: ["Cloud Security", "DevSecOps", "Zero Trust", "Remote Work Security"],
   },
   retail: {
-    name: "Retail Chain",
+    name: "Omnichannel Retail Chain",
     industry: "retail",
-    description: "Demo data for a retail chain with point-of-sale systems and customer data protection.",
+    description: "Multi-location retail chain with e-commerce integration and customer data analytics",
     userCount: 1500,
-    siteCount: 10,
+    siteCount: 8,
     budget: 1000000,
     timeline: "4 months",
-    compliance: ["PCI DSS", "CCPA"],
-    specialties: ["POS Security", "Customer Data Protection", "Compliance Automation"],
+    compliance: ["PCI DSS", "CCPA", "GDPR", "SOX"],
+    specialties: ["POS Security", "Customer Data Protection", "Omnichannel Integration", "Loss Prevention"],
   },
   education: {
-    name: "Education Campus",
+    name: "State University System",
     industry: "education",
-    description: "Demo data for a university campus with student BYOD and research networks.",
-    userCount: 3000,
-    siteCount: 4,
+    description: "Large university campus with research facilities, student housing, and administrative buildings",
+    userCount: 25000,
+    siteCount: 6,
     budget: 1800000,
-    timeline: "6 months",
-    compliance: ["FERPA", "CIPA"],
-    specialties: ["BYOD Security", "Research Network", "Compliance Reporting"],
+    timeline: "8 months",
+    compliance: ["FERPA", "CIPA", "FISMA", "HIPAA"],
+    specialties: ["Student Privacy", "Research Security", "BYOD Management", "Campus Safety"],
   },
   government: {
-    name: "Government Agency",
+    name: "Federal Agency",
     industry: "government",
-    description: "Demo data for a government agency with classified networks and FISMA compliance.",
-    userCount: 1000,
-    siteCount: 2,
-    budget: 2000000,
-    timeline: "8 months",
-    compliance: ["FISMA", "NIST 800-53"],
-    specialties: ["Classified Security", "Data Protection", "Compliance Automation"],
+    description: "Federal government agency with classified and unclassified networks",
+    userCount: 2000,
+    siteCount: 3,
+    budget: 2500000,
+    timeline: "12 months",
+    compliance: ["FISMA", "NIST 800-53", "FedRAMP", "CJIS"],
+    specialties: ["Classified Security", "FISMA Compliance", "Continuous Monitoring", "Insider Threat"],
   },
 }
 
@@ -101,33 +106,42 @@ export default function DemoDataModal({ isOpen, onClose }: DemoDataModalProps) {
   const [generationProgress, setGenerationProgress] = useState(0)
   const [generationStep, setGenerationStep] = useState("")
   const [isComplete, setIsComplete] = useState(false)
+  const [hasError, setHasError] = useState(false)
+  const [errorMessage, setErrorMessage] = useState("")
 
   const handleGenerateData = async (scenarioKey: string) => {
     setSelectedScenario(scenarioKey)
     setIsGenerating(true)
     setGenerationProgress(0)
     setIsComplete(false)
+    setHasError(false)
+    setErrorMessage("")
 
     const steps = [
-      { step: "Initializing scenario...", progress: 10 },
-      { step: "Generating user profiles...", progress: 25 },
-      { step: "Creating site configurations...", progress: 50 },
-      { step: "Building event timeline...", progress: 75 },
-      { step: "Setting up policies...", progress: 90 },
-      { step: "Finalizing data...", progress: 100 },
+      { step: "Initializing scenario configuration...", progress: 10 },
+      { step: "Generating comprehensive site data...", progress: 25 },
+      { step: "Creating realistic user profiles...", progress: 40 },
+      { step: "Building detailed event timeline...", progress: 60 },
+      { step: "Configuring security policies...", progress: 80 },
+      { step: "Finalizing demo environment...", progress: 100 },
     ]
 
     try {
       for (const { step, progress } of steps) {
         setGenerationStep(step)
         setGenerationProgress(progress)
-        await new Promise((resolve) => setTimeout(resolve, 1000))
+        await new Promise((resolve) => setTimeout(resolve, 800))
       }
 
       // Generate and save demo data
       await storage.generateDemoData(scenarioKey)
 
       setIsComplete(true)
+
+      toast({
+        title: "Demo Data Generated Successfully!",
+        description: `Created comprehensive ${INDUSTRY_SCENARIOS[scenarioKey as keyof typeof INDUSTRY_SCENARIOS].name} environment with sites, users, events, and policies.`,
+      })
 
       // Show completion for 2 seconds then close and refresh
       setTimeout(() => {
@@ -139,11 +153,14 @@ export default function DemoDataModal({ isOpen, onClose }: DemoDataModalProps) {
       }, 2000)
     } catch (error) {
       console.error("Error generating demo data:", error)
+      setHasError(true)
+      setErrorMessage(error instanceof Error ? error.message : "Unknown error occurred")
       setIsGenerating(false)
       setIsComplete(false)
+
       toast({
-        title: "Error",
-        description: "Failed to generate demo data. Please try again.",
+        title: "Error Generating Demo Data",
+        description: "Failed to generate demo data. Please try again or contact support.",
         variant: "destructive",
       })
     }
@@ -165,14 +182,12 @@ export default function DemoDataModal({ isOpen, onClose }: DemoDataModalProps) {
         return "🛍️"
       case "government":
         return "🏛️"
-      case "technology startup":
-        return "🚀"
       default:
         return "🏢"
     }
   }
 
-  if (isGenerating) {
+  if (isGenerating || isComplete || hasError) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="sm:max-w-md">
@@ -180,28 +195,53 @@ export default function DemoDataModal({ isOpen, onClose }: DemoDataModalProps) {
             <DialogTitle className="flex items-center gap-2">
               {isComplete ? (
                 <CheckCircle className="h-5 w-5 text-green-500" />
+              ) : hasError ? (
+                <AlertCircle className="h-5 w-5 text-red-500" />
               ) : (
                 <Loader2 className="h-5 w-5 animate-spin" />
               )}
-              {isComplete ? "Generation Complete!" : "Generating Demo Data"}
+              {isComplete ? "Generation Complete!" : hasError ? "Generation Failed" : "Generating Demo Data"}
             </DialogTitle>
             <DialogDescription>
               {isComplete
-                ? "Your demo environment is ready. Redirecting..."
-                : "Creating a comprehensive demo environment with realistic data..."}
+                ? "Your comprehensive demo environment is ready. Redirecting..."
+                : hasError
+                  ? "An error occurred while generating the demo data."
+                  : "Creating a comprehensive demo environment with realistic industry-specific data..."}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>{generationStep}</span>
-                <span>{generationProgress}%</span>
+            {!hasError && (
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>{generationStep}</span>
+                  <span>{generationProgress}%</span>
+                </div>
+                <Progress value={generationProgress} className="h-2" />
               </div>
-              <Progress value={generationProgress} className="h-2" />
-            </div>
+            )}
 
-            {selectedScenario && (
+            {hasError && (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-800 font-medium">Error Details:</p>
+                <p className="text-sm text-red-600 mt-1">{errorMessage}</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-3 bg-transparent"
+                  onClick={() => {
+                    setHasError(false)
+                    setIsGenerating(false)
+                    setSelectedScenario(null)
+                  }}
+                >
+                  Try Again
+                </Button>
+              </div>
+            )}
+
+            {selectedScenario && !hasError && (
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg flex items-center gap-2">
@@ -218,7 +258,10 @@ export default function DemoDataModal({ isOpen, onClose }: DemoDataModalProps) {
                     <div className="flex items-center gap-2">
                       <Users className="h-4 w-4 text-blue-500" />
                       <span>
-                        {INDUSTRY_SCENARIOS[selectedScenario as keyof typeof INDUSTRY_SCENARIOS].userCount} Users
+                        {INDUSTRY_SCENARIOS[
+                          selectedScenario as keyof typeof INDUSTRY_SCENARIOS
+                        ].userCount.toLocaleString()}{" "}
+                        Users
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -255,10 +298,11 @@ export default function DemoDataModal({ isOpen, onClose }: DemoDataModalProps) {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Load Demo Data</DialogTitle>
+          <DialogTitle>Load Comprehensive Demo Data</DialogTitle>
           <DialogDescription>
             Choose an industry scenario to generate comprehensive demo data with realistic users, sites, events, and
-            policies.
+            policies. Each scenario includes industry-specific configurations, compliance requirements, and detailed
+            infrastructure.
           </DialogDescription>
         </DialogHeader>
 
@@ -276,7 +320,7 @@ export default function DemoDataModal({ isOpen, onClose }: DemoDataModalProps) {
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div className="flex items-center gap-2">
                     <Users className="h-4 w-4 text-blue-500" />
-                    <span>{scenario.userCount} Users</span>
+                    <span>{scenario.userCount.toLocaleString()} Users</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Building2 className="h-4 w-4 text-green-500" />

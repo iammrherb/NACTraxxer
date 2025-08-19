@@ -167,21 +167,40 @@ export default function RolloutProgress() {
   }
 
   const calculateStats = (sitesData: Site[]) => {
-    const totalSites = sitesData.length
-    const completedSites = sitesData.filter((s) => s.status === "completed").length
-    const inProgressSites = sitesData.filter((s) => s.status === "in-progress").length
-    const notStartedSites = sitesData.filter((s) => s.status === "not-started").length
-    const onHoldSites = sitesData.filter((s) => s.status === "on-hold").length
+    const totalSites = sitesData.length || 0
+    const completedSites = sitesData.filter((s) => s.status === "completed").length || 0
+    const inProgressSites = sitesData.filter((s) => s.status === "in-progress").length || 0
+    const notStartedSites = sitesData.filter((s) => s.status === "not-started").length || 0
+    const onHoldSites = sitesData.filter((s) => s.status === "on-hold").length || 0
     const overallProgress = totalSites > 0 ? Math.round((completedSites / totalSites) * 100) : 0
     const onTimeDelivery = Math.round(Math.random() * 30 + 70) // Mock data
-    const totalUsers = sitesData.reduce((sum, site) => sum + site.users, 0)
-    const totalDevices = sitesData.reduce((sum, site) => sum + site.devices, 0)
-    const activeIssues = sitesData.reduce((sum, site) => sum + site.issues, 0)
-    const totalBudget = sitesData.reduce((sum, site) => sum + site.budget, 0)
+    const totalUsers = sitesData.reduce((sum, site) => {
+      const users = typeof site.users === "number" && !isNaN(site.users) ? site.users : 0
+      return sum + users
+    }, 0)
+    const totalDevices = sitesData.reduce((sum, site) => {
+      const devices = typeof site.devices === "number" && !isNaN(site.devices) ? site.devices : 0
+      return sum + devices
+    }, 0)
+    const activeIssues = sitesData.reduce((sum, site) => {
+      const issues = typeof site.issues === "number" && !isNaN(site.issues) ? site.issues : 0
+      return sum + issues
+    }, 0)
+    const totalBudget = sitesData.reduce((sum, site) => {
+      const budget = typeof site.budget === "number" && !isNaN(site.budget) ? site.budget : 0
+      return sum + budget
+    }, 0)
     const budgetUtilized = Math.round(Math.random() * 30 + 60) // Mock data
     const averageProgress =
-      totalSites > 0 ? Math.round(sitesData.reduce((sum, site) => sum + site.progress, 0) / totalSites) : 0
-    const criticalSites = sitesData.filter((s) => s.priority === "High" && s.status !== "completed").length
+      totalSites > 0
+        ? Math.round(
+            sitesData.reduce((sum, site) => {
+              const progress = typeof site.progress === "number" && !isNaN(site.progress) ? site.progress : 0
+              return sum + progress
+            }, 0) / totalSites,
+          )
+        : 0
+    const criticalSites = sitesData.filter((s) => s.priority === "High" && s.status !== "completed").length || 0
 
     setStats({
       totalSites,
@@ -389,7 +408,7 @@ export default function RolloutProgress() {
                 <Building className="h-6 w-6 text-blue-600" />
               </div>
               <div className="text-right">
-                <div className="text-2xl font-bold text-gray-900">{stats.totalSites}</div>
+                <div className="text-2xl font-bold text-gray-900">{isNaN(stats.totalSites) ? 0 : stats.totalSites}</div>
                 <div className="text-sm text-gray-500">Total Sites</div>
               </div>
             </div>
@@ -409,7 +428,9 @@ export default function RolloutProgress() {
                 <CheckCircle className="h-6 w-6 text-green-600" />
               </div>
               <div className="text-right">
-                <div className="text-2xl font-bold text-gray-900">{stats.completedSites}</div>
+                <div className="text-2xl font-bold text-gray-900">
+                  {isNaN(stats.completedSites) ? 0 : stats.completedSites}
+                </div>
                 <div className="text-sm text-gray-500">Completed</div>
               </div>
             </div>
@@ -429,7 +450,9 @@ export default function RolloutProgress() {
                 <Users className="h-6 w-6 text-purple-600" />
               </div>
               <div className="text-right">
-                <div className="text-2xl font-bold text-gray-900">{stats.totalUsers.toLocaleString()}</div>
+                <div className="text-2xl font-bold text-gray-900">
+                  {isNaN(stats.totalUsers) ? 0 : stats.totalUsers.toLocaleString()}
+                </div>
                 <div className="text-sm text-gray-500">Total Users</div>
               </div>
             </div>
@@ -449,7 +472,9 @@ export default function RolloutProgress() {
                 <AlertTriangle className="h-6 w-6 text-orange-600" />
               </div>
               <div className="text-right">
-                <div className="text-2xl font-bold text-gray-900">{stats.activeIssues}</div>
+                <div className="text-2xl font-bold text-gray-900">
+                  {isNaN(stats.activeIssues) ? 0 : stats.activeIssues}
+                </div>
                 <div className="text-sm text-gray-500">Active Issues</div>
               </div>
             </div>
@@ -573,8 +598,8 @@ export default function RolloutProgress() {
                     </td>
                     <td className="p-3">
                       <div className="flex items-center gap-2">
-                        <Progress value={site.progress} className="flex-1 h-2" />
-                        <span className="text-sm font-medium">{site.progress}%</span>
+                        <Progress value={isNaN(site.progress) ? 0 : site.progress} className="flex-1 h-2" />
+                        <span className="text-sm font-medium">{isNaN(site.progress) ? 0 : site.progress}%</span>
                       </div>
                     </td>
                     <td className="p-3">
