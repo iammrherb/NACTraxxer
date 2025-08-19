@@ -7,12 +7,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
 import { Slider } from "@/components/ui/slider"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import InteractiveDiagram from "./InteractiveDiagram"
 import PolicyManagement from "./policy-management"
+import VisualPolicySimulation from "./visual-policy-simulation"
 import { storage } from "@/lib/storage"
 import { toast } from "@/components/ui/use-toast"
 import {
@@ -31,8 +31,6 @@ import {
   ChevronRight,
   Save,
   Download,
-  Eye,
-  Zap,
   Activity,
   BarChart3,
   Layers,
@@ -43,6 +41,10 @@ import {
   ShoppingBag,
   Heart,
   Landmark,
+  Maximize2,
+  Minimize2,
+  Eye,
+  Zap,
 } from "lucide-react"
 
 interface ArchitectureConfig {
@@ -118,6 +120,7 @@ export default function ArchitectureDesigner() {
   const [config, setConfig] = useState<ArchitectureConfig>(defaultConfig)
   const [sites, setSites] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState("configuration")
+  const [isFullscreen, setIsFullscreen] = useState(false)
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     basic: true,
     infrastructure: true,
@@ -125,6 +128,7 @@ export default function ArchitectureDesigner() {
     security: true,
     features: true,
     visualization: true,
+    advanced: false,
   })
 
   useEffect(() => {
@@ -181,13 +185,13 @@ export default function ArchitectureDesigner() {
   }
 
   const industryOptions = [
-    { value: "healthcare", label: "Healthcare", icon: Heart },
-    { value: "financial", label: "Financial Services", icon: Landmark },
-    { value: "manufacturing", label: "Manufacturing", icon: Factory },
-    { value: "technology", label: "Technology", icon: Monitor },
-    { value: "retail", label: "Retail", icon: ShoppingBag },
-    { value: "education", label: "Education", icon: GraduationCap },
-    { value: "government", label: "Government", icon: Building },
+    { value: "healthcare", label: "Healthcare", icon: Heart, color: "#EF4444" },
+    { value: "financial", label: "Financial Services", icon: Landmark, color: "#10B981" },
+    { value: "manufacturing", label: "Manufacturing", icon: Factory, color: "#3B82F6" },
+    { value: "technology", label: "Technology", icon: Monitor, color: "#8B5CF6" },
+    { value: "retail", label: "Retail", icon: ShoppingBag, color: "#F59E0B" },
+    { value: "education", label: "Education", icon: GraduationCap, color: "#6366F1" },
+    { value: "government", label: "Government", icon: Building, color: "#6B7280" },
   ]
 
   const deploymentOptions = [
@@ -198,43 +202,43 @@ export default function ArchitectureDesigner() {
 
   const vendorOptions = {
     wired: [
-      { value: "cisco", label: "Cisco" },
-      { value: "aruba", label: "Aruba (HPE)" },
-      { value: "juniper", label: "Juniper" },
-      { value: "extreme", label: "Extreme Networks" },
-      { value: "dell", label: "Dell Networking" },
+      { value: "cisco", label: "Cisco", color: "#1BA0D7" },
+      { value: "aruba", label: "Aruba (HPE)", color: "#FF6900" },
+      { value: "juniper", label: "Juniper", color: "#84BD00" },
+      { value: "extreme", label: "Extreme Networks", color: "#00A651" },
+      { value: "dell", label: "Dell Networking", color: "#007DB8" },
     ],
     wireless: [
-      { value: "cisco", label: "Cisco" },
-      { value: "aruba", label: "Aruba (HPE)" },
-      { value: "ruckus", label: "Ruckus (CommScope)" },
-      { value: "meraki", label: "Cisco Meraki" },
-      { value: "mist", label: "Mist (Juniper)" },
+      { value: "cisco", label: "Cisco", color: "#1BA0D7" },
+      { value: "aruba", label: "Aruba (HPE)", color: "#FF6900" },
+      { value: "ruckus", label: "Ruckus (CommScope)", color: "#FF6B00" },
+      { value: "meraki", label: "Cisco Meraki", color: "#58C4DC" },
+      { value: "mist", label: "Mist (Juniper)", color: "#41B883" },
     ],
     firewall: [
-      { value: "palo_alto", label: "Palo Alto Networks" },
-      { value: "fortinet", label: "Fortinet" },
-      { value: "checkpoint", label: "Check Point" },
-      { value: "cisco", label: "Cisco ASA/FTD" },
-      { value: "juniper", label: "Juniper SRX" },
+      { value: "palo_alto", label: "Palo Alto Networks", color: "#FA582D" },
+      { value: "fortinet", label: "Fortinet", color: "#EE3124" },
+      { value: "checkpoint", label: "Check Point", color: "#FF6B35" },
+      { value: "cisco", label: "Cisco ASA/FTD", color: "#1BA0D7" },
+      { value: "juniper", label: "Juniper SRX", color: "#84BD00" },
     ],
   }
 
   const identityProviders = [
-    { value: "azure_ad", label: "Azure Active Directory" },
-    { value: "active_directory", label: "Active Directory" },
-    { value: "okta", label: "Okta" },
-    { value: "ping", label: "Ping Identity" },
-    { value: "google", label: "Google Workspace" },
-    { value: "aws_sso", label: "AWS SSO" },
+    { value: "azure_ad", label: "Azure Active Directory", color: "#0078D4" },
+    { value: "active_directory", label: "Active Directory", color: "#0078D4" },
+    { value: "okta", label: "Okta", color: "#007DC1" },
+    { value: "ping", label: "Ping Identity", color: "#0066CC" },
+    { value: "google", label: "Google Workspace", color: "#4285F4" },
+    { value: "aws_sso", label: "AWS SSO", color: "#FF9900" },
   ]
 
   const mdmProviders = [
-    { value: "intune", label: "Microsoft Intune" },
-    { value: "jamf", label: "Jamf Pro" },
-    { value: "workspace_one", label: "VMware Workspace ONE" },
-    { value: "mobileiron", label: "MobileIron" },
-    { value: "airwatch", label: "AirWatch" },
+    { value: "intune", label: "Microsoft Intune", color: "#00BCF2" },
+    { value: "jamf", label: "Jamf Pro", color: "#4A90E2" },
+    { value: "workspace_one", label: "VMware Workspace ONE", color: "#607078" },
+    { value: "mobileiron", label: "MobileIron", color: "#0066CC" },
+    { value: "airwatch", label: "AirWatch", color: "#607078" },
   ]
 
   const complianceFrameworks = [
@@ -255,18 +259,27 @@ export default function ArchitectureDesigner() {
     { value: "policies", label: "Access Control Policies", icon: Settings },
     { value: "connectivity", label: "Connectivity Options", icon: Network },
     { value: "intune", label: "Intune Integration", icon: Smartphone },
+    { value: "jamf", label: "Jamf Integration", icon: Monitor },
     { value: "onboarding", label: "Device Onboarding", icon: Users },
     { value: "radsec", label: "RADSEC Proxy", icon: Router },
     { value: "ztna", label: "Zero Trust Network Access", icon: Globe },
     { value: "guest", label: "Guest Portal", icon: Wifi },
     { value: "iot", label: "IoT Onboarding", icon: Activity },
+    { value: "tacacs", label: "TACACS+ Administration", icon: Server },
+    { value: "risk", label: "Risk Assessment", icon: BarChart3 },
+    { value: "multisite", label: "Multi-Site Deployment", icon: Building },
+    { value: "cloud", label: "Cloud Integration", icon: Globe },
+    { value: "wireless", label: "Wireless Infrastructure", icon: Wifi },
+    { value: "wired", label: "Wired Infrastructure", icon: Network },
   ]
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className={`w-full h-full ${isFullscreen ? "fixed inset-0 z-50 bg-white" : ""}`}>
+      <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
         <div>
-          <h2 className="text-2xl font-bold">Architecture Designer</h2>
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+            Architecture Designer
+          </h2>
           <p className="text-gray-600">Design and configure your Zero Trust NAC architecture</p>
         </div>
         <div className="flex items-center gap-2">
@@ -278,19 +291,34 @@ export default function ArchitectureDesigner() {
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
+          <Button variant="outline" onClick={() => setIsFullscreen(!isFullscreen)}>
+            {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+          </Button>
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="configuration">Configuration</TabsTrigger>
-          <TabsTrigger value="diagram">Architecture Diagram</TabsTrigger>
-          <TabsTrigger value="policies">Site Policies</TabsTrigger>
-          <TabsTrigger value="simulation">Simulation</TabsTrigger>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+        <TabsList className="grid w-full grid-cols-4 bg-white border-b">
+          <TabsTrigger value="configuration" className="flex items-center gap-2">
+            <Settings className="h-4 w-4" />
+            Configuration
+          </TabsTrigger>
+          <TabsTrigger value="diagram" className="flex items-center gap-2">
+            <Network className="h-4 w-4" />
+            Architecture Diagram
+          </TabsTrigger>
+          <TabsTrigger value="policies" className="flex items-center gap-2">
+            <Shield className="h-4 w-4" />
+            Site Policies
+          </TabsTrigger>
+          <TabsTrigger value="simulation" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Simulation
+          </TabsTrigger>
         </TabsList>
 
         {/* Configuration Tab */}
-        <TabsContent value="configuration" className="space-y-6">
+        <TabsContent value="configuration" className="flex-1 p-6 overflow-y-auto">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Site Selection */}
             <Card className="lg:col-span-3">
@@ -350,7 +378,7 @@ export default function ArchitectureDesigner() {
                             return (
                               <SelectItem key={option.value} value={option.value}>
                                 <div className="flex items-center gap-2">
-                                  <IconComponent className="h-4 w-4" />
+                                  <IconComponent className="h-4 w-4" style={{ color: option.color }} />
                                   {option.label}
                                 </div>
                               </SelectItem>
@@ -442,7 +470,10 @@ export default function ArchitectureDesigner() {
                         <SelectContent>
                           {vendorOptions.wired.map((vendor) => (
                             <SelectItem key={vendor.value} value={vendor.value}>
-                              {vendor.label}
+                              <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: vendor.color }}></div>
+                                {vendor.label}
+                              </div>
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -461,7 +492,10 @@ export default function ArchitectureDesigner() {
                         <SelectContent>
                           {vendorOptions.wireless.map((vendor) => (
                             <SelectItem key={vendor.value} value={vendor.value}>
-                              {vendor.label}
+                              <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: vendor.color }}></div>
+                                {vendor.label}
+                              </div>
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -480,7 +514,10 @@ export default function ArchitectureDesigner() {
                         <SelectContent>
                           {vendorOptions.firewall.map((vendor) => (
                             <SelectItem key={vendor.value} value={vendor.value}>
-                              {vendor.label}
+                              <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: vendor.color }}></div>
+                                {vendor.label}
+                              </div>
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -559,7 +596,10 @@ export default function ArchitectureDesigner() {
                                 }
                               }}
                             />
-                            <Label htmlFor={provider.value}>{provider.label}</Label>
+                            <Label htmlFor={provider.value} className="flex items-center gap-2">
+                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: provider.color }}></div>
+                              {provider.label}
+                            </Label>
                           </div>
                         ))}
                       </div>
@@ -581,7 +621,10 @@ export default function ArchitectureDesigner() {
                                 }
                               }}
                             />
-                            <Label htmlFor={provider.value}>{provider.label}</Label>
+                            <Label htmlFor={provider.value} className="flex items-center gap-2">
+                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: provider.color }}></div>
+                              {provider.label}
+                            </Label>
                           </div>
                         ))}
                       </div>
@@ -860,8 +903,6 @@ export default function ArchitectureDesigner() {
                       </div>
                     </div>
 
-                    <Separator />
-
                     <div>
                       <Label>Architecture View</Label>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
@@ -892,46 +933,20 @@ export default function ArchitectureDesigner() {
         </TabsContent>
 
         {/* Architecture Diagram Tab */}
-        <TabsContent value="diagram">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Network className="h-5 w-5" />
-                Interactive Architecture Diagram
-              </CardTitle>
-              <CardDescription>Visualize and interact with your Zero Trust NAC architecture</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <InteractiveDiagram config={config} />
-            </CardContent>
-          </Card>
+        <TabsContent value="diagram" className="flex-1">
+          <div className="h-full">
+            <InteractiveDiagram config={config} />
+          </div>
         </TabsContent>
 
         {/* Site Policies Tab */}
-        <TabsContent value="policies">
+        <TabsContent value="policies" className="flex-1">
           <PolicyManagement />
         </TabsContent>
 
         {/* Simulation Tab */}
-        <TabsContent value="simulation">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5" />
-                Architecture Simulation
-              </CardTitle>
-              <CardDescription>Simulate network traffic and policy enforcement</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-12">
-                <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Simulation Coming Soon</h3>
-                <p className="text-gray-600">
-                  Advanced network simulation and policy testing capabilities will be available in the next release.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+        <TabsContent value="simulation" className="flex-1">
+          <VisualPolicySimulation />
         </TabsContent>
       </Tabs>
     </div>

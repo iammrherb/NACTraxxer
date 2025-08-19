@@ -221,1062 +221,238 @@ const INDUSTRY_SCENARIOS = {
   },
 }
 
-class Storage {
-  private isClient = typeof window !== "undefined"
-
-  // Generic storage methods
-  private getItem<T>(key: string, defaultValue: T): T {
-    if (!this.isClient) return defaultValue
+export const storage = {
+  // Sites management
+  async getSites(): Promise<any[]> {
+    if (typeof window === "undefined") return []
     try {
-      const item = localStorage.getItem(key)
-      return item ? JSON.parse(item) : defaultValue
+      const sites = localStorage.getItem("nac-sites")
+      return sites ? JSON.parse(sites) : []
     } catch (error) {
-      console.error(`Error reading ${key} from localStorage:`, error)
-      return defaultValue
+      console.error("Error getting sites:", error)
+      return []
     }
-  }
+  },
 
-  private setItem<T>(key: string, value: T): void {
-    if (!this.isClient) return
+  async saveSites(sites: any[]): Promise<void> {
+    if (typeof window === "undefined") return
     try {
-      localStorage.setItem(key, JSON.stringify(value))
+      localStorage.setItem("nac-sites", JSON.stringify(sites))
     } catch (error) {
-      console.error(`Error writing ${key} to localStorage:`, error)
+      console.error("Error saving sites:", error)
     }
-  }
+  },
 
-  // Sites
-  getSites(): Site[] {
-    return this.getItem("nac-designer-sites", [])
-  }
-
-  saveSites(sites: Site[]): void {
-    this.setItem("nac-designer-sites", sites)
-  }
-
-  // Users
-  getUsers(): User[] {
-    return this.getItem("nac-designer-users", [])
-  }
-
-  saveUsers(users: User[]): void {
-    this.setItem("nac-designer-users", users)
-  }
-
-  // Events
-  getEvents(): Event[] {
-    return this.getItem("nac-designer-events", [])
-  }
-
-  saveEvents(events: Event[]): void {
-    this.setItem("nac-designer-events", events)
-  }
-
-  // Global Policies
-  getGlobalPolicies(): Policy[] {
-    return this.getItem("nac-designer-global-policies", [])
-  }
-
-  saveGlobalPolicies(policies: Policy[]): void {
-    this.setItem("nac-designer-global-policies", policies)
-  }
-
-  // Architecture Configuration
-  getArchitectureConfig(): ArchitectureConfig {
-    return this.getItem("nac-designer-architecture-config", {
-      industry: "healthcare",
-      deployment: "hybrid",
-      connectivity: ["wired", "wireless"],
-      identityProvider: "azure_ad",
-      mdm: "intune",
-      firewall: "palo_alto",
-      wiredVendor: "cisco",
-      wirelessVendor: "aruba",
-      deviceTypes: ["windows", "mac", "mobile", "iot"],
-      authTypes: ["certificate", "username_password", "mfa"],
-      compliance: ["hipaa", "pci_dss"],
-      customizations: {
-        colors: {
-          primary: "#3b82f6",
-          secondary: "#10b981",
-          accent: "#f59e0b",
-        },
-        layout: "standard",
-        showMetrics: true,
-        animationSpeed: 1,
-      },
-    })
-  }
-
-  saveArchitectureConfig(config: ArchitectureConfig): void {
-    this.setItem("nac-designer-architecture-config", config)
-  }
-
-  // Customer Information
-  getCustomerInfo(): CustomerInfo {
-    return this.getItem("nac-designer-customer-info", {
-      companyName: "Demo Company",
-      industry: "healthcare",
-      contactName: "John Doe",
-      email: "john.doe@company.com",
-      phone: "+1 (555) 123-4567",
-    })
-  }
-
-  saveCustomerInfo(info: CustomerInfo): void {
-    this.setItem("nac-designer-customer-info", info)
-  }
-
-  // Theme Settings
-  getThemeSettings(): any {
-    return this.getItem("nac-designer-theme", {
-      mode: "light",
-      primaryColor: "#3b82f6",
-      secondaryColor: "#10b981",
-      accentColor: "#f59e0b",
-    })
-  }
-
-  saveThemeSettings(settings: any): void {
-    this.setItem("nac-designer-theme", settings)
-  }
-
-  // Demo Data Generation
-  async generateDemoData(scenarioKey: string): Promise<void> {
-    if (!this.isClient) return
-
+  // Users management
+  async getUsers(): Promise<any[]> {
+    if (typeof window === "undefined") return []
     try {
-      const scenario = INDUSTRY_SCENARIOS[scenarioKey as keyof typeof INDUSTRY_SCENARIOS]
-      if (!scenario) {
-        throw new Error(`Scenario ${scenarioKey} not found`)
-      }
-
-      console.log(`Generating demo data for ${scenario.name}...`)
-
-      // Clear existing data first
-      this.clearAllData()
-
-      // Generate comprehensive demo sites
-      const demoSites = this.generateDemoSites(scenario)
-      console.log(`Generated ${demoSites.length} sites`)
-      this.saveSites(demoSites)
-
-      // Generate demo users
-      const demoUsers = this.generateDemoUsers(scenario, demoSites)
-      console.log(`Generated ${demoUsers.length} users`)
-      this.saveUsers(demoUsers)
-
-      // Generate demo events and timeline
-      const demoEvents = this.generateDemoEvents(scenario, demoSites)
-      console.log(`Generated ${demoEvents.length} events`)
-      this.saveEvents(demoEvents)
-
-      // Generate demo policies
-      const demoPolicies = this.generateDemoPolicies(scenario)
-      console.log(`Generated ${demoPolicies.length} policies`)
-      this.saveGlobalPolicies(demoPolicies)
-
-      // Update customer info
-      this.saveCustomerInfo({
-        companyName: scenario.name,
-        industry: scenario.industry,
-        contactName: "Demo Administrator",
-        email: "admin@demo.com",
-        phone: "+1 (555) 123-4567",
-      })
-
-      // Update architecture config for the industry
-      this.saveArchitectureConfig({
-        industry: scenario.industry,
-        deployment: "hybrid",
-        connectivity: ["wired", "wireless"],
-        identityProvider: "azure_ad",
-        mdm: "intune",
-        firewall: "palo_alto",
-        wiredVendor: "cisco",
-        wirelessVendor: "aruba",
-        deviceTypes: ["windows", "mac", "mobile", "iot"],
-        authTypes: ["certificate", "username_password", "mfa"],
-        compliance: scenario.compliance,
-        customizations: {
-          colors: {
-            primary: "#3b82f6",
-            secondary: "#10b981",
-            accent: "#f59e0b",
-          },
-          layout: "standard",
-          showMetrics: true,
-          animationSpeed: 1,
-        },
-      })
-
-      console.log(`Demo data generation completed for ${scenario.name}`)
+      const users = localStorage.getItem("nac-users")
+      return users ? JSON.parse(users) : []
     } catch (error) {
-      console.error("Error generating demo data:", error)
-      throw error
+      console.error("Error getting users:", error)
+      return []
     }
-  }
+  },
 
-  private generateDemoSites(scenario: any): Site[] {
-    const sites: Site[] = []
-    const regions = ["North America", "EMEA", "APAC", "LATAM"]
-    const cities = {
-      "North America": [
-        { name: "New York, NY", state: "NY", country: "USA" },
-        { name: "Los Angeles, CA", state: "CA", country: "USA" },
-        { name: "Chicago, IL", state: "IL", country: "USA" },
-        { name: "Toronto, ON", state: "ON", country: "Canada" },
-      ],
-      EMEA: [
-        { name: "London", state: "England", country: "UK" },
-        { name: "Frankfurt", state: "Hesse", country: "Germany" },
-        { name: "Paris", state: "Île-de-France", country: "France" },
-        { name: "Amsterdam", state: "North Holland", country: "Netherlands" },
-      ],
-      APAC: [
-        { name: "Tokyo", state: "Tokyo", country: "Japan" },
-        { name: "Singapore", state: "Singapore", country: "Singapore" },
-        { name: "Sydney", state: "NSW", country: "Australia" },
-        { name: "Hong Kong", state: "Hong Kong", country: "China" },
-      ],
-      LATAM: [
-        { name: "São Paulo", state: "SP", country: "Brazil" },
-        { name: "Mexico City", state: "CDMX", country: "Mexico" },
-        { name: "Buenos Aires", state: "CABA", country: "Argentina" },
-        { name: "Santiago", state: "RM", country: "Chile" },
-      ],
-    }
-
-    for (let i = 0; i < scenario.siteCount; i++) {
-      const region = regions[i % regions.length]
-      const cityList = cities[region as keyof typeof cities]
-      const cityInfo = cityList[Math.floor(Math.random() * cityList.length)]
-
-      const baseUsers = Math.floor(scenario.userCount / scenario.siteCount) + Math.floor(Math.random() * 200)
-      const baseDevices = Math.floor(baseUsers * 1.8) + Math.floor(Math.random() * 300)
-
-      sites.push({
-        id: `site-${scenario.id}-${i + 1}`,
-        name: `${scenario.name} - ${cityInfo.name.split(",")[0]}`,
-        location: cityInfo.name,
-        city: cityInfo.name.split(",")[0],
-        state: cityInfo.state,
-        country: cityInfo.country,
-        region: region,
-        type: this.getSiteType(scenario.industry),
-        users: baseUsers,
-        devices: baseDevices,
-        status: this.getRandomSiteStatus(),
-        phase: this.getRandomPhase(),
-        timeline: this.getRandomTimeline(),
-        notes: `${scenario.industry} facility with specialized requirements for ${scenario.specialties.join(", ")}`,
-        infrastructure: this.generateInfrastructure(scenario.industry),
-        compliance: scenario.compliance,
-        riskLevel: this.getRandomRiskLevel(),
-        securityRequirements: this.getSecurityRequirements(scenario.industry),
-        networkSegments: this.getNetworkSegments(scenario.industry),
-        priority: this.getRandomPriority() as "High" | "Medium" | "Low",
-        budget: Math.floor(scenario.budget / scenario.siteCount) + Math.floor(Math.random() * 200000),
-        projectManager: this.getRandomProjectManager(),
-        technicalOwner: this.getRandomTechnicalOwner(),
-        deviceCounts: {
-          total: baseDevices,
-          windows: Math.floor(baseDevices * 0.4),
-          mac: Math.floor(baseDevices * 0.2),
-          mobile: Math.floor(baseDevices * 0.3),
-          iot: Math.floor(baseDevices * 0.1),
-        },
-        userCounts: {
-          total: baseUsers,
-          employees: Math.floor(baseUsers * 0.8),
-          contractors: Math.floor(baseUsers * 0.15),
-          guests: Math.floor(baseUsers * 0.05),
-        },
-        industry: scenario.industry,
-      })
-    }
-
-    return sites
-  }
-
-  private generateDemoUsers(scenario: any, sites: Site[]): User[] {
-    const users: User[] = []
-    const roles = this.getRoles(scenario.industry)
-    const departments = this.getDepartments(scenario.industry)
-
-    for (let i = 0; i < Math.min(100, Math.floor(scenario.userCount / 25)); i++) {
-      const firstName = this.getRandomFirstName()
-      const lastName = this.getRandomLastName()
-
-      users.push({
-        id: `user-${scenario.id}-${i + 1}`,
-        name: `${firstName} ${lastName}`,
-        email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@${scenario.id}.com`,
-        role: roles[Math.floor(Math.random() * roles.length)],
-        department: departments[Math.floor(Math.random() * departments.length)],
-        sites: [sites[Math.floor(Math.random() * sites.length)].id],
-        permissions: this.getRandomPermissions(),
-        lastLogin: this.getRecentDate(),
-        status: Math.random() > 0.1 ? "active" : "inactive",
-      })
-    }
-
-    return users
-  }
-
-  private generateDemoEvents(scenario: any, sites: Site[]): Event[] {
-    const events: Event[] = []
-    const eventTypes: ("milestone" | "task" | "meeting" | "deployment")[] = [
-      "milestone",
-      "task",
-      "meeting",
-      "deployment",
-    ]
-    const phases = [
-      "Planning",
-      "Design",
-      "Implementation",
-      "Testing",
-      "Deployment",
-      "Go-Live",
-      "Training",
-      "Documentation",
-    ]
-
-    for (let i = 0; i < 50; i++) {
-      const site = sites[Math.floor(Math.random() * sites.length)]
-      const startDate = new Date(Date.now() + (Math.random() - 0.5) * 180 * 24 * 60 * 60 * 1000)
-      const endDate = new Date(startDate.getTime() + Math.random() * 21 * 24 * 60 * 60 * 1000)
-
-      events.push({
-        id: `event-${scenario.id}-${i + 1}`,
-        title: `${phases[Math.floor(Math.random() * phases.length)]} - ${site.name}`,
-        description: `${scenario.industry} deployment activity: ${this.getEventDescription(scenario.industry)}`,
-        startDate: startDate.toISOString().split("T")[0],
-        endDate: endDate.toISOString().split("T")[0],
-        type: eventTypes[Math.floor(Math.random() * eventTypes.length)],
-        status: this.getRandomEventStatus() as any,
-        assignedTo: [this.getRandomProjectManager(), this.getRandomTechnicalOwner()],
-        siteId: site.id,
-        priority: this.getRandomPriority() as any,
-        tags: [scenario.industry, site.region, phases[Math.floor(Math.random() * phases.length)]],
-      })
-    }
-
-    return events
-  }
-
-  private generateDemoPolicies(scenario: any): Policy[] {
-    const policies: Policy[] = []
-    const policyTemplates = this.getPolicyTemplates(scenario.industry)
-
-    policyTemplates.forEach((template, index) => {
-      policies.push({
-        id: `policy-${scenario.id}-${index + 1}`,
-        name: template.name,
-        description: template.description,
-        category: template.category,
-        priority: template.priority as any,
-        status: "active",
-        conditions: template.conditions,
-        actions: template.actions,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        appliedTo: [scenario.id],
-        effectiveness: 85 + Math.random() * 15,
-        violations: Math.floor(Math.random() * 10),
-      })
-    })
-
-    return policies
-  }
-
-  // Helper methods for demo data generation
-  private getSiteType(industry: string): string {
-    const types = {
-      healthcare: ["hospital", "clinic", "medical_center", "imaging_center", "lab"],
-      financial: ["headquarters", "branch", "data_center", "trading_floor", "operations_center"],
-      manufacturing: ["factory", "warehouse", "office", "r_and_d", "distribution_center"],
-      technology: ["headquarters", "office", "lab", "data_center", "co_working"],
-      retail: ["flagship_store", "store", "warehouse", "headquarters", "distribution_center"],
-      education: ["main_campus", "satellite_campus", "research_facility", "student_housing", "administrative"],
-      government: ["headquarters", "field_office", "secure_facility", "data_center", "operations_center"],
-    }
-    const industryTypes = types[industry as keyof typeof types] || ["office"]
-    return industryTypes[Math.floor(Math.random() * industryTypes.length)]
-  }
-
-  private getRandomSiteStatus(): string {
-    const statuses = ["planning", "in-progress", "testing", "completed", "on-hold"]
-    const weights = [0.2, 0.4, 0.2, 0.15, 0.05] // More likely to be in-progress
-    const random = Math.random()
-    let cumulative = 0
-    for (let i = 0; i < weights.length; i++) {
-      cumulative += weights[i]
-      if (random < cumulative) return statuses[i]
-    }
-    return statuses[1] // Default to in-progress
-  }
-
-  private getRandomPhase(): string {
-    const phases = ["Discovery", "Design", "Implementation", "Testing", "Deployment", "Go-Live", "Optimization"]
-    return phases[Math.floor(Math.random() * phases.length)]
-  }
-
-  private getRandomTimeline(): string {
-    const quarters = ["Q1 2024", "Q2 2024", "Q3 2024", "Q4 2024", "Q1 2025"]
-    return quarters[Math.floor(Math.random() * quarters.length)]
-  }
-
-  private generateInfrastructure(industry: string): any {
-    const vendors = {
-      wired: [
-        { name: "cisco", models: ["Catalyst 9300", "Catalyst 9400", "Catalyst 9600", "Nexus 9000"] },
-        { name: "aruba", models: ["CX 6200", "CX 6300", "CX 8360", "CX 10000"] },
-        { name: "juniper", models: ["EX4300", "EX4650", "QFX5120", "QFX10000"] },
-        { name: "extreme", models: ["X465", "X690", "X870", "SLX 9850"] },
-      ],
-      wireless: [
-        { name: "cisco", models: ["Catalyst 9136", "Catalyst 9162", "Aironet 4800", "Meraki MR57"] },
-        { name: "aruba", models: ["AP-515", "AP-635", "AP-655", "AP-675"] },
-        { name: "ruckus", models: ["R550", "R650", "R750", "R850"] },
-        { name: "mist", models: ["AP43", "AP45", "AP63", "AP33"] },
-      ],
-      firewall: [
-        { name: "palo_alto", models: ["PA-220", "PA-850", "PA-3220", "PA-5220", "PA-7080"] },
-        { name: "fortinet", models: ["FortiGate-100F", "FortiGate-600F", "FortiGate-1500D", "FortiGate-3000D"] },
-        { name: "checkpoint", models: ["1570", "3200", "5800", "15600", "26000"] },
-        { name: "cisco", models: ["ASA 5516", "ASA 5525", "FTD 2130", "FTD 4125"] },
-      ],
-    }
-
-    const wiredVendor = vendors.wired[Math.floor(Math.random() * vendors.wired.length)]
-    const wirelessVendor = vendors.wireless[Math.floor(Math.random() * vendors.wireless.length)]
-    const firewallVendor = vendors.firewall[Math.floor(Math.random() * vendors.firewall.length)]
-
-    return {
-      wired: {
-        vendor: wiredVendor.name,
-        switches: Math.floor(Math.random() * 30) + 5,
-        model: wiredVendor.models[Math.floor(Math.random() * wiredVendor.models.length)],
-      },
-      wireless: {
-        vendor: wirelessVendor.name,
-        aps: Math.floor(Math.random() * 80) + 10,
-        model: wirelessVendor.models[Math.floor(Math.random() * wirelessVendor.models.length)],
-      },
-      firewall: {
-        vendor: firewallVendor.name,
-        model: firewallVendor.models[Math.floor(Math.random() * firewallVendor.models.length)],
-      },
-    }
-  }
-
-  private getRandomRiskLevel(): string {
-    const levels = ["low", "medium", "high", "critical"]
-    const weights = [0.3, 0.4, 0.25, 0.05] // Most sites are low-medium risk
-    const random = Math.random()
-    let cumulative = 0
-    for (let i = 0; i < weights.length; i++) {
-      cumulative += weights[i]
-      if (random < cumulative) return levels[i]
-    }
-    return levels[1] // Default to medium
-  }
-
-  private getSecurityRequirements(industry: string): string[] {
-    const requirements = {
-      healthcare: [
-        "HIPAA Compliance",
-        "Patient Data Protection",
-        "Medical Device Security",
-        "PHI Encryption",
-        "Audit Logging",
-      ],
-      financial: ["PCI DSS", "SOX Compliance", "Fraud Prevention", "Transaction Security", "Regulatory Reporting"],
-      manufacturing: [
-        "OT Security",
-        "Industrial Controls",
-        "Safety Systems",
-        "Production Continuity",
-        "Supply Chain Security",
-      ],
-      technology: ["IP Protection", "Development Security", "Cloud Security", "API Security", "DevSecOps"],
-      retail: [
-        "POS Security",
-        "Customer Data Protection",
-        "Payment Processing",
-        "Loss Prevention",
-        "Omnichannel Security",
-      ],
-      education: ["Student Privacy", "Research Security", "BYOD Management", "Campus Safety", "Academic Freedom"],
-      government: [
-        "FISMA Compliance",
-        "Classified Data Protection",
-        "National Security",
-        "Insider Threat",
-        "Continuous Monitoring",
-      ],
-    }
-    return (
-      requirements[industry as keyof typeof requirements] || ["Standard Security", "Data Protection", "Access Control"]
-    )
-  }
-
-  private getNetworkSegments(industry: string): string[] {
-    const segments = {
-      healthcare: [
-        "Clinical Network",
-        "Administrative",
-        "Guest WiFi",
-        "Medical Devices",
-        "IoT Sensors",
-        "Imaging Systems",
-      ],
-      financial: ["Trading Floor", "Corporate Network", "Guest Access", "ATM Network", "Secure Vault", "Market Data"],
-      manufacturing: [
-        "Production Network",
-        "Office Network",
-        "OT Network",
-        "Guest Access",
-        "IoT Devices",
-        "Safety Systems",
-      ],
-      technology: ["Development", "Production", "Corporate", "Guest Network", "Lab Network", "Cloud Connectivity"],
-      retail: ["POS Network", "Corporate", "Guest WiFi", "Inventory Systems", "Security Cameras", "Digital Signage"],
-      education: [
-        "Academic Network",
-        "Administrative",
-        "Student Network",
-        "Research Network",
-        "Guest Access",
-        "Campus IoT",
-      ],
-      government: [
-        "Classified Network",
-        "Unclassified",
-        "Administrative",
-        "Public Access",
-        "Secure Communications",
-        "Visitor Network",
-      ],
-    }
-    return segments[industry as keyof typeof segments] || ["Corporate Network", "Guest Access", "IoT Devices"]
-  }
-
-  private getRoles(industry: string): string[] {
-    const roles = {
-      healthcare: ["physician", "nurse", "administrator", "it_manager", "security_officer", "compliance_officer"],
-      financial: ["trader", "analyst", "risk_manager", "compliance_officer", "it_admin", "security_analyst"],
-      manufacturing: ["plant_manager", "engineer", "operator", "maintenance", "safety_officer", "it_coordinator"],
-      technology: ["developer", "devops", "product_manager", "security_engineer", "it_admin", "data_scientist"],
-      retail: [
-        "store_manager",
-        "sales_associate",
-        "inventory_manager",
-        "loss_prevention",
-        "it_support",
-        "regional_manager",
-      ],
-      education: ["professor", "administrator", "it_staff", "security_officer", "student_services", "facilities"],
-      government: [
-        "analyst",
-        "administrator",
-        "security_officer",
-        "it_specialist",
-        "program_manager",
-        "compliance_officer",
-      ],
-    }
-    return roles[industry as keyof typeof roles] || ["employee", "manager", "admin", "specialist"]
-  }
-
-  private getDepartments(industry: string): string[] {
-    const departments = {
-      healthcare: [
-        "Clinical Services",
-        "Administration",
-        "IT",
-        "Facilities",
-        "Security",
-        "Compliance",
-        "Nursing",
-        "Radiology",
-      ],
-      financial: [
-        "Trading",
-        "Risk Management",
-        "IT",
-        "Compliance",
-        "Operations",
-        "Wealth Management",
-        "Investment Banking",
-        "Treasury",
-      ],
-      manufacturing: [
-        "Production",
-        "Engineering",
-        "IT",
-        "Quality Assurance",
-        "Safety",
-        "Maintenance",
-        "Supply Chain",
-        "R&D",
-      ],
-      technology: [
-        "Engineering",
-        "Product Management",
-        "IT",
-        "Security",
-        "Operations",
-        "Data Science",
-        "DevOps",
-        "Customer Success",
-      ],
-      retail: [
-        "Store Operations",
-        "IT",
-        "Loss Prevention",
-        "Merchandising",
-        "Customer Service",
-        "Supply Chain",
-        "Marketing",
-        "Finance",
-      ],
-      education: [
-        "IT Services",
-        "Administration",
-        "Facilities",
-        "Security",
-        "Academic Affairs",
-        "Student Services",
-        "Research",
-        "Library",
-      ],
-      government: [
-        "IT",
-        "Security",
-        "Operations",
-        "Administration",
-        "Intelligence",
-        "Communications",
-        "Logistics",
-        "Training",
-      ],
-    }
-    return departments[industry as keyof typeof departments] || ["IT", "Operations", "Administration", "Security"]
-  }
-
-  private getPolicyTemplates(industry: string): any[] {
-    const templates = {
-      healthcare: [
-        {
-          name: "HIPAA Device Compliance Policy",
-          description: "Ensures all devices accessing PHI meet HIPAA security requirements",
-          category: "compliance",
-          priority: "critical",
-          conditions: [
-            { type: "device_type", operator: "equals", value: "medical_device", description: "Medical device type" },
-            { type: "compliance_status", operator: "equals", value: "hipaa_compliant", description: "HIPAA compliant" },
-          ],
-          actions: [
-            { type: "allow", parameters: { network: "clinical" }, description: "Allow clinical network access" },
-            { type: "log", parameters: { level: "audit" }, description: "Create audit log entry" },
-          ],
-        },
-        {
-          name: "Patient Data Access Control",
-          description: "Controls access to patient data systems based on role and location",
-          category: "access_control",
-          priority: "critical",
-          conditions: [
-            {
-              type: "user_role",
-              operator: "in",
-              value: ["physician", "nurse", "clinical_staff"],
-              description: "Clinical staff role",
-            },
-            { type: "location", operator: "equals", value: "clinical_area", description: "Clinical area location" },
-          ],
-          actions: [
-            {
-              type: "allow",
-              parameters: { resources: ["patient_records", "ehr_system"] },
-              description: "Allow patient data access",
-            },
-            {
-              type: "require_mfa",
-              parameters: { methods: ["certificate", "biometric"] },
-              description: "Require strong authentication",
-            },
-          ],
-        },
-      ],
-      financial: [
-        {
-          name: "Trading Floor High Security Access",
-          description: "Ultra-secure access controls for trading floor systems",
-          category: "access_control",
-          priority: "critical",
-          conditions: [
-            { type: "location", operator: "equals", value: "trading_floor", description: "Trading floor location" },
-            {
-              type: "user_role",
-              operator: "in",
-              value: ["trader", "quant", "risk_manager"],
-              description: "Trading role",
-            },
-          ],
-          actions: [
-            {
-              type: "allow",
-              parameters: { network: "trading", priority: "high" },
-              description: "Allow trading network",
-            },
-            {
-              type: "require_mfa",
-              parameters: { methods: ["smartcard", "biometric"] },
-              description: "Require strong MFA",
-            },
-          ],
-        },
-      ],
-      manufacturing: [
-        {
-          name: "OT Network Segmentation Policy",
-          description: "Isolates operational technology from IT networks",
-          category: "network_security",
-          priority: "critical",
-          conditions: [
-            {
-              type: "device_type",
-              operator: "equals",
-              value: "industrial_control",
-              description: "Industrial control system",
-            },
-          ],
-          actions: [
-            { type: "allow", parameters: { vlan: "ot_network" }, description: "Allow OT network access" },
-            { type: "deny", parameters: { networks: ["corporate_it", "internet"] }, description: "Block IT networks" },
-          ],
-        },
-      ],
-      technology: [
-        {
-          name: "Developer Secure Access Policy",
-          description: "Secure access to development resources with code protection",
-          category: "development_security",
-          priority: "high",
-          conditions: [
-            {
-              type: "user_role",
-              operator: "in",
-              value: ["developer", "devops", "architect"],
-              description: "Development role",
-            },
-          ],
-          actions: [
-            {
-              type: "allow",
-              parameters: { resources: ["git_repos", "ci_cd", "staging"] },
-              description: "Allow dev resources",
-            },
-            { type: "require_mfa", parameters: { methods: ["certificate", "totp"] }, description: "Require MFA" },
-          ],
-        },
-      ],
-      retail: [
-        {
-          name: "POS System Security Policy",
-          description: "Comprehensive security for point-of-sale systems",
-          category: "payment_security",
-          priority: "critical",
-          conditions: [
-            { type: "device_type", operator: "equals", value: "pos_terminal", description: "POS terminal device" },
-          ],
-          actions: [
-            { type: "isolate", parameters: { vlan: "pos_network" }, description: "Isolate POS network" },
-            { type: "encrypt", parameters: { method: "p2pe" }, description: "Point-to-point encryption" },
-          ],
-        },
-      ],
-      education: [
-        {
-          name: "Student Network Access Policy",
-          description: "Balanced access for student devices with appropriate restrictions",
-          category: "student_access",
-          priority: "medium",
-          conditions: [{ type: "user_type", operator: "equals", value: "student", description: "Student user" }],
-          actions: [
-            {
-              type: "allow",
-              parameters: { network: "student", bandwidth: "50Mbps" },
-              description: "Student network access",
-            },
-            { type: "filter", parameters: { content: "educational" }, description: "Educational content filter" },
-          ],
-        },
-      ],
-      government: [
-        {
-          name: "Classified System Access Policy",
-          description: "Maximum security for classified information systems",
-          category: "classified_access",
-          priority: "critical",
-          conditions: [
-            {
-              type: "security_clearance",
-              operator: "greater_equal",
-              value: "secret",
-              description: "Security clearance required",
-            },
-          ],
-          actions: [
-            {
-              type: "allow",
-              parameters: { network: "classified", air_gap: "required" },
-              description: "Classified network access",
-            },
-            {
-              type: "require_mfa",
-              parameters: { methods: ["piv_card", "biometric"] },
-              description: "PIV card + biometric",
-            },
-          ],
-        },
-      ],
-    }
-
-    return (
-      templates[industry as keyof typeof templates] || [
-        {
-          name: "Standard Access Policy",
-          description: "Basic network access control policy",
-          category: "access_control",
-          priority: "medium",
-          conditions: [
-            { type: "device_compliance", operator: "equals", value: "compliant", description: "Compliant device" },
-          ],
-          actions: [{ type: "allow", parameters: { network: "corporate" }, description: "Allow corporate access" }],
-        },
-      ]
-    )
-  }
-
-  private getEventDescription(industry: string): string {
-    const descriptions = {
-      healthcare: "Medical device integration and HIPAA compliance validation",
-      financial: "Trading system deployment with regulatory compliance testing",
-      manufacturing: "Industrial control system integration and safety validation",
-      technology: "Cloud infrastructure deployment and security hardening",
-      retail: "POS system rollout and customer data protection implementation",
-      education: "Campus network upgrade and student device management",
-      government: "Classified system deployment with FISMA compliance validation",
-    }
-    return descriptions[industry as keyof typeof descriptions] || "Network access control deployment"
-  }
-
-  private getRandomEventStatus(): string {
-    const statuses = ["pending", "in_progress", "completed", "cancelled"]
-    const weights = [0.3, 0.4, 0.25, 0.05]
-    const random = Math.random()
-    let cumulative = 0
-    for (let i = 0; i < weights.length; i++) {
-      cumulative += weights[i]
-      if (random < cumulative) return statuses[i]
-    }
-    return statuses[1]
-  }
-
-  private getRandomPriority(): string {
-    const priorities = ["low", "medium", "high", "critical"]
-    const weights = [0.2, 0.4, 0.3, 0.1]
-    const random = Math.random()
-    let cumulative = 0
-    for (let i = 0; i < weights.length; i++) {
-      cumulative += weights[i]
-      if (random < cumulative) return priorities[i]
-    }
-    return priorities[1]
-  }
-
-  private getRandomProjectManager(): string {
-    const managers = [
-      "Sarah Johnson",
-      "Michael Chen",
-      "Lisa Rodriguez",
-      "David Kim",
-      "Emily Davis",
-      "Robert Wilson",
-      "Maria Garcia",
-      "James Thompson",
-      "Jennifer Lee",
-      "Alex Martinez",
-      "Amanda Taylor",
-      "Christopher Brown",
-      "Nicole Anderson",
-      "Kevin Zhang",
-      "Rachel Green",
-    ]
-    return managers[Math.floor(Math.random() * managers.length)]
-  }
-
-  private getRandomTechnicalOwner(): string {
-    const owners = [
-      "Alex Thompson",
-      "Maria Garcia",
-      "James Wilson",
-      "Emily Davis",
-      "Robert Lee",
-      "Sarah Kim",
-      "Michael Rodriguez",
-      "Lisa Chen",
-      "David Martinez",
-      "Jennifer Brown",
-      "Kevin Taylor",
-      "Amanda Zhang",
-      "Christopher Green",
-      "Nicole Johnson",
-      "Rachel Anderson",
-    ]
-    return owners[Math.floor(Math.random() * owners.length)]
-  }
-
-  private getRandomPermissions(): string[] {
-    const allPermissions = ["read", "write", "admin", "deploy", "monitor", "audit", "configure", "approve"]
-    return allPermissions.filter(() => Math.random() > 0.6)
-  }
-
-  private getRecentDate(): string {
-    const date = new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000)
-    return date.toISOString()
-  }
-
-  private getRandomFirstName(): string {
-    const names = [
-      "John",
-      "Sarah",
-      "Michael",
-      "Lisa",
-      "David",
-      "Emily",
-      "James",
-      "Maria",
-      "Robert",
-      "Jennifer",
-      "William",
-      "Jessica",
-      "Christopher",
-      "Ashley",
-      "Matthew",
-      "Amanda",
-      "Joshua",
-      "Stephanie",
-      "Andrew",
-      "Nicole",
-      "Daniel",
-      "Elizabeth",
-      "Anthony",
-      "Helen",
-      "Mark",
-      "Sandra",
-      "Donald",
-      "Donna",
-      "Steven",
-      "Carol",
-    ]
-    return names[Math.floor(Math.random() * names.length)]
-  }
-
-  private getRandomLastName(): string {
-    const names = [
-      "Smith",
-      "Johnson",
-      "Williams",
-      "Brown",
-      "Jones",
-      "Garcia",
-      "Miller",
-      "Davis",
-      "Rodriguez",
-      "Martinez",
-      "Hernandez",
-      "Lopez",
-      "Gonzalez",
-      "Wilson",
-      "Anderson",
-      "Thomas",
-      "Taylor",
-      "Moore",
-      "Jackson",
-      "Martin",
-      "Lee",
-      "Perez",
-      "Thompson",
-      "White",
-      "Harris",
-      "Sanchez",
-      "Clark",
-      "Ramirez",
-      "Lewis",
-      "Robinson",
-    ]
-    return names[Math.floor(Math.random() * names.length)]
-  }
-
-  // Demo Data Management
-  loadDemoData(industry: string): void {
-    console.log(`Loading demo data for ${industry}`)
-  }
-
-  clearAllData(): void {
-    if (!this.isClient) return
-    const keys = [
-      "nac-designer-sites",
-      "nac-designer-users",
-      "nac-designer-events",
-      "nac-designer-global-policies",
-      "nac-designer-architecture-config",
-      "nac-designer-customer-info",
-      "nac-designer-theme",
-    ]
-    keys.forEach((key) => localStorage.removeItem(key))
-  }
-
-  // Export/Import functionality
-  exportData(): string {
-    const data = {
-      sites: this.getSites(),
-      users: this.getUsers(),
-      events: this.getEvents(),
-      policies: this.getGlobalPolicies(),
-      config: this.getArchitectureConfig(),
-      customer: this.getCustomerInfo(),
-      theme: this.getThemeSettings(),
-      exportDate: new Date().toISOString(),
-    }
-    return JSON.stringify(data, null, 2)
-  }
-
-  importData(jsonData: string): boolean {
+  async saveUsers(users: any[]): Promise<void> {
+    if (typeof window === "undefined") return
     try {
-      const data = JSON.parse(jsonData)
+      localStorage.setItem("nac-users", JSON.stringify(users))
+    } catch (error) {
+      console.error("Error saving users:", error)
+    }
+  },
 
-      if (data.sites) this.saveSites(data.sites)
-      if (data.users) this.saveUsers(data.users)
-      if (data.events) this.saveEvents(data.events)
-      if (data.policies) this.saveGlobalPolicies(data.policies)
-      if (data.config) this.saveArchitectureConfig(data.config)
-      if (data.customer) this.saveCustomerInfo(data.customer)
-      if (data.theme) this.saveThemeSettings(data.theme)
+  // Events management
+  async getEvents(): Promise<any[]> {
+    if (typeof window === "undefined") return []
+    try {
+      const events = localStorage.getItem("nac-events")
+      return events ? JSON.parse(events) : []
+    } catch (error) {
+      console.error("Error getting events:", error)
+      return []
+    }
+  },
 
-      return true
+  async saveEvents(events: any[]): Promise<void> {
+    if (typeof window === "undefined") return
+    try {
+      localStorage.setItem("nac-events", JSON.stringify(events))
+    } catch (error) {
+      console.error("Error saving events:", error)
+    }
+  },
+
+  // Global policies management
+  async getGlobalPolicies(): Promise<any[]> {
+    if (typeof window === "undefined") return []
+    try {
+      const policies = localStorage.getItem("nac-global-policies")
+      return policies ? JSON.parse(policies) : []
+    } catch (error) {
+      console.error("Error getting global policies:", error)
+      return []
+    }
+  },
+
+  async saveGlobalPolicies(policies: any[]): Promise<void> {
+    if (typeof window === "undefined") return
+    try {
+      localStorage.setItem("nac-global-policies", JSON.stringify(policies))
+    } catch (error) {
+      console.error("Error saving global policies:", error)
+    }
+  },
+
+  // Architecture configuration
+  async getArchitectureConfig(): Promise<any> {
+    if (typeof window === "undefined") return null
+    try {
+      const config = localStorage.getItem("nac-architecture-config")
+      return config ? JSON.parse(config) : null
+    } catch (error) {
+      console.error("Error getting architecture config:", error)
+      return null
+    }
+  },
+
+  async saveArchitectureConfig(config: any): Promise<void> {
+    if (typeof window === "undefined") return
+    try {
+      localStorage.setItem("nac-architecture-config", JSON.stringify(config))
+    } catch (error) {
+      console.error("Error saving architecture config:", error)
+    }
+  },
+
+  // Theme settings
+  async getThemeSettings(): Promise<any> {
+    if (typeof window === "undefined") return null
+    try {
+      const theme = localStorage.getItem("nac-theme-settings")
+      return theme ? JSON.parse(theme) : null
+    } catch (error) {
+      console.error("Error getting theme settings:", error)
+      return null
+    }
+  },
+
+  async saveThemeSettings(settings: any): Promise<void> {
+    if (typeof window === "undefined") return
+    try {
+      localStorage.setItem("nac-theme-settings", JSON.stringify(settings))
+    } catch (error) {
+      console.error("Error saving theme settings:", error)
+    }
+  },
+
+  // User preferences
+  async getUserPreferences(): Promise<any> {
+    if (typeof window === "undefined") return null
+    try {
+      const prefs = localStorage.getItem("nac-user-preferences")
+      return prefs ? JSON.parse(prefs) : null
+    } catch (error) {
+      console.error("Error getting user preferences:", error)
+      return null
+    }
+  },
+
+  async saveUserPreferences(preferences: any): Promise<void> {
+    if (typeof window === "undefined") return
+    try {
+      localStorage.setItem("nac-user-preferences", JSON.stringify(preferences))
+    } catch (error) {
+      console.error("Error saving user preferences:", error)
+    }
+  },
+
+  // Site workbook data
+  async getSiteWorkbook(siteId: string): Promise<any> {
+    if (typeof window === "undefined") return null
+    try {
+      const workbook = localStorage.getItem(`nac-site-workbook-${siteId}`)
+      return workbook ? JSON.parse(workbook) : null
+    } catch (error) {
+      console.error("Error getting site workbook:", error)
+      return null
+    }
+  },
+
+  async saveSiteWorkbook(siteId: string, workbook: any): Promise<void> {
+    if (typeof window === "undefined") return
+    try {
+      localStorage.setItem(`nac-site-workbook-${siteId}`, JSON.stringify(workbook))
+    } catch (error) {
+      console.error("Error saving site workbook:", error)
+    }
+  },
+
+  // Rollout progress
+  async getRolloutProgress(): Promise<any[]> {
+    if (typeof window === "undefined") return []
+    try {
+      const progress = localStorage.getItem("nac-rollout-progress")
+      return progress ? JSON.parse(progress) : []
+    } catch (error) {
+      console.error("Error getting rollout progress:", error)
+      return []
+    }
+  },
+
+  async saveRolloutProgress(progress: any[]): Promise<void> {
+    if (typeof window === "undefined") return
+    try {
+      localStorage.setItem("nac-rollout-progress", JSON.stringify(progress))
+    } catch (error) {
+      console.error("Error saving rollout progress:", error)
+    }
+  },
+
+  // Clear all data
+  async clearAllData(): Promise<void> {
+    if (typeof window === "undefined") return
+    try {
+      const keys = Object.keys(localStorage).filter((key) => key.startsWith("nac-"))
+      keys.forEach((key) => localStorage.removeItem(key))
+    } catch (error) {
+      console.error("Error clearing data:", error)
+    }
+  },
+
+  // Export all data
+  async exportAllData(): Promise<any> {
+    if (typeof window === "undefined") return {}
+    try {
+      const data: any = {}
+      const keys = Object.keys(localStorage).filter((key) => key.startsWith("nac-"))
+      keys.forEach((key) => {
+        try {
+          data[key] = JSON.parse(localStorage.getItem(key) || "{}")
+        } catch {
+          data[key] = localStorage.getItem(key)
+        }
+      })
+      return data
+    } catch (error) {
+      console.error("Error exporting data:", error)
+      return {}
+    }
+  },
+
+  // Import all data
+  async importAllData(data: any): Promise<void> {
+    if (typeof window === "undefined") return
+    try {
+      Object.entries(data).forEach(([key, value]) => {
+        if (key.startsWith("nac-")) {
+          localStorage.setItem(key, typeof value === "string" ? value : JSON.stringify(value))
+        }
+      })
     } catch (error) {
       console.error("Error importing data:", error)
-      return false
     }
-  }
+  },
 }
-
-// Export the storage instance
-export const storage = new Storage()
