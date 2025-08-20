@@ -13,7 +13,6 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import InteractiveDiagram from "./InteractiveDiagram"
 import PolicyManagement from "./policy-management"
 import VisualPolicySimulation from "./visual-policy-simulation"
-import VendorShowcase from "./VendorShowcase"
 import { storage } from "@/lib/storage"
 import { toast } from "@/components/ui/use-toast"
 import {
@@ -46,7 +45,6 @@ import {
   Minimize2,
   Eye,
   Zap,
-  Palette,
 } from "lucide-react"
 
 interface ArchitectureConfig {
@@ -300,7 +298,7 @@ export default function ArchitectureDesigner() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-        <TabsList className="grid w-full grid-cols-5 bg-white border-b">
+        <TabsList className="grid w-full grid-cols-4 bg-white border-b">
           <TabsTrigger value="configuration" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
             Configuration
@@ -308,10 +306,6 @@ export default function ArchitectureDesigner() {
           <TabsTrigger value="diagram" className="flex items-center gap-2">
             <Network className="h-4 w-4" />
             Architecture Diagram
-          </TabsTrigger>
-          <TabsTrigger value="vendors" className="flex items-center gap-2">
-            <Palette className="h-4 w-4" />
-            Vendor Testing
           </TabsTrigger>
           <TabsTrigger value="policies" className="flex items-center gap-2">
             <Shield className="h-4 w-4" />
@@ -943,11 +937,6 @@ export default function ArchitectureDesigner() {
           <div className="h-full">
             <InteractiveDiagram config={config} />
           </div>
-        </TabsContent>
-
-        {/* Vendor Testing Tab */}
-        <TabsContent value="vendors" className="flex-1 p-6 overflow-y-auto">
-          <VendorShowcase />
         </TabsContent>
 
         {/* Site Policies Tab */}
