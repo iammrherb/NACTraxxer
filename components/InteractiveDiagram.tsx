@@ -1,23 +1,5 @@
 "use client"
-
-import React from "react"
-import { useState, useRef, useCallback, useEffect } from "react"
-import { Network, Shield, Server, Smartphone, Wifi, Router, Cloud, Key, Users, Building, Globe, Activity, AlertTriangle, Cpu, Target, Eye, Settings, Database, HardDrive, Zap, BarChart3, Lock, Monitor, TrendingUp, MemoryStick, Signal, Search, GitBranch, Layers3, Radio, Satellite, Cable, Workflow, FileKey, UserCheck, ShieldCheck, Fingerprint, Scan, Radar, Factory, GraduationCap, ShoppingBag, Heart, Landmark, Building2, CheckCircle, XCircle, Layers, Download, Plus, Minus, X, Save, RefreshCw, Bell, Calendar, Clock, FileText, Mail, Phone, Truck, Wrench, Briefcase, Home, MapPin, Navigation, Compass, Layers2, Share2, Link, Webhook, Container, HelpCircle, Info, ExternalLink, ArrowRight, ArrowLeft, ArrowUp, ArrowDown, Play, Pause, RotateCcw, ZoomIn, ZoomOut, Maximize, Minimize, MoveIcon, MousePointer, Crosshair, Edit3, Grid3X3, Palette, Sliders, MoreHorizontal, Filter, SortAsc, ToggleLeft, ToggleRight, Volume2, VolumeX, Sun, Moon, Star, Bookmark, Tag, Flag, CloudLightningIcon as Lightning, Flame, Snowflake, Droplets, Wind, CloudRain, CloudSnow, Thermometer, Gauge, Timer, TimerIcon as Stopwatch, AlarmClock, CalendarIcon, ClockIcon } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
-import { Slider } from "@/components/ui/slider"
-import { Badge } from "@/components/ui/badge"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Separator } from "@/components/ui/separator"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { useState, useRef, useCallback } from "react"
 
 interface DiagramComponent {
   id: string
@@ -32,7 +14,17 @@ interface DiagramComponent {
   model?: string
   version?: string
   status: "active" | "inactive" | "warning" | "error" | "pending" | "maintenance" | "degraded"
-  category: "cloud" | "network" | "security" | "endpoint" | "identity" | "management" | "application" | "connectivity" | "storage" | "compute"
+  category:
+    | "cloud"
+    | "network"
+    | "security"
+    | "endpoint"
+    | "identity"
+    | "management"
+    | "application"
+    | "connectivity"
+    | "storage"
+    | "compute"
   metrics?: {
     cpu?: number
     memory?: number
@@ -1972,86 +1964,71 @@ interface DiagramConnection {
   completionEconomyModel?: Record<string, any>
   fulfillmentEconomyModel?: Record<string, any>
   realizationEconomyModel?: Record<string, any>
-  achievementEconomyModel?: Record<string, any>
-  accomplishmentEconomyModel?: Record<string, any>
-  attainmentEconomyModel?: Record<string, any>
-  successEconomyModel?: Record<string, any>
-  victoryEconomyModel?: Record<string, any>
-  triumphEconomyModel?: Record<string, any>
-  conquestEconomyModel?: Record<string, any>
-  masteryEconomyModel?: Record<string, any>
-  dominanceEconomyModel?: Record<string, any>
-  supremacyEconomyModel?: Record<string, any>
-  leadershipEconomyModel?: Record<string, any>
-  championshipEconomyModel?: Record<string, any>
-  excellenceEconomyModel?: Record<string, any>
-  superiorityEconomyModel?: Record<string, any>
-  preeminenceEconomyModel?: Record<string, any>
-  primacyEconomyModel?: Record<string, any>
-  precedenceEconomyModel?: Record<string, any>
-  priorityEconomyModel?: Record<string, any>
-  importanceEconomyModel?: Record<string, any>
-  significanceEconomyModel?: Record<string, any>
-  relevanceEconomyModel?: Record<string, any>
-  meaningEconomyModel?: Record<string, any>
-  purposeEconomyModel?: Record<string, any>
-  intentionEconomyModel?: Record<string, any>
-  goalEconomyModel?: Record<string, any>
-  objectiveEconomyModel?: Record<string, any>
-  targetEconomyModel?: Record<string, any>
-  aimEconomyModel?: Record<string, any>
-  ambitionEconomyModel?: Record<string, any>
-  aspirationEconomyModel?: Record<string, any>
-  dreamEconomyModel?: Record<string, any>
-  visionEconomyModel?: Record<string, any>
-  missionEconomyModel?: Record<string, any>
-  callingEconomyModel?: Record<string, any>
-  destinyEconomyModel?: Record<string, any>
-  fateEconomyModel?: Record<string, any>
-  futureEconomyModel?: Record<string, any>
-  prospectEconomyModel?: Record<string, any>
-  potentialEconomyModel?: Record<string, any>
-  possibilityEconomyModel?: Record<string, any>
-  opportunityEconomyModel?: Record<string, any>
-  chanceEconomyModel?: Record<string, any>
-  hopeEconomyModel?: Record<string, any>
-  expectationEconomyModel?: Record<string, any>
-  anticipationEconomyModel?: Record<string, any>
-  predictionEconomyModel?: Record<string, any>
-  forecastEconomyModel?: Record<string, any>
-  projectionEconomyModel?: Record<string, any>
-  estimationEconomyModel?: Record<string, any>
-  calculationEconomyModel?: Record<string, any>
-  computationEconomyModel?: Record<string, any>
-  analysisEconomyModel?: Record<string, any>
-  evaluationEconomyModel?: Record<string, any>
-  assessmentEconomyModel?: Record<string, any>
-  measurementEconomyModel?: Record<string, any>
-  quantificationEconomyModel?: Record<string, any>
-  metricsEconomyModel?: Record<string, any>
-  statisticsEconomyModel?: Record<string, any>
-  dataEconomyModel?: Record<string, any>
-  informationEconomyModel?: Record<string, any>
-  knowledgeEconomyModel?: Record<string, any>
+  actualizationEconomyModel?: Record<string, any>
+  transcendenceEconomyModel?: Record<string, any>
+  enlightenmentEconomyModel?: Record<string, any>
   wisdomEconomyModel?: Record<string, any>
-  understandingEconomyModel?: Record<string, any>
-  comprehensionEconomyModel?: Record<string, any>
-  insightEconomyModel?: Record<string, any>
-  awarenessEconomyModel?: Record<string, any>
   consciousnessEconomyModel?: Record<string, any>
+  awarenessEconomyModel?: Record<string, any>
   mindfulnessEconomyModel?: Record<string, any>
-  attentionEconomyModel?: Record<string, any>
-  focusEconomyModel?: Record<string, any>
-  concentrationEconomyModel?: Record<string, any>
-  dedicationEconomyModel?: Record<string, any>
-  commitmentEconomyModel?: Record<string, any>
-  devotionEconomyModel?: Record<string, any>
-  loyaltyEconomyModel?: Record<string, any>
-  faithfulnessEconomyModel?: Record<string, any>
-  fidelityEconomyModel?: Record<string, any>
-  allegianceEconomyModel?: Record<string, any>
-  solidarityEconomyModel?: Record<string, any>
-  unityEconomyModel?: Record<string, any>
+  presenceEconomyModel?: Record<string, any>
+  authenticityEconomyModel?: Record<string, any>
+  integrityEconomyModel?: Record<string, any>
+  transparencyEconomyModel?: Record<string, any>
+  accountabilityEconomyModel?: Record<string, any>
+  responsibilityEconomyModel?: Record<string, any>
+  stewardshipEconomyModel?: Record<string, any>
+  custodianshipEconomyModel?: Record<string, any>
+  guardianshipEconomyModel?: Record<string, any>
+  protectionEconomyModel?: Record<string, any>
+  preservationEconomyModel?: Record<string, any>
+  conservationEconomyModel?: Record<string, any>
+  restorationEconomyModel?: Record<string, any>
+  regenerationEconomyModel?: Record<string, any>
+  renewalEconomyModel?: Record<string, any>
+  revitalizationEconomyModel?: Record<string, any>
+  rejuvenationEconomyModel?: Record<string, any>
+  rehabilitationEconomyModel?: Record<string, any>
+  recoveryEconomyModel?: Record<string, any>
+  healingEconomyModel?: Record<string, any>
+  repairEconomyModel?: Record<string, any>
+  maintenanceEconomyModel?: Record<string, any>
+  careEconomyModel?: Record<string, any>
+  nurturingEconomyModel?: Record<string, any>
+  supportEconomyModel?: Record<string, any>
+  assistanceEconomyModel?: Record<string, any>
+  helpEconomyModel?: Record<string, any>
+  serviceEconomyModel?: Record<string, any>
+  contributionEconomyModel?: Record<string, any>
+  participationEconomyModel?: Record<string, any>
+  engagementEconomyModel?: Record<string, any>
+  involvementEconomyModel?: Record<string, any>
+  inclusionEconomyModel?: Record<string, any>
+  belongingEconomyModel?: Record<string, any>
+  connectionEconomyModel?: Record<string, any>
+  relationshipEconomyModel?: Record<string, any>
+  communityEconomyModel?: Record<string, any>
+  societyEconomyModel?: Record<string, any>
+  civilizationEconomyModel?: Record<string, any>
+  humanityEconomyModel?: Record<string, any>
+  planetEconomyModel?: Record<string, any>
+  universeEconomyModel?: Record<string, any>
+  cosmosEconomyModel?: Record<string, any>
+  infinityEconomyModel?: Record<string, any>
+  eternityEconomyModel?: Record<string, any>
+  timelessnessEconomyModel?: Record<string, any>
+  boundlessnessEconomyModel?: Record<string, any>
+  limitlessnessEconomyModel?: Record<string, any>
+  endlessnessEconomyModel?: Record<string, any>
+  immensityEconomyModel?: Record<string, any>
+  vastnesEconomyModel?: Record<string, any>
+  grandeurEconomyModel?: Record<string, any>
+  magnificenceEconomyModel?: Record<string, any>
+  splendorEconomyModel?: Record<string, any>
+  gloryEconomyModel?: Record<string, any>
+  beautyEconomyModel?: Record<string, any>
+  eleganceEconomyModel?: Record<string, any>
+  graceEconomyModel?: Record<string, any>
   harmonyEconomyModel?: Record<string, any>
   balanceEconomyModel?: Record<string, any>
   equilibriumEconomyModel?: Record<string, any>
@@ -2824,464 +2801,6 @@ interface ArchitectureConfig {
     objectiveLeadership: boolean
     targetLeadership: boolean
     aimLeadership: boolean
-    ambitionLeadership: boolean
-    aspirationLeadership: boolean
-    dreamLeadership: boolean
-    visionLeadership: boolean
-    missionLeadership: boolean
-    callingLeadership: boolean
-    destinyLeadership: boolean
-    fateLeadership: boolean
-    futureLeadership: boolean
-    prospectLeadership: boolean
-    potentialLeadership: boolean
-    possibilityLeadership: boolean
-    opportunityLeadership: boolean
-    chanceLeadership: boolean
-    hopeLeadership: boolean
-    expectationLeadership: boolean
-    anticipationLeadership: boolean
-    predictionLeadership: boolean
-    forecastLeadership: boolean
-    projectionLeadership: boolean
-    estimationLeadership: boolean
-    calculationLeadership: boolean
-    computationLeadership: boolean
-    analysisLeadership: boolean
-    evaluationLeadership: boolean
-    assessmentLeadership: boolean
-    measurementLeadership: boolean
-    quantificationLeadership: boolean
-    metricsLeadership: boolean
-    statisticsLeadership: boolean
-    dataLeadership: boolean
-    informationLeadership: boolean
-    knowledgeLeadership: boolean
-    wisdomLeadership: boolean
-    understandingLeadership: boolean
-    comprehensionLeadership: boolean
-    insightLeadership: boolean
-    awarenessLeadership: boolean
-    consciousnessLeadership: boolean
-    mindfulnessLeadership: boolean
-    attentionLeadership: boolean
-    focusLeadership: boolean
-    concentrationLeadership: boolean
-    dedicationLeadership: boolean
-    commitmentLeadership: boolean
-    devotionLeadership: boolean
-    loyaltyLeadership: boolean
-    faithfulnessLeadership: boolean
-    fidelityLeadership: boolean
-    allegianceLeadership: boolean
-    solidarityLeadership: boolean
-    unityLeadership: boolean
-    harmonyLeadership: boolean
-    balanceLeadership: boolean
-    equilibriumLeadership: boolean
-    stabilityLeadership: boolean
-    consistencyLeadership: boolean
-    reliabilityLeadership: boolean
-    dependabilityLeadership: boolean
-    trustworthinessLeadership: boolean
-    credibilityLeadership: boolean
-    authenticityLeadership: boolean
-    genuinenessLeadership: boolean
-    sincerityLeadership: boolean
-    honestyLeadership: boolean
-    integrityLeadership: boolean
-    moralityLeadership: boolean
-    ethicsLeadership: boolean
-    valuesLeadership: boolean
-    principlesLeadership: boolean
-    beliefsLeadership: boolean
-    convictionsLeadership: boolean
-    faithLeadership: boolean
-    trustLeadership: boolean
-    confidenceLeadership: boolean
-    assuranceLeadership: boolean
-    certaintyLeadership: boolean
-    securityLeadership: boolean
-    safetyLeadership: boolean
-    protectionLeadership: boolean
-    defenseLeadership: boolean
-    guardLeadership: boolean
-    shieldLeadership: boolean
-    barrierLeadership: boolean
-    wallLeadership: boolean
-    fenceLeadership: boolean
-    boundaryLeadership: boolean
-    limitLeadership: boolean
-    borderLeadership: boolean
-    edgeLeadership: boolean
-    peripheryLeadership: boolean
-    marginLeadership: boolean
-    rimLeadership: boolean
-    circumferenceLeadership: boolean
-    perimeterLeadership: boolean
-    outlineLeadership: boolean
-    contourLeadership: boolean
-    profileLeadership: boolean
-    silhouetteLeadership: boolean
-    shadowLeadership: boolean
-    reflectionLeadership: boolean
-    imageLeadership: boolean
-    pictureLeadership: boolean
-    representationLeadership: boolean
-    depictionLeadership: boolean
-    illustrationLeadership: boolean
-    demonstrationLeadership: boolean
-    exampleLeadership: boolean
-    instanceLeadership: boolean
-    caseLeadership: boolean
-    scenarioLeadership: boolean
-    situationLeadership: boolean
-    contextLeadership: boolean
-    environmentLeadership: boolean
-    settingLeadership: boolean
-    backgroundLeadership: boolean
-    foundationLeadership: boolean
-    basisLeadership: boolean
-    groundLeadership: boolean
-    platformLeadership: boolean
-    infrastructureLeadership: boolean
-    frameworkLeadership: boolean
-    structureLeadership: boolean
-    architectureLeadership: boolean
-    systemLeadership: boolean
-    networkLeadership: boolean
-    ecosystemLeadership: boolean
-    communityLeadership: boolean
-    societyLeadership: boolean
-    organizationLeadership: boolean
-    institutionLeadership: boolean
-    establishmentLeadership: boolean
-    enterpriseLeadership: boolean
-    businessLeadership: boolean
-    companyLeadership: boolean
-    corporationLeadership: boolean
-    firmLeadership: boolean
-    agencyLeadership: boolean
-    bureauLeadership: boolean
-    officeLeadership: boolean
-    departmentLeadership: boolean
-    divisionLeadership: boolean
-    unitLeadership: boolean
-    groupLeadership: boolean
-    teamLeadership: boolean
-    squadLeadership: boolean
-    crewLeadership: boolean
-    staffLeadership: boolean
-    personnelLeadership: boolean
-    workforceLeadership: boolean
-    employeesLeadership: boolean
-    workersLeadership: boolean
-    peopleLeadership: boolean
-    individualsLeadership: boolean
-    personsLeadership: boolean
-    humansLeadership: boolean
-    beingsLeadership: boolean
-    entitiesLeadership: boolean
-    agentsLeadership: boolean
-    actorsLeadership: boolean
-    playersLeadership: boolean
-    participantsLeadership: boolean
-    membersLeadership: boolean
-    contributorsLeadership: boolean
-    collaboratorsLeadership: boolean
-    partnersLeadership: boolean
-    alliesLeadership: boolean
-    associatesLeadership: boolean
-    colleaguesLeadership: boolean
-    peersLeadership: boolean
-    equalsLeadership: boolean
-    counterpartsLeadership: boolean
-    equivalentsLeadership: boolean
-    matchesLeadership: boolean
-    pairsLeadership: boolean
-    couplesLeadership: boolean
-    duosLeadership: boolean
-    partnershipsLeadership: boolean
-    alliancesLeadership: boolean
-    coalitionsLeadership: boolean
-    confederationsLeadership: boolean
-    federationsLeadership: boolean
-    unionsLeadership: boolean
-    associationsLeadership: boolean
-    organizationsLeadership: boolean
-    societiesLeadership: boolean
-    communitiesLeadership: boolean
-    networksLeadership: boolean
-    ecosystemsLeadership: boolean
-    environmentsLeadership: boolean
-    landscapesLeadership: boolean
-    terrainsLeadership: boolean
-    territoriesLeadership: boolean
-    domainsLeadership: boolean
-    realmsLeadership: boolean
-    spheresLeadership: boolean
-    fieldsLeadership: boolean
-    areasLeadership: boolean
-    zonesLeadership: boolean
-    regionsLeadership: boolean
-    sectorsLeadership: boolean
-    segmentsLeadership: boolean
-    divisionsLeadership: boolean
-    departmentsLeadership: boolean
-    unitsLeadership: boolean
-    groupsLeadership: boolean
-    teamsLeadership: boolean
-    squadsLeadership: boolean
-    crewsLeadership: boolean
-    bandsLeadership: boolean
-    gangsLeadership: boolean
-    packagesLeadership: boolean
-    bundlesLeadership: boolean
-    setsLeadership: boolean
-    collectionsLeadership: boolean
-    assembliesLeadership: boolean
-    gatheringsLeadership: boolean
-    meetingsLeadership: boolean
-    conferencesLeadership: boolean
-    summitsLeadership: boolean
-    conventionsLeadership: boolean
-    symposiumsLeadership: boolean
-    seminarsLeadership: boolean
-    workshopsLeadership: boolean
-    trainingLeadership: boolean
-    educationLeadership: boolean
-    learningLeadership: boolean
-    developmentLeadership: boolean
-    improvementLeadership: boolean
-    enhancementLeadership: boolean
-    advancementLeadership: boolean
-    progressLeadership: boolean
-    growthLeadership: boolean
-    expansionLeadership: boolean
-    evolutionLeadership: boolean
-    transformationLeadership: boolean
-    changeLeadership: boolean
-    innovationLeadership: boolean
-    revolutionLeadership: boolean
-    disruptionLeadership: boolean
-    breakthroughLeadership: boolean
-    discoveryLeadership: boolean
-    inventionLeadership: boolean
-    creationLeadership: boolean
-    generationLeadership: boolean
-    productionLeadership: boolean
-    manufacturingLeadership: boolean
-    constructionLeadership: boolean
-    buildingLeadership: boolean
-    assemblyLeadership: boolean
-    integrationLeadership: boolean
-    combinationLeadership: boolean
-    synthesisLeadership: boolean
-    compositionLeadership: boolean
-    formulationLeadership: boolean
-    designLeadership: boolean
-    planningLeadership: boolean
-    strategyLeadership: boolean
-    approachLeadership: boolean
-    methodologyLeadership: boolean
-    frameworkLeadership: boolean
-    modelLeadership: boolean
-    systemLeadership: boolean
-    solutionLeadership: boolean
-    answerLeadership: boolean
-    responseLeadership: boolean
-    reactionLeadership: boolean
-    feedbackLeadership: boolean
-    inputLeadership: boolean
-    outputLeadership: boolean
-    outcomeLeadership: boolean
-    resultLeadership: boolean
-    consequenceLeadership: boolean
-    effectLeadership: boolean
-    impactLeadership: boolean
-    influenceLeadership: boolean
-    powerLeadership: boolean
-    forceLeadership: boolean
-    strengthLeadership: boolean
-    energyLeadership: boolean
-    vitalityLeadership: boolean
-    vigorLeadership: boolean
-    dynamismLeadership: boolean
-    momentumLeadership: boolean
-    driveLeadership: boolean
-    motivationLeadership: boolean
-    inspirationLeadership: boolean
-    encouragementLeadership: boolean
-    supportLeadership: boolean
-    backingLeadership: boolean
-    endorsementLeadership: boolean
-    approvalLeadership: boolean
-    acceptanceLeadership: boolean
-    recognitionLeadership: boolean
-    acknowledgmentLeadership: boolean
-    appreciationLeadership: boolean
-    gratitudeLeadership: boolean
-    thanksLeadership: boolean
-    praiseLeadership: boolean
-    commendationLeadership: boolean
-    complimentLeadership: boolean
-    tributeLeadership: boolean
-    honorLeadership: boolean
-    respectLeadership: boolean
-    admirationLeadership: boolean
-    esteemLeadership: boolean
-    regardLeadership: boolean
-    reverenceLeadership: boolean
-    venerationLeadership: boolean
-    worshipLeadership: boolean
-    devotionLeadership: boolean
-    dedicationLeadership: boolean
-    commitmentLeadership: boolean
-    loyaltyLeadership: boolean
-    faithfulnessLeadership: boolean
-    fidelityLeadership: boolean
-    allegianceLeadership: boolean
-    solidarityLeadership: boolean
-    unityLeadership: boolean
-    harmonyLeadership: boolean
-    cooperationLeadership: boolean
-    collaborationLeadership: boolean
-    partnershipLeadership: boolean
-    allianceLeadership: boolean
-    coalitionLeadership: boolean
-    confederationLeadership: boolean
-    federationLeadership: boolean
-    unionLeadership: boolean
-    associationLeadership: boolean
-    organizationLeadership: boolean
-    societyLeadership: boolean
-    communityLeadership: boolean
-    networkLeadership: boolean
-    ecosystemLeadership: boolean
-    environmentLeadership: boolean
-    contextLeadership: boolean
-    settingLeadership: boolean
-    situationLeadership: boolean
-    scenarioLeadership: boolean
-    circumstanceLeadership: boolean
-    conditionLeadership: boolean
-    stateLeadership: boolean
-    statusLeadership: boolean
-    positionLeadership: boolean
-    locationLeadership: boolean
-    placeLeadership: boolean
-    siteLeadership: boolean
-    venueLeadership: boolean
-    facilityLeadership: boolean
-    installationLeadership: boolean
-    infrastructureLeadership: boolean
-    platformLeadership: boolean
-    foundationLeadership: boolean
-    baseLeadership: boolean
-    groundLeadership: boolean
-    floorLeadership: boolean
-    levelLeadership: boolean
-    tierLeadership: boolean
-    layerLeadership: boolean
-    stratumLeadership: boolean
-    dimensionLeadership: boolean
-    aspectLeadership: boolean
-    facetLeadership: boolean
-    featureLeadership: boolean
-    characteristicLeadership: boolean
-    attributeLeadership: boolean
-    propertyLeadership: boolean
-    qualityLeadership: boolean
-    traitLeadership: boolean
-    elementLeadership: boolean
-    componentLeadership: boolean
-    partLeadership: boolean
-    pieceLeadership: boolean
-    segmentLeadership: boolean
-    sectionLeadership: boolean
-    portionLeadership: boolean
-    fractionLeadership: boolean
-    shareLeadership: boolean
-    stakeLeadership: boolean
-    interestLeadership: boolean
-    involvementLeadership: boolean
-    participationLeadership: boolean
-    engagementLeadership: boolean
-    interactionLeadership: boolean
-    communicationLeadership: boolean
-    connectionLeadership: boolean
-    relationshipLeadership: boolean
-    associationLeadership: boolean
-    linkLeadership: boolean
-    bondLeadership: boolean
-    tieLeadership: boolean
-    attachmentLeadership: boolean
-    affiliationLeadership: boolean
-    membershipLeadership: boolean
-    belongingLeadership: boolean
-    inclusionLeadership: boolean
-    integrationLeadership: boolean
-    incorporationLeadership: boolean
-    assimilationLeadership: boolean
-    absorptionLeadership: boolean
-    adoptionLeadership: boolean
-    acceptanceLeadership: boolean
-    approvalLeadership: boolean
-    endorsementLeadership: boolean
-    supportLeadership: boolean
-    backingLeadership: boolean
-    sponsorshipLeadership: boolean
-    patronageLeadership: boolean
-    advocacyLeadership: boolean
-    championshipLeadership: boolean
-    promotionLeadership: boolean
-    advancementLeadership: boolean
-    developmentLeadership: boolean
-    improvementLeadership: boolean
-    enhancementLeadership: boolean
-    upgradeLeadership: boolean
-    modernizationLeadership: boolean
-    renovationLeadership: boolean
-    refurbishmentLeadership: boolean
-    restorationLeadership: boolean
-    rehabilitationLeadership: boolean
-    revitalizationLeadership: boolean
-    rejuvenationLeadership: boolean
-    renewalLeadership: boolean
-    regenerationLeadership: boolean
-    rebirthLeadership: boolean
-    revivalLeadership: boolean
-    resurgenceLeadership: boolean
-    comebackLeadership: boolean
-    recoveryLeadership: boolean
-    healingLeadership: boolean
-    repairLeadership: boolean
-    fixLeadership: boolean
-    correctionLeadership: boolean
-    adjustmentLeadership: boolean
-    modificationLeadership: boolean
-    alterationLeadership: boolean
-    changeLeadership: boolean
-    transformationLeadership: boolean
-    conversionLeadership: boolean
-    transitionLeadership: boolean
-    shiftLeadership: boolean
-    moveLeadership: boolean
-    migrationLeadership: boolean
-    relocationLeadership: boolean
-    transferLeadership: boolean
-    transportLeadership: boolean
-    deliveryLeadership: boolean
-    distributionLeadership: boolean
-    disseminationLeadership: boolean
-    spreadLeadership: boolean
-    propagationLeadership: boolean
-    diffusionLeadership: boolean
-    circulationLeadership: boolean
-    flowLeadership: boolean
-    streamLeadership: boolean
-    currentLeadership: boolean
-    tideLeadership: boolean
   }
   industrySpecificFeatures?: {
     healthcare: {
@@ -4075,3 +3594,271 @@ interface ArchitectureConfig {
       debtGovernance: boolean
       equityGovernance: boolean
       securitiesGovernance: boolean
+    }
+  }
+}
+
+interface InteractiveDiagramProps {
+  view: string
+  cloudProvider: string
+  networkVendor: string
+  connectivityType: string
+  animationSpeed: number
+  showDataFlow?: boolean
+}
+
+export default function InteractiveDiagram({
+  view,
+  cloudProvider,
+  networkVendor,
+  connectivityType,
+  animationSpeed,
+  showDataFlow = false
+}: InteractiveDiagramProps) {
+  const svgRef = useRef<SVGSVGElement>(null)
+  const [isAnimating, setIsAnimating] = useState(false)
+  const [zoom, setZoom] = useState(1)
+  const [selectedNode, setSelectedNode] = useState<string | null>(null)
+  const [hoveredNode, setHoveredNode] = useState<string | null>(null)
+  const [selectedConnection, setSelectedConnection] = useState<string | null>(null)
+  const [showMetrics, setShowMetrics] = useState(true)
+  const [showLabels, setShowLabels] = useState(true)
+  const [showLegend, setShowLegend] = useState(true)
+  const [fullScreen, setFullScreen] = useState(false)
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
+  const [isDragging, setIsDragging] = useState(false)
+  const [components, setComponents] = useState<DiagramComponent[]>([])
+  const [connections, setConnections] = useState<DiagramConnection[]>([])
+  const [config, setConfig] = useState<ArchitectureConfig>({
+    industry: 'healthcare',
+    deployment: 'hybrid',
+    connectivity: ['sdwan', 'vpn'],
+    wiredVendor: 'cisco',
+    wirelessVendor: 'cisco',
+    firewallVendor: 'paloalto',
+    identityProvider: ['azure-ad'],
+    mdmProvider: ['intune'],
+    radiusType: 'cloud',
+    deviceAdmin: 'tacacs',
+    authTypes: ['802.1x', 'certificate'],
+    deviceTypes: ['windows', 'mac', 'ios', 'android'],
+    complianceFrameworks: ['hipaa', 'sox'],
+    securityFeatures: ['encryption', 'mfa', 'dlp'],
+    networkSegmentation: true,
+    guestAccess: true,
+    iotSupport: true,
+    cloudIntegration: true,
+    onPremiseIntegration: true,
+    hybridDeployment: true,
+    animations: true,
+    showMetrics: true,
+    showConnections: true,
+    animationSpeed: 1,
+    zoomLevel: 1,
+    selectedView: view,
+    customColors: {
+      primary: '#00c8d7',
+      secondary: '#0078D4',
+      accent: '#FF6B35'
+    }
+  })
+
+  // Generate comprehensive architecture data based on view and configuration
+  const generateArchitectureData = useCallback(() => {
+    switch (view) {
+      case 'complete':
+        return generateCompleteArchitecture()
+      case 'auth-flow':
+        return generateAuthenticationFlow()
+      case 'pki':
+        return generatePKIInfrastructure()
+      case 'policies':
+        return generatePolicyFramework()
+      case 'connectivity':
+        return generateConnectivityArchitecture()
+      case 'intune':
+        return generateIntuneIntegration()
+      case 'jamf':
+        return generateJamfIntegration()
+      case 'onboarding':
+        return generateDeviceOnboarding()
+      case 'guest-portal':
+        return generateGuestPortal()
+      case 'iot-onboarding':
+        return generateIoTOnboarding()
+      case 'fortigate-tacacs':
+        return generateFortiGateTACACS()
+      case 'palo-tacacs':
+        return generatePaloAltoTACACS()
+      case 'palo-userid':
+        return generatePaloAltoUserID()
+      case 'fortigate-fsso':
+        return generateFortiGateFSSO()
+      case 'ztna':
+        return generateZTNAArchitecture()
+      case 'radsec-proxy':
+        return generateRadSecProxyArchitecture()
+      default:
+        return generateCompleteArchitecture()
+    }
+  }, [view, config, cloudProvider, networkVendor, connectivityType])
+
+  // Complete Architecture with all components
+  const generateCompleteArchitecture = () => {
+    const components: DiagramComponent[] = [
+      // Cloud Infrastructure
+      {
+        id: 'portnox-cloud',
+        type: 'nac-platform',
+        x: 600,
+        y: 200,
+        width: 180,
+        height: 120,
+        label: 'Portnox Cloud\nNAC Platform',
+        vendor: 'portnox',
+        status: 'active',
+        category: 'cloud',
+        icon: '🛡️',
+        color: '#00c8d7',
+        description: 'Cloud-based Network Access Control platform with comprehensive policy management, device profiling, and threat detection',
+        detailedDescription: 'Enterprise-grade NAC solution providing zero-trust network access, automated device onboarding, policy enforcement, and advanced analytics',
+        metrics: {
+          cpu: 45,
+          memory: 62,
+          connections: 15420,
+          throughput: '2.5 Gbps',
+          latency: 12,
+          uptime: 99.97,
+          users: 8500,
+          sessions: 12300,
+          policies: 156,
+          securityScore: 94,
+          complianceScore: 98,
+          threatLevel: 'low',
+          vulnerabilities: 2,
+          certificates: 8500,
+          authenticationRate: 99.2,
+          blockedThreats: 1247,
+          allowedConnections: 45230,
+          deniedConnections: 892
+        },
+        connections: ['azure-ad', 'intune', 'radius-proxy', 'policy-engine', 'certificate-authority'],
+        protocols: ['RADIUS', 'HTTPS', 'LDAP', 'SAML', 'REST API'],
+        ports: [443, 1812, 1813, 636],
+        certificates: ['TLS Server Certificate', 'CA Root Certificate'],
+        policies: ['Device Compliance', 'User Authentication', 'Network Segmentation'],
+        compliance: ['HIPAA', 'SOX', 'PCI-DSS'],
+        criticality: 'critical',
+        businessImpact: 'High - Core security infrastructure',
+        redundancy: true,
+        failoverCapability: true,
+        loadBalancing: true,
+        monitoring: true,
+        logging: true,
+        alerting: true
+      },
+      
+      // Identity Providers
+      {
+        id: 'azure-ad',
+        type: 'identity-provider',
+        x: 900,
+        y: 100,
+        width: 160,
+        height: 100,
+        label: 'Microsoft\nAzure AD',
+        vendor: 'microsoft',
+        status: 'active',
+        category: 'identity',
+        icon: '👤',
+        color: '#0078D4',
+        description: 'Enterprise identity and access management service',
+        metrics: {
+          users: 8500,
+          groups: 245,
+          applications: 156,
+          authenticationRate: 99.8,
+          mfaAdoption: 87,
+          riskScore: 15,
+          complianceScore: 96
+        },
+        connections: ['portnox-cloud', 'intune'],
+        protocols: ['SAML', 'OAuth 2.0', 'OpenID Connect', 'LDAP'],
+        compliance: ['SOC 2', 'ISO 27001', 'GDPR'],
+        criticality: 'critical'
+      },
+
+      {
+        id: 'intune',
+        type: 'mdm-platform',
+        x: 900,
+        y: 250,
+        width: 160,
+        height: 100,
+        label: 'Microsoft\nIntune',
+        vendor: 'microsoft',
+        status: 'active',
+        category: 'management',
+        icon: '📱',
+        color: '#0078D4',
+        description: 'Mobile Device Management and Mobile Application Management',
+        metrics: {
+          managedDevices: 7200,
+          complianceRate: 94,
+          policyViolations: 45,
+          appDeployments: 1250,
+          securityBaseline: 92
+        },
+        connections: ['azure-ad', 'portnox-cloud'],
+        protocols: ['HTTPS', 'REST API'],
+        compliance: ['HIPAA', 'SOX'],
+        criticality: 'high'
+      },
+
+      // Network Infrastructure
+      {
+        id: 'core-switch',
+        type: 'network-switch',
+        subtype: 'core',
+        x: 300,
+        y: 150,
+        width: 140,
+        height: 90,
+        label: `${networkVendor.charAt(0).toUpperCase() + networkVendor.slice(1)}\nCore Switch`,
+        vendor: networkVendor,
+        model: networkVendor === 'cisco' ? 'Catalyst 9500' : networkVendor === 'aruba' ? 'CX 8400' : 'EX4650',
+        status: 'active',
+        category: 'network',
+        icon: '🔌',
+        color: '#059669',
+        description: 'High-performance core network switch with 802.1X authentication',
+        metrics: {
+          portUtilization: 68,
+          throughput: '40 Gbps',
+          latency: 2,
+          packetLoss: 0.01,
+          uptime: 99.99,
+          connectedDevices: 240,
+          vlanCount: 45,
+          spanningTreeInstances: 12
+        },
+        connections: ['portnox-cloud', 'access-switch-1', 'access-switch-2', 'wireless-controller'],
+        protocols: ['802.1X', 'RADIUS', 'SNMP', 'SSH'],
+        ports: [22, 161, 1812, 1813],
+        criticality: 'critical'
+      },
+
+      {
+        id: 'access-switch-1',
+        type: 'network-switch',
+        subtype: 'access',
+        x: 150,
+        y: 300,
+        width: 120,
+        height: 80,
+        label: `${networkVendor.charAt(0).toUpperCase() + networkVendor.slice(1)}\nAccess SW-1`,
+        vendor: networkVendor,
+        status: 'active',
+        category: 'network',
+        icon: '🔌',
+        color: '#0\
