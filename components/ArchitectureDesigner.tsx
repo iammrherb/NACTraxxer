@@ -6,8 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import InteractiveDiagram from "./InteractiveDiagram"
 import PolicyManagement from "./policy-management"
 import VisualPolicySimulation from "./visual-policy-simulation"
-import { storage } from "@/lib/storage"
-import { toast } from "@/components/ui/use-toast"
+import { storage } from "../lib/storage"
+import { toast } from "../hooks/use-toast"
 import { Network, Shield, BarChart3, Maximize2, Minimize2, Save, Download, Eye, EyeOff } from "lucide-react"
 
 interface ArchitectureConfig {

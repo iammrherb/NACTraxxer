@@ -64,7 +64,8 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import { storage } from "@/lib/storage"
+import { storage } from "../lib/storage"
+import { ComponentMetrics } from "../lib/simulation-metrics"
 import { toast } from "@/components/ui/use-toast"
 
 interface DiagramComponent {
