@@ -229,7 +229,8 @@ class StorageService {
 
   // Policies
   async getPolicies(): Promise<any[]> {
-    return this.getItem<any[]>('policies') || []
+    const policies = await this.getItem<any[]>('policies')
+    return policies || []
   }
 
   async savePolicies(policies: any[]): Promise<void> {
@@ -238,7 +239,8 @@ class StorageService {
 
   // Simulations
   async getSimulations(): Promise<any[]> {
-    return this.getItem<any[]>('simulations') || []
+    const sims = await this.getItem<any[]>('simulations')
+    return sims || []
   }
 
   async saveSimulations(simulations: any[]): Promise<void> {
@@ -287,26 +289,28 @@ class StorageService {
 
   // Global Policies
   async getGlobalPolicies(): Promise<any[]> {
-    return this.getItem<any[]>('global_policies') || []
+    const policies = await this.getItem<any[]>('global_policies')
+    return policies || []
   }
 
   async saveGlobalPolicies(policies: any[]): Promise<void> {
     return this.setItem('global_policies', policies)
   }
 
-  // Demo Data Generation
-  async generateDemoData(): Promise<void> {
-    // This would generate demo data for the application
-    console.log('Generating demo data...')
-  }
-
   // Events Management
   async getEvents(): Promise<any[]> {
-    return this.getItem<any[]>('events') || []
+    const events = await this.getItem<any[]>('events')
+    return events || []
   }
 
   async saveEvents(events: any[]): Promise<void> {
     return this.setItem('events', events)
+  }
+
+  // Demo Data Generation
+  async generateDemoData(): Promise<void> {
+    // This would generate demo data for the application
+    console.log('Generating demo data...')
   }
 
   // Update User Preferences method alias

@@ -37,7 +37,7 @@ import {
 } from "lucide-react"
 import { storage, type Site, type User } from "@/lib/storage"
 import BulkSiteCreator from "./bulk-site-creator"
-import SiteWorkbook from "./SiteWorkbook"
+import SiteWorkbook from "./site-workbook"
 import { toast } from "@/components/ui/use-toast"
 
 interface MasterSiteListProps {
@@ -1362,7 +1362,7 @@ export default function MasterSiteList({ onSiteSelect }: MasterSiteListProps) {
       {showWorkbook && selectedSite && (
         <Dialog open={showWorkbook} onOpenChange={setShowWorkbook}>
           <DialogContent className="sm:max-w-7xl max-h-[95vh] overflow-hidden p-0">
-            <SiteWorkbook siteId={selectedSite.id} />
+            <SiteWorkbook siteId={selectedSite.id} onClose={() => setShowWorkbook(false)} />
           </DialogContent>
         </Dialog>
       )}
