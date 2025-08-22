@@ -1,10 +1,9 @@
-import Header from './components/Header'
-import { Toaster } from './components/ui/toaster'
-
 function App() {
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <header className="bg-card border-b border-border p-4">
+        <h1 className="text-xl font-bold">NAC Designer</h1>
+      </header>
       
       <main className="container mx-auto px-4 py-8">
         <div className="text-center space-y-6 mb-12">
@@ -42,8 +41,6 @@ function App() {
           </div>
         </div>
       </main>
-      
-      <Toaster />
     </div>
   )
 }
