@@ -18,7 +18,7 @@ import {
   MapPin,
 } from "lucide-react"
 import { storage } from "@/lib/storage"
-import { toast } from "@/components/ui/use-toast"
+import { toast } from "@/hooks/use-toast"
 
 interface Site {
   id: string

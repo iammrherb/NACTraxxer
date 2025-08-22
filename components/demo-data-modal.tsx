@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Loader2, Building2, Users, Shield, DollarSign, Clock, CheckCircle, AlertCircle } from "lucide-react"
 import { storage } from "@/lib/storage"
-import { toast } from "@/components/ui/use-toast"
+import { toast } from "@/hooks/use-toast"
 
 interface DemoDataModalProps {
   isOpen: boolean

@@ -38,7 +38,7 @@ import {
 import { storage, type Site, type User } from "@/lib/storage"
 import BulkSiteCreator from "./bulk-site-creator"
 import SiteWorkbook from "./site-workbook"
-import { toast } from "@/components/ui/use-toast"
+import { toast } from "@/hooks/use-toast"
 
 interface MasterSiteListProps {
   onSiteSelect?: (site: Site) => void

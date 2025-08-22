@@ -13,7 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Slider } from "@/components/ui/slider"
 import { Building2, MapPin, Users, Settings, Shield, Network, Plus } from "lucide-react"
 import { storage } from "@/lib/storage"
-import { toast } from "@/components/ui/use-toast"
+import { toast } from "@/hooks/use-toast"
 
 interface BulkSiteCreatorProps {
   isOpen: boolean

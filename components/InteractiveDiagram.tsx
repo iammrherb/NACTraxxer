@@ -88,7 +88,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { storage } from "../lib/storage"
 // Remove the ComponentMetrics import since we'll use flexible typing
 // import { ComponentMetrics } from "../lib/simulation-metrics"
-import { toast } from "@/components/ui/use-toast"
+import { toast } from "@/hooks/use-toast"
 
 interface DiagramComponent {
   id: string
