@@ -4745,4 +4745,121 @@ export default function InteractiveDiagram({
                         </CollapsibleTrigger>
                         <CollapsibleContent className="space-y-3 mt-2">
                           <div>
-                            <Label>Connectivity Options</Label\
+                            <Label>Connectivity Options</Label>
+                            <div className="grid grid-cols-2 gap-2 mt-2">
+                              {connectivityOptions.map((option) => (
+                                <div key={option.value} className="flex items-center space-x-2">
+                                  <Checkbox 
+                                    id={option.value}
+                                    checked={config.connectivity?.includes(option.value)}
+                                    onCheckedChange={(checked) => {
+                                      const newConnectivity = checked
+                                        ? [...(config.connectivity || []), option.value]
+                                        : (config.connectivity || []).filter(c => c !== option.value)
+                                      updateConfig({ connectivity: newConnectivity })
+                                    }}
+                                  />
+                                  <Label htmlFor={option.value} className="text-sm">{option.label}</Label>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    </TabsContent>
+                  </Tabs>
+                </div>
+              </ScrollArea>
+            </CardContent>
+          )}
+        </Card>
+      )}
+
+      {/* Enhanced Mini Toolbar */}
+      {!showControlPanel && (
+        <div className="absolute top-4 left-4 flex flex-col gap-2 z-50">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setShowControlPanel(true)}
+            className="bg-white/90 backdrop-blur-sm shadow-lg hover:bg-white"
+          >
+            <Settings className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setInteractionMode(interactionMode === "pan" ? "select" : "pan")}
+            className="bg-white/90 backdrop-blur-sm shadow-lg hover:bg-white"
+          >
+            {interactionMode === "pan" ? <MousePointer className="h-4 w-4" /> : <Hand className="h-4 w-4" />}
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={resetView}
+            className="bg-white/90 backdrop-blur-sm shadow-lg hover:bg-white"
+          >
+            <RotateCcw className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+
+      {/* Zoom Controls */}
+      <div className="absolute bottom-4 right-4 flex flex-col gap-2 z-50">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => handleZoom(zoomLevel + 10)}
+          className="bg-white/90 backdrop-blur-sm shadow-lg hover:bg-white"
+        >
+          <Plus className="h-4 w-4" />
+        </Button>
+        <div className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded text-sm font-medium shadow-lg">
+          {zoomLevel}%
+        </div>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => handleZoom(zoomLevel - 10)}
+          className="bg-white/90 backdrop-blur-sm shadow-lg hover:bg-white"
+        >
+          <Minus className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {/* Component Selection Modal */}
+      {showComponentLibrary && (
+        <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-[800px] max-h-[600px] bg-white">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Add Component</CardTitle>
+                <Button variant="ghost" size="sm" onClick={() => setShowComponentLibrary(false)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[400px]">
+                <div className="grid grid-cols-3 gap-4">
+                  {COMPONENT_LIBRARY.map((component) => (
+                    <Button
+                      key={component.type}
+                      variant="outline"
+                      className="h-20 flex flex-col items-center justify-center gap-2"
+                      onClick={() => addComponent(component.type)}
+                    >
+                      <div className="text-2xl">{component.icon}</div>
+                      <span className="text-xs">{component.name}</span>
+                    </Button>
+                  ))}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+    </div>
+  )
+}
