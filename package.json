@@ -27,6 +27,7 @@
     "@radix-ui/react-tabs": "latest",
     "@radix-ui/react-toast": "latest",
     "@radix-ui/react-tooltip": "^1.2.8",
+    "@tailwindcss/postcss": "^4.1.12",
     "@vitejs/plugin-react": "^5.0.1",
     "antd": "latest",
     "class-variance-authority": "^0.7.1",
@@ -51,7 +52,7 @@
     "autoprefixer": "^10.4.21",
     "eslint": "^8",
     "eslint-config-next": "14.0.4",
-    "postcss": "^8.5",
+    "postcss": "^8.5.6",
     "tailwindcss": "^4.1.12",
     "typescript": "^5.9.2"
   }
