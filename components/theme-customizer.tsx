@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { toast } from "@/hooks/use-toast"
+import { toast } from "@/components/ui/use-toast"
 import { storage, type UserPreferences } from "@/lib/storage"
 import { Palette, RotateCcw, Building2 } from "lucide-react"
 
@@ -51,7 +51,7 @@ export default function ThemeCustomizer({ onThemeUpdated }: ThemeCustomizerProps
       setFormData({
         companyName: prefs.companyName || "",
         customerLogo: prefs.customerLogo || "",
-        theme: (prefs.theme as "light" | "dark" | "system") || "light",
+        theme: prefs.theme || "light",
         notifications: prefs.notifications ?? true,
         autoSave: prefs.autoSave ?? true,
       })

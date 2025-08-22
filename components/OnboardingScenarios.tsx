@@ -609,7 +609,7 @@ export default function OnboardingScenarios() {
                 <Wifi className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-gray-600 mb-2">No Simulation Selected</h3>
                 <p className="text-gray-500 mb-4">Choose a scenario from the Onboarding Scenarios tab to start a simulation</p>
-                <Button onClick={() => (document.querySelector('[value="scenarios"]') as HTMLElement)?.click()}>
+                <Button onClick={() => document.querySelector('[value="scenarios"]')?.click()}>
                   View Scenarios
                 </Button>
               </CardContent>

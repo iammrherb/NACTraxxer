@@ -20,7 +20,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Switch } from "@/components/ui/switch"
 import { Progress } from "@/components/ui/progress"
-import { toast } from "@/hooks/use-toast"
+import { toast } from "@/components/ui/use-toast"
 import { storage } from "@/lib/storage"
 import {
   Plus,
@@ -438,10 +438,10 @@ export default function PolicyManagement() {
                 onSubmit={createPolicy}
                 onCancel={() => setIsCreateDialogOpen(false)}
                 addCondition={addCondition}
-                updateCondition={(index: number, field: string, value: any) => updateCondition(index, field as keyof PolicyCondition, value)}
+                updateCondition={updateCondition}
                 removeCondition={removeCondition}
                 addAction={addAction}
-                updateAction={(index: number, field: string, value: any) => updateAction(index, field as keyof PolicyAction, value)}
+                updateAction={updateAction}
                 removeAction={removeAction}
               />
             </DialogContent>
@@ -593,10 +593,11 @@ export default function PolicyManagement() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-          <Switch
-            checked={policy.status === "active"}
-            onCheckedChange={() => togglePolicyStatus(policy.id)}
-          />
+                          <Switch
+                            checked={policy.status === "active"}
+                            onCheckedChange={() => togglePolicyStatus(policy.id)}
+                            size="sm"
+                          />
                           <span className="text-sm">{policy.status}</span>
                         </div>
                       </TableCell>
@@ -622,8 +623,8 @@ export default function PolicyManagement() {
                                 name: policy.name,
                                 description: policy.description,
                                 category: policy.category,
-                                priority: policy.priority as any,
-                                status: policy.status as any,
+                                priority: policy.priority,
+                                status: policy.status,
                                 conditions: policy.conditions,
                                 actions: policy.actions,
                                 tags: policy.tags,
@@ -733,10 +734,10 @@ export default function PolicyManagement() {
             onSubmit={updatePolicy}
             onCancel={() => setIsEditDialogOpen(false)}
             addCondition={addCondition}
-          updateCondition={(index: number, field: string, value: any) => updateCondition(index, field as keyof PolicyCondition, value)}
-          removeCondition={removeCondition}
-          addAction={addAction}
-          updateAction={(index: number, field: string, value: any) => updateAction(index, field as keyof PolicyAction, value)}
+            updateCondition={updateCondition}
+            removeCondition={removeCondition}
+            addAction={addAction}
+            updateAction={updateAction}
             removeAction={removeAction}
           />
         </DialogContent>

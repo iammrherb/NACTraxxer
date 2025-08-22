@@ -18,7 +18,7 @@ import {
   MapPin,
 } from "lucide-react"
 import { storage } from "@/lib/storage"
-import { toast } from "@/hooks/use-toast"
+import { toast } from "@/components/ui/use-toast"
 
 interface Site {
   id: string
@@ -160,7 +160,7 @@ export default function RolloutProgress() {
     const milestoneNames = ["Site Survey", "Equipment Delivery", "Installation", "Configuration", "Testing", "Go-Live"]
     return milestoneNames.map((name) => ({
       name,
-      status: (Math.random() > 0.5 ? "completed" : Math.random() > 0.5 ? "in-progress" : "pending") as "completed" | "in-progress" | "pending",
+      status: Math.random() > 0.5 ? "completed" : Math.random() > 0.5 ? "in-progress" : ("pending" as const),
       date: getValidDateString(new Date(Date.now() + Math.random() * 30 * 24 * 60 * 60 * 1000)),
       progress: Math.floor(Math.random() * 100),
     }))

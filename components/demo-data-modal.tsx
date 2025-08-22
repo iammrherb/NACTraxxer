@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Loader2, Building2, Users, Shield, DollarSign, Clock, CheckCircle, AlertCircle } from "lucide-react"
 import { storage } from "@/lib/storage"
-import { toast } from "@/hooks/use-toast"
+import { toast } from "@/components/ui/use-toast"
 
 interface DemoDataModalProps {
   isOpen: boolean
@@ -134,7 +134,7 @@ export default function DemoDataModal({ isOpen, onClose }: DemoDataModalProps) {
       }
 
       // Generate and save demo data
-      await storage.generateDemoData()
+      await storage.generateDemoData(scenarioKey)
 
       setIsComplete(true)
 

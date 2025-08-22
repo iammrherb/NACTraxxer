@@ -50,12 +50,11 @@ interface Policy {
 }
 
 interface SiteWorkbookProps {
-  siteId: string
+  siteId: string | null
   onSiteChange?: (siteId: string) => void
-  onClose?: () => void
 }
 
-export default function SiteWorkbook({ siteId, onSiteChange, onClose }: SiteWorkbookProps) {
+export default function SiteWorkbook({ siteId, onSiteChange }: SiteWorkbookProps) {
   const [sites, setSites] = useState<Site[]>([])
   const [selectedSiteId, setSelectedSiteId] = useState<string>(siteId || "")
   const [isEditing, setIsEditing] = useState(false)
@@ -120,9 +119,9 @@ export default function SiteWorkbook({ siteId, onSiteChange, onClose }: SiteWork
         globalPoliciesData.map((p) => ({
           id: p.id,
           name: p.name,
-          condition: p.conditions.map((c: any) => `${c.type} ${c.operator} ${c.value}`).join(", "),
-          action: p.actions.map((a: any) => a.type).join(", "),
-          vlan: p.actions.find((a: any) => a.type === "vlan_assign")?.parameters?.vlan || "N/A",
+          condition: p.conditions.map((c) => `${c.type} ${c.operator} ${c.value}`).join(", "),
+          action: p.actions.map((a) => a.type).join(", "),
+          vlan: p.actions.find((a) => a.type === "vlan_assign")?.parameters?.vlan || "N/A",
           priority: p.priority,
           type: "global" as const,
           description: p.description,
@@ -417,8 +416,8 @@ export default function SiteWorkbook({ siteId, onSiteChange, onClose }: SiteWork
                       {isEditing ? (
                         <Select
                           value={currentSite.priority}
-                           onValueChange={(value: string) =>
-                            setEditedSite({ ...currentSite, priority: value as Site["priority"] })
+                          onValueChange={(value: Site["priority"]) =>
+                            setEditedSite({ ...currentSite, priority: value })
                           }
                         >
                           <SelectTrigger className="w-32 h-8">
@@ -431,7 +430,7 @@ export default function SiteWorkbook({ siteId, onSiteChange, onClose }: SiteWork
                           </SelectContent>
                         </Select>
                       ) : (
-                        <Badge variant="secondary">{getPriorityColor(currentSite.priority || "Medium")}</Badge>
+                        <Badge variant={getPriorityColor(currentSite.priority)}>{currentSite.priority}</Badge>
                       )}
                     </div>
                     <div className="flex justify-between">
@@ -458,7 +457,7 @@ export default function SiteWorkbook({ siteId, onSiteChange, onClose }: SiteWork
                           className="w-32 h-8"
                         />
                       ) : (
-                        <span>{(currentSite.users || 0).toLocaleString()}</span>
+                        <span>{currentSite.users.toLocaleString()}</span>
                       )}
                     </div>
                   </div>
@@ -477,9 +476,7 @@ export default function SiteWorkbook({ siteId, onSiteChange, onClose }: SiteWork
                       {isEditing ? (
                         <Select
                           value={currentSite.status}
-                          onValueChange={(value: string) =>
-                            setEditedSite({ ...currentSite, status: value as Site["status"] })
-                          }
+                          onValueChange={(value: Site["status"]) => setEditedSite({ ...currentSite, status: value })}
                         >
                           <SelectTrigger className="w-32 h-8">
                             <SelectValue />
@@ -492,8 +489,8 @@ export default function SiteWorkbook({ siteId, onSiteChange, onClose }: SiteWork
                           </SelectContent>
                         </Select>
                       ) : (
-                        <span className={`font-medium ${getStatusColor(currentSite.status || "Planned")}`}>
-                          {currentSite.status || "Planned"}
+                        <span className={`font-medium ${getStatusColor(currentSite.status)}`}>
+                          {currentSite.status}
                         </span>
                       )}
                     </div>
@@ -691,7 +688,7 @@ export default function SiteWorkbook({ siteId, onSiteChange, onClose }: SiteWork
                   ×
                 </Button>
               </div>
-              <PolicyManagement />
+              <PolicyManagement onClose={() => setShowPolicyManager(false)} />
             </div>
           </div>
         </div>

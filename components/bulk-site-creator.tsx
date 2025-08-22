@@ -13,7 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Slider } from "@/components/ui/slider"
 import { Building2, MapPin, Users, Settings, Shield, Network, Plus } from "lucide-react"
 import { storage } from "@/lib/storage"
-import { toast } from "@/hooks/use-toast"
+import { toast } from "@/components/ui/use-toast"
 
 interface BulkSiteCreatorProps {
   isOpen: boolean
@@ -200,8 +200,7 @@ export default function BulkSiteCreator({ isOpen, onClose, onSitesCreated }: Bul
           status: (["Planned", "In Progress"] as const)[Math.floor(Math.random() * 2)],
           phase: String(Math.floor(Math.random() * 3) + 1),
           users: userCount,
-          devices: Math.floor(deviceCount * 0.4) + Math.floor(deviceCount * 0.2) + Math.floor(deviceCount * 0.1) + Math.floor(deviceCount * 0.2) + Math.floor(deviceCount * 0.1) + Math.floor(deviceCount * 0.05),
-          deviceBreakdown: {
+          devices: {
             windows: Math.floor(deviceCount * 0.4),
             mac: Math.floor(deviceCount * 0.2),
             linux: Math.floor(deviceCount * 0.1),
@@ -281,15 +280,7 @@ export default function BulkSiteCreator({ isOpen, onClose, onSitesCreated }: Bul
 
       // Save all sites
       for (const site of sites) {
-        await storage.addSite({
-          ...site,
-          size: "medium",
-          config: {
-            identityProviders: ["azure_ad"],
-            mdmProviders: ["intune"],
-            authMethods: ["802.1x", "mac_auth"]
-          }
-        })
+        await storage.addSite(site)
       }
 
       toast({

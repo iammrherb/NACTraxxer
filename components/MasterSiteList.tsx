@@ -37,8 +37,8 @@ import {
 } from "lucide-react"
 import { storage, type Site, type User } from "@/lib/storage"
 import BulkSiteCreator from "./bulk-site-creator"
-import SiteWorkbook from "./site-workbook"
-import { toast } from "@/hooks/use-toast"
+import SiteWorkbook from "./SiteWorkbook"
+import { toast } from "@/components/ui/use-toast"
 
 interface MasterSiteListProps {
   onSiteSelect?: (site: Site) => void
@@ -103,7 +103,7 @@ export default function MasterSiteList({ onSiteSelect }: MasterSiteListProps) {
         (site) =>
           site.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           site.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (site.region && site.region.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          site.region.toLowerCase().includes(searchTerm.toLowerCase()) ||
           site.industry.toLowerCase().includes(searchTerm.toLowerCase()),
       )
     }
@@ -1012,13 +1012,13 @@ export default function MasterSiteList({ onSiteSelect }: MasterSiteListProps) {
                       <div>
                         <Label className="text-sm font-medium">Project Manager</Label>
                         <p className="mt-1 text-sm">
-                          {selectedSite.projectManager ? (getUserName(selectedSite.projectManager) || selectedSite.projectManager) : 'Not assigned'}
+                          {getUserName(selectedSite.projectManager) || selectedSite.projectManager}
                         </p>
                       </div>
                       <div>
                         <Label className="text-sm font-medium">Technical Owner</Label>
                         <p className="mt-1 text-sm">
-                          {selectedSite.technicalOwner ? (getUserName(selectedSite.technicalOwner) || selectedSite.technicalOwner) : 'Not assigned'}
+                          {getUserName(selectedSite.technicalOwner) || selectedSite.technicalOwner}
                         </p>
                       </div>
                       {selectedSite.technicalOwners && selectedSite.technicalOwners.length > 0 && (
@@ -1362,7 +1362,7 @@ export default function MasterSiteList({ onSiteSelect }: MasterSiteListProps) {
       {showWorkbook && selectedSite && (
         <Dialog open={showWorkbook} onOpenChange={setShowWorkbook}>
           <DialogContent className="sm:max-w-7xl max-h-[95vh] overflow-hidden p-0">
-            <SiteWorkbook siteId={selectedSite.id} onClose={() => setShowWorkbook(false)} />
+            <SiteWorkbook siteId={selectedSite.id} />
           </DialogContent>
         </Dialog>
       )}
