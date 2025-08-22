@@ -26,32 +26,7 @@ import {
   Clock,
   Briefcase,
 } from "lucide-react"
-import { storage } from "@/lib/storage"
-
-interface User {
-  id: string
-  firstName: string
-  lastName: string
-  email: string
-  role: string
-  department: string
-  location: string
-  timezone: string
-  certifications: string[]
-  skills: string[]
-  globalAccess: boolean
-  assignedSites: string[]
-  createdAt: string
-  lastLogin?: string
-  isActive: boolean
-}
-
-interface Site {
-  id: string
-  name: string
-  region: string
-  country: string
-}
+import { storage, type Site, type User } from "@/lib/storage"
 
 interface UserManagementModalProps {
   isOpen: boolean
@@ -166,17 +141,17 @@ export default function UserManagementModal({ isOpen, onClose }: UserManagementM
   const filterUsers = () => {
     const filtered = users.filter((user) => {
       const matchesSearch =
-        user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (user.firstName || user.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (user.lastName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.role.toLowerCase().includes(searchTerm.toLowerCase())
 
       const matchesRole = roleFilter === "all" || user.role === roleFilter
-      const matchesDepartment = departmentFilter === "all" || user.department === departmentFilter
+      const matchesDepartment = departmentFilter === "all" || (user.department || '') === departmentFilter
       const matchesStatus =
         statusFilter === "all" ||
-        (statusFilter === "active" && user.isActive) ||
-        (statusFilter === "inactive" && !user.isActive)
+        (statusFilter === "active" && (user.isActive ?? true)) ||
+        (statusFilter === "inactive" && !(user.isActive ?? true))
 
       return matchesSearch && matchesRole && matchesDepartment && matchesStatus
     })
@@ -186,9 +161,24 @@ export default function UserManagementModal({ isOpen, onClose }: UserManagementM
 
   const handleAddUser = async () => {
     try {
+      const userId = `user-${Date.now()}`
       await storage.addUser({
-        ...newUser,
+        id: userId,
+        name: `${newUser.firstName} ${newUser.lastName}`,
+        sites: [],
+        email: newUser.email,
+        role: newUser.role,
+        firstName: newUser.firstName,
+        lastName: newUser.lastName,
+        department: newUser.department,
+        location: newUser.location,
+        timezone: newUser.timezone,
+        certifications: newUser.certifications,
+        skills: newUser.skills,
+        globalAccess: newUser.globalAccess,
         assignedSites: [],
+        createdAt: new Date().toISOString(),
+        isActive: true,
       })
 
       setNewUser({
@@ -300,7 +290,9 @@ export default function UserManagementModal({ isOpen, onClose }: UserManagementM
   }
 
   const getUserInitials = (user: User) => {
-    return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`
+    const firstName = user.firstName || user.name?.split(' ')[0] || 'U'
+    const lastName = user.lastName || user.name?.split(' ')[1] || 'U'
+    return `${firstName.charAt(0)}${lastName.charAt(0)}`
   }
 
   const getRoleColor = (role: string) => {
@@ -322,16 +314,17 @@ export default function UserManagementModal({ isOpen, onClose }: UserManagementM
 
     const departmentDistribution = users.reduce(
       (acc, user) => {
-        acc[user.department] = (acc[user.department] || 0) + 1
+        const dept = user.department || 'Unassigned'
+        acc[dept] = (acc[dept] || 0) + 1
         return acc
       },
       {} as Record<string, number>,
     )
 
-    const activeUsers = users.filter((u) => u.isActive).length
+    const activeUsers = users.filter((u) => u.isActive ?? true).length
     const globalAccessUsers = users.filter((u) => u.globalAccess).length
     const avgSitesPerUser =
-      users.length > 0 ? users.reduce((sum, u) => sum + u.assignedSites.length, 0) / users.length : 0
+      users.length > 0 ? users.reduce((sum, u) => sum + (u.assignedSites?.length || 0), 0) / users.length : 0
 
     return (
       <div className="space-y-6">
@@ -438,7 +431,7 @@ export default function UserManagementModal({ isOpen, onClose }: UserManagementM
 
   const renderSiteAssignments = () => {
     const siteAssignments = sites.map((site) => {
-      const assignedUsers = users.filter((user) => user.assignedSites.includes(site.id))
+      const assignedUsers = users.filter((user) => (user.assignedSites || []).includes(site.id))
       return {
         ...site,
         userCount: assignedUsers.length,
@@ -476,7 +469,7 @@ export default function UserManagementModal({ isOpen, onClose }: UserManagementM
                           }}
                         />
                         <span className="text-sm">
-                          {user.firstName} {user.lastName} - {user.role}
+                          {user.firstName || user.name?.split(' ')[0] || 'User'} {user.lastName || user.name?.split(' ')[1] || ''}
                         </span>
                       </div>
                     ))}
@@ -542,7 +535,7 @@ export default function UserManagementModal({ isOpen, onClose }: UserManagementM
                         <AvatarFallback className="text-xs">{getUserInitials(user)}</AvatarFallback>
                       </Avatar>
                       <span className="text-sm">
-                        {user.firstName} {user.lastName}
+                        {user.firstName || user.name?.split(' ')[0] || 'User'} {user.lastName || user.name?.split(' ')[1] || ''}
                       </span>
                     </div>
                   ))}
@@ -677,7 +670,7 @@ export default function UserManagementModal({ isOpen, onClose }: UserManagementM
                             </Avatar>
                             <div>
                               <div className="font-medium">
-                                {user.firstName} {user.lastName}
+                                {user.firstName || user.name?.split(' ')[0] || 'User'} {user.lastName || user.name?.split(' ')[1] || ''}
                               </div>
                               <div className="text-sm text-gray-500">{user.email}</div>
                               {user.globalAccess && (
@@ -692,28 +685,28 @@ export default function UserManagementModal({ isOpen, onClose }: UserManagementM
                         <td className="p-3">
                           <Badge className={getRoleColor(user.role)}>{user.role}</Badge>
                         </td>
-                        <td className="p-3 text-sm">{user.department}</td>
+                        <td className="p-3 text-sm">{user.department || 'N/A'}</td>
                         <td className="p-3">
                           <div className="text-sm">
                             <div className="flex items-center">
                               <MapPin className="h-3 w-3 mr-1 text-gray-400" />
-                              {user.location}
+                              {user.location || 'N/A'}
                             </div>
                             <div className="flex items-center text-gray-500">
                               <Clock className="h-3 w-3 mr-1" />
-                              {user.timezone}
+                              {user.timezone || 'N/A'}
                             </div>
                           </div>
                         </td>
                         <td className="p-3">
                           <div className="flex items-center space-x-1">
                             <Building2 className="h-4 w-4 text-gray-400" />
-                            <span className="text-sm">{user.assignedSites.length}</span>
+                            <span className="text-sm">{(user.assignedSites || []).length}</span>
                           </div>
                         </td>
                         <td className="p-3">
-                          <Badge variant={user.isActive ? "default" : "secondary"}>
-                            {user.isActive ? "Active" : "Inactive"}
+                          <Badge variant={(user.isActive ?? true) ? "default" : "secondary"}>
+                            {(user.isActive ?? true) ? "Active" : "Inactive"}
                           </Badge>
                         </td>
                         <td className="p-3">
@@ -868,14 +861,14 @@ export default function UserManagementModal({ isOpen, onClose }: UserManagementM
                 <div>
                   <Label>First Name</Label>
                   <Input
-                    value={editingUser.firstName}
+                    value={editingUser.firstName || ''}
                     onChange={(e) => setEditingUser({ ...editingUser, firstName: e.target.value })}
                   />
                 </div>
                 <div>
                   <Label>Last Name</Label>
                   <Input
-                    value={editingUser.lastName}
+                    value={editingUser.lastName || ''}
                     onChange={(e) => setEditingUser({ ...editingUser, lastName: e.target.value })}
                   />
                 </div>
@@ -926,14 +919,14 @@ export default function UserManagementModal({ isOpen, onClose }: UserManagementM
                 <div>
                   <Label>Location</Label>
                   <Input
-                    value={editingUser.location}
+                    value={editingUser.location || ''}
                     onChange={(e) => setEditingUser({ ...editingUser, location: e.target.value })}
                   />
                 </div>
                 <div>
                   <Label>Timezone</Label>
                   <Select
-                    value={editingUser.timezone}
+                    value={editingUser.timezone || ''}
                     onValueChange={(value) => setEditingUser({ ...editingUser, timezone: value })}
                   >
                     <SelectTrigger>
@@ -951,14 +944,14 @@ export default function UserManagementModal({ isOpen, onClose }: UserManagementM
                 <div className="col-span-2 space-y-2">
                   <div className="flex items-center space-x-2">
                     <Checkbox
-                      checked={editingUser.globalAccess}
+                      checked={editingUser.globalAccess ?? false}
                       onCheckedChange={(checked) => setEditingUser({ ...editingUser, globalAccess: !!checked })}
                     />
                     <Label>Global Access</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Checkbox
-                      checked={editingUser.isActive}
+                      checked={editingUser.isActive ?? true}
                       onCheckedChange={(checked) => setEditingUser({ ...editingUser, isActive: !!checked })}
                     />
                     <Label>Active User</Label>

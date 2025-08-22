@@ -50,11 +50,12 @@ interface Policy {
 }
 
 interface SiteWorkbookProps {
-  siteId: string | null
+  siteId: string
   onSiteChange?: (siteId: string) => void
+  onClose?: () => void
 }
 
-export default function SiteWorkbook({ siteId, onSiteChange }: SiteWorkbookProps) {
+export default function SiteWorkbook({ siteId, onSiteChange, onClose }: SiteWorkbookProps) {
   const [sites, setSites] = useState<Site[]>([])
   const [selectedSiteId, setSelectedSiteId] = useState<string>(siteId || "")
   const [isEditing, setIsEditing] = useState(false)

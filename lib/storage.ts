@@ -8,6 +8,16 @@ export interface User {
   sites: string[]
   firstName?: string
   lastName?: string
+  department?: string
+  location?: string
+  timezone?: string
+  certifications?: string[]
+  skills?: string[]
+  globalAccess?: boolean
+  assignedSites?: string[]
+  createdAt?: string
+  lastLogin?: string
+  isActive?: boolean
 }
 
 export interface Site {
@@ -18,7 +28,7 @@ export interface Site {
   size: 'small' | 'medium' | 'large' | 'enterprise'
   config: any
   region?: string
-  status?: 'Complete' | 'In Progress' | 'Planned' | 'Delayed' | 'On Hold'
+  status?: 'Complete' | 'In Progress' | 'Planned' | 'Delayed' | 'On Hold' | 'completed' | 'not-started' | 'planning' | 'in-progress' | 'testing' | 'on-hold'
   priority?: 'High' | 'Medium' | 'Low'
   users?: number
   devices?: number
@@ -30,10 +40,16 @@ export interface Site {
   targetDate?: string
   actualDate?: string
   notes?: string
+  country?: string
+  progress?: number
   userCounts?: {
     employees?: number
     contractors?: number
     guests?: number
+    total?: number
+  }
+  deviceCounts?: {
+    total?: number
   }
   infrastructure?: {
     switches?: number
@@ -63,7 +79,9 @@ export interface Site {
   }
   authentication?: {
     identityProviders?: string[]
+    identityProvider?: string[]
     mdmProviders?: string[]
+    mdm?: string[]
     authMethods?: string[]
   }
   projectManager?: string
@@ -80,15 +98,23 @@ export interface Site {
   compliance?: string[]
   securityRequirements?: string[]
   risks?: Array<{
+    id?: string
     description: string
     severity: 'Low' | 'Medium' | 'High' | 'Critical'
     mitigation: string
+    status?: string
   }>
   networkSegments?: Array<{
     name: string
     vlan: number
     subnet: string
     description: string
+  }>
+  milestones?: Array<{
+    name: string
+    status: 'pending' | 'completed' | 'in-progress'
+    date: string
+    progress: number
   }>
 }
 
@@ -125,6 +151,13 @@ export interface ArchitectureConfig {
     secondary: string
     accent: string
   }
+}
+
+export interface UserPreferences {
+  theme?: string
+  language?: string
+  notifications?: boolean
+  [key: string]: any
 }
 
 class StorageService {
@@ -222,12 +255,72 @@ class StorageService {
     return this.setItem('users', users)
   }
 
-  // User Preferences
-  async getUserPreferences(): Promise<any> {
-    return this.getItem<any>('user_preferences') || {}
+  async addUser(user: User): Promise<void> {
+    const users = await this.getUsers()
+    users.push(user)
+    return this.saveUsers(users)
   }
 
-  async saveUserPreferences(preferences: any): Promise<void> {
+  async updateUser(userId: string, updates: Partial<User>): Promise<void> {
+    const users = await this.getUsers()
+    const index = users.findIndex(user => user.id === userId)
+    if (index !== -1) {
+      users[index] = { ...users[index], ...updates }
+      return this.saveUsers(users)
+    }
+  }
+
+  async deleteUser(userId: string): Promise<void> {
+    const users = await this.getUsers()
+    const filteredUsers = users.filter(user => user.id !== userId)
+    return this.saveUsers(filteredUsers)
+  }
+
+  async assignUserToSites(userId: string, siteIds: string[]): Promise<void> {
+    const users = await this.getUsers()
+    const index = users.findIndex(user => user.id === userId)
+    if (index !== -1) {
+      users[index].assignedSites = siteIds
+      return this.saveUsers(users)
+    }
+  }
+
+  // Global Policies
+  async getGlobalPolicies(): Promise<any[]> {
+    return this.getItem<any[]>('global_policies') || []
+  }
+
+  async saveGlobalPolicies(policies: any[]): Promise<void> {
+    return this.setItem('global_policies', policies)
+  }
+
+  // Demo Data Generation
+  async generateDemoData(): Promise<void> {
+    // This would generate demo data for the application
+    console.log('Generating demo data...')
+  }
+
+  // Events Management
+  async getEvents(): Promise<any[]> {
+    return this.getItem<any[]>('events') || []
+  }
+
+  async saveEvents(events: any[]): Promise<void> {
+    return this.setItem('events', events)
+  }
+
+  // Update User Preferences method alias
+  async updateUserPreferences(preferences: any): Promise<void> {
+    return this.saveUserPreferences(preferences)
+  }
+
+  // User Preferences
+  async getUserPreferences(): Promise<UserPreferences> {
+    const prefs = await this.getItem<UserPreferences>('user_preferences')
+    return prefs || {}
+  }
+
+  async saveUserPreferences(preferences: UserPreferences): Promise<void> {
     return this.setItem('user_preferences', preferences)
   }
 

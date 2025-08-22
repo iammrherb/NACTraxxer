@@ -103,7 +103,7 @@ export default function MasterSiteList({ onSiteSelect }: MasterSiteListProps) {
         (site) =>
           site.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           site.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          site.region.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (site.region && site.region.toLowerCase().includes(searchTerm.toLowerCase())) ||
           site.industry.toLowerCase().includes(searchTerm.toLowerCase()),
       )
     }
@@ -1012,13 +1012,13 @@ export default function MasterSiteList({ onSiteSelect }: MasterSiteListProps) {
                       <div>
                         <Label className="text-sm font-medium">Project Manager</Label>
                         <p className="mt-1 text-sm">
-                          {getUserName(selectedSite.projectManager) || selectedSite.projectManager}
+                          {selectedSite.projectManager ? (getUserName(selectedSite.projectManager) || selectedSite.projectManager) : 'Not assigned'}
                         </p>
                       </div>
                       <div>
                         <Label className="text-sm font-medium">Technical Owner</Label>
                         <p className="mt-1 text-sm">
-                          {getUserName(selectedSite.technicalOwner) || selectedSite.technicalOwner}
+                          {selectedSite.technicalOwner ? (getUserName(selectedSite.technicalOwner) || selectedSite.technicalOwner) : 'Not assigned'}
                         </p>
                       </div>
                       {selectedSite.technicalOwners && selectedSite.technicalOwners.length > 0 && (
