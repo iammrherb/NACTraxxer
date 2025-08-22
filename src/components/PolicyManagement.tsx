@@ -32,7 +32,7 @@ import {
   Eye,
   Settings
 } from "lucide-react"
-import { storage, type Policy } from "../lib/storage"
+import { storage, type Policy, type Site } from "../lib/storage"
 import { simulationMetrics } from "../lib/simulation-metrics"
 
 const SAMPLE_POLICIES: Policy[] = [
@@ -174,7 +174,7 @@ const SAMPLE_POLICIES: Policy[] = [
 
 export default function PolicyManagement() {
   const [policies, setPolicies] = useState<Policy[]>(SAMPLE_POLICIES)
-  const [sites] = useState(storage.getSites())
+  const [sites, setSites] = useState<Site[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<string>("all")
   const [selectedStatus, setSelectedStatus] = useState<string>("all")
@@ -183,6 +183,14 @@ export default function PolicyManagement() {
   const [selectedPolicy, setSelectedPolicy] = useState<Policy | null>(null)
   const [viewMode, setViewMode] = useState<"list" | "grid">("list")
   const [metrics] = useState(simulationMetrics.getMetrics())
+
+  useEffect(() => {
+    const loadSites = async () => {
+      const loadedSites = await storage.getSites()
+      setSites(loadedSites)
+    }
+    loadSites()
+  }, [])
 
   const [newPolicy, setNewPolicy] = useState({
     name: "",

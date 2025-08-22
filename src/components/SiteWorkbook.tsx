@@ -23,7 +23,8 @@ import {
   Settings,
   CheckCircle,
   AlertTriangle,
-  Info
+  Info,
+  Clock
 } from "lucide-react"
 import { storage, type Site } from "../lib/storage"
 
