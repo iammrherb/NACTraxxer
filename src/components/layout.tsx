@@ -1,5 +1,3 @@
-"use client"
-
 import { useEffect } from "react"
 import { Outlet, useNavigate } from "react-router-dom"
 import { useSession } from "@/components/session-provider"
