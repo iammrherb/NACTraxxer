@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Plus, Search, Filter, Download, Upload, MapPin, Users, HardDrive, Calendar, DollarSign, AlertTriangle } from "lucide-react"
 import { Button } from "./ui/button"
 import { Input } from "./ui/input"
@@ -17,7 +17,15 @@ import { storage, type Site } from "../lib/storage"
 import { INDUSTRY_SCENARIOS } from "../lib/industryScenarios"
 
 export default function SitesManagement() {
-  const [sites, setSites] = useState<Site[]>(storage.getSites())
+  const [sites, setSites] = useState<Site[]>([])
+  
+  useEffect(() => {
+    const loadSites = async () => {
+      const loadedSites = await storage.getSites()
+      setSites(loadedSites)
+    }
+    loadSites()
+  }, [])
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedIndustry, setSelectedIndustry] = useState<string>("all")
   const [selectedStatus, setSelectedStatus] = useState<string>("all")
