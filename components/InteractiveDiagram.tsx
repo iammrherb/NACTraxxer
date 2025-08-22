@@ -63,9 +63,11 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { storage } from "../lib/storage"
-import { ComponentMetrics } from "../lib/simulation-metrics"
+// Remove the ComponentMetrics import since we'll use flexible typing
+// import { ComponentMetrics } from "../lib/simulation-metrics"
 import { toast } from "@/components/ui/use-toast"
 
 interface DiagramComponent {
@@ -78,34 +80,7 @@ interface DiagramComponent {
   height: number
   status: "online" | "offline" | "warning" | "error" | "maintenance"
   category: "cloud" | "network" | "security" | "endpoint" | "identity" | "management" | "application" | "connectivity"
-  metrics?: {
-    cpu?: number
-    memory?: number
-    network?: number
-    connections?: number
-    throughput?: string
-    latency?: number
-    uptime?: number
-    users?: number
-    sessions?: number
-    requests?: number
-    bandwidth?: string
-    packetLoss?: number
-    jitter?: number
-    availability?: number
-    responseTime?: number
-    errorRate?: number
-    securityScore?: number
-    complianceScore?: number
-    riskScore?: number
-    threatLevel?: string
-    vulnerabilities?: number
-    patches?: number
-    certificates?: number
-    policies?: number
-    violations?: number
-    incidents?: number
-  }
+  metrics?: Record<string, any>
   connections: string[]
   icon: string
   color: string
@@ -1736,7 +1711,7 @@ export default function InteractiveDiagram({
         certificates: 12500,
         validCerts: 12485,
         expiringSoon: 15,
-      },
+      } as any,
     })
 
     components.push({

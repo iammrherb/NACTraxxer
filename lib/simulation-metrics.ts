@@ -1,5 +1,6 @@
 // Extended metrics interface with all component-specific properties
 export interface ComponentMetrics {
+  // Base system metrics
   cpu?: number
   memory?: number
   network?: number
@@ -34,7 +35,7 @@ export interface ComponentMetrics {
   globalPolicies?: number
   
   // Threat Intelligence specific
-  riskScores?: number // Note: using riskScores (plural) as used in code
+  riskScores?: number
   feeds?: number
   
   // Network Infrastructure specific
@@ -66,7 +67,26 @@ export interface ComponentMetrics {
   investigations?: number
   threats?: number
   
-  // Additional metrics for comprehensive coverage
+  // OS/Platform specific
+  macos?: number
+  linux?: number
+  android?: number
+  ios?: number
+  
+  // Additional common metrics
+  users?: number
+  sessions?: number
+  policies?: number
+  rules?: number
+  endpoints?: number
+  vulnerabilities?: number
+  patches?: number
+  licenses?: number
+  compliance?: number
+  backup?: number
+  storage?: number
+  
+  // Allow any additional string/number properties for extensibility
   [key: string]: string | number | undefined
 }
 
