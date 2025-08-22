@@ -56,6 +56,26 @@ import {
   ChevronDown,
   ChevronRight,
   Layers,
+  MousePointer,
+  Hand,
+  RotateCcw,
+  Plus,
+  Minus,
+  EyeOff,
+  Play,
+  Pause,
+  Download,
+  Save,
+  Upload,
+  Grid3X3,
+  Move,
+  Square,
+  Circle,
+  ZoomIn,
+  ZoomOut,
+  MousePointer2,
+  Clock,
+  FileText,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -361,18 +381,24 @@ const STATUS_COLORS = {
 }
 
 const CONNECTION_COLORS = {
-  ethernet: "#9CA3AF",
-  fiber: "#64748B",
-  wireless: "#A78BFA",
-  vpn: "#F472B6",
-  radius: "#F87171",
-  api: "#6EE7B7",
-  tunnel: "#FBBF24",
-  saml: "#60A5FA",
-  oidc: "#38BDF8",
-  https: "#A3E635",
-  tacacs: "#FB7185",
-  radsec: "#9333EA",
+  ethernet: "#2563eb",
+  fiber: "#7c3aed", 
+  wireless: "#059669",
+  vpn: "#dc2626",
+  radius: "#ea580c",
+  api: "#0891b2",
+  tunnel: "#7c2d12",
+  saml: "#be123c",
+  oidc: "#9333ea",
+  https: "#16a34a",
+  tacacs: "#c2410c",
+  radsec: "#0f766e",
+  expressroute: "#ff6b35",
+  sdwan: "#4f46e5",
+  mpls: "#059669",
+  internet: "#0891b2",
+  leased_line: "#7c3aed",
+  satellite: "#dc2626"
 }
 
 const ARCHITECTURE_VIEWS = [
@@ -488,13 +514,59 @@ export default function InteractiveDiagram({
   const [dataFlowAnimation, setDataFlowAnimation] = useState(0)
   const [metricsUpdateInterval, setMetricsUpdateInterval] = useState<NodeJS.Timeout | null>(null)
   const [interactionMode, setInteractionMode] = useState<"select" | "pan" | "connect" | "edit">("select")
+  const [showControlPanel, setShowControlPanel] = useState(showControls)
+  const [showComponentLibrary, setShowComponentLibrary] = useState(false)
+  const [isAnimating, setIsAnimating] = useState(false)
+
+  // Connectivity options for the UI
+  const connectivityOptions = [
+    { value: 'ethernet', label: 'Ethernet' },
+    { value: 'fiber', label: 'Fiber Optic' },
+    { value: 'wireless', label: 'Wireless' },
+    { value: 'vpn', label: 'VPN' },
+    { value: 'mpls', label: 'MPLS' },
+    { value: 'internet', label: 'Internet' }
+  ]
+
+  // Component library for adding new components
+  const COMPONENT_LIBRARY = [
+    { type: 'switch', name: 'Network Switch', icon: '🔄' },
+    { type: 'firewall', name: 'Firewall', icon: '🛡️' },
+    { type: 'server', name: 'Server', icon: '🖥️' },
+    { type: 'router', name: 'Router', icon: '📡' },
+    { type: 'ap', name: 'Access Point', icon: '📶' },
+    { type: 'cloud', name: 'Cloud Service', icon: '☁️' }
+  ]
+
+  // Handle zoom functionality
+  const handleZoom = useCallback((newZoom: number) => {
+    const clampedZoom = Math.max(25, Math.min(200, newZoom))
+    setZoomLevel(clampedZoom)
+    if (onConfigUpdate) {
+      onConfigUpdate({ zoomLevel: clampedZoom })
+    }
+  }, [onConfigUpdate, setZoomLevel])
+
+  // Reset view to default
+  const resetView = useCallback(() => {
+    setZoomLevel(100)
+    setPanOffset({ x: 0, y: 0 })
+    setSelectedComponent(null)
+    setSelectedConnection(null)
+  }, [])
+
+  // Add component functionality
+  const addComponent = useCallback((type: string) => {
+    console.log(`Adding component: ${type}`)
+    setShowComponentLibrary(false)
+    // Component addition logic would go here
+  }, [])
   const [showGrid, setShowGrid] = useState(true)
   const [snapToGrid, setSnapToGrid] = useState(true)
   const [gridSize, setGridSize] = useState(20)
   const [autoLayout, setAutoLayout] = useState(false)
   const [showLegend, setShowLegend] = useState(true)
   const [exportFormat, setExportFormat] = useState<"png" | "svg" | "pdf">("png")
-  const [showControlPanel, setShowControlPanel] = useState(showControls)
   const [controlPanelMinimized, setControlPanelMinimized] = useState(false)
   const [controlPanelPosition, setControlPanelPosition] = useState({ x: 16, y: 16 })
   const [isDraggingPanel, setIsDraggingPanel] = useState(false)

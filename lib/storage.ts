@@ -1,5 +1,15 @@
 // Simple storage utility for Portnox NAC Designer
 
+export interface User {
+  id: string
+  name: string
+  email: string
+  role: string
+  sites: string[]
+  firstName?: string
+  lastName?: string
+}
+
 export interface Site {
   id: string
   name: string
@@ -7,6 +17,79 @@ export interface Site {
   industry: string
   size: 'small' | 'medium' | 'large' | 'enterprise'
   config: any
+  region?: string
+  status?: 'Complete' | 'In Progress' | 'Planned' | 'Delayed' | 'On Hold'
+  priority?: 'High' | 'Medium' | 'Low'
+  users?: number
+  devices?: number
+  budget?: number
+  completionPercent?: number
+  phase?: string
+  timeZone?: string
+  startDate?: string
+  targetDate?: string
+  actualDate?: string
+  notes?: string
+  userCounts?: {
+    employees?: number
+    contractors?: number
+    guests?: number
+  }
+  infrastructure?: {
+    switches?: number
+    accessPoints?: number
+    firewalls?: number
+    wired?: {
+      vendor?: string
+      model?: string
+      switches?: number
+      ports?: number
+    }
+    wireless?: {
+      vendor?: string
+      model?: string
+      accessPoints?: number
+      controllers?: number
+    }
+    firewall?: {
+      vendor?: string
+      model?: string
+      throughput?: string
+    }
+    radius?: {
+      type?: string
+      vendor?: string
+    }
+  }
+  authentication?: {
+    identityProviders?: string[]
+    mdmProviders?: string[]
+    authMethods?: string[]
+  }
+  projectManager?: string
+  technicalOwner?: string
+  technicalOwners?: string[]
+  assignedUsers?: string[]
+  contactName?: string
+  contactEmail?: string
+  contactPhone?: string
+  address?: string
+  city?: string
+  state?: string
+  zipCode?: string
+  compliance?: string[]
+  securityRequirements?: string[]
+  risks?: Array<{
+    description: string
+    severity: 'Low' | 'Medium' | 'High' | 'Critical'
+    mitigation: string
+  }>
+  networkSegments?: Array<{
+    name: string
+    vlan: number
+    subnet: string
+    description: string
+  }>
 }
 
 export interface ArchitectureConfig {
@@ -127,6 +210,16 @@ class StorageService {
 
   async saveSimulations(simulations: any[]): Promise<void> {
     return this.setItem('simulations', simulations)
+  }
+
+  // Users Management
+  async getUsers(): Promise<User[]> {
+    const users = await this.getItem<User[]>('users')
+    return users || []
+  }
+
+  async saveUsers(users: User[]): Promise<void> {
+    return this.setItem('users', users)
   }
 
   // User Preferences
