@@ -1,14 +1,10 @@
-export default function HomePage() {
+import Header from '../components/Header'
+import { Toaster } from '@/components/ui/toaster'
+
+function App() {
   return (
     <div className="min-h-screen bg-background">
-      <header className="bg-card border-b border-border">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center space-x-4">
-            <h1 className="text-xl font-bold gradient-text">Portnox NAC Designer</h1>
-            <p className="text-sm text-muted-foreground">Zero Trust Network Access Control</p>
-          </div>
-        </div>
-      </header>
+      <Header />
       
       <main className="container mx-auto px-4 py-8">
         <div className="text-center space-y-6 mb-12">
@@ -46,6 +42,10 @@ export default function HomePage() {
           </div>
         </div>
       </main>
+      
+      <Toaster />
     </div>
   )
 }
+
+export default App
