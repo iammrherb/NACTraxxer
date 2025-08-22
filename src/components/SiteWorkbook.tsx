@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
 import { Button } from "./ui/button"
 import { Input } from "./ui/input"
@@ -25,7 +25,7 @@ import {
   AlertTriangle,
   Info
 } from "lucide-react"
-import { storage } from "../lib/storage"
+import { storage, type Site } from "../lib/storage"
 
 interface SiteWorkbookData {
   siteInfo: {
@@ -87,7 +87,7 @@ interface SiteWorkbookData {
 
 export default function SiteWorkbook() {
   const [selectedSite, setSelectedSite] = useState<string>("")
-  const [sites] = useState(storage.getSites())
+  const [sites, setSites] = useState<Site[]>([])
   const [workbookData, setWorkbookData] = useState<SiteWorkbookData>({
     siteInfo: {
       name: "",
@@ -188,6 +188,14 @@ export default function SiteWorkbook() {
       }
     }
   })
+
+  useEffect(() => {
+    const loadSites = async () => {
+      const loadedSites = await storage.getSites()
+      setSites(loadedSites)
+    }
+    loadSites()
+  }, [])
 
   const loadSiteData = (siteId: string) => {
     const site = sites.find(s => s.id === siteId)

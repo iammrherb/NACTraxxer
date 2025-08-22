@@ -7,7 +7,7 @@ import { Badge } from "./ui/badge"
 import { Button } from "./ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
 import { CalendarDays, Clock, Users, HardDrive, CheckCircle, AlertCircle, TrendingUp, BarChart3 } from "lucide-react"
-import { storage } from "../lib/storage"
+import { storage, type Site } from "../lib/storage"
 import { simulationMetrics } from "../lib/simulation-metrics"
 
 interface ProgressMetrics {
@@ -29,19 +29,23 @@ interface ProgressMetrics {
 
 export default function RolloutProgress() {
   const [metrics, setMetrics] = useState<ProgressMetrics | null>(null)
-  const [sites] = useState(storage.getSites())
+  const [sites, setSites] = useState<Site[]>([])
   const [realTimeMetrics, setRealTimeMetrics] = useState(simulationMetrics.getMetrics())
   const [selectedTimeframe, setSelectedTimeframe] = useState("30d")
 
   useEffect(() => {
-    // Calculate progress metrics
-    const totalSites = sites.length
-    const completedSites = sites.filter(s => s.status === "completed").length
-    const inProgressSites = sites.filter(s => s.status === "in-progress").length
-    const planningSites = sites.filter(s => s.status === "planning").length
-    
-    const totalDevices = sites.reduce((sum, site) => sum + (typeof site.devices === 'number' ? site.devices : 0), 0)
-    const totalUsers = sites.reduce((sum, site) => sum + (site.users || 0), 0)
+    const loadSitesAndCalculateMetrics = async () => {
+      const loadedSites = await storage.getSites()
+      setSites(loadedSites)
+      
+      // Calculate progress metrics
+      const totalSites = loadedSites.length
+      const completedSites = loadedSites.filter(s => s.status === "completed").length
+      const inProgressSites = loadedSites.filter(s => s.status === "in-progress").length
+      const planningSites = loadedSites.filter(s => s.status === "planning").length
+      
+      const totalDevices = loadedSites.reduce((sum, site) => sum + (typeof site.devices === 'number' ? site.devices : 0), 0)
+      const totalUsers = loadedSites.reduce((sum, site) => sum + (site.users || 0), 0)
     
     const overallProgress = totalSites > 0 ? Math.round((completedSites / totalSites) * 100) : 0
 
@@ -93,7 +97,10 @@ export default function RolloutProgress() {
     }, 3000)
 
     return () => clearInterval(interval)
-  }, [sites])
+    }
+    
+    loadSitesAndCalculateMetrics()
+  }, [])
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {

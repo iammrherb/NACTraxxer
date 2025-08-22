@@ -7,7 +7,7 @@ import SiteWorkbook from "./components/SiteWorkbook"
 import ArchitectureDesigner from "./components/ArchitectureDesigner"
 import TimelineSchedule from "./components/TimelineSchedule"
 import PolicyManagement from "./components/PolicyManagement"
-import { ThemeProvider } from "./components/ThemeProvider"
+import { ThemeProvider } from "./components/ui/theme-provider"
 
 interface DashboardStats {
   sites: number
@@ -53,7 +53,7 @@ export default function App() {
   }
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+    <ThemeProvider defaultTheme="system">
       <div className="min-h-screen bg-background">
         {/* Header */}
         <header className="border-b bg-card">

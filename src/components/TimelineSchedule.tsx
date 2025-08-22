@@ -20,7 +20,7 @@ import {
   ChevronLeft,
   ChevronRight
 } from "lucide-react"
-import { storage } from "../lib/storage"
+import { storage, type Site } from "../lib/storage"
 
 interface TimelineEvent {
   id: string
@@ -147,7 +147,15 @@ const SAMPLE_EVENTS: TimelineEvent[] = [
 
 export default function TimelineSchedule() {
   const [events] = useState<TimelineEvent[]>(SAMPLE_EVENTS)
-  const [sites] = useState(storage.getSites())
+  const [sites, setSites] = useState<Site[]>([])
+
+  useEffect(() => {
+    const loadSites = async () => {
+      const loadedSites = await storage.getSites()
+      setSites(loadedSites)
+    }
+    loadSites()
+  }, [])
   const [selectedSite, setSelectedSite] = useState<string>("all")
   const [selectedType, setSelectedType] = useState<string>("all")
   const [selectedStatus, setSelectedStatus] = useState<string>("all")

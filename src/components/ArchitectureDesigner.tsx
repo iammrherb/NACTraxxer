@@ -28,7 +28,7 @@ import {
   Cloud,
   Database
 } from "lucide-react"
-import { storage, type ArchitectureConfig } from "../lib/storage"
+import { storage, type ArchitectureConfig, type Site } from "../lib/storage"
 import { INDUSTRY_SCENARIOS } from "../lib/industryScenarios"
 
 const NETWORK_COMPONENTS = {
@@ -112,7 +112,7 @@ export default function ArchitectureDesigner() {
     }
   })
   
-  const [sites] = useState(storage.getSites())
+  const [sites, setSites] = useState<Site[]>([])
   const [selectedComponents, setSelectedComponents] = useState<string[]>([
     "core", "switch", "firewall", "wireless", "nac", "radius"
   ])
@@ -129,6 +129,14 @@ export default function ArchitectureDesigner() {
     storage.saveArchitectureConfig(config)
     // Show success message (would implement toast here)
   }
+
+  useEffect(() => {
+    const loadSites = async () => {
+      const loadedSites = await storage.getSites()
+      setSites(loadedSites)
+    }
+    loadSites()
+  }, [])
 
   const loadSiteConfiguration = (siteId: string) => {
     const site = sites.find(s => s.id === siteId)
