@@ -1,28 +1,25 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom"
-import { ThemeProvider } from "@/components/theme-provider"
-import { SessionProvider } from "@/components/session-provider"
-import { Toaster } from "@/components/ui/toaster"
-import Layout from "./components/layout"
-import HomePage from "./pages/home"
-import LoginPage from "./pages/login"
-import ArchitecturePage from "./pages/architecture"
 
 function App() {
   return (
-    <ThemeProvider defaultTheme="light" storageKey="portnox-theme">
-      <SessionProvider>
-        <Router>
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/" element={<Layout />}>
-              <Route index element={<HomePage />} />
-              <Route path="architecture" element={<ArchitecturePage />} />
-            </Route>
-          </Routes>
-          <Toaster />
-        </Router>
-      </SessionProvider>
-    </ThemeProvider>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <Router>
+        <Routes>
+          <Route path="/" element={
+            <div className="flex items-center justify-center min-h-screen">
+              <div className="text-center space-y-4">
+                <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  NAC Designer
+                </h1>
+                <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+                  Network Access Control Architecture Designer
+                </p>
+              </div>
+            </div>
+          } />
+        </Routes>
+      </Router>
+    </div>
   )
 }
 
