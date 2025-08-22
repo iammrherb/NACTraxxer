@@ -1,9 +1,9 @@
+import Header from '../components/Header'
+
 function App() {
   return (
     <div className="min-h-screen bg-background">
-      <header className="bg-card border-b border-border p-4">
-        <h1 className="text-xl font-bold">NAC Designer</h1>
-      </header>
+      <Header />
       
       <main className="container mx-auto px-4 py-8">
         <div className="text-center space-y-6 mb-12">
