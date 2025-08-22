@@ -1,4 +1,4 @@
-import Header from '../components/Header'
+import Header from './components/Header'
 import { Toaster } from '@/components/ui/toaster'
 
 function App() {

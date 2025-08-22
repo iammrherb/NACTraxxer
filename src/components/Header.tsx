@@ -16,15 +16,15 @@ export default function Header() {
   const [notifications] = useState(3)
 
   return (
-    <header className="bg-white border-b border-gray-200">
+    <header className="bg-card border-b border-border">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           {/* Logo and Title */}
           <div className="flex items-center space-x-4">
-            <Shield className="h-8 w-8 text-blue-600" />
+            <Shield className="h-8 w-8 text-primary" />
             <div>
-              <h1 className="text-xl font-bold text-gray-900">Portnox NAC Designer</h1>
-              <p className="text-sm text-gray-500">Zero Trust Network Access Control</p>
+              <h1 className="text-xl font-bold text-foreground">Portnox NAC Designer</h1>
+              <p className="text-sm text-muted-foreground">Zero Trust Network Access Control</p>
             </div>
           </div>
 
