@@ -438,10 +438,10 @@ export default function PolicyManagement() {
                 onSubmit={createPolicy}
                 onCancel={() => setIsCreateDialogOpen(false)}
                 addCondition={addCondition}
-                updateCondition={updateCondition}
+                updateCondition={(index: number, field: string, value: any) => updateCondition(index, field as keyof PolicyCondition, value)}
                 removeCondition={removeCondition}
                 addAction={addAction}
-                updateAction={updateAction}
+                updateAction={(index: number, field: string, value: any) => updateAction(index, field as keyof PolicyAction, value)}
                 removeAction={removeAction}
               />
             </DialogContent>
@@ -593,11 +593,10 @@ export default function PolicyManagement() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Switch
-                            checked={policy.status === "active"}
-                            onCheckedChange={() => togglePolicyStatus(policy.id)}
-                            size="sm"
-                          />
+          <Switch
+            checked={policy.status === "active"}
+            onCheckedChange={() => togglePolicyStatus(policy.id)}
+          />
                           <span className="text-sm">{policy.status}</span>
                         </div>
                       </TableCell>
@@ -623,8 +622,8 @@ export default function PolicyManagement() {
                                 name: policy.name,
                                 description: policy.description,
                                 category: policy.category,
-                                priority: policy.priority,
-                                status: policy.status,
+                                priority: policy.priority as any,
+                                status: policy.status as any,
                                 conditions: policy.conditions,
                                 actions: policy.actions,
                                 tags: policy.tags,
@@ -734,10 +733,10 @@ export default function PolicyManagement() {
             onSubmit={updatePolicy}
             onCancel={() => setIsEditDialogOpen(false)}
             addCondition={addCondition}
-            updateCondition={updateCondition}
-            removeCondition={removeCondition}
-            addAction={addAction}
-            updateAction={updateAction}
+          updateCondition={(index: number, field: string, value: any) => updateCondition(index, field as keyof PolicyCondition, value)}
+          removeCondition={removeCondition}
+          addAction={addAction}
+          updateAction={(index: number, field: string, value: any) => updateAction(index, field as keyof PolicyAction, value)}
             removeAction={removeAction}
           />
         </DialogContent>

@@ -160,7 +160,7 @@ export default function RolloutProgress() {
     const milestoneNames = ["Site Survey", "Equipment Delivery", "Installation", "Configuration", "Testing", "Go-Live"]
     return milestoneNames.map((name) => ({
       name,
-      status: Math.random() > 0.5 ? "completed" : Math.random() > 0.5 ? "in-progress" : ("pending" as const),
+      status: (Math.random() > 0.5 ? "completed" : Math.random() > 0.5 ? "in-progress" : "pending") as "completed" | "in-progress" | "pending",
       date: getValidDateString(new Date(Date.now() + Math.random() * 30 * 24 * 60 * 60 * 1000)),
       progress: Math.floor(Math.random() * 100),
     }))

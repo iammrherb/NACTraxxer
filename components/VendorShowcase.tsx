@@ -20,7 +20,17 @@ const VendorShowcase = () => {
         {/* Content for Visual Comparison */}
       </TabsContent>
       <TabsContent value="impact" className="space-y-4">
-        <VendorImpactDemo />
+        <VendorImpactDemo 
+          onVendorChange={() => {}}
+          currentConfig={{
+            wiredVendor: "cisco",
+            wirelessVendor: "cisco", 
+            firewallVendor: "cisco",
+            identityProviders: ["azure_ad"],
+            mdmProviders: ["intune"],
+            cloudProviders: ["azure"]
+          }}
+        />
       </TabsContent>
     </Tabs>
   )

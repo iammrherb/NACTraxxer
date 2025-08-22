@@ -680,34 +680,83 @@ export default function ArchitectureDesigner() {
             </CardHeader>
             <CardContent className="p-0">
               <InteractiveDiagram
-                view={selectedView}
                 config={{
-                  cloudProvider,
-                  networkVendor,
-                  connectivityType,
-                  identityProvider,
-                  mdmProvider,
-                  firewallVendor,
-                  radiusType: "portnox",
-                  pkiProvider: "portnox",
-                  wirelessVendor: networkVendor,
-                  deviceTypes: ["windows", "mac", "ios", "android", "iot", "printers"],
-                  byodSupport: true,
-                  guestPortal: true,
                   industry,
-                  complianceFramework,
+                  deployment: "enterprise",
+                  connectivity: [connectivityType],
+                  wiredVendor: networkVendor,
+                  wirelessVendor: networkVendor,
+                  firewallVendor,
+                  identityProvider: [identityProvider],
+                  mdmProvider: [mdmProvider],
+                  radiusType: "portnox",
+                  deviceAdmin: "portnox",
+                  authTypes: ["802.1x", "mac_auth"],
+                  deviceTypes: ["windows", "mac", "ios", "android", "iot", "printers"],
+                  complianceFrameworks: [complianceFramework],
+                  securityFeatures: ["nac", "firewall", "radius"],
+                  networkSegmentation: true,
+                  guestAccess: true,
+                  iotSupport: true,
+                  cloudIntegration: true,
+                  onPremiseIntegration: true,
+                  hybridDeployment: true,
+                  animations: isAnimating,
+                  showMetrics: true,
+                  showConnections: true,
+                  animationSpeed: animationSpeed[0],
+                  zoomLevel: 1,
+                  selectedView,
+                  customColors: {
+                    primary: "#3b82f6",
+                    secondary: "#6b7280",
+                    accent: "#10b981"
+                  }
                 }}
-                isAnimating={isAnimating}
-                animationSpeed={animationSpeed[0]}
-                showLegend={showLegend}
-                className="min-h-[600px]"
+                showControls={true}
+                isFullscreen={false}
               />
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="legend" className="space-y-4">
-          <ArchitectureLegend currentView={selectedView} />
+          <ArchitectureLegend 
+            currentView={selectedView} 
+            config={{
+              industry,
+              deployment: "enterprise",
+              connectivity: [connectivityType],
+              wiredVendor: networkVendor,
+              wirelessVendor: networkVendor,
+              firewallVendor,
+              identityProvider: [identityProvider],
+              mdmProvider: [mdmProvider],
+              radiusType: "portnox",
+              deviceAdmin: "portnox",
+              authTypes: ["802.1x", "mac_auth"],
+              deviceTypes: ["windows", "mac", "ios", "android", "iot", "printers"],
+              complianceFrameworks: [complianceFramework],
+              securityFeatures: ["nac", "firewall", "radius"],
+              networkSegmentation: true,
+              guestAccess: true,
+              iotSupport: true,
+              cloudIntegration: true,
+              onPremiseIntegration: true,
+              hybridDeployment: true,
+              animations: isAnimating,
+              showMetrics: true,
+              showConnections: true,
+              animationSpeed: animationSpeed[0],
+              zoomLevel: 1,
+              selectedView,
+              customColors: {
+                primary: "#3b82f6",
+                secondary: "#6b7280",
+                accent: "#10b981"
+              }
+            }}
+          />
         </TabsContent>
 
         <TabsContent value="policies" className="space-y-4">

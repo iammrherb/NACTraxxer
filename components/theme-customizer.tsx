@@ -51,7 +51,7 @@ export default function ThemeCustomizer({ onThemeUpdated }: ThemeCustomizerProps
       setFormData({
         companyName: prefs.companyName || "",
         customerLogo: prefs.customerLogo || "",
-        theme: prefs.theme || "light",
+        theme: (prefs.theme as "light" | "dark" | "system") || "light",
         notifications: prefs.notifications ?? true,
         autoSave: prefs.autoSave ?? true,
       })

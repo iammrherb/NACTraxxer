@@ -134,7 +134,7 @@ export default function DemoDataModal({ isOpen, onClose }: DemoDataModalProps) {
       }
 
       // Generate and save demo data
-      await storage.generateDemoData(scenarioKey)
+      await storage.generateDemoData()
 
       setIsComplete(true)
 
